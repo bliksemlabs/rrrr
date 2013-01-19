@@ -1,6 +1,6 @@
 #include "craptor.h"
 
-#define BUFLEN 20
+#define BUFLEN 255
 
 /* parse a cgi query string returning one key-value pair at a time */
 inline boolean next_query_param(const char *qstring, char *buf, char **vbuf, int buflen) {
