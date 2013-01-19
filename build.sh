@@ -1,3 +1,3 @@
 #!/bin/bash
 # -lfcgi must be after source files
-gcc -g *.c -o craptor -l fcgi
+gcc -Wall -g *.c -o craptor -l fcgi

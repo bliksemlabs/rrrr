@@ -13,6 +13,9 @@ int main(int argc, char **argv) {
 
     FCGX_Stream *in, *out, *err;
     FCGX_ParamArray envp;
+
+//    parse_query_params("cheese=pickle&time=12&color=red&1234=5678", out);
+
     int count = 0;
     while(FCGX_Accept(&in, &out, &err, &envp) >= 0) {
         FCGX_FPrintF(out,

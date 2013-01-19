@@ -1,44 +1,38 @@
 #include "craptor.h"
 
-#define BUFLEN 255
-
-// use only one buffer? key is at buf, and val pointer is set somewhere in buf
+#define BUFLEN 20
 
 /* parse a cgi query string returning one key-value pair at a time */
-inline boolean next_query_param(const char *qstring, char *keybuf, char *valbuf, int buflen) {
-    static const char *c = NULL;
-    char *k = keybuf;
-    char *v = valbuf;
-    // could just have a pointer to the current buffer in use, and set that when we hit =
+inline boolean next_query_param(const char *qstring, char *buf, char **vbuf, int buflen) {
+    static const char *q = NULL;
     
-    if (c == NULL) { // not currently working on a qstring
-        c = qstring; // set up to start parsing a new qstring
-    }
+    // set up if not currently working on a qstring
+    if (q == NULL) 
+        q = qstring; 
     
-    if (*c == '\0') { // reached the end of the query string
-        c = NULL;
-        return FALSE;
+    if (*q == '\0') { 
+        q = NULL; // set internal state (no work in progress)
+        return FALSE; // signal this query string is fully parsed
     }
-        
-    boolean inval = FALSE; // track whether we have passed '=' in the KVP
-    while ( *c ) {
-        if (*c == '&') {
-            ++c;
+
+    char *eob = buf + buflen - 1;
+    
+    *vbuf = buf; // in case there is no '='
+    while (*q != '\0') {
+        if (buf >= eob) // check for buffer overflow
             break;
+        if (*q == '=') {
+            *buf++ = '\0';
+            *vbuf = buf;
+            ++q;
+        } else if (*q == '&') {
+            ++q;
+            break;
+        } else {
+            *buf++ = *q++; 
         }
-        if (inval) { 
-            // handle value
-            *(v++) = *c;
-        } else {    
-            // handle key
-            if (*c == '=') // move from key to value
-                inval = TRUE;
-            else
-                *(k++) = *c;
-        }
-        ++c;
     }
-    *k = *v = '\0';
+    *buf = '\0'; // terminate value string
     return TRUE;
 }
 
@@ -49,11 +43,12 @@ void url_decode (char *buf) {
 
 request_t parse_query_params(const char *qstring, FCGX_Stream *out) {
     char key[BUFLEN];
-    char val[BUFLEN];
+    char *val;
     request_t req;
     
-    while (next_query_param(qstring, key, val, BUFLEN)) {
+    while (next_query_param(qstring, key, &val, BUFLEN)) {
         FCGX_FPrintF(out, "key %s val %s<br>\n", key, val);
+        //syslog(LOG_INFO, "key %s val %s<br>\n", key, val);
         if (strcmp(key, "time") == 0) {
             req.time = 0;
         } else if (strcmp(key, "cheese") == 0) {
@@ -63,4 +58,5 @@ request_t parse_query_params(const char *qstring, FCGX_Stream *out) {
         }
     }
     
+    return req;
 }
