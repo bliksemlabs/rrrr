@@ -1,0 +1,6 @@
+# backups / work in progress
+*~
+
+# make and build files
+*.o
+
