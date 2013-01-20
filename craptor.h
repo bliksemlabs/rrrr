@@ -23,16 +23,21 @@ typedef enum {FALSE = 0, TRUE} boolean;
 typedef struct {
     float lat;
     float lon;
+} stop_coord_t;
+
+typedef struct {
+    int stop_routes_offset;
+    int transfers_offset;
 } stop_t;
 
 typedef struct {
-    int stops_offset;
+    int route_stops_offset;
     int stop_times_offset;
 } route_t;
 
 typedef struct {
     int target_stop;
-    float dist_m;
+    float dist_meters;
 } xfer_t;
 
 typedef struct {
