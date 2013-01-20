@@ -2,6 +2,8 @@
 
 #define BUFLEN 255
 
+extern struct context ctx;
+
 /* parse a cgi query string returning one key-value pair at a time */
 inline boolean next_query_param(const char *qstring, char *buf, char **vbuf, int buflen) {
     static const char *q = NULL;
@@ -74,6 +76,7 @@ boolean parse_query_params(request_t *req) {
     char key[BUFLEN];
     char *val;
     // set defaults
+    req->walk_speed = 1.3; // m/sec
     req->from = req->to = req->time = -1; 
     req->arrive_by = FALSE;
     while (next_query_param(qstring, key, &val, BUFLEN)) {
@@ -85,9 +88,12 @@ boolean parse_query_params(request_t *req) {
             req->from = atoi(val);
         } else if (strcmp(key, "to") == 0) {
             req->to = atoi(val);
+        } else if (strcmp(key, "speed") == 0) {
+            req->walk_speed = atof(val);
         } else {
             printf("unrecognized parameter: key=%s val=%s\n", key, val);
         }
+        printf("context: %d\n", ctx.data_size);
     }
     return TRUE;
 }
