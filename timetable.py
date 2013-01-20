@@ -155,12 +155,12 @@ assert len(stop_routes_offsets) == nstops + 1
 print "saving stop indexes"
 loc_stops = tell()
 struct_2i = Struct('ii')
-for stop in zip (transfers_offsets, stop_routes_offsets) :
+for stop in zip (stop_routes_offsets, transfers_offsets) :
     out.write(struct_2i.pack(*stop));
 
 print "saving route indexes"
 loc_routes = tell()
-for route in zip (stop_times_offsets, route_stops_offsets) :
+for route in zip (route_stops_offsets, stop_times_offsets) :
     out.write(struct_2i.pack(*route));
 
 print "done writing timetable file"

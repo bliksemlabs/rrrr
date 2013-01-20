@@ -21,6 +21,18 @@
 typedef enum {FALSE = 0, TRUE} boolean;
 
 typedef struct {
+    char version_string[8];
+    int nstops;
+    int nroutes;
+    int loc_stops;
+    int loc_routes;
+    int loc_route_stops;
+    int loc_stop_times;
+    int loc_stop_routes;
+    int loc_transfers; 
+} timetable_header_t;
+
+typedef struct {
     float lat;
     float lon;
 } stop_coord_t;
@@ -55,16 +67,14 @@ struct context {
     int nstops;
     int nroutes;
     
+    stop_coord_t *stop_coords;
     stop_t *stops;
-    int *stop_routes_offsets;
-
-    int *route_stops_offsets; // per route
-    int *stop_times_offsets;  // per route (each trip is of the same size)
-    int *route_stops; // for each route, the stops visited in order
-    int *dep_times; // for each trip on each route, the departure times    
-    int *arv_times; // for each trip on each route, the arrival times    
-
-    xfer_t *transfers;
+    route_t *routes;
+    int *route_stops;
+    int *stop_times;
+    int *stop_routes;
+    xfer_t *transfers; 
+    
 };
 
 boolean parse_query_params(request_t *req);
