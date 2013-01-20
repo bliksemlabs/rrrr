@@ -3,3 +3,4 @@
 NUM_HANDLERS=4
 killall craptor
 cgi-fcgi -start -connect /tmp/fastcgi.socket ./craptor $NUM_HANDLERS
+chmod a+rw /tmp/fastcgi.socket
