@@ -1,16 +1,22 @@
 #ifndef CRAPTOR_H
 #define CRAPTOR_H
 
-#include "fcgiapp.h"
+#include "fcgi_stdio.h"
+
+#include <ctype.h>
+#include <errno.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 #include <syslog.h>
-#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 #define PROGRAM_NAME "craptor"
-#define EXIT_SUCCESS 0
-#define EXIT_FAIL 1
 
 typedef enum {FALSE = 0, TRUE} boolean;
 
@@ -27,12 +33,14 @@ typedef struct {
 } route_t;
 
 typedef struct {
-    stop_t *from_stop;
-    stop_t *to_stop;
+    int from;
+    int to;
     long time;
-    int arrive_by; // bool
+    boolean arrive_by; 
 } request_t;
 
-request_t parse_query_params(const char *qstring, FCGX_Stream *out);
+boolean parse_query_params(request_t *req);
+
+void url_decode (char *buf);
 
 #endif // CRAPTOR_H

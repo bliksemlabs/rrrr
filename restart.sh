@@ -1,5 +1,5 @@
 #!/bin/bash
 # -lfcgi must be after source files
-NUM_HANDLERS=10
+NUM_HANDLERS=4
 killall craptor
-cgi-fcgi -start -connect localhost:9000  ./craptor $NUM_HANDLERS
+cgi-fcgi -start -connect /tmp/fastcgi.socket ./craptor $NUM_HANDLERS
