@@ -1,6 +1,5 @@
 #!/bin/bash
-# -lfcgi must be after source files
 NUM_HANDLERS=4
-killall craptor
-cgi-fcgi -start -connect /tmp/fastcgi.socket ./craptor $NUM_HANDLERS
+killall rrrr
+cgi-fcgi -start -connect /tmp/fastcgi.socket ./rrrr $NUM_HANDLERS
 chmod a+rw /tmp/fastcgi.socket

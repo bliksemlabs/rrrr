@@ -16,7 +16,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#define PROGRAM_NAME "craptor"
+#define PROGRAM_NAME "rrrr"
 
 typedef enum {FALSE = 0, TRUE} boolean;
 

@@ -1,16 +1,16 @@
 CC=gcc
 CFLAGS=-g -Wall -o3
 LDFLAGS=
-SOURCES=craptor.c qstring.c
+SOURCES=rrrr.c qstring.c
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=craptor
+EXECUTABLE=rrrr
 
 all: $(SOURCES) $(EXECUTABLE)
 	
 $(EXECUTABLE): $(OBJECTS) 
 	$(CC) $(LDFLAGS) $(OBJECTS) -l fcgi -o $@
 
-.cpp.o:
+.c.o:
 	$(CC) $(CFLAGS) $< -o $@
 	
 clean:
