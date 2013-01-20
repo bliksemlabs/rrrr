@@ -9,7 +9,7 @@ void die(const char *msg) {
 
 void setup() {
 
-    #define INPUT_FILE "/home/abyrd/timetable.dat"
+    #define INPUT_FILE "/tmp/timetable.dat"
 
     /* Logging */
     setlogmask(LOG_UPTO(LOG_DEBUG));
