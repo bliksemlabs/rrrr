@@ -1,17 +1,17 @@
 CC=gcc
-CFLAGS=-g -Wall -o3
-LDFLAGS=
-SOURCES=rrrr.c qstring.c
+CFLAGS=-g -Wall -std=c99 -o3
+LIBS=-lfcgi
+SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=rrrr
 
 all: $(SOURCES) $(EXECUTABLE)
 	
 $(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(LDFLAGS) $(OBJECTS) -l fcgi -o $@
+	$(CC) $(OBJECTS) $(LIBS) -o $@
 
-.c.o:
-	$(CC) $(CFLAGS) $< -o $@
-	
 clean:
 	rm -rf $(OBJECTS) $(EXECUTABLE)
+
+test: $(SOURCES)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
