@@ -1,11 +1,11 @@
-#include "rrrr.h"
-
-#define BUFLEN 255
-
-extern struct context ctx;
+/* qstring.c : utility functions for handling cgi query strings */
+#include "qstring.h" 
+#include <stdbool.h>
+#include <stddef.h>
+#include <ctype.h>
 
 /* parse a cgi query string returning one key-value pair at a time */
-inline boolean next_query_param(const char *qstring, char *buf, char **vbuf, int buflen) {
+bool qstring_next_pair(const char *qstring, char *buf, char **vbuf, int buflen) {
     static const char *q = NULL;
     // set up if not currently working on a qstring
     if (q == NULL) 
@@ -13,7 +13,7 @@ inline boolean next_query_param(const char *qstring, char *buf, char **vbuf, int
     
     if (*q == '\0') { 
         q = NULL; // set internal state (no work in progress)
-        return FALSE; // signal this query string is fully parsed
+        return false; // signal this query string is fully parsed
     }
     char *eob = buf + buflen - 1;
     *vbuf = buf; // in case there is no '='
@@ -32,24 +32,16 @@ inline boolean next_query_param(const char *qstring, char *buf, char **vbuf, int
         }
     }
     *buf = '\0'; // terminate value string
-    return TRUE;
+    return true;
 }
 
-/* http://www.geekhideout.com/urlcode.shtml */
-
-/* Converts a hex character to its integer value */
-char from_hex(char ch) {
+/* converts a hex character to its integer value */
+static char from_hex(char ch) {
   return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
 }
 
-/* Converts an integer value to its hex character*/
-char to_hex(char code) {
-  static char hex[] = "0123456789abcdef";
-  return hex[code & 15];
-}
-
 /* destructively decodes a url-encoded string (the result length is always <= the input length) */
-void url_decode (char *buf) {
+void qstring_url_decode (char *buf) {
     char *in = buf;
     char *out = buf;
     while ( *in ) {
@@ -67,35 +59,6 @@ void url_decode (char *buf) {
         ++in;
     }
     *out = '\0';
-}
-
-boolean parse_query_params(request_t *req) {
-    char *qstring = getenv("QUERY_STRING");
-    if (qstring == NULL)
-        return FALSE;
-    char key[BUFLEN];
-    char *val;
-    // set defaults
-    req->walk_speed = 1.3; // m/sec
-    req->from = req->to = req->time = -1; 
-    req->arrive_by = FALSE;
-    while (next_query_param(qstring, key, &val, BUFLEN)) {
-        url_decode (key);
-        url_decode (val);
-        if (strcmp(key, "time") == 0) {
-            req->time = atoi(val);
-        } else if (strcmp(key, "from") == 0) {
-            req->from = atoi(val);
-        } else if (strcmp(key, "to") == 0) {
-            req->to = atoi(val);
-        } else if (strcmp(key, "speed") == 0) {
-            req->walk_speed = atof(val);
-        } else {
-            printf("unrecognized parameter: key=%s val=%s\n", key, val);
-        }
-        printf("context: %d\n", ctx.data_size);
-    }
-    return TRUE;
 }
 
 
