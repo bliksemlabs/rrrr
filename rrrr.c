@@ -6,17 +6,18 @@
 #include "router.h"
 
 int main(int argc, char **argv) {
-    /* SETUP */
 
+    /* SETUP */
+    
     // logging
     setlogmask(LOG_UPTO(LOG_DEBUG));
     openlog(CONFIG_PROGRAM_NAME, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
     syslog(LOG_INFO, "starting up");
-
+    
     // load transit data from disk
     transit_data_t tdata;
     transit_data_load(CONFIG_INPUT_FILE, &tdata);
-
+    
     // initialize router
     router_t router;
     router_setup(&router, &tdata);

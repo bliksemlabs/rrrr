@@ -1,3 +1,4 @@
+/* router.c : the main routing algorithm */
 #include "router.h"
 #include "util.h"
 #include "config.h"
@@ -30,8 +31,6 @@ bool router_request_from_qstring(router_request_t *req) {
     req->from = req->to = req->time = -1; 
     req->arrive_by = false;
     while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
-        qstring_url_decode (key);
-        qstring_url_decode (val);
         if (strcmp(key, "time") == 0) {
             req->time = atoi(val);
         } else if (strcmp(key, "from") == 0) {
