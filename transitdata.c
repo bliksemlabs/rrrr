@@ -58,6 +58,39 @@ void transit_data_close(transit_data_t *td) {
     munmap(td->base, td->size);
 }
 
+// change to return number of stops, store pointer to array.
+inline int *transit_data_stops_for_route(transit_data_t td, int route, int **next_route) {
+    route_t route0 = td.routes[route];
+    route_t route1 = td.routes[route + 1];
+    *next_route = td.route_stops + route1.route_stops_offset;
+    return td.route_stops + route0.route_stops_offset;
+}
+
+inline int *transit_data_stoptimes_for_route(transit_data_t td, int route, int **next_route) {
+    route_t route0 = td.routes[route];
+    route_t route1 = td.routes[route + 1];
+    *next_route = td.stop_times + route1.stop_times_offset;
+    return td.stop_times + route0.stop_times_offset;
+}
+
+void transit_data_dump_route(transit_data_t *td, int route) {
+    int *s_end, *t_end;
+    int *s = transit_data_stops_for_route(*td, route, &s_end);
+    int *t = transit_data_stoptimes_for_route(*td, route, &t_end);
+    int nstops = s_end - s;
+    printf("ROUTE %d NSTOPS %d\n", route, nstops);
+    printf("SSEQ SINDEX  \n");
+    for (int i = 0; i < nstops; ++i) {
+        printf("%4d %6d : ", i, s[i]);
+        for (int *t2 = &(t[i]); t2 < t_end; t2 += nstops) {
+            char buf[16];
+            timetext(buf, *t2);
+            printf("%s ", buf);
+        }
+        printf("\n");
+    }
+}
+
 void transit_data_dump(transit_data_t *td) {
     printf("\nCONTEXT\n"
            "nstops: %d\n"

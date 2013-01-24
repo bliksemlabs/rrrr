@@ -4,12 +4,14 @@
 
 typedef struct router router_t;
 struct router {
-    transit_data_t *tdata;
+    transit_data_t tdata;
     // scratch space for solving
     // making this opaque requires more dynamic allocation
+    int table_size;
+    int *best;
     int *arrivals;
-//int (*back_trip)[tdata->nstops];
-//int (*back_stop)[tdata->nstops];
+    int *back_trip;
+    int *back_stop;
 };
 
 typedef struct router_request router_request_t;
@@ -28,3 +30,5 @@ bool router_request_from_qstring(router_request_t*);
 void router_request_dump(router_request_t*);
 
 void router_teardown(router_t*);
+
+bool router_route(router_t*, router_request_t*);

@@ -47,5 +47,11 @@ void transit_data_close(transit_data_t*);
 
 void transit_data_dump(transit_data_t*);
 
+int *transit_data_stops_for_route(transit_data_t, int route, int **next_route);
+
+int *transit_data_stoptimes_for_route(transit_data_t, int route, int **next_route);
+
+void transit_data_dump_route(transit_data_t *td, int route);
+
 #endif // _TRANSIT_DATA_H
 

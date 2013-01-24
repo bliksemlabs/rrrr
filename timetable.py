@@ -53,30 +53,35 @@ def sorted_departure_times(db, bundle) :
         for (departure_time, stop_sequence) in db.execute(query, (trip_id,)) :
             yield(departure_time)
 
+struct_header = Struct('8s8i')
 def write_header () :
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct.pack('8s8i', htext, nstops, nroutes, 
+    packed = struct_header.pack(htext, nstops, nroutes, 
         loc_stops, loc_routes, loc_route_stops, loc_stop_times, loc_stop_routes, loc_transfers) 
     out.write(packed)
     
 # seek past end of header, which will be written later
-out.seek(8 + 8 * INTWIDTH)
+out.seek(struct_header.size)
 
 print "building stop indexes and coordinate list"
 struct_2f = Struct('2f')
-# establish a mapping between stop ids and ints close to 0
+# establish a mapping between sorted stop ids and integer indexes (allowing binary search later)
 stopid_for_idx = []
 idx_for_stopid = {}
 idx = 0
-for (sid, name, lat, lon) in db.stops() :
+query = """
+        select stop_id, stop_name, stop_lat, stop_lon
+        from stops
+        order by stop_id
+        """ 
+for (sid, name, lat, lon) in db.execute(query) :
     idx_for_stopid[sid] = idx
     stopid_for_idx.append(sid)
     out.write(struct_2f.pack(lat, lon));
     idx += 1
-
-nstops = idx    
-
+nstops = idx
+    
 print "building trip bundles"
 route_for_idx = db.compile_trip_bundles(reporter=sys.stdout)
 nroutes = len(route_for_idx)
@@ -163,10 +168,25 @@ loc_routes = tell()
 for route in zip (route_stops_offsets, stop_times_offsets) :
     out.write(struct_2i.pack(*route));
 
-print "done writing timetable file"
+print "writing out sorted stopids to string table"
+loc_stopids = tell()
+stopid_offsets = []
+offset = 0;
+for sid in stopid_for_idx :
+    out.write(sid)
+    out.write('\0')
+    stopid_offsets.append(offset)
+    offset += len(sid) + 1
+# index is several times bigger than the string table. it's probably better to just store fixed-width ids.
+print "writing string table index"
+loc_stopid_offsets = tell()
+for offset in stopid_offsets:
+    writeint(offset)
+
+print "reached end of timetable file"
 loc_eof = tell()
 
-print "writing header... ",
+print "rewinding and writing header... ",
 write_header()
    
 print "done."
