@@ -22,12 +22,11 @@ def writeshort(x) :
 
 def tell() :
     pos = out.tell();
-    bytes = pos
-    mib = pos / (1024 * 1024)
-    bytes -= mib * (1024 * 1024)
-    kib = bytes / 1024
-    bytes -= kib * 1024
-    print "at position %d in output (%dM %dk)" % (pos, mib, kib)
+    if pos > 1024 * 1024 :
+        text = '%0.2f MB' % (pos / 1024.0 / 1024.0)
+    else :  
+        text = '%0.2f kB' % (pos / 1024.0)
+    print "  at position %d in output [%s]" % (pos, text)
     return pos
 
 INTWIDTH = 4
@@ -116,6 +115,7 @@ stop_times_offsets = []
 for idx, route in enumerate(route_for_idx) :
     if idx > 0 and idx % 100 == 0 :
         print 'wrote %d routes' % idx
+        tell()
     stop_times_offsets.append(offset)
     for departure_time in sorted_departure_times(db, route) :
         # could be stored as a short
@@ -152,11 +152,19 @@ print "saving transfers (footpaths)"
 loc_transfers = tell()
 offset = 0
 transfers_offsets = []
-for idx in range(nstops) :
+query = """
+select from_stop_id, to_stop_id, transfer_type, min_transfer_time
+from transfers where from_stop_id = ?"""
+struct_2i = Struct('if')
+for from_idx, from_sid in enumerate(stopid_for_idx) :
     transfers_offsets.append(offset)
+    for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
+        to_idx = idx_for_stopid[to_sid]
+        out.write(struct_2i.pack(to_idx, 210.1))# assume 200 meter transfer for now
+        offset += 1
 transfers_offsets.append(offset) # sentinel
-assert len(stop_routes_offsets) == nstops + 1
-
+assert len(transfers_offsets) == nstops + 1
+                                       
 print "saving stop indexes"
 loc_stops = tell()
 struct_2i = Struct('ii')

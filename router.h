@@ -12,6 +12,7 @@ struct router {
     int *arrivals;
     int *back_trip;
     int *back_stop;
+    // maybe we should store some state in here, like round and sub-scratch pointers
 };
 
 typedef struct router_request router_request_t;

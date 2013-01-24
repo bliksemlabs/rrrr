@@ -22,7 +22,8 @@ void router_setup(router_t *router, transit_data_t *td) {
     
 }
 
-inline static void router_reset(router_t router) {
+static inline void router_reset(router_t router) {
+
 }
 
 void router_teardown(router_t *router) {
@@ -31,8 +32,31 @@ void router_teardown(router_t *router) {
     free(router->back_stop);
 }
 
-static void apply_transfers(int round, int stop) {
-    
+static inline void apply_transfers(router_t r, int round, float speed_meters_sec, int stop) {
+    transit_data_t d = r.tdata;
+    int nstops = d.nstops;
+    int *arr = r.arrivals + (round * nstops);
+    int *back_trip = r.back_trip + (round * nstops);
+    int *back_stop = r.back_stop + (round * nstops);
+    for (int s0 = 0; s0 < nstops; ++s0) {
+        int t0 = arr[s0]; 
+        if (t0 != INF) { 
+            // damn this is inefficient
+            stop_t stop0 = d.stops[s0];
+            stop_t stop1 = d.stops[s0+1];
+            transfer_t *tr0 = d.transfers + stop0.transfers_offset;
+            transfer_t *tr1 = d.transfers + stop1.transfers_offset;
+            for ( ; tr0 < tr1 ; ++tr0) {
+                int s1 = (*tr0).target_stop;
+                int t1 = t0 + (int)((*tr0).dist_meters / speed_meters_sec);
+                if (arr[s1] > t1) {
+                    arr[s1] = t1;
+                    back_trip[s1] = -2; // need sym const for walk distinct from NONE
+                    back_stop[s1] = s0;
+                }
+            } 
+        }
+    }
 }
 
 static void dump_results(router_t *prouter) {
@@ -58,12 +82,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // clear arrivals. not necessary to clear other tables, they will only be read where arrivals are set.    
     for (int *p = router.arrivals, *pend = router.arrivals + nstops; p < pend; ++p)
         *p = INF; // no memset for ints
-        
     // set initial state (maybe group all this together as "state"?
     router.arrivals[req.from] = req.time; 
     router.back_trip[req.from] = NONE; 
     router.back_stop[req.from] = NONE; 
-    //apply_transfers(0, req.from);
+    apply_transfers(router, 0, req.walk_speed, req.from);
     int setcount = 0;
     for (int round = 0; round < CONFIG_MAX_ROUNDS; ++round) {
         printf("round %d\n", round);
@@ -116,9 +139,10 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         --trip;
                     }
                 }
-            } 
-        }
-    }
+            } // end for (stop)
+        } // end for (route)
+        apply_transfers(router, round, req.walk_speed, -1);
+    } // end for (round)
     printf ("set %d stops\n", setcount);
     //dump_results(prouter);
     return true;
@@ -137,6 +161,8 @@ inline static bool range_check(router_request_t *req) {
     if (req->time < 0) return false;
     return true;
 }
+
+static int test_endpoint = 10;
 
 #define BUFLEN 255
 bool router_request_from_qstring(router_request_t *req) {
@@ -159,6 +185,9 @@ bool router_request_from_qstring(router_request_t *req) {
             printf("unrecognized parameter: key=%s val=%s\n", key, val);
         }
     }
+    req->from = test_endpoint;
+    test_endpoint += 761;
+    test_endpoint %= 5000;
     return true;
 }
 
