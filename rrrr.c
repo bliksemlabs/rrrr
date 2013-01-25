@@ -23,14 +23,14 @@ int main(int argc, char **argv) {
     router_setup(&router, &tdata);
 
     /* MAIN LOOP */
-    router_request_t req;
     while(FCGI_Accept() >= 0) {
         printf("Content-type: text/plain\r\n\r\n");
+        router_request_t req;
         router_request_from_qstring(&req);
         router_request_dump(&req);
         //transit_data_dump(&tdata);
         router_route(&router, &req);
-        //router_result(&req);
+        router_result_dump(&router, &req);
     }
 
     /* TEAR DOWN */

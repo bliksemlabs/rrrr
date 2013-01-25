@@ -10,14 +10,16 @@ void die(const char *msg) {
     exit(EXIT_FAILURE);
 }
 
-void timetext(char *buf, int t) {
+static char buf[32];
+
+char *timetext(int t) {
     if (t == INT_MAX) {
-        sprintf(buf, "   --   ");    
-        return;
+        return "   --   ";
     }        
     int s = t % 60;
     int m = t / 60;
     int h = m / 60;
     m = m % 60;
     sprintf(buf, "%02d:%02d:%02d", h, m, s);
+    return buf;
 }

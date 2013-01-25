@@ -83,9 +83,7 @@ void transit_data_dump_route(transit_data_t *td, int route) {
     for (int i = 0; i < nstops; ++i) {
         printf("%4d %6d : ", i, s[i]);
         for (int *t2 = &(t[i]); t2 < t_end; t2 += nstops) {
-            char buf[16];
-            timetext(buf, *t2);
-            printf("%s ", buf);
+            printf("%s ", timetext(*t2));
         }
         printf("\n");
     }

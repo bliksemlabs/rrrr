@@ -32,7 +32,7 @@ void router_teardown(router_t *router) {
     free(router->back_stop);
 }
 
-static inline void apply_transfers(router_t r, int round, float speed_meters_sec, int stop) {
+static inline void apply_transfers(router_t r, int round, float speed_meters_sec) {
     transit_data_t d = r.tdata;
     int nstops = d.nstops;
     int *arr = r.arrivals + (round * nstops);
@@ -65,10 +65,8 @@ static void dump_results(router_t *prouter) {
     for (int s = 0; s < r.tdata.nstops; ++s) {
         printf("%4d ", s);
         int *a = r.arrivals + s;
-        char buf[16];
         for (int round = 0; round < CONFIG_MAX_ROUNDS; ++round, a += r.tdata.nstops) {
-            timetext(buf, *a);
-            printf("%8s ", buf);
+            printf("%8s ", timetext(*a));
         }
         printf("\n");
     }
@@ -79,25 +77,29 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     router_request_t req = *preq;
     int nstops = router.tdata.nstops;
     int nroutes = router.tdata.nroutes;
-    // clear arrivals. not necessary to clear other tables, they will only be read where arrivals are set.    
-    for (int *p = router.arrivals, *pend = router.arrivals + nstops; p < pend; ++p)
-        *p = INF; // no memset for ints
-    // set initial state (maybe group all this together as "state"?
-    router.arrivals[req.from] = req.time; 
-    router.back_trip[req.from] = NONE; 
-    router.back_stop[req.from] = NONE; 
-    apply_transfers(router, 0, req.walk_speed, req.from);
-    int setcount = 0;
+    // clear rounds 0 and 1 (no memset for ints).
+    // it is not necessary to clear the other tables. they will only be read where arrivals are set.
+    for (int *p = router.arrivals, *pend = router.arrivals + nstops + nstops; p < pend; ++p) { 
+        *p = INF; 
+    }
+    // use round 1 fields for "prev round" at round 0
+    int *arr_prev = router.arrivals + nstops; 
+    // set initial state (maybe group as a "state" struct?
+    arr_prev[req.from] = req.time; 
     for (int round = 0; round < CONFIG_MAX_ROUNDS; ++round) {
         printf("round %d\n", round);
         int *arr = router.arrivals + round * nstops;
-        int *back_trip = router.back_trip + round * nstops;
-        int *back_stop = router.back_stop + round * nstops;
-        if (round > 0)
-            memcpy(arr, arr-nstops, nstops * sizeof(int));
+        int *back_trip = router.back_trip; //+ round * nstops;
+        int *back_stop = router.back_stop; //+ round * nstops;
+        if (round > 0) {
+            arr_prev = arr - nstops;
+            memcpy(arr, arr_prev, nstops * sizeof(int));
+        } else {
+            back_stop[req.from] = NONE;
+        }
         for (int route = 0; route < nroutes; ++route) {
-            //if (route % 100 == 0) 
-                //printf("  route %d\n", route);
+            if (route % 100 == 0) 
+                printf("  route %d\n", route);
             // transit_data_dump_route(&(router.tdata), route);
             int *s_end, *t_end;    // pointers one element beyond the end of arrays
             int *s = transit_data_stops_for_route(router.tdata, route, &s_end);
@@ -105,47 +107,70 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             int route_nstops = s_end - s;
             int trip = NONE;       // trip index within the route
             int board_stop = NONE; // stop index where that trip was boarded
-            t -= route_nstops; // hackish handling of first boarding -- pointing outside the array
-            for ( ; s < s_end; ++s, ++t) {
+            for ( ; s < s_end ; ++s, ++t) {
                 int stop = *s;
-                //printf("    stop %d\n", stop);
+                //printf("    stop %d %s\n", stop, timetext(arr_prev[stop]));
                 if (trip == NONE) {
                     // should just set to the last trip in the list, and let it fall through
                     // if arr[stop] > *t; will also hit INFs.
-                    //printf("stop %d arrival %d\n", stop, arr[stop]);
-                    if (arr[stop] == INF) continue; // prefill results with NONE/INF or copy from R_r-1
+                    if (arr_prev[stop] == INF) continue; // note comparison against PREVIOUS to enforce xfer invariant
                     // Scan forward to the latest trip that can be boarded, if any.
                     // (should scan backward to allow break at 1st)
                     //printf("hit non-inf stop %d\n", stop);
-                    for (int *t_next = t + route_nstops; t_next < t_end && arr[stop] < *t_next; t_next += route_nstops) {
+                    //transit_data_dump_route(&(router.tdata), route);
+                    int trip_next = 0;
+                    int *t_next = t;
+                    while (t_next < t_end && *t_next < arr_prev[stop]) {
+                        //printf("    board option %d at %s\n", trip_next, timetext(*t_next));
+                        trip_next += 1; // remembering that we start at -1 for NONE
+                        t_next += route_nstops;
+                    }
+                    //printf("    final option %d at %s\n", trip_next, timetext(*t_next));
+                    if (t_next < t_end) { // did not overshoot the end of the list
                         t = t_next;
-                        trip += 1; // remembering that we start at -1 for NONE
+                        trip = trip_next;
                         board_stop = stop;
                     }
                     continue;
                 }
                 // typedef a time_t?
-                if (*t < arr[stop]) {
+                if (*t < arr[stop]) { // we do have to check .LT., right?
                     arr[stop] = *t;
                     back_trip[stop] = trip; // (should be route?)
                     back_stop[stop] = board_stop;
-                    //printf("set stop %d to %d\n", stop, *t);
-                    ++setcount;
-                } else if (arr[stop] < *t) { 
-                    // If arrival time at this stop is before arrival time at this stop on the current trip,
+                    //printf("set stop %d to %s\n", stop, timetext(*t));
+                } else if (arr_prev[stop] < *t) { // compare against PREVIOUS round
+                    // If last round's arrival time at this stop is before arrival time at this stop on the current trip,
                     // check whether it is possible to board an earlier trip.
-                    while (trip > 0 && *(t - route_nstops) > arr[stop]) {
+                    while (trip > 0 && *(t - route_nstops) > arr_prev[stop]) {
                         t -= route_nstops; // skip to the same stop in the previous trip
                         --trip;
+                        board_stop = stop;
                     }
                 }
             } // end for (stop)
         } // end for (route)
-        apply_transfers(router, round, req.walk_speed, -1);
+        apply_transfers(router, round, req.walk_speed);
     } // end for (round)
-    printf ("set %d stops\n", setcount);
     //dump_results(prouter);
     return true;
+}
+
+bool router_result_dump(router_t *prouter, router_request_t *preq) {
+    router_t router = *prouter;
+    router_request_t req = *preq;
+    printf("routing result\n");
+    int last_round = router.tdata.nstops * (CONFIG_MAX_ROUNDS - 1);
+
+    int *arr = router.arrivals + last_round;
+    int *back_trip = router.back_trip;// + last_round;
+    int *back_stop = router.back_stop;// + last_round;
+
+    int count = 0;
+    for (int s = req.to; back_stop[s] >= 0; s = back_stop[s]) {
+        printf ("%8s stop %6d via trip %2d\n", timetext(arr[s]), s, back_trip[s]);
+        if (count++ > 10) break;
+    }        
 }
 
 inline static void set_defaults(router_request_t *req) {
