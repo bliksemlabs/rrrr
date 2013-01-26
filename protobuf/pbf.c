@@ -17,10 +17,6 @@
 // protoc-c --c_out . ./osmformat.proto
 // protoc-c --c_out . ./fileformat.proto
 
-// "The uncompressed length of a Blob *should* be less than 16 MiB (16*1024*1024 bytes) 
-// and *must* be less than 32 MiB."
-#define MAX_BLOB_SIZE_UNCOMPRESSED 32 * 1024 * 1024
-
 static void die(const char *msg) {
     fprintf(stderr, "%s\n", msg);
     exit(EXIT_FAILURE);
@@ -46,12 +42,15 @@ static void pbf_unmap() {
     munmap(map, map_size);
 }
 
+// "The uncompressed length of a Blob *should* be less than 16 MiB (16*1024*1024 bytes) 
+// and *must* be less than 32 MiB."
+#define MAX_BLOB_SIZE_UNCOMPRESSED 32 * 1024 * 1024
 static unsigned char zbuf[MAX_BLOB_SIZE_UNCOMPRESSED];
 
 static int zinflate(ProtobufCBinaryData *in, unsigned char *out) {
     int ret;
     
-    /* initialize deflate state */
+    /* initialize inflate state */
     z_stream strm;
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
@@ -65,7 +64,6 @@ static int zinflate(ProtobufCBinaryData *in, unsigned char *out) {
     /* ProtobufCBinaryData is {size_t len; uint8_t *data} */ 
     strm.avail_in = in->len;
     strm.next_in = in->data;
-
     strm.avail_out = MAX_BLOB_SIZE_UNCOMPRESSED;
     strm.next_out = out;
 
