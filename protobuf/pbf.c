@@ -13,8 +13,6 @@
 #include <arpa/inet.h>
 #include "zlib.h"
 
-#define FILE "/var/otp/graphs/benelux/planet-benelux.osm.pbf"
-
 // install protobuf-c-compiler and libprotobuf-c0-dev, then 
 // protoc-c --c_out . ./osmformat.proto
 // protoc-c --c_out . ./fileformat.proto
@@ -31,12 +29,12 @@ static void die(const char *msg) {
 static void *map;
 static size_t map_size;
 
-static void pbf_map() {
-    int fd = open(FILE, O_RDONLY);
-    if (fd == -1) 
+static void pbf_map(const char *filename) {
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1)
         die("could not find input file");
     struct stat st;
-    if (stat(FILE, &st) == -1) 
+    if (stat(filename, &st) == -1) 
         die("could not stat input file");
     map = mmap((void*)0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     map_size = st.st_size;
@@ -117,8 +115,8 @@ void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *call
     }
 }
 
-void scan_pbf(osm_callbacks_t *callbacks) {
-    pbf_map();
+void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
+    pbf_map(filename);
     OSMPBF__HeaderBlock *header = NULL;
     int blobcount = 0;
     for (void *buf = map; buf < map + map_size; ++blobcount) {
@@ -190,10 +188,13 @@ void scan_pbf(osm_callbacks_t *callbacks) {
 }
 
 int main (int argc, const char * argv[]) {
+    if (argc < 2)
+        die("usage: pbf input.pbf");
+    const char *filename = argv[1];
     osm_callbacks_t callbacks;
     callbacks.way = &handle_way;
     callbacks.node = NULL;
-    scan_pbf(&callbacks);
+    scan_pbf(filename, &callbacks);
     printf("total node references %d\n", noderefs);
     return 0;
 }
