@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -std=c99 -o3
+CFLAGS=-g -Wall -std=gnu99 -o3
 LIBS=-lfcgi
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
