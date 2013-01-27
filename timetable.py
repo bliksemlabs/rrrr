@@ -5,7 +5,9 @@ from struct import Struct
 # requires graphserver to be installed
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 
-db = GTFSDatabase('/home/abyrd/trimet.gtfsdb')
+FILE = '/home/abyrd/trimet.gtfsdb'
+FILE = '/home/abyrd/kv7.gtfsdb'
+db = GTFSDatabase(FILE)
 
 out = open("/tmp/timetable.dat", "wb")
 
@@ -139,10 +141,10 @@ stop_routes_offsets = []
 for idx in range(nstops) :
     stop_routes_offsets.append(offset)
     sid = stopid_for_idx[idx]
-    # should check that this stop actually has routes...
-    for route_idx in stop_routes[sid] :
-        writeint(route_idx)
-        offset += 1 
+    if sid in stop_routes :
+        for route_idx in stop_routes[sid] :
+            writeint(route_idx)
+            offset += 1 
 stop_routes_offsets.append(offset) # sentinel
 assert len(stop_routes_offsets) == nstops + 1
 

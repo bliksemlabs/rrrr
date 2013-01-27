@@ -7,16 +7,20 @@
 #include <stdlib.h>
 #include <fcgi_stdio.h>
 #include <string.h>
+#include <time.h>
+
+#define WALK -2
 
 void router_setup(router_t *router, transit_data_t *td) {
+    srand(time(NULL));
     router->tdata = *td;
     router->table_size = td->nstops * CONFIG_MAX_ROUNDS;
     router->best = malloc(sizeof(int) * td->nstops); 
     router->arrivals  = malloc(sizeof(int) * router->table_size);
-    router->back_trip = malloc(sizeof(int) * router->table_size);
+    router->back_route = malloc(sizeof(int) * router->table_size);
     router->back_stop = malloc(sizeof(int) * router->table_size);
     if (router->arrivals  == NULL ||
-        router->back_trip == NULL ||
+        router->back_route == NULL ||
         router->back_stop == NULL)
         die("failed to allocate router scratch space");
     
@@ -28,7 +32,7 @@ static inline void router_reset(router_t router) {
 
 void router_teardown(router_t *router) {
     free(router->arrivals);
-    free(router->back_trip);
+    free(router->back_route);
     free(router->back_stop);
 }
 
@@ -36,8 +40,8 @@ static inline void apply_transfers(router_t r, int round, float speed_meters_sec
     transit_data_t d = r.tdata;
     int nstops = d.nstops;
     int *arr = r.arrivals + (round * nstops);
-    int *back_trip = r.back_trip + (round * nstops);
-    int *back_stop = r.back_stop + (round * nstops);
+    int *back_route = r.back_route; // + (round * nstops);
+    int *back_stop = r.back_stop; // + (round * nstops);
     for (int s0 = 0; s0 < nstops; ++s0) {
         int t0 = arr[s0]; 
         if (t0 != INF) { 
@@ -51,7 +55,7 @@ static inline void apply_transfers(router_t r, int round, float speed_meters_sec
                 int t1 = t0 + (int)((*tr0).dist_meters / speed_meters_sec);
                 if (arr[s1] > t1) {
                     arr[s1] = t1;
-                    back_trip[s1] = -2; // need sym const for walk distinct from NONE
+                    back_route[s1] = WALK; // need sym const for walk distinct from NONE
                     back_stop[s1] = s0;
                 }
             } 
@@ -89,17 +93,15 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     for (int round = 0; round < CONFIG_MAX_ROUNDS; ++round) {
         printf("round %d\n", round);
         int *arr = router.arrivals + round * nstops;
-        int *back_trip = router.back_trip; //+ round * nstops;
+        int *back_route = router.back_route; //+ round * nstops;
         int *back_stop = router.back_stop; //+ round * nstops;
         if (round > 0) {
             arr_prev = arr - nstops;
             memcpy(arr, arr_prev, nstops * sizeof(int));
-        } else {
-            back_stop[req.from] = NONE;
         }
         for (int route = 0; route < nroutes; ++route) {
-            if (route % 100 == 0) 
-                printf("  route %d\n", route);
+            //if (route % 100 == 0) 
+            //    printf("  route %d\n", route);
             // transit_data_dump_route(&(router.tdata), route);
             int *s_end, *t_end;    // pointers one element beyond the end of arrays
             int *s = transit_data_stops_for_route(router.tdata, route, &s_end);
@@ -136,7 +138,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 // typedef a time_t?
                 if (*t < arr[stop]) { // we do have to check .LT., right?
                     arr[stop] = *t;
-                    back_trip[stop] = trip; // (should be route?)
+                    back_route[stop] = route; // (should be route?)
                     back_stop[stop] = board_stop;
                     //printf("set stop %d to %s\n", stop, timetext(*t));
                 } else if (arr_prev[stop] < *t) { // compare against PREVIOUS round
@@ -151,24 +153,30 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             } // end for (stop)
         } // end for (route)
         apply_transfers(router, round, req.walk_speed);
+        back_route[req.from] = NONE;
+        back_stop[req.from] = NONE;
     } // end for (round)
     //dump_results(prouter);
     return true;
 }
 
-bool router_result_dump(router_t *prouter, router_request_t *preq) {
+void router_result_dump(router_t *prouter, router_request_t *preq) {
     router_t router = *prouter;
     router_request_t req = *preq;
     printf("routing result\n");
     int last_round = router.tdata.nstops * (CONFIG_MAX_ROUNDS - 1);
 
     int *arr = router.arrivals + last_round;
-    int *back_trip = router.back_trip;// + last_round;
+    int *back_route = router.back_route;// + last_round;
     int *back_stop = router.back_stop;// + last_round;
 
     int count = 0;
-    for (int s = req.to; back_stop[s] >= 0; s = back_stop[s]) {
-        printf ("%8s stop %6d via trip %2d\n", timetext(arr[s]), s, back_trip[s]);
+    for (int s = req.to; ; s = back_stop[s]) {
+        printf ("%8s stop %6d via route %2d\n", timetext(arr[s]), s, back_route[s]);
+        if (back_stop[s] == NONE) {
+            printf("END");
+            break;
+        }
         if (count++ > 10) break;
     }        
 }
@@ -179,6 +187,18 @@ inline static void set_defaults(router_request_t *req) {
     req->arrive_by = false;
 }
 
+int rrrrandom(int limit) {
+    return (int) (limit * (random() / (RAND_MAX + 1.0)));
+}
+
+inline static void set_random(router_request_t *req) {
+    req->walk_speed = 1.5; // m/sec
+    req->from = rrrrandom(5500);
+    req->to = rrrrandom(5500);
+    req->time = 3600 * 6 + rrrrandom(3600 * 17);
+    req->arrive_by = false;
+}
+
 inline static bool range_check(router_request_t *req) {
     if (req->walk_speed < 0.1) return false;
     if (req->from < 0) return false;
@@ -186,8 +206,6 @@ inline static bool range_check(router_request_t *req) {
     if (req->time < 0) return false;
     return true;
 }
-
-static int test_endpoint = 10;
 
 #define BUFLEN 255
 bool router_request_from_qstring(router_request_t *req) {
@@ -206,13 +224,14 @@ bool router_request_from_qstring(router_request_t *req) {
             req->to = atoi(val);
         } else if (strcmp(key, "speed") == 0) {
             req->walk_speed = atof(val);
+        } else if (strcmp(key, "randomize") == 0) {
+            printf("RANDOMIZING\n");
+            set_random(req);
+            return true;
         } else {
             printf("unrecognized parameter: key=%s val=%s\n", key, val);
         }
     }
-    req->from = test_endpoint;
-    test_endpoint += 761;
-    test_endpoint %= 5000;
     return true;
 }
 

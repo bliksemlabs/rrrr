@@ -10,7 +10,7 @@ struct router {
     int table_size;
     int *best;
     int *arrivals;
-    int *back_trip;
+    int *back_route;
     int *back_stop;
     // maybe we should store some state in here, like round and sub-scratch pointers
 };
@@ -34,4 +34,4 @@ void router_teardown(router_t*);
 
 bool router_route(router_t*, router_request_t*);
 
-bool router_result_dump(router_t*, router_request_t*);
+void router_result_dump(router_t*, router_request_t*);
