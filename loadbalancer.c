@@ -23,7 +23,7 @@ int main (void) {
     zlist_t *workers = zlist_new ();
 
     while (true) {
-        if (++npoll % 72 == 0)
+        if (++npoll % 100 == 0)
             syslog(LOG_INFO, "broker: frx %04d ftx %04d brx %04d btx %04d / %d workers\n", 
                 frx, ftx, brx, btx, nworkers);
         zmq_pollitem_t items [] = {

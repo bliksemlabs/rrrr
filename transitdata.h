@@ -39,6 +39,8 @@ struct transit_data {
     transfer_t *transfers; 
     // optional data -- NULL pointer means it is not available
     coord_t *stop_coords;
+    int stop_id_width;
+    char *stop_ids;
 };
 
 void transit_data_load(char* /*filename*/, transit_data_t*);

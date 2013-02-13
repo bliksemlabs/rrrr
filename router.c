@@ -1,4 +1,5 @@
 /* router.c : the main routing algorithm */
+
 #include "router.h"
 #include "util.h"
 #include "config.h"
@@ -174,7 +175,7 @@ void router_result_dump(router_t *prouter, router_request_t *preq) {
     for (int s = req.to; ; s = back_stop[s]) {
         printf ("%8s stop %6d via route %2d\n", timetext(arr[s]), s, back_route[s]);
         if (back_stop[s] == NONE) {
-            printf("END");
+            printf("END\n");
             break;
         }
         if (count++ > 10) break;

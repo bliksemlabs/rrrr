@@ -1,4 +1,5 @@
-/* test.c */
+/* test.c : test client */
+
 #include <time.h>
 #include <zmq.h>
 #include <czmq.h>
@@ -17,14 +18,16 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     assert (rc == 0);
     int request_count = 0;
     while (true) {
+        //sleep (1);
         router_request_t req;
         router_request_randomize(&req);
+        //router_request_dump(&req);
         zmq_send(sock, &req, sizeof(req), 0);
         //syslog (LOG_INFO, "test client sent %d requests\n", request_count);
         char *reply = zstr_recv (sock);
         if (!reply)
             break;
-        // syslog (LOG_INFO, "test client received response: %s\n", reply);
+        //syslog (LOG_INFO, "test client received response: %s\n", reply);
         free (reply);
         if (++request_count == RRRR_TEST_REQUESTS)
             break;

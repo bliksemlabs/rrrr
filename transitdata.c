@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stddef.h>
-#include <fcgi_stdio.h>
 
 // file-visible struct
 typedef struct transit_data_header transit_data_header_t;
@@ -20,6 +19,7 @@ struct transit_data_header {
     int loc_stop_times;
     int loc_stop_routes;
     int loc_transfers; 
+    int loc_stop_ids; 
 };
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
@@ -51,7 +51,8 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->stop_times = (int*) (b + header->loc_stop_times);
     td->stop_routes = (int*) (b + header->loc_stop_routes);
     td->transfers = (transfer_t*) (b + header->loc_transfers);
-
+    td->stop_id_width = *((int*) (b + header->loc_stop_ids));
+    td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(int));
 }
 
 void transit_data_close(transit_data_t *td) {
@@ -94,8 +95,7 @@ void transit_data_dump(transit_data_t *td) {
            "nstops: %d\n"
            "nroutes: %d\n", td->nstops, td->nroutes);
     printf("\nSTOPS\n");
-    int i;
-    for (i=0; i<td->nstops; i++) {
+    for (int i = 0; i < td->nstops; i++) {
         printf("stop %d at lat %f lon %f\n", i, td->stop_coords[i].lat, td->stop_coords[i].lon);
         stop_t s0 = td->stops[i];
         stop_t s1 = td->stops[i+1];
@@ -109,7 +109,7 @@ void transit_data_dump(transit_data_t *td) {
         printf("\n");
     }
     printf("\nROUTES\n");
-    for (i=0; i<td->nroutes; i++) {
+    for (int i = 0; i < td->nroutes; i++) {
         printf("route %d\n", i);
         route_t r0 = td->routes[i];
         route_t r1 = td->routes[i+1];
@@ -121,6 +121,11 @@ void transit_data_dump(transit_data_t *td) {
             printf("%d ", td->route_stops[j]);
         }
         printf("\n");
+    }
+    printf("\nSTOPIDS\n");
+    int stride = td->stop_id_width;
+    for (int i = 0; i < td->nstops; i++) {
+        printf("stop %03d has id %s \n", i, td->stop_ids + (i * stride));
     }
 }
 

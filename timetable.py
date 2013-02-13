@@ -5,11 +5,11 @@ from struct import Struct
 # requires graphserver to be installed
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 
-FILE = '/home/abyrd/trimet.gtfsdb'
 FILE = '/home/abyrd/kv7.gtfsdb'
+FILE = '/home/abyrd/trimet.gtfsdb'
 db = GTFSDatabase(FILE)
 
-out = open("/tmp/timetable.dat", "wb")
+out = open("./timetable.dat", "wb")
 
 #switch to unsigned
 #pack arrival and departure into 4 bytes w/ offset?
@@ -54,12 +54,12 @@ def sorted_departure_times(db, bundle) :
         for (departure_time, stop_sequence) in db.execute(query, (trip_id,)) :
             yield(departure_time)
 
-struct_header = Struct('8s8i')
+struct_header = Struct('8s9i')
 def write_header () :
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, nstops, nroutes, 
-        loc_stops, loc_routes, loc_route_stops, loc_stop_times, loc_stop_routes, loc_transfers) 
+    packed = struct_header.pack(htext, nstops, nroutes, loc_stops, loc_routes, loc_route_stops, 
+        loc_stop_times, loc_stop_routes, loc_transfers, loc_stopids)
     out.write(packed)
     
 # seek past end of header, which will be written later
@@ -161,8 +161,10 @@ struct_2i = Struct('if')
 for from_idx, from_sid in enumerate(stopid_for_idx) :
     transfers_offsets.append(offset)
     for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
+        if ttime == None :
+            continue # skip non-time/non-distance transfers for now
         to_idx = idx_for_stopid[to_sid]
-        out.write(struct_2i.pack(to_idx, 210.1))# assume 200 meter transfer for now
+        out.write(struct_2i.pack(to_idx, float(ttime))) # must convert time/dist
         offset += 1
 transfers_offsets.append(offset) # sentinel
 assert len(transfers_offsets) == nstops + 1
@@ -179,20 +181,19 @@ for route in zip (route_stops_offsets, stop_times_offsets) :
     out.write(struct_2i.pack(*route));
 
 print "writing out sorted stopids to string table"
+# stopid index is several times bigger than the string table. it's probably better to just store fixed-width ids.
+width = 0;
+for sid in stopid_for_idx :
+    if len(sid) > width :
+        width = len(sid)
+width += 1
 loc_stopids = tell()
-stopid_offsets = []
-offset = 0;
+writeint(width)
 for sid in stopid_for_idx :
     out.write(sid)
-    out.write('\0')
-    stopid_offsets.append(offset)
-    offset += len(sid) + 1
-# index is several times bigger than the string table. it's probably better to just store fixed-width ids.
-print "writing string table index"
-loc_stopid_offsets = tell()
-for offset in stopid_offsets:
-    writeint(offset)
-
+    padding = '\0' * (width - len(sid))
+    out.write(padding)
+    
 print "reached end of timetable file"
 loc_eof = tell()
 
