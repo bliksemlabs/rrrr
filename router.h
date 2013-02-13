@@ -30,6 +30,8 @@ bool router_request_from_qstring(router_request_t*);
 
 void router_request_dump(router_request_t*);
 
+void router_request_randomize(router_request_t*);
+
 void router_teardown(router_t*);
 
 bool router_route(router_t*, router_request_t*);

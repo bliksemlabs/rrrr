@@ -1,0 +1,58 @@
+// Defines protobuf message types for RRRR
+// https://developers.google.com/protocol-buffers/docs/proto
+
+enum Mode {
+    // walk is assumed, and modified by have_bicycle, have_car, and wheelchair flags
+    BUS = 0;
+    SUBWAY = 1;
+    RAIL = 2;
+    TRAM = 3;
+    FERRY = 4;
+    AIR = 9;
+}
+
+message Request {
+    required string from_stop = 1;
+    required string to_stop = 2;
+    required uint64 time = 3; // epoch
+    optional bool arrive_by = 4;
+    optional uint32 num_itineraries = 5;
+    repeated Mode modes = 8;
+    //repeated uint32 modez = 8 [packed=true]; // use numerical / hierarchical system
+    optional bool have_bicycle = 21;
+    optional bool need_wheelchair = 22;
+    optional float walk_speed = 31; // m/sec
+    optional float bike_speed = 32; // m/sec
+    optional uint32 max_transfers = 33;
+    optional uint32 transfer_slack = 34; // seconds
+    repeated string banned_routes = 41;
+    repeated string banned_stops = 42;
+    repeated string banned_stations = 43;
+    repeated string banned_trips = 44;
+}
+
+message Response {
+    repeated Itinerary itineraries = 1;
+}
+
+message Itinerary {
+    repeated Leg legs = 1;
+    optional float fare = 2;
+}
+
+message Leg {
+    required Mode mode = 1;
+    required Place from_place = 2;
+    required Place to_place = 3;
+    required uint64 from_time = 4; // epoch
+    required uint64 to_time = 5; // epoch
+}
+
+message Place {
+    optional double latitude = 1;
+    optional double longitude = 2;
+    optional string stop = 3;
+    optional string name = 4;
+}
+
+

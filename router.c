@@ -5,7 +5,7 @@
 #include "qstring.h"
 #include "transitdata.h"
 #include <stdlib.h>
-#include <fcgi_stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -14,7 +14,7 @@
 void router_setup(router_t *router, transit_data_t *td) {
     srand(time(NULL));
     router->tdata = *td;
-    router->table_size = td->nstops * CONFIG_MAX_ROUNDS;
+    router->table_size = td->nstops * RRRR_MAX_ROUNDS;
     router->best = malloc(sizeof(int) * td->nstops); 
     router->arrivals  = malloc(sizeof(int) * router->table_size);
     router->back_route = malloc(sizeof(int) * router->table_size);
@@ -69,7 +69,7 @@ static void dump_results(router_t *prouter) {
     for (int s = 0; s < r.tdata.nstops; ++s) {
         printf("%4d ", s);
         int *a = r.arrivals + s;
-        for (int round = 0; round < CONFIG_MAX_ROUNDS; ++round, a += r.tdata.nstops) {
+        for (int round = 0; round < RRRR_MAX_ROUNDS; ++round, a += r.tdata.nstops) {
             printf("%8s ", timetext(*a));
         }
         printf("\n");
@@ -90,8 +90,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     int *arr_prev = router.arrivals + nstops; 
     // set initial state (maybe group as a "state" struct?
     arr_prev[req.from] = req.time; 
-    for (int round = 0; round < CONFIG_MAX_ROUNDS; ++round) {
-        printf("round %d\n", round);
+    for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {
+        //printf("round %d\n", round);
         int *arr = router.arrivals + round * nstops;
         int *back_route = router.back_route; //+ round * nstops;
         int *back_stop = router.back_stop; //+ round * nstops;
@@ -164,7 +164,7 @@ void router_result_dump(router_t *prouter, router_request_t *preq) {
     router_t router = *prouter;
     router_request_t req = *preq;
     printf("routing result\n");
-    int last_round = router.tdata.nstops * (CONFIG_MAX_ROUNDS - 1);
+    int last_round = router.tdata.nstops * (RRRR_MAX_ROUNDS - 1);
 
     int *arr = router.arrivals + last_round;
     int *back_route = router.back_route;// + last_round;
@@ -191,7 +191,7 @@ int rrrrandom(int limit) {
     return (int) (limit * (random() / (RAND_MAX + 1.0)));
 }
 
-inline static void set_random(router_request_t *req) {
+void router_request_randomize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
     req->from = rrrrandom(5500);
     req->to = rrrrandom(5500);
@@ -226,7 +226,7 @@ bool router_request_from_qstring(router_request_t *req) {
             req->walk_speed = atof(val);
         } else if (strcmp(key, "randomize") == 0) {
             printf("RANDOMIZING\n");
-            set_random(req);
+            router_request_randomize(req);
             return true;
         } else {
             printf("unrecognized parameter: key=%s val=%s\n", key, val);
@@ -238,7 +238,7 @@ bool router_request_from_qstring(router_request_t *req) {
 void router_request_dump(router_request_t *req) {
     printf("from: %d\n"
            "to: %d\n"
-           "time: %d\n"
+           "time: %ld\n"
            "speed: %f\n", req->from, req->to, req->time, req->walk_speed);
 }
 
