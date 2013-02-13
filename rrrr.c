@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     // establish zmq connection
     zctx_t *zctx = zctx_new ();
     void *zsock = zsocket_new(zctx, ZMQ_REQ);
-    int zrc = zsocket_connect(zsock, "tcp://localhost:9293");
+    int zrc = zsocket_connect(zsock, WORKER_ENDPOINT);
     if (zrc != 0) exit(1);
     
     // signal to the broker/load balancer that this worker is ready

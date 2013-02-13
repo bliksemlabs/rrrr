@@ -13,7 +13,7 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     // connect client thread to load balancer
     void *sock = zsocket_new (ctx, ZMQ_REQ); // auto-deleted with thread
     // int rc = zsocket_connect (sock, "ipc://frontend.ipc"); 
-    int rc = zsocket_connect (sock, "tcp://localhost:9292");
+    int rc = zsocket_connect (sock, CLIENT_ENDPOINT);
     assert (rc == 0);
     int request_count = 0;
     while (true) {
@@ -61,7 +61,7 @@ int main (void) {
     gettimeofday(&t1, NULL);
     double dt = ((t1.tv_usec + 1000000 * t1.tv_sec) - (t0.tv_usec + 1000000 * t0.tv_sec)) / 1000000.0;
     int total_requests = RRRR_TEST_CONCURRENCY * RRRR_TEST_REQUESTS;
-    syslog (LOG_INFO, "%d threads, %d requests each, %d total requests, %f sec total time => %f req/sec",
+    syslog (LOG_INFO, "%d threads, %d requests each, %d total requests, %f sec total time (%f req/sec)",
         RRRR_TEST_CONCURRENCY, RRRR_TEST_REQUESTS, total_requests, dt, total_requests / dt);
 
     // teardown

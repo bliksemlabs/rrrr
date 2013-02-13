@@ -3,6 +3,7 @@
 #include <syslog.h>
 #include <czmq.h>
 #include "rrrr.h"
+#include "config.h"
 
 int main (void) {
 
@@ -14,10 +15,8 @@ int main (void) {
     zctx_t *ctx = zctx_new ();
     void *frontend = zsocket_new (ctx, ZMQ_ROUTER);
     void *backend = zsocket_new (ctx, ZMQ_ROUTER);
-    //zsocket_bind (frontend, "ipc://frontend.ipc");
-    //zsocket_bind (backend, "ipc://backend.ipc");
-    zsocket_bind (frontend, "tcp://*:9292");
-    zsocket_bind (backend, "tcp://*:9293");
+    zsocket_bind (frontend, CLIENT_ENDPOINT);
+    zsocket_bind (backend, WORKER_ENDPOINT);
     int frx = 0, ftx = 0, brx = 0, btx = 0, nworkers = 0, npoll = 0;
     
     //  Queue of available workers
