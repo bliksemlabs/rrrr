@@ -12,6 +12,13 @@ Each worker is a separate process and keeps a permanent scratch buffer that is r
 
 It looks like in may be possible to keep memory consumption for a Portland, Oregon-sized system under 10MiB. Full Netherlands coverage should be possible in about 50MiB.
 
+Dependencies
+------------
+
+1. Graphserver (for its SQLite GTFS tools)
+2. zeromq and libczmq
+3. gcc
+
 
 Building transit data
 ---------------------
@@ -60,7 +67,7 @@ rrrr[31114]: 1 threads, 1 total requests, 0.036565 sec total time (27.348557 req
 
 Then you should be able to run the test client:
 
-```bash
+```
 ~/git/rrrr$ ./client 1000 4
 
 rrrr[31144]: test client starting
@@ -85,13 +92,4 @@ rrrr[31144]: test client thread terminating
 rrrr[31144]: test client thread terminating
 rrrr[31144]: 4 threads, 1000 total requests, 3.893521 sec total time (256.836935 req/sec)
 ```
-
-
-Dependencies
-------------
-
-1. Graphserver (for its SQLite GTFS tools)
-2. zeromq and libczmq
-3. gcc
-
 
