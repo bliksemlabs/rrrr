@@ -55,5 +55,7 @@ int *transit_data_stoptimes_for_route(transit_data_t, int route, int **next_rout
 
 void transit_data_dump_route(transit_data_t *td, int route);
 
+char *transit_data_stop_id_for_index(transit_data_t*, int index);
+
 #endif // _TRANSIT_DATA_H
 

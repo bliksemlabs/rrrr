@@ -5,8 +5,8 @@ from struct import Struct
 # requires graphserver to be installed
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 
-FILE = '/home/abyrd/kv7.gtfsdb'
 FILE = '/home/abyrd/trimet.gtfsdb'
+FILE = '/home/abyrd/kv7.gtfsdb'
 db = GTFSDatabase(FILE)
 
 out = open("./timetable.dat", "wb")
@@ -59,7 +59,7 @@ def write_header () :
     out.seek(0)
     htext = "TTABLEV1"
     packed = struct_header.pack(htext, nstops, nroutes, loc_stops, loc_routes, loc_route_stops, 
-        loc_stop_times, loc_stop_routes, loc_transfers, loc_stopids)
+        loc_stop_times, loc_stop_routes, loc_transfers, loc_stop_ids)
     out.write(packed)
     
 # seek past end of header, which will be written later
@@ -181,18 +181,21 @@ for route in zip (route_stops_offsets, stop_times_offsets) :
     out.write(struct_2i.pack(*route));
 
 print "writing out sorted stopids to string table"
-# stopid index is several times bigger than the string table. it's probably better to just store fixed-width ids.
+# stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
 width = 0;
 for sid in stopid_for_idx :
     if len(sid) > width :
         width = len(sid)
 width += 1
-loc_stopids = tell()
+loc_stop_ids = tell()
 writeint(width)
 for sid in stopid_for_idx :
     out.write(sid)
     padding = '\0' * (width - len(sid))
     out.write(padding)
+
+# maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
+
     
 print "reached end of timetable file"
 loc_eof = tell()

@@ -164,7 +164,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
 void router_result_dump(router_t *prouter, router_request_t *preq) {
     router_t router = *prouter;
     router_request_t req = *preq;
-    printf("routing result\n");
+    printf("---- routing result ----\n");
     int last_round = router.tdata.nstops * (RRRR_MAX_ROUNDS - 1);
 
     int *arr = router.arrivals + last_round;
@@ -173,9 +173,10 @@ void router_result_dump(router_t *prouter, router_request_t *preq) {
 
     int count = 0;
     for (int s = req.to; ; s = back_stop[s]) {
-        printf ("%8s stop %6d via route %2d\n", timetext(arr[s]), s, back_route[s]);
+        char *stop_id = transit_data_stop_id_for_index(&(router.tdata), s);
+        printf ("%8s stop %6s [%06d] via route [%2d]\n", timetext(arr[s]), stop_id, s, back_route[s]);
         if (back_stop[s] == NONE) {
-            printf("END\n");
+            printf("---- end of routing result ----\n");
             break;
         }
         if (count++ > 10) break;
@@ -236,10 +237,13 @@ bool router_request_from_qstring(router_request_t *req) {
     return true;
 }
 
-void router_request_dump(router_request_t *req) {
-    printf("from: %d\n"
-           "to: %d\n"
-           "time: %ld\n"
-           "speed: %f\n", req->from, req->to, req->time, req->walk_speed);
+void router_request_dump(router_t *router, router_request_t *req) {
+    char *from_stop_id = transit_data_stop_id_for_index(&(router->tdata), req->from);
+    char *to_stop_id = transit_data_stop_id_for_index(&(router->tdata), req->to);
+    printf("from: %s [%d]\n"
+           "to:   %s [%d]\n"
+           "time: %s [%ld]\n"
+           "speed: %f\n", from_stop_id, req->from, to_stop_id, req->to, 
+                timetext(req->time), req->time, req->walk_speed);
 }
 

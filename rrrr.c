@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     // initialize router
     router_t router;
     router_setup(&router, &tdata);
-    //transit_data_dump(&tdata);
+    // transit_data_dump(&tdata); // debug timetable file format
     
     // establish zmq connection
     zctx_t *zctx = zctx_new ();
@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
     if (zrc != 0) exit(1);
     
     // signal to the broker/load balancer that this worker is ready
-    // move to shared header file
     zframe_t *frame = zframe_new (WORKER_READY, 1);
     zframe_send (&frame, zsock, 0);
     syslog(LOG_INFO, "worker sent ready message to load balancer");
@@ -54,10 +53,10 @@ int main(int argc, char **argv) {
             req = (router_request_t*) zframe_data (frame);
             //syslog(LOG_INFO, "received request");
             //router_request_from_qstring(&req);
-            //router_request_dump(req);
+            //router_request_dump(&router, req);
             //transit_data_dump(&tdata);
             router_route(&router, req);
-            router_result_dump(&router, req);
+            //router_result_dump(&router, req);
             zframe_reset (frame, "OK", 2);
         } else {
             syslog(LOG_WARNING, "worker received reqeust with wrong length");

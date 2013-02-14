@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdio.h>
 
 // file-visible struct
 typedef struct transit_data_header transit_data_header_t;
@@ -21,6 +22,10 @@ struct transit_data_header {
     int loc_transfers; 
     int loc_stop_ids; 
 };
+
+inline char *transit_data_stop_id_for_index(transit_data_t *td, int index) {
+    return td->stop_ids + (td->stop_id_width * index);
+}
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
 void transit_data_load(char *filename, transit_data_t *td) {
