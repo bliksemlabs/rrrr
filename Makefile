@@ -1,24 +1,25 @@
 CC=gcc
 CFLAGS=-g -Wall -std=gnu99 -o2
-LIBS=-lfcgi -lzmq -lczmq
+LIBS=-lzmq -lczmq
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
+BINS=workerrrr brrrroker client
 
-all: loadbalancer rrrr test
+all: $(BINS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
 
-loadbalancer: loadbalancer.o
+brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
-rrrr: qstring.o router.o transitdata.o util.o rrrr.o
+workerrrr: qstring.o router.o transitdata.o util.o worker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-test: qstring.o router.o transitdata.o util.o test.o
+client: qstring.o router.o transitdata.o util.o client.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 clean:
-	rm -f *.o *~ core rrrr
+	rm -f *.o *~ core $(BINS)
 
 

@@ -1,4 +1,4 @@
-/* test.c : test client */
+/* client.c : test client */
 
 #include <time.h>
 #include <zmq.h>

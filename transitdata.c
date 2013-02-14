@@ -1,4 +1,4 @@
-/* transit_data.c : handles memory mapped data file with timetable etc. */
+/* transitdata.c : handles memory mapped data file with timetable etc. */
 #include "transitdata.h" // make sure it works alone
 #include "util.h"
 #include <fcntl.h>

@@ -1,3 +1,5 @@
+/* worker.c : worker processes that handle routing requests */
+
 #include <syslog.h>
 #include <stdlib.h>
 #include <zmq.h>
