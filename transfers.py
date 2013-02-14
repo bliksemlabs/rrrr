@@ -1,20 +1,31 @@
 #!/usr/bin/python
 
-import math
+import math, sys    
 
 # requires graphserver to be installed
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 
-verbose = True
+verbose = False
 RADIUS = 400 # meters
 OBSTRUCTION = 1.3 #factor to expand straight-line distance
-FILE = '/home/abyrd/kv7.gtfsdb'
-FILE = '/home/abyrd/trimet.gtfsdb'
-db = GTFSDatabase(FILE)
 range_lat = RADIUS / 111111.111
 
+if len(sys.argv) < 2 :
+    print 'usage: transfers.py infile.gtfsdb [verbose]'
+    exit(1)
+    
+gtfsdb_file = sys.argv[1]
+try :
+    with open(gtfsdb_file) as f :
+        db = GTFSDatabase(gtfsdb_file)    
+except IOError as e :
+    print 'gtfsdb file "%s" cannot be opened' % gtfsdb_file
+    exit(1)
+        
+if len(sys.argv) > 2 and sys.argv[2] == "verbose" :
+    verbose = True
+    
 # a normal index on lat and lon is sufficiently fast, no need for a spatial index
-
 all_query = "select stop_id, stop_name, stop_lat, stop_lon from stops;"
 near_query = """
 select stop_id, stop_name, stop_lat, stop_lon from stops where 
@@ -37,13 +48,13 @@ def distance (lat1, lon1, lat2, lon2, xscale) :
     
 # can also compare squared distances in scaled meters
 transfers = []
+n_processed = 0
 for sid, sname, lat, lon in db.execute(all_query) :
     if verbose :
         print sid, sname
     xscale = math.cos(math.radians(lat)) 
     range_lon = range_lat * xscale
-    if verbose :
-        print xscale, range_lat, range_lon
+    # print xscale, range_lat, range_lon
     for sid2, sname2, lat2, lon2 in db.execute(near_query, locals()):
         if sid2 == sid :
             continue
@@ -53,11 +64,15 @@ for sid, sname, lat, lon in db.execute(all_query) :
         if verbose :
             print "  ", sid2, sname2, '%0.1f m' % d
         transfers.append ( (sid, sid2, d * OBSTRUCTION) )
+    n_processed += 1;
+    if n_processed % 10000 == 0 :
+        print 'processed %d stops' % n_processed
 
 cur = db.get_cursor()
-cur.execute('delete from transfers where transfer_type = 9;')
+cur.execute('delete from transfers;') # where transfer_type = 9;')
 cur.executemany('insert into transfers values (?,?,9,?);', transfers)
 cur.execute('create index if not exists transfers_from_stop_id ON transfers (from_stop_id)')
+print 'committing...'
 db.conn.commit()
 # print 'vacuuming...'
 # cur.execute('vacuum;')

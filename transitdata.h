@@ -16,6 +16,7 @@ typedef struct route route_t;
 struct route {
     int route_stops_offset;
     int stop_times_offset;
+    int trip_ids_offset;
 };
 
 typedef struct transfer transfer_t;
@@ -41,6 +42,10 @@ struct transit_data {
     coord_t *stop_coords;
     int stop_id_width;
     char *stop_ids;
+    int route_id_width;
+    char *route_ids;
+    int trip_id_width;
+    char *trip_ids;
 };
 
 void transit_data_load(char* /*filename*/, transit_data_t*);
@@ -55,7 +60,11 @@ int *transit_data_stoptimes_for_route(transit_data_t, int route, int **next_rout
 
 void transit_data_dump_route(transit_data_t *td, int route);
 
-char *transit_data_stop_id_for_index(transit_data_t*, int index);
+char *transit_data_stop_id_for_index(transit_data_t*, int stop_index);
+
+char *transit_data_route_id_for_index(transit_data_t*, int route_index);
+
+char *transit_data_trip_id_for_route_index(transit_data_t*, int route_index);
 
 #endif // _TRANSIT_DATA_H
 

@@ -68,7 +68,8 @@ static void dump_results(router_t *prouter) {
     router_t r = *prouter;
     printf("STOP ARRIVAL\n");
     for (int s = 0; s < r.tdata.nstops; ++s) {
-        printf("%4d ", s);
+        char *stop_id = transit_data_stop_id_for_index(&(r.tdata), s);
+        printf("%6s ", stop_id);
         int *a = r.arrivals + s;
         for (int round = 0; round < RRRR_MAX_ROUNDS; ++round, a += r.tdata.nstops) {
             printf("%8s ", timetext(*a));
@@ -157,7 +158,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         back_route[req.from] = NONE;
         back_stop[req.from] = NONE;
     } // end for (round)
-    //dump_results(prouter);
+    // dump_results(prouter); // DEBUG
     return true;
 }
 
@@ -195,9 +196,9 @@ int rrrrandom(int limit) {
 
 void router_request_randomize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
-    req->from = rrrrandom(5500);
-    req->to = rrrrandom(5500);
-    req->time = 3600 * 6 + rrrrandom(3600 * 17);
+    req->from = rrrrandom(2268);
+    req->to = rrrrandom(2268);
+    req->time = 3600 * 7 + rrrrandom(3600 * 6);
     req->arrive_by = false;
 }
 

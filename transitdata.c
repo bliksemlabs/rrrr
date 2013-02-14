@@ -21,10 +21,22 @@ struct transit_data_header {
     int loc_stop_routes;
     int loc_transfers; 
     int loc_stop_ids; 
+    int loc_route_ids; 
+    int loc_trip_ids; 
 };
 
-inline char *transit_data_stop_id_for_index(transit_data_t *td, int index) {
-    return td->stop_ids + (td->stop_id_width * index);
+inline char *transit_data_stop_id_for_index(transit_data_t *td, int stop_index) {
+    return td->stop_ids + (td->stop_id_width * stop_index);
+}
+
+inline char *transit_data_route_id_for_index(transit_data_t *td, int route_index) {
+    return td->route_ids + (td->route_id_width * route_index);
+}
+
+inline char *transit_data_trip_id_for_route_index(transit_data_t *td, int route_index) {
+    route_t route = (td->routes)[route_index];
+    int char_offset = route.trip_ids_offset * td->trip_id_width;
+    return td->trip_ids + char_offset;
 }
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
@@ -58,6 +70,10 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->transfers = (transfer_t*) (b + header->loc_transfers);
     td->stop_id_width = *((int*) (b + header->loc_stop_ids));
     td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(int));
+    td->route_id_width = *((int*) (b + header->loc_route_ids));
+    td->route_ids = (char*) (b + header->loc_route_ids + sizeof(int));
+    td->trip_id_width = *((int*) (b + header->loc_trip_ids));
+    td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(int));
 }
 
 void transit_data_close(transit_data_t *td) {
@@ -128,9 +144,14 @@ void transit_data_dump(transit_data_t *td) {
         printf("\n");
     }
     printf("\nSTOPIDS\n");
-    int stride = td->stop_id_width;
     for (int i = 0; i < td->nstops; i++) {
-        printf("stop %03d has id %s \n", i, td->stop_ids + (i * stride));
+        printf("stop %03d has id %s \n", i, transit_data_stop_id_for_index(td, i));
+    }
+    printf("\nROUTEIDS, TRIPIDS\n");
+    for (int i = 0; i < td->nroutes; i++) {
+        printf("route %03d has id %s and first trip id %s \n", i, 
+            transit_data_route_id_for_index(td, i),
+            transit_data_trip_id_for_route_index(td, i));
     }
 }
 
