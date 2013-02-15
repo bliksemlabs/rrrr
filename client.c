@@ -29,7 +29,7 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
         if (!reply) 
             break;
         if (verbose) 
-            syslog (LOG_INFO, "test client received response: %s\n", reply);
+            printf ("%s", reply);
         free (reply);
         if (++request_count >= n_requests)
             break;
@@ -94,7 +94,9 @@ int main (int argc, char **argv) {
     double dt = ((t1.tv_usec + 1000000 * t1.tv_sec) - (t0.tv_usec + 1000000 * t0.tv_sec)) / 1000000.0;
     syslog (LOG_INFO, "%d threads, %d total requests, %f sec total time (%f req/sec)",
         concurrency, n_requests, dt, n_requests / dt);
-
+    
+    //printf("%c", '\0x1A');
+    
     // teardown
     zctx_destroy (&ctx);
     closelog();

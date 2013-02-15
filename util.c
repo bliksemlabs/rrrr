@@ -12,7 +12,7 @@ void die(const char *msg) {
 
 static char buf[32];
 
-char *timetext(int t) {
+char *btimetext(int t, char *buf, int buflen) {
     if (t == INT_MAX) {
         return "   --   ";
     }        
@@ -23,3 +23,8 @@ char *timetext(int t) {
     sprintf(buf, "%02d:%02d:%02d", h, m, s);
     return buf;
 }
+
+char *timetext(int t) {
+    return btimetext(t, buf, 32);
+}
+

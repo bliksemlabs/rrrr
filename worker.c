@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     // initialize router
     router_t router;
     router_setup(&router, &tdata);
-    transit_data_dump(&tdata); // debug timetable file format
+    //transit_data_dump(&tdata); // debug timetable file format
     
     // establish zmq connection
     zctx_t *zctx = zctx_new ();
@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
 
     /* MAIN LOOP */
     int request_count = 0;
+    char result_buf[2048];
     while (true) {
         zmsg_t *msg = zmsg_recv (zsock);
         if (!msg) // interrupted (signal)
@@ -53,10 +54,11 @@ int main(int argc, char **argv) {
         if (zframe_size (frame) == sizeof (router_request_t)) {
             router_request_t *req;
             req = (router_request_t*) zframe_data (frame);
-            router_request_dump(&router, req);
+            //router_request_dump(&router, req);
             router_route(&router, req);
-            router_result_dump(&router, req);
-            zframe_reset (frame, "OK", 2);
+            int result_length = router_result_dump(&router, req, result_buf, 2048);
+            zframe_reset (frame, result_buf, result_length);
+            //zframe_reset (frame, "OK", 2);
         } else {
             syslog(LOG_WARNING, "worker received reqeust with wrong length");
             zframe_reset (frame, "ERR", 3);

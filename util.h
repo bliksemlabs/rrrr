@@ -11,6 +11,8 @@
 
 void die(const char* /* message */ );
 
+char *btimetext(int t, char *buf, int buflen);
+
 char *timetext(int t);
 
 #endif // _UTIL_H

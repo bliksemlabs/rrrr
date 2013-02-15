@@ -64,7 +64,7 @@ char *transit_data_stop_id_for_index(transit_data_t*, int stop_index);
 
 char *transit_data_route_id_for_index(transit_data_t*, int route_index);
 
-char *transit_data_trip_id_for_route_index(transit_data_t*, int route_index);
+char *transit_data_trip_ids_for_route_index(transit_data_t*, int route_index);
 
 #endif // _TRANSIT_DATA_H
 

@@ -33,7 +33,7 @@ inline char *transit_data_route_id_for_index(transit_data_t *td, int route_index
     return td->route_ids + (td->route_id_width * route_index);
 }
 
-inline char *transit_data_trip_id_for_route_index(transit_data_t *td, int route_index) {
+inline char *transit_data_trip_ids_for_route_index(transit_data_t *td, int route_index) {
     route_t route = (td->routes)[route_index];
     int char_offset = route.trip_ids_offset * td->trip_id_width;
     return td->trip_ids + char_offset;
@@ -151,7 +151,7 @@ void transit_data_dump(transit_data_t *td) {
     for (int i = 0; i < td->nroutes; i++) {
         printf("route %03d has id %s and first trip id %s \n", i, 
             transit_data_route_id_for_index(td, i),
-            transit_data_trip_id_for_route_index(td, i));
+            transit_data_trip_ids_for_route_index(td, i));
     }
 }
 
