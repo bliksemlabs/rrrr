@@ -10,6 +10,9 @@
 #include "config.h"
 
 static bool verbose = false;
+static bool randomize = false;
+static int from_s = 0;
+static int to_s = 1;
 
 static void client_task (void *args, zctx_t *ctx, void *pipe) {
     int n_requests = *((int*) args);
@@ -21,7 +24,14 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     int request_count = 0;
     while (true) {
         router_request_t req;
-        router_request_randomize(&req);
+        if (randomize) 
+            router_request_randomize(&req);
+        else {
+            req.from=from_s;
+            req.to=to_s;
+            req.time=3600 * 8;
+            req.walk_speed=1.5;
+        }
         // if (verbose) router_request_dump(&req);
         zmq_send(sock, &req, sizeof(req), 0);
         // syslog (LOG_INFO, "test client thread has sent %d requests\n", request_count);
@@ -38,6 +48,11 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     zstr_send (pipe, "done");
 }
 
+void usage() {
+    printf("usage: 'client rand [nreqs] [nthreads]' or 'client id [from_stop_id] [to_stop_id]'\n" );
+    exit (1);
+}
+
 int main (int argc, char **argv) {
     
     // initialize logging
@@ -52,15 +67,25 @@ int main (int argc, char **argv) {
     int n_requests = 1;
     int concurrency = RRRR_TEST_CONCURRENCY;
     if (argc > 1)
-        n_requests = atoi(argv[1]);
-    if (n_requests < 0)
+        randomize = !(strcmp(argv[1], "rand"));
+
+    if (randomize && argc > 2) {
+        n_requests = atoi(argv[2]);
+        if (n_requests < 0)
+            n_requests = 1;
+        if (argc > 3)
+            concurrency = atoi(argv[3]);
+    } else {
+        from_s = atoi(argv[2]);
+        to_s = atoi(argv[3]);
         n_requests = 1;
-    if (argc > 2)
-        concurrency = atoi(argv[2]);
+        concurrency = 1;
+    }
     if (concurrency < 1 || concurrency > 32)
         concurrency = RRRR_TEST_CONCURRENCY;
     if (concurrency > n_requests)
         concurrency = n_requests;
+
     syslog (LOG_INFO, "test client number of requests: %d", n_requests);
     syslog (LOG_INFO, "test client concurrency: %d", concurrency);
     verbose = (n_requests == 1);
