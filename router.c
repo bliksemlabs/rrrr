@@ -48,8 +48,8 @@ static inline void apply_transfers(router_t r, int fround, int tround, float spe
             transfer_t *tr0 = d.transfers + stop0.transfers_offset;
             transfer_t *tr1 = d.transfers + stop1.transfers_offset;
             for ( ; tr0 < tr1 ; ++tr0) {
-                int s1 = (*tr0).target_stop;
-                int t1 = t0 + (int)((*tr0).dist_meters / speed_meters_sec);
+                int s1 = tr0->target_stop;
+                int t1 = t0 + (int)(tr0->dist_meters / speed_meters_sec + 60);
                 router_state_t *state1 = tstates + s1;
                 // printf("   target %d\n", s1);
                 if (state1->arrival_time > t1) {
@@ -246,8 +246,8 @@ int rrrrandom(int limit) {
 
 void router_request_randomize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
-    req->from = rrrrandom(2268);
-    req->to = rrrrandom(2268);
+    req->from = rrrrandom(5400);
+    req->to = rrrrandom(5400);
     req->time = 3600 * 7 + rrrrandom(3600 * 6);
     req->arrive_by = false;
 }
