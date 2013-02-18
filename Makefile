@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -std=gnu99 -o2
+CFLAGS=-g -Wall -std=gnu99 -O2 -flto
 LIBS=-lzmq -lczmq
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
