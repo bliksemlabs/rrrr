@@ -24,12 +24,21 @@ def stop_name(stop_id) :
     
 def trip_info(trip_id) :
     try :
-        result = list(db.execute('select route_id, trip_id, trip_headsign from trips where trip_id = ?', (trip_id,)))[0]
+        result = list(db.execute('select trip_id, trip_headsign from trips where trip_id = ?', (trip_id,)))[0]
+        result = '%s richting %s' % result
     except :
-        result = ('', 'walk', '')
-    return ('%8s %16s %18s' % result)
+        result = 'walk'
+    return result
         
+legs = []
 for line in sys.stdin.readlines() :
-    tripid, fromid, fromtime, toid, totime = line.split()
-    print trip_info(tripid), 'FROM %25s at %8s TO %25s at %8s' % (stop_name(fromid), fromtime, stop_name(toid), totime)
-    
+    try :
+        tripid, fromid, fromtime, toid, totime = line.split()
+        line = '%s from %s at %8s to %s at %8s' % (trip_info(tripid), stop_name(fromid), fromtime, stop_name(toid), totime)
+    except :
+        pass
+    legs.append(line)
+
+while len(legs) > 0 :
+    print legs.pop()
+    print
