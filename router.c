@@ -5,6 +5,7 @@
 #include "config.h"
 #include "qstring.h"
 #include "transitdata.h"
+#include "bitset.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,7 +19,9 @@ void router_setup(router_t *router, transit_data_t *td) {
     router->table_size = td->nstops * RRRR_MAX_ROUNDS;
     router->best_time = malloc(sizeof(int) * td->nstops); 
     router->states = malloc(sizeof(router_state_t) * router->table_size);
-    if (router->best_time  == NULL || router->states == NULL)
+    router->updated_stops = bitset_new(td->nstops);
+    router->updated_routes = bitset_new(td->nroutes);
+    if ( ! (router->best_time && router->states && router->updated_stops && router->updated_routes))
         die("failed to allocate router scratch space");
     
 }
@@ -82,20 +85,25 @@ static void dump_results(router_t *prouter) {
 
 
 bool router_route(router_t *prouter, router_request_t *preq) {
-    router_t router = *prouter;
+    router_t router = *prouter; // why copy?
     router_request_t req = *preq;
     int nstops = router.tdata.nstops;
     int nroutes = router.tdata.nroutes;
-    // clear rounds 0 and 1 (no memset for ints).
-    // it is not necessary to clear the other . they will only be read where arrivals are set.
+    // clear rounds 0 and 1
+    // it is not necessary to clear the others. they will only be read where arrivals are set.
+    // (this is not really true when the search does not reach a stop but we try to reconstruct a path -- initialize "to" as well)
+    // remember, we are checking against array of best known arrival times, not the values in the states... can we initialize only best?
     for (router_state_t *s = router.states, *s_end = router.states + nstops + nstops; s < s_end; ++s) { 
-        (*s).arrival_time = INF; 
+        s->arrival_time = INF; 
     }
+    // router.updated_routes shall be initialized when transfers are computed
+    bitset_reset(router.updated_stops);
     // use round 1 fields for "prev round" at round 0
     router_state_t *states_prev = router.states + nstops; 
     // set initial state
-    states_prev[req.from].arrival_time = req.time; 
-    // apply transfers to initial state
+    states_prev[req.from].arrival_time = req.time;
+    bitset_set(router.updated_stops, req.from);
+    // apply transfers to initial state, which also initializes routes bitset
     apply_transfers(router, 1, 1, req.walk_speed);
     //dump_results(prouter); // DEBUG
     for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {

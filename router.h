@@ -1,6 +1,11 @@
 /* router.h */
+
+#ifndef _ROUTER_H
+#define _ROUTER_H
+
 #include <stdbool.h>
 #include "transitdata.h"
+#include "bitset.h"
 
 typedef struct router_state router_state_t;
 struct router_state {
@@ -19,6 +24,8 @@ struct router {
     int table_size;
     int *best_time;
     router_state_t *states;
+    BitSet *updated_stops;
+    BitSet *updated_routes;
     // maybe we should store more routing state in here, like round and sub-scratch pointers
 };
 
@@ -44,3 +51,6 @@ void router_teardown(router_t*);
 bool router_route(router_t*, router_request_t*);
 
 int router_result_dump(router_t*, router_request_t*, char *buf, int buflen); // return num of chars written
+
+#endif // _ROUTER_H
+
