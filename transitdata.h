@@ -54,7 +54,11 @@ void transit_data_close(transit_data_t*);
 
 void transit_data_dump(transit_data_t*);
 
+
 int *transit_data_stops_for_route(transit_data_t, int route, int **next_route);
+
+/* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
+int transit_data_routes_for_stop(transit_data_t*, int stop, int **routes_ret);
 
 int *transit_data_stoptimes_for_route(transit_data_t, int route, int **next_route);
 

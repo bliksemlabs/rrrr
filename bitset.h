@@ -23,7 +23,7 @@ struct bitset_iter_s {
 
 BitSet *bitset_new(int capacity);
 
-void bitset_reset(BitSet *self);
+void bitset_reset(BitSet *self); // rename to bitset_clear?
 
 void bitset_init(BitSet *self, int capacity);
 

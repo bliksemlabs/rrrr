@@ -35,37 +35,53 @@ void router_teardown(router_t *router) {
     free(router->states);
 }
 
-static inline void apply_transfers(router_t r, int fround, int tround, float speed_meters_sec) {
+static inline void flag_routes_for_stop (router_t *r, int stop_index) {
+    /*restrict*/ int *routes;
+    int n_routes = transit_data_routes_for_stop (&(r->tdata), stop_index, &routes);
+    for (int i = 0; i < n_routes; ++i) {
+        D printf ("(flagging route %d at stop %d)\n", routes[i], stop_index);
+        bitset_set (r->updated_routes, routes[i]);
+    }
+}
+
+static inline void apply_transfers (router_t r, int round, float speed_meters_sec) {
     transit_data_t d = r.tdata;
     int nstops = d.nstops;
-    router_state_t *fstates = r.states + (fround * nstops);
-    router_state_t *tstates = r.states + (tround * nstops);
-    for (int s0 = 0; s0 < nstops; ++s0) {
-        router_state_t *state0 = fstates + s0;
-        int t0 = state0->arrival_time;
-        if (t0 != INF) { 
-            // printf("transfer at %d\n", s0);
-            // damn this is inefficient
-            stop_t stop0 = d.stops[s0];
-            stop_t stop1 = d.stops[s0+1];
-            transfer_t *tr0 = d.transfers + stop0.transfers_offset;
-            transfer_t *tr1 = d.transfers + stop1.transfers_offset;
-            for ( ; tr0 < tr1 ; ++tr0) {
-                int s1 = tr0->target_stop;
-                int t1 = t0 + (int)(tr0->dist_meters / speed_meters_sec + 60);
-                router_state_t *state1 = tstates + s1;
-                // printf("   target %d\n", s1);
-                if (state1->arrival_time > t1) {
-                    // printf("    setting %d %d\n", s1, t1);
-                    state1->arrival_time = t1;
-                    state1->back_route = WALK; // need sym const for walk distinct from NONE
-                    state1->back_stop = s0;
-                    state1->back_trip_id = "walk";
-                    state1->board_time = state0->arrival_time;
+    router_state_t *states = r.states + (round * nstops);
+    bitset_reset (r.updated_routes);
+    for (int stop_index_from = bitset_next_set_bit (r.updated_stops, 0); stop_index_from >= 0;
+             stop_index_from = bitset_next_set_bit (r.updated_stops, stop_index_from + 1)) {
+        D printf ("stop %d was marked as updated \n", stop_index_from);
+        flag_routes_for_stop (&r, stop_index_from);
+        router_state_t *state_from = states + stop_index_from;
+        int time_from = r.best_time[stop_index_from];
+        if (time_from != INF) {
+            D printf ("  applying transfer at %d (%s) \n", 
+                      stop_index_from, transit_data_stop_id_for_index(&d, stop_index_from));
+            /* change to begin, length rather than begin, end in order to restrict pointers ? */
+            transfer_t *tr     = d.transfers + d.stops[stop_index_from    ].transfers_offset;
+            transfer_t *tr_end = d.transfers + d.stops[stop_index_from + 1].transfers_offset;
+            // int n_transfers_for_stop = tr_end - tr;
+            for ( ; tr < tr_end ; ++tr) {
+                int stop_index_to = tr->target_stop;
+                int time_to = time_from + (int) (tr->dist_meters / speed_meters_sec + 60);
+                router_state_t *state_to = states + stop_index_to;
+                D printf("    target %d (%s) \n", 
+                         stop_index_to, transit_data_stop_id_for_index(&d, stop_index_to));
+                if (r.best_time[stop_index_to] > time_to) {
+                    D printf ("      setting %d %d\n", stop_index_to, time_to);
+                    state_to->arrival_time = time_to;
+                    r.best_time[stop_index_to] = time_to;
+                    state_to->back_route = WALK; // need sym const for walk distinct from NONE
+                    state_to->back_stop = stop_index_from;
+                    state_to->back_trip_id = "walk";
+                    state_to->board_time = state_from->arrival_time;
+                    flag_routes_for_stop (&r, stop_index_to);
                 }
             } 
         }
     }
+    bitset_reset (r.updated_stops);
 }
 
 
@@ -73,7 +89,7 @@ static void dump_results(router_t *prouter) {
     router_t r = *prouter;
     printf("STOP ARRIVAL\n");
     for (int s = 0; s < r.tdata.nstops; ++s) {
-        char *stop_id = transit_data_stop_id_for_index(&(r.tdata), s);
+        char *stop_id = transit_data_stop_id_for_index (&(r.tdata), s);
         printf("%6s ", stop_id);
         router_state_t *state = r.states + s;
         for (int round = 0; round < RRRR_MAX_ROUNDS; ++round, state += r.tdata.nstops) {
@@ -88,92 +104,88 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     router_t router = *prouter; // why copy?
     router_request_t req = *preq;
     int nstops = router.tdata.nstops;
-    int nroutes = router.tdata.nroutes;
-    // clear rounds 0 and 1
-    // it is not necessary to clear the others. they will only be read where arrivals are set.
-    // (this is not really true when the search does not reach a stop but we try to reconstruct a path -- initialize "to" as well)
-    // remember, we are checking against array of best known arrival times, not the values in the states... can we initialize only best?
-    for (router_state_t *s = router.states, *s_end = router.states + nstops + nstops; s < s_end; ++s) { 
-        s->arrival_time = INF; 
-    }
-    // router.updated_routes shall be initialized when transfers are computed
-    bitset_reset(router.updated_stops);
-    // use round 1 fields for "prev round" at round 0
-    router_state_t *states_prev = router.states + nstops; 
+    int trip_id_width = router.tdata.trip_id_width;
+
     // set initial state
-    states_prev[req.from].arrival_time = req.time;
+    router_state_t *states = router.states;
+    for (int s = 0; s < router.table_size; ++s)
+        states[s].arrival_time = INF;
+    for (int s = 0; s < nstops; ++s)
+        router.best_time[s] = INF;
+    router.best_time[req.from] = req.time;
+    states[req.from].arrival_time = req.time;
+    bitset_reset(router.updated_stops);
     bitset_set(router.updated_stops, req.from);
-    // apply transfers to initial state, which also initializes routes bitset
-    apply_transfers(router, 1, 1, req.walk_speed);
-    //dump_results(prouter); // DEBUG
+    // apply transfers to initial state, which also initializes updated routes bitset
+    apply_transfers(router, 0, req.walk_speed);
+    //T dump_results(prouter);
     for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {
-        //printf("round %d\n", round);
-        router_state_t *states = router.states + round * nstops;
-        if (round > 0) {
-            states_prev = states - nstops;
-            memcpy(states, states_prev, nstops * sizeof(router_state_t));
-        }
-        for (int route = 0; route < nroutes; ++route) {
-            //if (route % 100 == 0) 
-            //    printf("  route %d\n", route);
-            // transit_data_dump_route(&(router.tdata), route);
+        D printf("round %d\n", round);
+        states = router.states + round * nstops;
+        for (int route = bitset_next_set_bit (router.updated_routes, 0); route >= 0;
+                 route = bitset_next_set_bit (router.updated_routes, route + 1)) {
+            D printf("  route %d\n", route);
+            T transit_data_dump_route(&(router.tdata), route);
             int *s_end, *t_end;    // pointers one element beyond the end of arrays
+            /* TODO: restrict pointers ? */ 
             int *s = transit_data_stops_for_route(router.tdata, route, &s_end);
             int *t = transit_data_stoptimes_for_route(router.tdata, route, &t_end);
             int route_nstops = s_end - s;
             char *trip_ids = transit_data_trip_ids_for_route_index(&(router.tdata), route); 
             char *trip_id = NULL;
-            int trip = NONE;       // trip index within the route
-            int trip_id_width = router.tdata.trip_id_width;
+            int trip_index = NONE;       // trip index within the route
             int board_stop = NONE; // stop index where that trip was boarded
             int board_time = NONE; // time when that trip was boarded
             for ( ; s < s_end ; ++s, ++t) {
                 int stop = *s;
+                /* TODO: switch to CamelCase convention for OO classes */
                 router_state_t *state = states + stop;
-                router_state_t *state_prev = states_prev + stop;
-                //printf("    stop %d %s\n", stop, timetext(arr_prev[stop]));
+                T printf("    stop %d %s\n", stop, timetext(router.best_time[stop]));
                 /* if we have not yet boarded a trip on this route, see if we can board one */
-                if (trip == NONE) {
+                if (trip_index == NONE) {
                     // should just set to the last trip in the list, and let it fall through
                     // if arr[stop] > *t; will also hit INFs.
-                    if (state_prev->arrival_time == INF) continue; // note comparison against PREVIOUS to enforce xfer invariant
+                    if (router.best_time[stop] == INF) 
+                        continue; 
                     // Scan forward to the latest trip that can be boarded, if any.
                     // (should scan backward to allow break at 1st)
-                    //printf("hit non-inf stop %d\n", stop);
-                    //transit_data_dump_route(&(router.tdata), route);
+                    T printf("hit non-inf stop %d\n", stop);
+                    T transit_data_dump_route(&(router.tdata), route);
                     int trip_next = 0;
                     int *t_next = t;
-                    while (t_next < t_end && *t_next < state_prev->arrival_time) {
-                        //printf("    board option %d at %s\n", trip_next, timetext(*t_next));
+                    while (t_next < t_end && *t_next < router.best_time[stop]) {
+                        T printf("    board option %d at %s\n", trip_next, timetext(*t_next));
                         trip_next += 1; // remembering that we start at -1 for NONE
-                        // increment tripid as well?
                         t_next += route_nstops;
                     }
-                    //printf("    final option %d at %s\n", trip_next, timetext(*t_next));
+                    T printf("    final option %d at %s\n", trip_next, timetext(*t_next));
                     if (t_next < t_end) { // did not overshoot the end of the list
                         t = t_next;
-                        trip = trip_next;
-                        trip_id = trip_ids + trip_id_width * trip;
+                        trip_index = trip_next;
+                        trip_id = trip_ids + trip_id_width * trip_index;
                         board_stop = stop;
                         board_time = *t_next;
                     }
                     continue;
                 }
-                // typedef a time_t?
-                if (*t < state->arrival_time) { // we do have to check .LT., right?
+                /* TODO: typedef a time type? */
+                if (*t < router.best_time[stop]) {
+                    /* Only update if better than best known,
+                       remembering that n transfers is increasing with each round,
+                       and only Pareto-optimal paths count. */
                     state->arrival_time = *t;
-                    state->back_route = route; // (should be route?)
+                    router.best_time[stop] = *t;
+                    state->back_route = route; 
                     state->back_trip_id = trip_id; 
                     state->back_stop = board_stop;
                     state->board_time = board_time;
-                    // state.back_trip = ...
-                    //printf("set stop %d to %s\n", stop, timetext(*t));
-                } else if (state_prev->arrival_time < *t) { // compare against PREVIOUS round
-                    // If last round's arrival time at this stop is before arrival time at this stop on the current trip,
-                    // check whether it is possible to board an earlier trip.
-                    while (trip > 0 && *(t - route_nstops) > state_prev->arrival_time) {
+                    bitset_set(router.updated_stops, stop); // mark stop for next round.
+                    T printf("set stop %d to %s\n", stop, timetext(*t));
+                } else if (router.best_time[stop] < *t) { // compare against PREVIOUS round only?
+                    /* Check whether it is possible to board an earlier trip. */
+                    while (trip_index > 0 && *(t - route_nstops) > router.best_time[stop]) {
                         t -= route_nstops; // skip to the same stop in the previous trip
-                        --trip;
+                        --trip_index;
                         trip_id -= trip_id_width;
                         board_stop = stop;
                         board_time = *t;
@@ -182,7 +194,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             } // end for (stop)
         } // end for (route)
         //if (round < RRRR_MAX_ROUNDS - 1) 
-        apply_transfers(router, round, round, req.walk_speed);
+        apply_transfers(router, round, req.walk_speed);
         router.states[req.from].arrival_time = req.time;
         router.states[req.from].back_stop = -1;
         router.states[req.from].back_route = -1;
@@ -202,6 +214,10 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
     //round = -1;
     while (round >= 0) {
         router_state_t *states = router.states + router.tdata.nstops * round;
+        if (states[s].arrival_time == INF) {
+            round -= 1;
+            continue;
+        } 
         int last_stop = states[s].back_stop;
         if (s < 0 || s > router.tdata.nstops) { 
             // this was causing segfaults
@@ -218,12 +234,6 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
         btimetext(board, cboard, 255);
         btimetext(alight, calight, 255);
         char *trip_id = states[s].back_trip_id;
-
-        char *route_id;
-        if (route == -2)
-            route_id = "walk";
-        else if (route == -1)
-            route_id = "init";
 
         b += sprintf (b, "%16s %8s %8s %8s %8s \n", trip_id, 
             last_stop_id, cboard, this_stop_id, calight);

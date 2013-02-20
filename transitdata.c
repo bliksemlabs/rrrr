@@ -88,6 +88,13 @@ inline int *transit_data_stops_for_route(transit_data_t td, int route, int **nex
     return td.route_stops + route0.route_stops_offset;
 }
 
+inline int transit_data_routes_for_stop(transit_data_t *td, int stop, int **routes_ret) {
+    stop_t stop0 = td->stops[stop];
+    stop_t stop1 = td->stops[stop + 1];
+    *routes_ret = td->stop_routes + stop0.stop_routes_offset;
+    return stop1.stop_routes_offset - stop0.stop_routes_offset;
+}
+
 inline int *transit_data_stoptimes_for_route(transit_data_t td, int route, int **next_route) {
     route_t route0 = td.routes[route];
     route_t route1 = td.routes[route + 1];
