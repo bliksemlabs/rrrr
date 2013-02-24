@@ -25,8 +25,6 @@ BitSet *bitset_new(int capacity);
 
 void bitset_reset(BitSet *self); // rename to bitset_clear?
 
-void bitset_init(BitSet *self, int capacity);
-
 void bitset_set(BitSet *self, int index);
 
 bool bitset_get(BitSet *self, int index);

@@ -10,7 +10,7 @@ inline void bitset_reset(BitSet *self) {
     memset(self->chunks, 0, sizeof(uint64_t) * self->nchunks);
 }
 
-void bitset_init(BitSet *self, int capacity) {
+static void bitset_init(BitSet *self, int capacity) {
     self->capacity = capacity;
     self->nchunks = capacity / 64;
     if (capacity % 64) 
