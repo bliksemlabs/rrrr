@@ -1,5 +1,6 @@
 /* Load-balancing broker using CZMQ API. Borrows heavily from load balancer pattern in 0MQ Guide. */
 
+#include <stdbool.h> 
 #include <syslog.h>
 #include <czmq.h>
 #include "rrrr.h"
