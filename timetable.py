@@ -17,6 +17,7 @@ except IOError as e :
     print 'gtfsdb file %s cannot be opened' % gtfsdb_file
     exit(1)
 out = open("./timetable.dat", "wb")
+stops_out = open("./stops", "wb")
 
 #switch to unsigned
 #pack arrival and departure into 4 bytes w/ offset?
@@ -91,8 +92,10 @@ for (sid, name, lat, lon) in db.execute(query) :
     idx_for_stopid[sid] = idx
     stop_id_for_idx.append(sid)
     out.write(struct_2f.pack(lat, lon));
+    stops_out.write(name+'\n')
     idx += 1
 nstops = idx
+stops_out.close()
     
 print "building trip bundles"
 route_for_idx = db.compile_trip_bundles(reporter=sys.stdout)
