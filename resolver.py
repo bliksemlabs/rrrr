@@ -23,6 +23,8 @@ def stop_name(stop_id) :
     return result[0][0]
     
 def trip_info(trip_id) :
+    if trip_id == 'walk':
+        return 'walk'
     try :
         result = list(db.execute('select route_id, trip_id, trip_headsign from trips where trip_id = ?', (trip_id,)))[0]
         result = '%s %s richting %s' % result
