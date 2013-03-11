@@ -7,7 +7,7 @@ from copy import copy
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 
 verbose = False
-RADIUS = 4000 # meters
+RADIUS = 2000 # meters
 OBSTRUCTION = 1.3 #factor to expand straight-line distance
 range_lat = RADIUS / 111111.111
 
@@ -35,7 +35,7 @@ all_query = """select stops.stop_id, stops.stop_name, stops.stop_lat, stops.stop
 near_query = """
 select stop_id, stop_name, stop_lat, stop_lon from stops where 
 stop_lat > (:lat - :range_lat) and stop_lat < (:lat + :range_lat) and
-stop_lon > (:lon - :range_lon) and stop_lon < (:lon + :range_lon) ORDER BY (((stop_lat - :lat) * (stop_lat - :lat)) + ((stop_lon - :lon) * (stop_lon - :lon))) DESC;
+stop_lon > (:lon - :range_lon) and stop_lon < (:lon + :range_lon) ORDER BY (((stop_lat - :lat) * (stop_lat - :lat)) + ((stop_lon - :lon) * (stop_lon - :lon))) ASC;
 """
        
 # equirectangular / sinusoidal projection
