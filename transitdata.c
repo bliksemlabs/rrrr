@@ -40,6 +40,11 @@ inline char *transit_data_trip_ids_for_route_index(transit_data_t *td, int route
     return td->trip_ids + char_offset;
 }
 
+inline int *transit_data_trip_masks_for_route_index(transit_data_t *td, int route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->trip_active + route.trip_ids_offset;
+}
+
 /* Map an input file into memory and reconstruct pointers to its contents. */
 void transit_data_load(char *filename, transit_data_t *td) {
 
@@ -75,7 +80,7 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->route_ids = (char*) (b + header->loc_route_ids + sizeof(int));
     td->trip_id_width = *((int*) (b + header->loc_trip_ids));
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(int));
-    td->trip_active = (uint32_t*) (b + header->loc_trip_active);
+    td->trip_active = (int*) (b + header->loc_trip_active); // should be uint32_t
 }
 
 void transit_data_close(transit_data_t *td) {

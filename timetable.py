@@ -35,6 +35,14 @@ sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
 print 'feed covers %s -- %s' % db.date_range()
 
+# find active period
+#dfrom, dto = db.date_range()
+#d = dfrom
+#while (d <= dto) :
+#    active_sids = db.service_periods(d)
+#    print d, len(active_sids)
+#    d += timedelta(days = 1)
+
 bitmask_for_sid = {}
 for sid in sids :
     bitmask_for_sid[sid] = 0
@@ -55,7 +63,6 @@ for (tid, sid) in db.execute(query) :
     service_id_for_trip_id [tid] = sid
 
 ############################
-
 
 
 #switch to unsigned
@@ -227,6 +234,15 @@ for idx, route in enumerate(route_for_idx) :
     stop_times_offsets.append(stoffset)
     trip_ids_offsets.append(tioffset)
     trip_ids = sorted_trip_ids(db, route)
+    
+    ### A route/tripbundle may have multiple serviceIds, but often covers only some days or is zero
+    ### filter out inactive routes on the search day
+    # mask = 0
+    # for trip_id in trip_ids :
+    #     mask |= bitmask_for_sid[ service_id_for_trip_id [trip_id] ]
+    # print 'mask for all trips is {:032b}'.format(mask)
+    ###
+    
     # print idx, route, len(trip_ids)
     for departure_time in departure_times(trip_ids) :
         # could be stored as a short

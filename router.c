@@ -99,12 +99,31 @@ static void dump_results(router_t *prouter) {
     }
 }
 
+//assumes little endian http://stackoverflow.com/a/3974138/778449
+void printBits(size_t const size, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+
+    for (i=size-1;i>=0;i--)
+    {
+        for (j=7;j>=0;j--)
+        {
+            byte = b[i] & (1<<j);
+            byte >>= j;
+            printf("%u", byte);
+        }
+    }
+    puts("");
+}
 
 bool router_route(router_t *prouter, router_request_t *preq) {
     router_t router = *prouter; // why copy?
     router_request_t req = *preq;
     int nstops = router.tdata.nstops;
     int trip_id_width = router.tdata.trip_id_width;
+    int date_mask = 1 << 2; // as a demo, search on the 3rd day of the schedule
 
     // set initial state
     router_state_t *states = router.states;
@@ -132,6 +151,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             int *t = transit_data_stoptimes_for_route(router.tdata, route, &t_end);
             int route_nstops = s_end - s;
             char *trip_ids = transit_data_trip_ids_for_route_index(&(router.tdata), route); 
+            int *trip_masks = transit_data_trip_masks_for_route_index(&(router.tdata), route); 
             char *trip_id = NULL;
             int trip_index = NONE;       // trip index within the route
             int board_stop = NONE; // stop index where that trip was boarded
@@ -153,8 +173,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     T transit_data_dump_route(&(router.tdata), route);
                     int trip_next = 0;
                     int *t_next = t;
-                    while (t_next < t_end && *t_next < router.best_time[stop]) {
+                    while (t_next < t_end) {
                         T printf("    board option %d at %s\n", trip_next, timetext(*t_next));
+                        if ((*t_next >= router.best_time[stop]) &&  // if this time is later than the best known for this stop
+                            (date_mask & trip_masks[trip_next]))    // and if this trip is running
+                                break;
                         trip_next += 1; // remembering that we start at -1 for NONE
                         t_next += route_nstops;
                     }
