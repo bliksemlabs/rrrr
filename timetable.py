@@ -47,8 +47,8 @@ for day_offset in range(32) :
     for sid in active_sids :
         bitmask_for_sid[sid] |= day_mask
 
-for sid in sids :
-    print '{:<5s} {:032b}'.format(sid, bitmask_for_sid[sid])
+#for sid in sids :
+#    print '{:<5s} {:032b}'.format(sid, bitmask_for_sid[sid])
         
 service_id_for_trip_id = {}        
 query = """ select trip_id, service_id from trips """
@@ -232,8 +232,13 @@ for idx, route in enumerate(route_for_idx) :
     ### filter out inactive routes on the search day
     # mask = 0
     # for trip_id in trip_ids :
-    #     mask |= bitmask_for_sid[ service_id_for_trip_id [trip_id] ]
+    #     try :
+    #        mask |= bitmask_for_sid[ service_id_for_trip_id [trip_id] ]
+    #     except :
+    #        continue
     # print 'mask for all trips is {:032b}'.format(mask)
+    # if mask == 0 :
+    #    print trip_id
     ###
     
     # print idx, route, len(trip_ids)
