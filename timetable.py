@@ -29,25 +29,18 @@ stops_out = open("./stops", "wb") # ID <-> StopName map for the geocoder
 start_date = date( *map(int, sys.argv[2].split('-')) )
 print 'calendar start date is %s' % start_date
 
-# db.date_range() is somewhat slow.
-# db.service_periods(sample_date) is slow because it checks its parameters with date_range().
 sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
 print 'feed covers %s -- %s' % db.date_range()
-
-# find active period
-#dfrom, dto = db.date_range()
-#d = dfrom
-#while (d <= dto) :
-#    active_sids = db.service_periods(d)
-#    print d, len(active_sids)
-#    d += timedelta(days = 1)
 
 bitmask_for_sid = {}
 for sid in sids :
     bitmask_for_sid[sid] = 0
 for day_offset in range(32) :
     date = start_date + timedelta(days = day_offset)
+    # db.date_range() is somewhat slow.
+    # db.service_periods(sample_date) is slow because it checks its parameters with date_range().
+    # this is very inefficient, but run time is reasonable for now and it uses existing code.
     active_sids = db.service_periods(date)
     day_mask = 1 << day_offset
     print 'date {!s} has {:d} active service ids. applying mask (base2) {:032b}'.format(date, len(active_sids), day_mask)
@@ -334,11 +327,11 @@ loc_trip_active = tell()
 n_zeros = 0
 for trip_id in all_trip_ids :
     service_id = service_id_for_trip_id [trip_id]
-    try:
+    try :
         bitmask = bitmask_for_sid [service_id]
-    except:
+    except :
+        print 'no calendar information for service_id', service_id
         bitmask = 0
-        print 'Trip_id %s is missing %s' % (trip_id,service_id)
     if bitmask == 0 :
         n_zeros += 1
     # print '{:032b} {:s} ({:s})'.format(bitmask, trip_id, service_id)
