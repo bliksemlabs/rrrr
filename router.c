@@ -123,7 +123,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     router_request_t req = *preq;
     int nstops = router.tdata.nstops;
     int trip_id_width = router.tdata.trip_id_width;
-    int date_mask = 1 << 2; // as a demo, search on the 3rd day of the schedule
+    int date_mask = 1 << 4; // as a demo, search on a specific day of the schedule
 
     // set initial state
     router_state_t *states = router.states;
