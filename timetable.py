@@ -73,7 +73,7 @@ struct_2f = Struct('2f') # 2 floats
 def write2floats(x, y) :
     out.write(struct_2f.pack(x, y));
 
-def align(width) :
+def align(width=4) :
     """ Align output file to a [width]-byte boundary. """
     pos = out.tell()
     n_padding_bytes = (width - (pos % width)) % width
@@ -93,7 +93,7 @@ def write_text_comment(string) :
     """ Write a text block to the file, just to help indentify segment boundaries, and align. """
     string = '|| {:s} ||'.format(string)
     out.write(string) 
-    align(4)
+    align()
 
 def write_string_table(strings) :
     """ Write a table of fixed-width, null-terminated strings to the output file.
