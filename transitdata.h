@@ -46,6 +46,7 @@ struct transit_data {
     char *route_ids;
     int trip_id_width;
     char *trip_ids;
+    uint32_t *trip_active;
 };
 
 void transit_data_load(char* /*filename*/, transit_data_t*);

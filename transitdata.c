@@ -23,6 +23,7 @@ struct transit_data_header {
     int loc_stop_ids; 
     int loc_route_ids; 
     int loc_trip_ids; 
+    int loc_trip_active; 
 };
 
 inline char *transit_data_stop_id_for_index(transit_data_t *td, int stop_index) {
@@ -74,6 +75,7 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->route_ids = (char*) (b + header->loc_route_ids + sizeof(int));
     td->trip_id_width = *((int*) (b + header->loc_trip_ids));
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(int));
+    td->trip_active = (uint32_t*) (b + header->loc_trip_active);
 }
 
 void transit_data_close(transit_data_t *td) {
