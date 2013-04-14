@@ -334,7 +334,11 @@ loc_trip_active = tell()
 n_zeros = 0
 for trip_id in all_trip_ids :
     service_id = service_id_for_trip_id [trip_id]
-    bitmask = bitmask_for_sid [service_id]
+    try:
+        bitmask = bitmask_for_sid [service_id]
+    except:
+        bitmask = 0
+        print 'Trip_id %s is missing %s' % (trip_id,service_id)
     if bitmask == 0 :
         n_zeros += 1
     # print '{:032b} {:s} ({:s})'.format(bitmask, trip_id, service_id)
