@@ -3,6 +3,7 @@
 #define _TRANSIT_DATA_H
 
 #include "geometry.h"
+#include "util.h"
 #include <stddef.h>
 
 // hide these details?
@@ -25,6 +26,7 @@ struct transfer {
     float dist_meters;
 };
 
+// treat entirely as read-only?
 typedef struct transit_data transit_data_t;
 struct transit_data {
     void *base;
@@ -35,7 +37,7 @@ struct transit_data {
     stop_t *stops;
     route_t *routes;
     int *route_stops;
-    int *stop_times;
+    rtime_t *stop_times;
     int *stop_routes;
     transfer_t *transfers; 
     // optional data -- NULL pointer means it is not available
@@ -47,6 +49,7 @@ struct transit_data {
     int trip_id_width;
     char *trip_ids;
     int *trip_active;
+    int *route_active;
 };
 
 void transit_data_load(char* /*filename*/, transit_data_t*);
@@ -61,7 +64,7 @@ int *transit_data_stops_for_route(transit_data_t, int route, int **next_route);
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 int transit_data_routes_for_stop(transit_data_t*, int stop, int **routes_ret);
 
-int *transit_data_stoptimes_for_route(transit_data_t, int route, int **next_route);
+rtime_t *transit_data_stoptimes_for_route(transit_data_t, int route, rtime_t **next_route);
 
 void transit_data_dump_route(transit_data_t *td, int route);
 

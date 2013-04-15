@@ -12,10 +12,11 @@ void die(const char *msg) {
 
 static char buf[32];
 
-char *btimetext(int t, char *buf, int buflen) {
-    if (t == INT_MAX) {
+char *btimetext(rtime_t rt, char *buf, int buflen) {
+    if (rt == UNREACHED) {
         return "   --   ";
     }        
+    int t = (int)rt << 1;
     int s = t % 60;
     int m = t / 60;
     int h = m / 60;
@@ -24,7 +25,23 @@ char *btimetext(int t, char *buf, int buflen) {
     return buf;
 }
 
-char *timetext(int t) {
+char *timetext(rtime_t t) {
     return btimetext(t, buf, 32);
+}
+
+//assumes little endian http://stackoverflow.com/a/3974138/778449
+// size in bytes
+void printBits(size_t const size, void const * const ptr) {
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    for (i=size-1;i>=0;i--) {
+        for (j=7;j>=0;j--) {
+            byte = b[i] & (1<<j);
+            byte >>= j;
+            printf("%u", byte);
+        }
+    }
+    puts("");
 }
 

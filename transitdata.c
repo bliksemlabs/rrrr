@@ -24,6 +24,7 @@ struct transit_data_header {
     int loc_route_ids; 
     int loc_trip_ids; 
     int loc_trip_active; 
+    int loc_route_active; 
 };
 
 inline char *transit_data_stop_id_for_index(transit_data_t *td, int stop_index) {
@@ -34,6 +35,7 @@ inline char *transit_data_route_id_for_index(transit_data_t *td, int route_index
     return td->route_ids + (td->route_id_width * route_index);
 }
 
+// this should probably return the pointer and store the number of items in a parameter, to avoid awkward & and match other functions.
 inline char *transit_data_trip_ids_for_route_index(transit_data_t *td, int route_index) {
     route_t route = (td->routes)[route_index];
     int char_offset = route.trip_ids_offset * td->trip_id_width;
@@ -71,9 +73,10 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->stops = (stop_t*) (b + header->loc_stops);
     td->routes = (route_t*) (b + header->loc_routes);
     td->route_stops = (int*) (b + header->loc_route_stops);
-    td->stop_times = (int*) (b + header->loc_stop_times);
+    td->stop_times = (rtime_t*) (b + header->loc_stop_times);
     td->stop_routes = (int*) (b + header->loc_stop_routes);
     td->transfers = (transfer_t*) (b + header->loc_transfers);
+    //maybe replace with pointers because there's a lot of wasted space?
     td->stop_id_width = *((int*) (b + header->loc_stop_ids));
     td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(int));
     td->route_id_width = *((int*) (b + header->loc_route_ids));
@@ -81,6 +84,7 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->trip_id_width = *((int*) (b + header->loc_trip_ids));
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(int));
     td->trip_active = (int*) (b + header->loc_trip_active); // should be uint32_t
+    td->route_active = (int*) (b + header->loc_route_active); // should be uint32_t
 }
 
 void transit_data_close(transit_data_t *td) {
@@ -102,7 +106,7 @@ inline int transit_data_routes_for_stop(transit_data_t *td, int stop, int **rout
     return stop1.stop_routes_offset - stop0.stop_routes_offset;
 }
 
-inline int *transit_data_stoptimes_for_route(transit_data_t td, int route, int **next_route) {
+inline rtime_t *transit_data_stoptimes_for_route(transit_data_t td, int route, rtime_t **next_route) {
     route_t route0 = td.routes[route];
     route_t route1 = td.routes[route + 1];
     *next_route = td.stop_times + route1.stop_times_offset;
@@ -110,15 +114,16 @@ inline int *transit_data_stoptimes_for_route(transit_data_t td, int route, int *
 }
 
 void transit_data_dump_route(transit_data_t *td, int route) {
-    int *s_end, *t_end;
+    int *s_end;
     int *s = transit_data_stops_for_route(*td, route, &s_end);
-    int *t = transit_data_stoptimes_for_route(*td, route, &t_end);
+    rtime_t *t_end;
+    rtime_t *t = transit_data_stoptimes_for_route(*td, route, &t_end);
     int nstops = s_end - s;
     printf("ROUTE %d NSTOPS %d\n", route, nstops);
     printf("SSEQ SINDEX  \n");
     for (int i = 0; i < nstops; ++i) {
         printf("%4d %6d : ", i, s[i]);
-        for (int *t2 = &(t[i]); t2 < t_end; t2 += nstops) {
+        for (rtime_t *t2 = &(t[i]); t2 < t_end; t2 += nstops) {
             printf("%s ", timetext(*t2));
         }
         printf("\n");

@@ -4,15 +4,18 @@
 #define _ROUTER_H
 
 #include <stdbool.h>
+#include <stdint.h>
+#include <time.h>
 #include "transitdata.h"
 #include "bitset.h"
+#include "util.h"
 
 typedef struct router_state router_state_t;
 struct router_state {
-    int arrival_time;
+    rtime_t arrival_time;
     int back_stop;
     int back_route;
-    int board_time;
+    rtime_t board_time;
     char *back_trip_id;
 };
 
@@ -22,7 +25,7 @@ struct router {
     // scratch space for solving
     // making this opaque requires more dynamic allocation
     int table_size;
-    int *best_time;
+    rtime_t *best_time;
     router_state_t *states;
     BitSet *updated_stops;
     BitSet *updated_routes;
@@ -33,7 +36,7 @@ typedef struct router_request router_request_t;
 struct router_request {
     int from;
     int to;
-    long time;
+    time_t time;
     double walk_speed;
     bool arrive_by; 
 };

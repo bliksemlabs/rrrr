@@ -4,4 +4,10 @@
 # make and build files
 *.o
 
-rrrr
+*.gtfsdb
+*.zip
+
+rrrr.sh
+brrrroker
+workerrrr
+client

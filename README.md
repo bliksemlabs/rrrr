@@ -29,6 +29,15 @@ Next, run `python transfers.py output.gtfsdb` to add distance-based transfers to
 Finally, run `python timetable.py output.gtfsdb` to create the timetable file `timetable.dat` based on that GTFS database.
 
 
+Coding conventions
+-----------------------------
+Use specific types from stdint.h for cross-platform compatibility.
+Absolute times are stored in uint64 and referenced from the Epoch.
+Times in schedules are uint16 and referenced from midnight. 2**16 / 60 / 60 is only 18 hours, but by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution.
+When the result of a function is an array, the function should return a pointer to the array and store the number of elements in an indirected parameter (rather than the other way around).
+The data file is mostly a column store.
+
+
 Building and starting up RRRR
 -----------------------------
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, struct
+import sys, struct, time
 from struct import Struct
 # requires graphserver to be installed
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
@@ -43,7 +43,7 @@ for day_offset in range(32) :
     # this is very inefficient, but run time is reasonable for now and it uses existing code.
     active_sids = db.service_periods(date)
     day_mask = 1 << day_offset
-    print 'date {!s} has {:d} active service ids. applying mask (base2) {:032b}'.format(date, len(active_sids), day_mask)
+    print 'date {!s} has {:5d} active service ids. applying mask {:032b}'.format(date, len(active_sids), day_mask)
     for sid in active_sids :
         bitmask_for_sid[sid] |= day_mask
 
@@ -61,14 +61,14 @@ for (tid, sid) in db.execute(query) :
 #switch to unsigned
 #pack arrival and departure into 4 bytes w/ offset?
 
-struct_1i = Struct('I') # a single UNSIGNED int
+struct_1I = Struct('I') # a single UNSIGNED int
 def writeint(x) :
-    out.write(struct_1i.pack(x));
+    out.write(struct_1I.pack(x));
 
-struct_1h = Struct('h') # a single short 
-def writeshort(x) : 
-    out.write(struct_1h.pack(x));
-
+struct_1H = Struct('H') # a single UNSIGNED short 
+def write_ushort(x) : 
+    out.write(struct_1H.pack(x));
+        
 struct_2f = Struct('2f') # 2 floats
 def write2floats(x, y) :
     out.write(struct_2f.pack(x, y));
@@ -138,24 +138,34 @@ def departure_times(trip_ids) :
     """ generator that takes a list of trip_ids 
     and returns all stop times in order for those trip_ids """
     for trip_id in trip_ids :
+        last_time = 0
         query = """
         select departure_time, stop_sequence
         from stop_times
         where trip_id = ?
         order by stop_sequence""" 
         for (departure_time, stop_sequence) in db.execute(query, (trip_id,)) :
+            if departure_time < last_time :
+                print "non-increasing departure times on trip %s, forcing positive" % trip_id
+                departure_time = last_time
+            last_time = departure_time
             yield(departure_time)
 
-struct_header = Struct('8s12i')
+# make this into a method on a Header class 
+struct_header = Struct('8s13i')
 def write_header () :
+    """ Write out a file header containing offsets to the beginning of each subsection. 
+    Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
     packed = struct_header.pack(htext, nstops, nroutes, loc_stops, loc_routes, loc_route_stops, 
         loc_stop_times, loc_stop_routes, loc_transfers, 
-        loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active)
+        loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active)
     out.write(packed)
+
+### Begin writing out file ###
     
-# seek past end of header, which will be written later
+# Seek past the end of the header, which will be written last when all offsets are known.
 out.seek(struct_header.size)
 
 print "building stop indexes and coordinate list"
@@ -168,7 +178,8 @@ query = """
         from stops
         order by stop_id
         """
-# loop over all stop IDs in alphabetical order
+# Write timetable segment 0 : stop coordinates
+# (loop over all stop IDs in alphabetical order)
 for (sid, name, lat, lon) in db.execute(query) :
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
@@ -179,8 +190,41 @@ nstops = idx
 stops_out.close()
     
 print "building trip bundles"
-route_for_idx = db.compile_trip_bundles(reporter=sys.stdout)
-nroutes = len(route_for_idx)
+all_routes = db.compile_trip_bundles(reporter=sys.stdout) # slow call
+# A route ("TripBundle") may have many service_ids, and often runs only some days or none at all.
+# Throw out routes and trips that do not occur during this calendar period,
+# and record active-days-bitmasks for each route, allowing us to filter out inactive routes on a specific search day.
+route_mask_for_idx = [] # one active-days-bitmask for each route (bundle of trips)
+route_for_idx = []
+n_trips_total = 0
+n_trips_removed = 0
+n_routes_removed = 0
+for route in all_routes :
+    route_mask = 0
+    running_trip_ids = []
+    n_trips_total += len(route.trip_ids)
+    for trip_id in route.trip_ids :
+        try :
+            service_id = service_id_for_trip_id [trip_id]
+            trip_mask = bitmask_for_sid[service_id]
+            route_mask |= trip_mask
+            if trip_mask != 0 :
+                running_trip_ids.append(trip_id)
+            else :
+                n_trips_removed += 1
+        except KeyError:
+            continue
+    # print 'mask for all trips is {:032b}'.format(route_mask)
+    if route_mask != 0 :
+        route.trip_ids = running_trip_ids
+        route_for_idx.append(route)
+        route_mask_for_idx.append(route_mask)
+    else :
+        n_routes_removed += 1
+nroutes = len(route_for_idx) # this is the final culled list of routes
+print '%d / %d routes had running services, %d / %d trips removed' % (nroutes, len(all_routes), n_trips_removed, n_trips_total)
+del all_routes, n_trips_total, n_trips_removed, n_routes_removed
+
 
 route_id_for_idx = []
 for route in route_for_idx :
@@ -210,6 +254,11 @@ assert len(route_stops_offsets) == nroutes + 1
 
 # print db.service_ids()
 
+def time_string_from_seconds(sec) :
+    t = time.localtime(sec)
+    #if t.tm_mday > 0 :
+    return time.strftime('day %d %H:%M:%S', t)
+
 # what we are calling routes here are TripBundles in gtfsdb
 print "saving the stop times for each trip of each route"
 write_text_comment("STOP TIMES")
@@ -219,6 +268,7 @@ stoffset = 0
 all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
 tioffset = 0
+crazy_threshold = 60 * 60 * 24 * 1.3 
 for idx, route in enumerate(route_for_idx) :
     if idx > 0 and idx % 1000 == 0 :
         print 'wrote %d routes' % idx
@@ -227,25 +277,15 @@ for idx, route in enumerate(route_for_idx) :
     stop_times_offsets.append(stoffset)
     trip_ids_offsets.append(tioffset)
     trip_ids = sorted_trip_ids(db, route)
-    
-    ### A route/tripbundle may have multiple serviceIds, but often covers only some days or is zero
-    ### filter out inactive routes on the search day
-    # mask = 0
-    # for trip_id in trip_ids :
-    #     try :
-    #        mask |= bitmask_for_sid[ service_id_for_trip_id [trip_id] ]
-    #     except :
-    #        continue
-    # print 'mask for all trips is {:032b}'.format(mask)
-    # if mask == 0 :
-    #    print trip_id
-    ###
-    
     # print idx, route, len(trip_ids)
     for departure_time in departure_times(trip_ids) :
-        # could be stored as a short
-        # writeshort(departure_time / 15)
-        writeint(departure_time)
+        # 2**16 / 60 / 60 is only 18 hours
+        # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
+        if departure_time > crazy_threshold :
+            print departure_time, time_string_from_seconds(departure_time)
+            write_ushort(0xFFF0 - 1) # do not write UNREACHABLE in util.h because this may cause problems
+        else :
+            write_ushort(departure_time >> 1) 
         stoffset += 1 
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
@@ -320,14 +360,16 @@ print "writing route ids to string table"
 write_text_comment("ROUTE IDS")
 loc_route_ids = write_string_table(route_id_for_idx)
 
+
 print "writing trip ids to string table" 
 # note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order. 
 write_text_comment("TRIP IDS")
 loc_trip_ids = write_string_table(all_trip_ids)
 
+
 print "writing bitfields indicating which days each trip is active" 
 # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
-write_text_comment("SERVICE ACTIVE BITFIELDS")
+write_text_comment("TRIP ACTIVE BITFIELDS")
 loc_trip_active = tell()
 n_zeros = 0
 for trip_id in all_trip_ids :
@@ -342,6 +384,18 @@ for trip_id in all_trip_ids :
     # print '{:032b} {:s} ({:s})'.format(bitmask, trip_id, service_id)
     writeint(bitmask)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
+
+
+print "writing bitfields indicating which days each route is active" 
+write_text_comment("ROUTE ACTIVE BITFIELDS")
+loc_route_active = tell()
+n_zeros = 0
+for bitfield in route_mask_for_idx :
+    if bitfield == 0 :
+        n_zeros += 1
+    writeint(bitfield)
+print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
+
 
 print "reached end of timetable file"
 write_text_comment("END TTABLEV1")

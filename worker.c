@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
     /* MAIN LOOP */
     int request_count = 0;
-    char result_buf[2048];
+    char result_buf[4096];
     while (true) {
         zmsg_t *msg = zmsg_recv (zsock);
         if (!msg) // interrupted (signal)
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
             req = (router_request_t*) zframe_data (frame);
             //router_request_dump(&router, req);
             router_route(&router, req);
-            int result_length = router_result_dump(&router, req, result_buf, 2048);
+            int result_length = router_result_dump(&router, req, result_buf, 4096);
             zframe_reset (frame, result_buf, result_length);
             //zframe_reset (frame, "OK", 2);
         } else {
