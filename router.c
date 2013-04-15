@@ -39,11 +39,11 @@ void router_teardown(router_t *router) {
 
 // flag_routes_for_stops... all at once after doing transfers?
 /* Given a stop index, mark all routes that serve it as updated. */
-static inline void flag_routes_for_stop (router_t *r, int stop_index, int date_mask) {
+static inline void flag_routes_for_stop (router_t *r, int stop_index, uint32_t date_mask) {
     /*restrict*/ int *routes;
     int n_routes = transit_data_routes_for_stop (&(r->tdata), stop_index, &routes);
     for (int i = 0; i < n_routes; ++i) {
-        int route_active_flags = r->tdata.route_active[routes[i]];
+        uint32_t route_active_flags = r->tdata.route_active[routes[i]];
         T printf ("(flagging route %d at stop %d)\n", routes[i], stop_index);
         // CHECK that there are any trips running on this route (another bitfield)
         // printf("route flags %d", route_active_flags);
@@ -58,7 +58,7 @@ static inline void flag_routes_for_stop (router_t *r, int stop_index, int date_m
  set the associated routes as updated. The routes bitset is cleared before the operation, 
  and the stops bitset is cleared after all transfers have been computed and all routes have been set.
  */
-static inline void apply_transfers (router_t r, int round, float speed_meters_sec, int date_mask) {
+static inline void apply_transfers (router_t r, int round, float speed_meters_sec, uint32_t date_mask) {
     transit_data_t d = r.tdata; // this is copying... 
     int nstops = d.nstops;
     router_state_t *states = r.states + (round * nstops);
@@ -134,8 +134,8 @@ void dump_trips(router_t *prouter) {
     for (int route = 0; route < nroutes; ++route) {
         char *trip_ids = transit_data_trip_ids_for_route_index(&(router.tdata), route);
         char *trip_ids_end = transit_data_trip_ids_for_route_index(&(router.tdata), route + 1);
-        int  *trip_masks = transit_data_trip_masks_for_route_index(&(router.tdata), route);
-        int  *trip_masks_end = transit_data_trip_masks_for_route_index(&(router.tdata), route + 1);
+        uint32_t *trip_masks = transit_data_trip_masks_for_route_index(&(router.tdata), route);
+        uint32_t *trip_masks_end = transit_data_trip_masks_for_route_index(&(router.tdata), route + 1);
         long n_tids = (trip_ids_end - trip_ids) / tid_width;
         long n_masks = trip_masks_end - trip_masks;
         printf ("route %d / %d, n trip_ids %ld, n trip masks %ld\n", route + 1, nroutes, n_tids, n_masks);
@@ -156,7 +156,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
 
     int nstops = router.tdata.nstops;
     int trip_id_width = router.tdata.trip_id_width;
-    int date_mask = 1 << 2; // as a demo, search on the 3rd day of the schedule
+    uint32_t date_mask = 1 << 2; // as a demo, search on the 3rd day of the schedule
     
     // set initial state
     router_state_t *states = router.states;
@@ -188,7 +188,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             rtime_t *t_end;
             rtime_t *t = transit_data_stoptimes_for_route(router.tdata, route, &t_end);
             char *trip_ids = transit_data_trip_ids_for_route_index(&(router.tdata), route); 
-            int *trip_masks = transit_data_trip_masks_for_route_index(&(router.tdata), route); 
+            uint32_t *trip_masks = transit_data_trip_masks_for_route_index(&(router.tdata), route); 
             char *trip_id = NULL;
             int trip_index = NONE; // trip index within the route
             int board_stop = NONE; // stop index where that trip was boarded
