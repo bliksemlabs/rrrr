@@ -4,7 +4,13 @@
 #define RRRR_INPUT_FILE "/home/abyrd/git/rrrr/timetable.dat"
 
 // runtime increases roughly linearly with this value
-#define RRRR_MAX_ROUNDS 5
+// though with target pruning it no longer seems to have as much effect
+#define RRRR_MAX_ROUNDS 8
+
+// specify in seconds
+#define RRRR_WALK_SLACK_SEC 120
+// specify in internal 2-second intervals!
+#define RRRR_XFER_SLACK_2SEC 120
 
 // bind does not work with names (localhost) but does work with * (all interfaces)
 #define CLIENT_ENDPOINT "tcp://127.0.0.1:9292"
