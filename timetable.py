@@ -261,7 +261,7 @@ for route in route_for_idx :
         if long_name is not None :
             desc += ' (%s)' % long_name
     desc = ';'.join([desc, headsign])
-    print desc
+    # print desc
     route_id_for_idx.append(desc)
 
     
@@ -399,8 +399,8 @@ loc_route_ids = write_string_table(route_id_for_idx)
 print "writing trip ids to string table" 
 # note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order. 
 write_text_comment("TRIP IDS")
-loc_trip_ids = write_string_table(all_trip_ids)
-
+#loc_trip_ids = write_string_table(all_trip_ids)
+loc_trip_ids = 0
 
 print "writing bitfields indicating which days each trip is active" 
 # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
