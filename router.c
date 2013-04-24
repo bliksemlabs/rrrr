@@ -93,7 +93,7 @@ static inline void apply_transfers (router_t r, int round, float speed_meters_se
                     r.best_time[stop_index_to] = time_to;
                     state_to->back_route = WALK; // need sym const for walk distinct from NONE
                     state_to->back_stop = stop_index_from;
-                    state_to->back_trip_id = "walk";
+                    state_to->back_trip_id = "walk;walk"; // semicolon to provide headsign field in demo
                     state_to->board_time = state_from->arrival_time;
                     flag_routes_for_stop (&r, stop_index_to, date_mask);
                 }
@@ -181,6 +181,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                  route = bitset_next_set_bit (router.updated_routes, route + 1)) {
             D printf("  route %d\n", route);
             T transit_data_dump_route(&(router.tdata), route);
+            char *route_id = transit_data_route_id_for_index(&(router.tdata), route); // actually contains a detailed route description, not an ID for demo
             /* TODO: restrict pointers ? */ 
             int *s_end;    // pointer one element beyond the end of array
             int *s = transit_data_stops_for_route(router.tdata, route, &s_end);
@@ -250,7 +251,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     state->arrival_time = *t;
                     router.best_time[stop] = *t;
                     state->back_route = route; 
-                    state->back_trip_id = trip_id; 
+                    state->back_trip_id = route_id; // changed for demo, was: trip_id; 
                     state->back_stop = board_stop;
                     state->board_time = board_time;
                     if (*t < router.best_time[req.to]) { // "target pruning" sec. 3.1
@@ -281,7 +282,7 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
         router_state_t *states = router.states + router.tdata.nstops * round_outer;
         if (states[s].arrival_time == UNREACHED)
             continue;
-        b += sprintf (b, "\n %d VEHICLES \n", round_outer + 1);
+        b += sprintf (b, "\nA %d VEHICLES \n", round_outer + 1);
         int round = round_outer;
         while (round >= 0) {
             states = router.states + router.tdata.nstops * round;
@@ -308,7 +309,7 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
             btimetext(alight, calight, 255);
             char *trip_id = states[s].back_trip_id;
 
-            b += sprintf (b, "%16s %8s %8s %8s %8s \n", trip_id, 
+            b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
                 last_stop_id, cboard, this_stop_id, calight);
             if (b > b_end) {
                 printf ("buffer overflow\n");
