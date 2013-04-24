@@ -227,11 +227,43 @@ nroutes = len(route_for_idx) # this is the final culled list of routes
 print '%d / %d routes had running services, %d / %d trips removed' % (nroutes, len(all_routes), n_trips_removed, n_trips_total)
 del all_routes, n_trips_total, n_trips_removed, n_routes_removed
 
-
+# We have two definitions of "route".
+# GTFS routes are totally arbitrary groups of trips (but fortunately NL GTFS routes correspond with 
+# rider notions of a route).
+# RAPTOR routes are what Graphserver calls trip bundles and OTP calls stop patterns and Transmodel 
+# calls JOURNEYPATTERNs: an ordered sequence of stops.
+# We want one descriptive string per route, in the RAPTOR sense, which should amount to one string 
+# per GTFS route per direction.
 route_id_for_idx = []
+modes = { 0: 'tram', 
+          1: 'subway',
+          2: 'train',
+          3: 'bus',
+          4: 'ferry',
+          # very popular in the netherlands
+          5: 'cable car',
+          6: 'gondola',
+          7: 'funicular' }
 for route in route_for_idx :
-    rid = list(db.execute('select route_id from trips where trip_id = ?', (route.trip_ids[0],)))
-    route_id_for_idx.append(rid[0][0])
+    exemplar_trip = route.trip_ids[0]
+    SQL = """ select trips.route_id, trips.trip_headsign, 
+                     routes.agency_id, routes.route_short_name, routes.route_long_name, routes.route_type
+              from trips, routes
+              where trips.trip_id = ?
+              and trips.route_id = routes.route_id """
+    #  executemany
+    rid, headsign, agency, short_name, long_name, mode = list(db.execute(SQL, (exemplar_trip,)))[0]    
+    if short_name is None : 
+        # mostly trains with the service type (Sprinter, IC) in the long name field
+        desc = long_name
+    else : 
+        desc = '%s %s' % (modes[mode], short_name)
+        if long_name is not None :
+            desc += ' (%s)' % long_name
+    desc = ';'.join([desc, headsign])
+    print desc
+    route_id_for_idx.append(desc)
+
     
 # named tuples?
 # stops = [(-1, -1) for _ in range(nstops)]
