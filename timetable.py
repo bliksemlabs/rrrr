@@ -134,22 +134,22 @@ def sorted_trip_ids(db, bundle) :
     sorted_trips = [trip_id for (trip_id, departure_time) in db.execute(query, (firststop,))]
     return sorted_trips
     
-def departure_times(trip_ids) :
+def fetch_stop_times(trip_ids) :
     """ generator that takes a list of trip_ids 
     and returns all stop times in order for those trip_ids """
     for trip_id in trip_ids :
         last_time = 0
         query = """
-        select departure_time, stop_sequence
+        select arrival_time, departure_time, stop_sequence
         from stop_times
         where trip_id = ?
         order by stop_sequence""" 
-        for (departure_time, stop_sequence) in db.execute(query, (trip_id,)) :
+        for (arrival_time, departure_time, stop_sequence) in db.execute(query, (trip_id,)) :
             if departure_time < last_time :
                 print "non-increasing departure times on trip %s, forcing positive" % trip_id
                 departure_time = last_time
             last_time = departure_time
-            yield(departure_time)
+            yield(arrival_time, departure_time)
 
 # make this into a method on a Header class 
 struct_header = Struct('8s13i')
@@ -171,6 +171,7 @@ out.seek(struct_header.size)
 print "building stop indexes and coordinate list"
 # establish a mapping between sorted stop ids and integer indexes (allowing binary search later)
 stop_id_for_idx = []
+stop_name_for_idx = []
 idx_for_stop_id = {}
 idx = 0
 query = """
@@ -183,6 +184,7 @@ query = """
 for (sid, name, lat, lon) in db.execute(query) :
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
+    stop_name_for_idx.append(name)
     write2floats(lat, lon)
     stops_out.write(name+'\n')
     idx += 1
@@ -278,7 +280,7 @@ for idx, route in enumerate(route_for_idx) :
     trip_ids_offsets.append(tioffset)
     trip_ids = sorted_trip_ids(db, route)
     # print idx, route, len(trip_ids)
-    for departure_time in departure_times(trip_ids) :
+    for arrival_time, departure_time in fetch_stop_times(trip_ids) :
         # 2**16 / 60 / 60 is only 18 hours
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
         if departure_time > crazy_threshold :
@@ -353,7 +355,8 @@ for route in zip (route_stops_offsets, stop_times_offsets, trip_ids_offsets) :
 print "writing out sorted stop ids to string table"
 # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
 write_text_comment("STOP IDS (SORTED)")
-loc_stop_ids = write_string_table(stop_id_for_idx)
+# loc_stop_ids = write_string_table(stop_id_for_idx) <-- write IDs instead of names
+loc_stop_ids = write_string_table(stop_name_for_idx)
 
 # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
 print "writing route ids to string table"

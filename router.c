@@ -276,17 +276,16 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
     router_request_t req = *preq;
     char *b = buf;
     char *b_end = buf + buflen;
-    for (int round_outer = RRRR_MAX_ROUNDS - 1; round_outer >= 0; --round_outer) {
+    for (int round_outer = 0; round_outer < RRRR_MAX_ROUNDS; ++round_outer) {
+        int s = req.to;
+        router_state_t *states = router.states + router.tdata.nstops * round_outer;
+        if (states[s].arrival_time == UNREACHED)
+            continue;
         b += sprintf (b, "\n %d VEHICLES \n", round_outer + 1);
         int round = round_outer;
-        int count = 0;
-        int s = req.to;
-        //round = -1;
         while (round >= 0) {
-            router_state_t *states = router.states + router.tdata.nstops * round;
+            states = router.states + router.tdata.nstops * round;
             if (states[s].arrival_time == UNREACHED) {
-                if (round == round_outer) 
-                    break;
                 round -= 1;
                 b += sprintf (b, "%d UNREACHED \n", s);
                 continue;
@@ -317,7 +316,6 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
             }
             if (last_stop == req.from) 
                 break;
-            if (count++ > 20) break;
             if (route >= 0 && round > 0)
                 round -= 1;
             s = last_stop;
