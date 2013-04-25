@@ -1,11 +1,11 @@
 # CC=clang
 # CFLAGS=-g -march=native -Wall -std=gnu99 -O2 -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 CC=gcc
-CFLAGS=-g -march=native -Wall -std=gnu99 -O2 -flto
+CFLAGS=-g -march=native -Wall -std=gnu99 -O2
 LIBS=-lzmq -lczmq
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
-BINS=workerrrr brrrroker client
+BINS=workerrrr brrrroker client lookup-console
 
 all: $(BINS)
 
@@ -15,10 +15,13 @@ all: $(BINS)
 brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
-workerrrr: qstring.o router.o transitdata.o util.o worker.o bitset.o
+workerrrr: bitset.o qstring.o router.o transitdata.o util.o worker.o bitset.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-client: qstring.o router.o transitdata.o util.o client.o
+client: bitset.o qstring.o router.o transitdata.o util.o client.o
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+
+lookup-console: transitdata.o util.o lookup-console.o trie.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 clean:
