@@ -295,6 +295,13 @@ def time_string_from_seconds(sec) :
 
 # what we are calling routes here are TripBundles in gtfsdb
 print "saving the stop times for each trip of each route"
+# In the full NL dataset only about half of route (RAPTOR sense) have any dwells at all.
+# Rather than try to do some intense bit-twiddling time packing on all routes, we'll just 
+# check ahead of time whether each route has dwells or not, store separate arrivals and 
+# departures table offsets, which point to the same location if the route has no dwells. This
+# should achieve about 25% space savings with very simple implementation.
+# The problem is that this gets in the way of using the address of the next route block as a termination condition for loops.
+# The pointer arithmetic would need to be replaced with array indexing.
 write_text_comment("STOP TIMES")
 loc_stop_times = tell()
 stop_times_offsets = []
@@ -316,7 +323,7 @@ for idx, route in enumerate(route_for_idx) :
         # 2**16 / 60 / 60 is only 18 hours
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
         if departure_time > crazy_threshold :
-            print departure_time, time_string_from_seconds(departure_time)
+            print 'suspect departure time:', departure_time, time_string_from_seconds(departure_time)
             write_ushort(0xFFF0 - 1) # do not write UNREACHABLE in util.h because this may cause problems
         else :
             write_ushort(departure_time >> 1) 
@@ -442,3 +449,50 @@ write_header()
 print "done."
 out.close();
 
+
+
+
+def analyze_dwells () :
+    """ Use this method to discover than in the full NL dataset only about half of route (RAPTOR sense) have any dwells at all. """
+    dwells = {} # histogram of dwell times
+    routes_with_dwells = 0
+    trips_with_dwells = 0
+    isolated_dwells = 0
+    ntrips = 0
+    ndwells = 0
+    for route in route_for_idx :
+        route_has_dwells = False
+        SQL = "select arrival_time, departure_time from stop_times where trip_id = ? order by stop_sequence"    
+        for trip_id in route.trip_ids :
+            ntrips += 1
+            trip_has_dwells = False
+            prev_no_dwell = False # at beginning of trip there is no reference for a relative stoptime
+            for arrival_time, departure_time in db.execute(SQL, (trip_id,)) :
+                dwell = departure_time - arrival_time
+                if dwell > 0 :
+                    route_has_dwells = True
+                    trip_has_dwells = True
+                    if prev_has_dwell :
+                        isolated_dwells += 1
+                    prev_has_dwell = True # for next iteration
+                    ndwells += 1
+                else :
+                    prev_has_dwell = False # for next iteration
+                try :
+                    dwells[dwell] += 1
+                except KeyError :
+                    dwells[dwell] = 1
+            if trip_has_dwells :
+                trips_with_dwells += 1
+        if route_has_dwells :
+            routes_with_dwells += 1
+    print "DWELL SUMMARY"
+    print "routes with dwells %d / %d (%f%%)" % (routes_with_dwells, len(route_for_idx), routes_with_dwells * 100.0 / len(route_for_idx))
+    print "trips with dwells %d / %d (%f%%)" % (trips_with_dwells, ntrips, trips_with_dwells * 100.0 / ntrips)
+    print "isolated dwells %d / %d (%f%%)" % (isolated_dwells, ndwells, isolated_dwells * 100.0 / ndwells)
+    print "HISTOGRAM"
+    print "dwell, frequency"
+    for dwell, n in dwells.items() :
+        print '%d,%d' % (dwell, n)
+    sys.exit(0)
+    

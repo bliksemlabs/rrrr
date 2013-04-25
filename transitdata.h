@@ -48,8 +48,8 @@ struct transit_data {
     char *route_ids;
     int trip_id_width;
     char *trip_ids;
-    uint32_t *trip_active;
-    uint32_t *route_active;
+    int *trip_active;
+    int *route_active;
 };
 
 void transit_data_load(char* /*filename*/, transit_data_t*);
@@ -57,6 +57,7 @@ void transit_data_load(char* /*filename*/, transit_data_t*);
 void transit_data_close(transit_data_t*);
 
 void transit_data_dump(transit_data_t*);
+
 
 int *transit_data_stops_for_route(transit_data_t, int route, int **next_route);
 
@@ -73,7 +74,7 @@ char *transit_data_route_id_for_index(transit_data_t*, int route_index);
 
 char *transit_data_trip_ids_for_route_index(transit_data_t*, int route_index);
 
-uint32_t *transit_data_trip_masks_for_route_index(transit_data_t *td, int route_index);
+int *transit_data_trip_masks_for_route_index(transit_data_t *td, int route_index);
 
 #endif // _TRANSIT_DATA_H
 
