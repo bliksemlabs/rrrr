@@ -88,7 +88,8 @@ int trie_load(trie_t *t, transit_data_t *td) {
         int c, word_len = strlen(stopname);
 
         for (int j = 0; j <= word_len; j++) {
-            c = stopname[j];
+            /* lowercase */
+            c = stopname[j] >= 'A' && stopname[j] <= 'Z' ? stopname[j] | 0x60 : stopname[j];
             if (c == '\0') {
                 t->index = global_index;
                 global_index++;
