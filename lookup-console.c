@@ -58,13 +58,14 @@ int main(int argc, char *argv[]){
 
   transit_data_load(RRRR_INPUT_FILE, &tdata);
   trie_load(t, &tdata);
- 
+  char suffix[512];
+
   while (!kbhit() && len < 255){
     // getting the pressed key...
     ch = getchar();
 
     if (ch == 26 || ch == 10 || ch == 27) {
-        index = trie_complete(t, text);
+        index = trie_complete(t, text, suffix);
         //printf("\nResult: %d\n", index);
         //printf("\n");
 
@@ -87,8 +88,8 @@ int main(int argc, char *argv[]){
     }
     
     putchar(ch);
-    index = trie_complete(t, text);
-    printf("                                         %d                \r%s", index, text);
+    index = trie_complete(t, text, suffix);
+    printf("%s                                         %d                \r%s", suffix, index, text);
   }
 
   //Cleanup

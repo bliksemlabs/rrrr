@@ -55,7 +55,7 @@ int trie_prefix(trie_t *t, char *prefix) {
     return t->node;
 }
 
-unsigned int trie_complete(trie_t *t, char *prefix) {
+unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
     int extra = 0;
     int c;
     while ((c = *prefix++)) {
@@ -69,12 +69,14 @@ unsigned int trie_complete(trie_t *t, char *prefix) {
     while (c < TRIE_SIZE && t->node == 1) {
         c++;
         if (t->chars[c] != NULL) {
-            putchar(c);
+            suffix[extra] = c;
             t = t->chars[c];
             c = 0;
             extra++;
         }
     }
+
+    suffix[extra] = '\0';
 
     return t->index;
 }
