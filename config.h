@@ -8,7 +8,7 @@
 #define RRRR_MAX_ROUNDS 8
 
 // specify in seconds
-#define RRRR_WALK_SLACK_SEC 0
+#define RRRR_WALK_SLACK_SEC 60
 // specify in internal 2-second intervals!
 #define RRRR_XFER_SLACK_2SEC 0
 

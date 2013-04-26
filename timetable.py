@@ -324,10 +324,13 @@ for idx, route in enumerate(route_for_idx) :
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
         if departure_time < arrival_time :
             print "negative dwell time"
-        if departure_time > crazy_threshold :
+            # do not write UNREACHABLE in util.h because this may cause problems
+            write_2ushort(0xFFF0 - 1, 0xFFF0 - 1) 
+        elif departure_time > crazy_threshold :
             print 'suspect departure time:', departure_time, time_string_from_seconds(departure_time)
-            #write_ushort(0xFFF0 - 1) # do not write UNREACHABLE in util.h because this may cause problems
-        write_2ushort(arrival_time >> 1, departure_time >> 1) 
+            write_2ushort(0xFFF0 - 1, 0xFFF0 - 1) 
+        else :
+            write_2ushort(arrival_time >> 1, departure_time >> 1) 
         stoffset += 1 
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
