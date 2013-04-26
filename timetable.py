@@ -65,9 +65,9 @@ struct_1I = Struct('I') # a single UNSIGNED int
 def writeint(x) :
     out.write(struct_1I.pack(x));
 
-struct_1H = Struct('H') # a single UNSIGNED short 
-def write_ushort(x) : 
-    out.write(struct_1H.pack(x));
+struct_2H = Struct('HH') # a single UNSIGNED short 
+def write_2ushort(x, y) : 
+    out.write(struct_2H.pack(x, y));
         
 struct_2f = Struct('2f') # 2 floats
 def write2floats(x, y) :
@@ -322,11 +322,12 @@ for idx, route in enumerate(route_for_idx) :
     for arrival_time, departure_time in fetch_stop_times(trip_ids) :
         # 2**16 / 60 / 60 is only 18 hours
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
+        if departure_time < arrival_time :
+            print "negative dwell time"
         if departure_time > crazy_threshold :
             print 'suspect departure time:', departure_time, time_string_from_seconds(departure_time)
-            write_ushort(0xFFF0 - 1) # do not write UNREACHABLE in util.h because this may cause problems
-        else :
-            write_ushort(departure_time >> 1) 
+            #write_ushort(0xFFF0 - 1) # do not write UNREACHABLE in util.h because this may cause problems
+        write_2ushort(arrival_time >> 1, departure_time >> 1) 
         stoffset += 1 
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)

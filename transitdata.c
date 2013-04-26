@@ -73,7 +73,7 @@ void transit_data_load(char *filename, transit_data_t *td) {
     td->stops = (stop_t*) (b + header->loc_stops);
     td->routes = (route_t*) (b + header->loc_routes);
     td->route_stops = (int*) (b + header->loc_route_stops);
-    td->stop_times = (rtime_t*) (b + header->loc_stop_times);
+    td->stop_times = (stoptime_t*) (b + header->loc_stop_times);
     td->stop_routes = (int*) (b + header->loc_stop_routes);
     td->transfers = (transfer_t*) (b + header->loc_transfers);
     //maybe replace with pointers because there's a lot of wasted space?
@@ -106,7 +106,7 @@ inline int transit_data_routes_for_stop(transit_data_t *td, int stop, int **rout
     return stop1.stop_routes_offset - stop0.stop_routes_offset;
 }
 
-inline rtime_t *transit_data_stoptimes_for_route(transit_data_t td, int route, rtime_t **next_route) {
+inline stoptime_t *transit_data_stoptimes_for_route(transit_data_t td, int route, stoptime_t **next_route) {
     route_t route0 = td.routes[route];
     route_t route1 = td.routes[route + 1];
     *next_route = td.stop_times + route1.stop_times_offset;

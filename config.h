@@ -8,9 +8,9 @@
 #define RRRR_MAX_ROUNDS 8
 
 // specify in seconds
-#define RRRR_WALK_SLACK_SEC 120
+#define RRRR_WALK_SLACK_SEC 0
 // specify in internal 2-second intervals!
-#define RRRR_XFER_SLACK_2SEC 120
+#define RRRR_XFER_SLACK_2SEC 0
 
 // bind does not work with names (localhost) but does work with * (all interfaces)
 #define CLIENT_ENDPOINT "tcp://127.0.0.1:9292"

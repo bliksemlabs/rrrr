@@ -186,8 +186,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             int *s_end;    // pointer one element beyond the end of array
             int *s = transit_data_stops_for_route(router.tdata, route, &s_end);
             int route_nstops = s_end - s;
-            rtime_t *t_end;
-            rtime_t *t = transit_data_stoptimes_for_route(router.tdata, route, &t_end);
+            stoptime_t *t_end;
+            stoptime_t *t = transit_data_stoptimes_for_route(router.tdata, route, &t_end);
             // rtime_t (*route_stop_times)[route_nstops] = t;
             char *trip_ids = transit_data_trip_ids_for_route_index(&(router.tdata), route); 
             uint32_t *trip_masks = transit_data_trip_masks_for_route_index(&(router.tdata), route); 
@@ -204,8 +204,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 /* if we have not yet boarded a trip on this route, see if we can board one */
                 // also handle the case where we hit a better arrival time (this is "more efficient" 
                 // if we scan backward but scanning forward seems reasonably performant)
-                if (trip_index == NONE || last_state->arrival_time + RRRR_XFER_SLACK_2SEC < *t) { 
-                    if (router.best_time[stop] == UNREACHED)        
+                if (trip_index == NONE || last_state->arrival_time + RRRR_XFER_SLACK_2SEC < t->departure) { 
+                    if (router.best_time[stop] == UNREACHED)
                         continue; 
                     if (last_state->arrival_time == UNREACHED) {
                         // boarding at a place that was not reached in the last round!
@@ -215,21 +215,21 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     T printf("hit previously-reached stop %d\n", stop);
                     T transit_data_dump_route(&(router.tdata), route);
                     int trip_next = 0;
-                    rtime_t *t_next = t;
+                    stoptime_t *t_next = t;
                     while (t_next < t_end) {
-                        T printf("    board option %d at %s \n", trip_next, timetext(*t_next));
+                        T printf("    board option %d at %s \n", trip_next, timetext(t_next->departure));
                         T printBits(4, & (trip_masks[trip_next]));
                         T printBits(4, & date_mask);
                         T printf("\n");
                         // if this time is later than the best known for this stop
-                        if ((*t_next >= router.best_time[stop] + RRRR_XFER_SLACK_2SEC) &&  
+                        if ((t_next->departure >= router.best_time[stop] + RRRR_XFER_SLACK_2SEC) &&  
                             (date_mask & trip_masks[trip_next])) {  // and if this trip is running
-                            T printf("    final option %d at %s\n", trip_next, timetext(*t_next));
+                            T printf("    final option %d at %s\n", trip_next, timetext(t_next->departure));
                             t = t_next;
                             trip_index = trip_next;
                             trip_id = trip_ids + trip_id_width * trip_index;
                             board_stop = stop;
-                            board_time = *t_next;
+                            board_time = t_next->departure;
                             // printf ("boarded %s with mask ", trip_id);
                             // printBits (4, & (trip_masks[trip_next]));
                             // printf ("\n");
@@ -242,22 +242,22 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         T printf("    no suitable trip to board.\n");
                     }
                     continue;
-                } else if (*t < router.best_time[stop]) { // will also hit UNREACHED (UINT16_MAX)
+                } else if (t->arrival < router.best_time[stop]) { // will also hit UNREACHED (UINT16_MAX)
                     /* We have already boarded a trip along this route. 
                        Check if this trip provides improved arrival times.
                        Only update if the new time is better than the best known,
                        remembering that n_transfers is increasing with each round,
                        and only Pareto-optimal paths count. */
-                    state->arrival_time = *t;
-                    router.best_time[stop] = *t;
+                    state->arrival_time = t->arrival;
+                    router.best_time[stop] = t->arrival;
                     state->back_route = route; 
                     state->back_trip_id = route_id; // changed for demo, was: trip_id; 
                     state->back_stop = board_stop;
                     state->board_time = board_time;
-                    if (*t < router.best_time[req.to]) { // "target pruning" sec. 3.1
+                    if (t->arrival < router.best_time[req.to]) { // "target pruning" sec. 3.1
                         bitset_set(router.updated_stops, stop); // mark stop for next round.
                     }
-                    T printf("set stop %d to %s\n", stop, timetext(*t));
+                    T printf("set stop %d to %s\n", stop, timetext(t->arrival));
                 } 
             } // end for (stop)
         } // end for (route)

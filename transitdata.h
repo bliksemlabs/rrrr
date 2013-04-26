@@ -26,6 +26,12 @@ struct transfer {
     float dist_meters;
 };
 
+typedef struct stoptime stoptime_t;
+struct stoptime {
+    rtime_t arrival;
+    rtime_t departure;
+};
+
 // treat entirely as read-only?
 typedef struct transit_data transit_data_t;
 struct transit_data {
@@ -37,7 +43,7 @@ struct transit_data {
     stop_t *stops;
     route_t *routes;
     int *route_stops;
-    rtime_t *stop_times;
+    stoptime_t *stop_times;
     int *stop_routes;
     transfer_t *transfers; 
     // optional data -- NULL pointer means it is not available
@@ -48,8 +54,8 @@ struct transit_data {
     char *route_ids;
     int trip_id_width;
     char *trip_ids;
-    int *trip_active;
-    int *route_active;
+    uint32_t *trip_active;
+    uint32_t *route_active;
 };
 
 void transit_data_load(char* /*filename*/, transit_data_t*);
@@ -64,7 +70,7 @@ int *transit_data_stops_for_route(transit_data_t, int route, int **next_route);
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 int transit_data_routes_for_stop(transit_data_t*, int stop, int **routes_ret);
 
-rtime_t *transit_data_stoptimes_for_route(transit_data_t, int route, rtime_t **next_route);
+stoptime_t *transit_data_stoptimes_for_route(transit_data_t, int route, stoptime_t **next_route);
 
 void transit_data_dump_route(transit_data_t *td, int route);
 
@@ -74,7 +80,7 @@ char *transit_data_route_id_for_index(transit_data_t*, int route_index);
 
 char *transit_data_trip_ids_for_route_index(transit_data_t*, int route_index);
 
-int *transit_data_trip_masks_for_route_index(transit_data_t *td, int route_index);
+uint32_t *transit_data_trip_masks_for_route_index(transit_data_t *td, int route_index);
 
 #endif // _TRANSIT_DATA_H
 
