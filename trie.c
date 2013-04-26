@@ -12,6 +12,7 @@ unsigned int global_index = 0;
 
 inline trie_t *trie_init(void) {
     trie_t *t = (trie_t *) malloc(sizeof(trie_t));
+    memset(t, 0, sizeof(trie_t));
     t->node = 0;
     t->index = -1;
     return t;
@@ -76,46 +77,35 @@ unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
         }
     }
 
-    suffix[extra] = '\0';
+    suffix[extra] = NULL;
 
     return t->index;
 }
 
 int trie_load(trie_t *t, transit_data_t *td) {
     trie_t *root = t;
-    int words = 0;
 
     for (int i = 0; i < td->nstops; i++) {
         char *stopname = transit_data_stop_id_for_index(td, i);
         int c, word_len = strlen(stopname);
 
-        for (int j = 0; j <= word_len; j++) {
+        for (int j = 0; j < word_len; j++) {
             /* lowercase */
             c = stopname[j] >= 'A' && stopname[j] <= 'Z' ? stopname[j] | 0x60 : stopname[j];
-            if (c == '\0') {
-                t->index = global_index;
-                global_index++;
-                t->chars[TRIE_SENTINEL] = trie_init();
-                words++;
-                t = root;
-            } else {
-                if (c >= 0 && c < TRIE_SIZE) {
-                    assert(c >= 0 && c < TRIE_SIZE);
-                    if (t->chars[c] == NULL) {
-                        t->chars[c] = trie_init();
-                    }
-                    t->node = 1;
-                    t = t->chars[c];
-                }
+            assert(c >= 0 && c < TRIE_SIZE);
+            if (t->chars[c] == NULL) {
+                t->chars[c] = trie_init();
             }
+            t->node = 1;
+            t = t->chars[c];
         }
-        if (t != root && word_len > 0) {
-            t->index = global_index;
-            global_index++;
-            t->chars[TRIE_SENTINEL] = trie_init();
-        }
+        
+        t->index = global_index;
+        global_index++;
+//        t->chars[TRIE_SENTINEL] = trie_init();
+        t = root;
     }
-    return words;
+    return td->nstops;
 }
 
 void trie_strip(trie_t *t, char *src, char *dest) {

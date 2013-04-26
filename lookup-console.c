@@ -60,6 +60,9 @@ int main(int argc, char *argv[]){
   trie_load(t, &tdata);
   char suffix[512];
 
+  text[0] = '\0';
+  suffix[0] = '\0';
+
   while (!kbhit() && len < 255){
     // getting the pressed key...
     ch = getchar();
