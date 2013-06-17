@@ -66,8 +66,16 @@ int main (int argc, char **argv) {
     // read and range-check parameters
     int n_requests = 1;
     int concurrency = RRRR_TEST_CONCURRENCY;
-    if (argc > 1)
-        randomize = !(strcmp(argv[1], "rand"));
+    if (argc != 4)
+        usage();
+    
+    if (strcmp(argv[1], "rand") == 0) {
+        randomize = true;
+    } else if (strcmp(argv[1], "id") == 0) {
+        randomize = false;
+    } else {
+        usage();
+    }
 
     if (randomize && argc > 2) {
         n_requests = atoi(argv[2]);

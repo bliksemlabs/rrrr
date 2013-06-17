@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include "trie.h"
-#include "transitdata.h"
+#include "tdata.h"
 #include "config.h"
 
 static struct termios g_old_kbd_mode;
@@ -53,10 +53,10 @@ int main(int argc, char *argv[]){
   int len = 0;
   unsigned index = 0;
   char text[255];
-  transit_data_t tdata;
+  tdata_t tdata;
   trie_t *t = trie_init();
 
-  transit_data_load(RRRR_INPUT_FILE, &tdata);
+  tdata_load(RRRR_INPUT_FILE, &tdata);
   trie_load(t, &tdata);
   char suffix[512];
 

@@ -7,7 +7,7 @@
 #include <assert.h>
 #include "config.h"
 #include "rrrr.h"
-#include "transitdata.h"
+#include "tdata.h"
 #include "router.h"
 
 int main(int argc, char **argv) {
@@ -20,13 +20,13 @@ int main(int argc, char **argv) {
     syslog(LOG_INFO, "worker starting up");
     
     // load transit data from disk
-    transit_data_t tdata;
-    transit_data_load(RRRR_INPUT_FILE, &tdata);
+    tdata_t tdata;
+    tdata_load(RRRR_INPUT_FILE, &tdata);
     
     // initialize router
     router_t router;
     router_setup(&router, &tdata);
-    //transit_data_dump(&tdata); // debug timetable file format
+    //tdata_dump(&tdata); // debug timetable file format
     
     // establish zmq connection
     zctx_t *zctx = zctx_new ();
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
     // zframe_send (&frame, zmq_sock, 0);
     // syslog(LOG_INFO, "departure message sent to load balancer");
     // zmsg_t *msg = zmsg_recv (zmq_sock);
-    transit_data_close(&tdata);
+    tdata_close(&tdata);
     zctx_destroy (&zctx); //zmq_close(socket) necessary before context destroy?
     exit(EXIT_SUCCESS);
 }

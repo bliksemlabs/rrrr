@@ -1,6 +1,6 @@
-/* transitdata.h */
-#ifndef _TRANSIT_DATA_H
-#define _TRANSIT_DATA_H
+/* tdata.h */
+#ifndef _TDATA_H
+#define _TDATA_H
 
 #include "geometry.h"
 #include "util.h"
@@ -14,10 +14,12 @@ struct stop {
 };
 
 typedef struct route route_t;
-struct route {
+struct route { // switch to unsigned
     int route_stops_offset;
     int stop_times_offset;
     int trip_ids_offset;
+    int n_stops;
+    int n_trips;
 };
 
 typedef struct transfer transfer_t;
@@ -33,8 +35,8 @@ struct stoptime {
 };
 
 // treat entirely as read-only?
-typedef struct transit_data transit_data_t;
-struct transit_data {
+typedef struct tdata tdata_t;
+struct tdata {
     void *base;
     size_t size;
     // required data
@@ -58,29 +60,28 @@ struct transit_data {
     uint32_t *route_active;
 };
 
-void transit_data_load(char* /*filename*/, transit_data_t*);
+void tdata_load(char* /*filename*/, tdata_t*);
 
-void transit_data_close(transit_data_t*);
+void tdata_close(tdata_t*);
 
-void transit_data_dump(transit_data_t*);
+void tdata_dump(tdata_t*);
 
-
-int *transit_data_stops_for_route(transit_data_t, int route, int **next_route);
+int *tdata_stops_for_route(tdata_t, int route);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-int transit_data_routes_for_stop(transit_data_t*, int stop, int **routes_ret);
+int tdata_routes_for_stop(tdata_t*, int stop, int **routes_ret);
 
-stoptime_t *transit_data_stoptimes_for_route(transit_data_t, int route, stoptime_t **next_route);
+stoptime_t *tdata_stoptimes_for_route(tdata_t*, int route_index);
 
-void transit_data_dump_route(transit_data_t *td, int route);
+void tdata_dump_route(tdata_t*, int route_index);
 
-char *transit_data_stop_id_for_index(transit_data_t*, int stop_index);
+char *tdata_stop_id_for_index(tdata_t*, int stop_index);
 
-char *transit_data_route_id_for_index(transit_data_t*, int route_index);
+char *tdata_route_id_for_index(tdata_t*, int route_index);
 
-char *transit_data_trip_ids_for_route_index(transit_data_t*, int route_index);
+char *tdata_trip_ids_for_route(tdata_t*, int route_index);
 
-uint32_t *transit_data_trip_masks_for_route_index(transit_data_t *td, int route_index);
+uint32_t *tdata_trip_masks_for_route(tdata_t*, int route_index);
 
-#endif // _TRANSIT_DATA_H
+#endif // _TDATA_H
 

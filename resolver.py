@@ -35,7 +35,7 @@ def trip_info(trip_id) :
 legs = []
 for line in sys.stdin.readlines() :
     try :
-        tripid, fromid, fromtime, toid, totime = line.split()
+        tripid, fromid, fromtime, toid, totime = line.split(';')
         line = '%5s - %5s   %s to %s [%s]' % (fromtime[:5], totime[:5], stop_name(fromid), stop_name(toid), trip_info(tripid))
     except :
         pass

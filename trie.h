@@ -4,7 +4,7 @@
 #define TRIE_SIZE 128
 #define TRIE_SENTINEL 0
 
-#include "transitdata.h"
+#include "tdata.h"
 
 typedef struct _trie_t {
     struct _trie_t *chars[TRIE_SIZE];
@@ -17,7 +17,7 @@ void trie_add(trie_t *, char *);
 int trie_exists(trie_t *, char *);
 int trie_prefix(trie_t *, char *);
 unsigned int trie_complete(trie_t *, char *, char *);
-int trie_load(trie_t *, transit_data_t *);
+int trie_load(trie_t *, tdata_t *);
 void trie_strip(trie_t *, char *, char *);
 void trie_free(trie_t *);
 

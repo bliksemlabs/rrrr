@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "trie.h"
-#include "transitdata.h"
+#include "tdata.h"
 
 unsigned int global_index = 0;
 
@@ -82,11 +82,11 @@ unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
     return t->index;
 }
 
-int trie_load(trie_t *t, transit_data_t *td) {
+int trie_load(trie_t *t, tdata_t *td) {
     trie_t *root = t;
 
     for (int i = 0; i < td->nstops; i++) {
-        char *stopname = transit_data_stop_id_for_index(td, i);
+        char *stopname = tdata_stop_id_for_index(td, i);
         int c, word_len = strlen(stopname);
 
         for (int j = 0; j < word_len; j++) {

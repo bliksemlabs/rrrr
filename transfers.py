@@ -6,8 +6,8 @@ import math, sys
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 
 verbose = False
-RADIUS = 400 # meters
-OBSTRUCTION = 1.3 #factor to expand straight-line distance
+RADIUS = 800 # meters
+OBSTRUCTION = 1.3 # factor to expand straight-line distance
 range_lat = RADIUS / 111111.111
 
 if len(sys.argv) < 2 :

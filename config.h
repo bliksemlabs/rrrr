@@ -20,10 +20,17 @@
 // #define CLIENT_ENDPOINT "ipc://client_pipe"
 // #define WORKER_ENDPOINT "ipc://worker_pipe"
 
+// #define INFO
 // #define DEBUG
 // #define TRACE
 
 /* http://stackoverflow.com/questions/1644868/c-define-macro-for-debug-printing */
+#ifdef INFO
+ #define I 
+#else
+ #define I for(;0;)
+#endif
+
 #ifdef DEBUG
  #define D 
 #else

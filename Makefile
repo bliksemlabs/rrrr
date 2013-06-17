@@ -15,13 +15,13 @@ all: $(BINS)
 brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
-workerrrr: bitset.o qstring.o router.o transitdata.o util.o worker.o bitset.o
+workerrrr: bitset.o qstring.o router.o tdata.o util.o worker.o bitset.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-client: bitset.o qstring.o router.o transitdata.o util.o client.o
+client: bitset.o qstring.o router.o tdata.o util.o client.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-lookup-console: transitdata.o util.o lookup-console.o trie.o
+lookup-console: tdata.o util.o lookup-console.o trie.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 clean:

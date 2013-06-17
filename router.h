@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
-#include "transitdata.h"
+#include "tdata.h"
 #include "bitset.h"
 #include "util.h"
 
@@ -21,7 +21,7 @@ struct router_state {
 
 typedef struct router router_t;
 struct router {
-    transit_data_t tdata;
+    tdata_t tdata;
     // scratch space for solving
     // making this opaque requires more dynamic allocation
     int table_size;
@@ -41,7 +41,7 @@ struct router_request {
     bool arrive_by; 
 };
 
-void router_setup(router_t*, transit_data_t*);
+void router_setup(router_t*, tdata_t*);
 
 bool router_request_from_qstring(router_request_t*);
 

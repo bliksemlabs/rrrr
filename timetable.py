@@ -6,10 +6,14 @@ from struct import Struct
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
 from datetime import timedelta, date
 
-if len(sys.argv) != 3 :
-    print 'usage: timetable.py inputfile.gtfsdb YYYY-MM-DD'
+if len(sys.argv) < 2 :
+    USAGE = """usage: timetable.py inputfile.gtfsdb [calendar start date] 
+    If a start date is provided in YYYY-MM-DD format, a calendar will be built for the 32 days following the given date. 
+    Otherwise the service calendar will be analyzed and the month with the maximum number of running services will be used."""
+    print USAGE
     exit(1)
-    
+
+# first command line parameter: the gtfsdb to convert    
 gtfsdb_file = sys.argv[1]
 try :
     with open(gtfsdb_file) as f :
@@ -17,22 +21,52 @@ try :
 except IOError as e :
     print 'gtfsdb file %s cannot be opened' % gtfsdb_file
     exit(1)
+    
 out = open("./timetable.dat", "wb")
 stops_out = open("./stops", "wb") # ID <-> StopName map for the geocoder
 
+feed_start_date, feed_end_date = db.date_range()
+print 'feed covers %s -- %s' % (feed_start_date, feed_end_date)
 
+def find_max_service () :
+    n_services_on_day = []
+    # apply calendars (day-of-week)
+    day_masks = [ [ x != 0 for x in c[1:8] ] for c in db.execute('select * from calendar') ]
+    feed_date = feed_start_date
+    while feed_date <= feed_end_date :
+        feed_date += timedelta(days = 1)
+        count = 0
+        for day_mask in day_masks :
+            if day_mask[feed_date.weekday()] :
+                count += 1
+        n_services_on_day.append(count)
+    # apply single-day exceptions
+    for service_id, text_date, exception_type in db.execute('select * from calendar_dates') :
+        service_date = date( *map(int, (text_date[:4], text_date[4:6], text_date[6:8])) )
+        date_offset = service_date - feed_start_date
+        day_offset = date_offset.days
+        # print service_date, day_offset
+        if exception_type == 1 :
+            n_services_on_day[day_offset] += 1
+        else :
+            n_services_on_day[day_offset] -= 1
+    n_month = [ sum(n_services_on_day[i:i+32]) for i in range(len(n_services_on_day) - 32) ]
+    max_date, max_n_services = max(enumerate(n_month), key = lambda x : x[1])
+    max_date = feed_start_date + timedelta(days = max_date)
+    print "32-day period with the maximum number of services begins %s (%d services)" % (max_date, max_n_services)  
+    return max_date 
 
-#############CALENDAR
-
-
-# second param: 32-day calendar start date
-start_date = date( *map(int, sys.argv[2].split('-')) )
+# second command line parameter: start date for 32-day calendar
+try :
+    start_date = date( *map(int, sys.argv[2].split('-')) )
+except :
+    print 'scanning service calendar to find the month with maximum service...'
+    start_date = find_max_service()
 print 'calendar start date is %s' % start_date
 
 sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
-print 'feed covers %s -- %s' % db.date_range()
-
+                    
 bitmask_for_sid = {}
 for sid in sids :
     bitmask_for_sid[sid] = 0
@@ -60,6 +94,8 @@ for (tid, sid) in db.execute(query) :
 
 #switch to unsigned
 #pack arrival and departure into 4 bytes w/ offset?
+
+# C structs, must match those defined in .h files.
 
 struct_1I = Struct('I') # a single UNSIGNED int
 def writeint(x) :
@@ -198,6 +234,8 @@ all_routes = db.compile_trip_bundles(reporter=sys.stdout) # slow call
 # and record active-days-bitmasks for each route, allowing us to filter out inactive routes on a specific search day.
 route_mask_for_idx = [] # one active-days-bitmask for each route (bundle of trips)
 route_for_idx = []
+route_n_stops = [] # number of stops in each route
+route_n_trips = [] # number of trips in each route
 n_trips_total = 0
 n_trips_removed = 0
 n_routes_removed = 0
@@ -215,17 +253,21 @@ for route in all_routes :
             else :
                 n_trips_removed += 1
         except KeyError:
-            continue
+            continue # might this accidentally get the lists out of sync?
     # print 'mask for all trips is {:032b}'.format(route_mask)
     if route_mask != 0 :
         route.trip_ids = running_trip_ids
         route_for_idx.append(route)
         route_mask_for_idx.append(route_mask)
+        route_n_stops.append(len(route.pattern.stop_ids))
+        route_n_trips.append(len(running_trip_ids))
     else :
         n_routes_removed += 1
 nroutes = len(route_for_idx) # this is the final culled list of routes
 print '%d / %d routes had running services, %d / %d trips removed' % (nroutes, len(all_routes), n_trips_removed, n_trips_total)
 del all_routes, n_trips_total, n_trips_removed, n_routes_removed
+route_n_stops.append(0) # sentinel
+route_n_trips.append(0) # sentinel
 
 # We have two definitions of "route".
 # GTFS routes are totally arbitrary groups of trips (but fortunately NL GTFS routes correspond with 
@@ -260,7 +302,8 @@ for route in route_for_idx :
         desc = '%s %s' % (modes[mode], short_name)
         if long_name is not None :
             desc += ' (%s)' % long_name
-    desc = ';'.join([desc, headsign])
+    if (headsign is not None) :
+        desc = ';'.join([desc, headsign])
     # print desc
     route_id_for_idx.append(desc)
 
@@ -391,9 +434,15 @@ for stop in zip (stop_routes_offsets, transfers_offsets) :
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-struct_3i = Struct('iii')
-for route in zip (route_stops_offsets, stop_times_offsets, trip_ids_offsets) :
-    out.write(struct_3i.pack(*route));
+route_t = Struct('iiiii') # change to unsigned
+route_t_fields = [route_stops_offsets, stop_times_offsets, trip_ids_offsets, route_n_stops, route_n_trips]
+# check that all list lengths match the total number of routes. 
+for l in route_t_fields :
+    # the extra last route is a sentinel so we can derive list lengths for the last true route.
+    assert len(l) == nroutes + 1
+for route in zip (*route_t_fields) :
+    # print route
+    out.write(route_t.pack(*route));
 
 print "writing out sorted stop ids to string table"
 # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.

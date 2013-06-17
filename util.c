@@ -15,7 +15,7 @@ static char buf[32];
 char *btimetext(rtime_t rt, char *buf, int buflen) {
     if (rt == UNREACHED) {
         return "   --   ";
-    }        
+    }
     int t = (int)rt << 1;
     int s = t % 60;
     int m = t / 60;
