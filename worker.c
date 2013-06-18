@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
             router_request_t *req;
             req = (router_request_t*) zframe_data (frame);
             //router_request_dump(&router, req);
-            router_route(&router, req, false);
+            router_route(&router, req);
             int result_length = router_result_dump(&router, req, result_buf, 4096);
             zframe_reset (frame, result_buf, result_length);
             //zframe_reset (frame, "OK", 2);

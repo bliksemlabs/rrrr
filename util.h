@@ -13,10 +13,12 @@
 typedef uint16_t rtime_t;
 
 // UNREACHED must be bigger than any time used in the router for the algorithm to work right
+// Ideally we should never rely on the numerical value of these preprocessor constants
+// since they will be used in both departAfter and arriveBy searches.
 #define UNREACHED UINT16_MAX
 #define NONE -1
 
-void die(const char* /* message */ );
+void die(const char* message);
 
 char *btimetext(rtime_t t, char *buf, int buflen);
 

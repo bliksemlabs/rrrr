@@ -22,7 +22,7 @@
 // #define CLIENT_ENDPOINT "ipc://client_pipe"
 // #define WORKER_ENDPOINT "ipc://worker_pipe"
 
-//#define INFO
+// #define INFO
 // #define DEBUG
 // #define TRACE
 
