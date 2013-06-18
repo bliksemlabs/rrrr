@@ -12,7 +12,7 @@
 
 typedef struct router_state router_state_t;
 struct router_state {
-    rtime_t arrival_time;
+    rtime_t time;
     int back_stop;
     int back_route;
     rtime_t board_time;
@@ -51,7 +51,7 @@ void router_request_randomize(router_request_t*);
 
 void router_teardown(router_t*);
 
-bool router_route(router_t*, router_request_t*);
+bool router_route(router_t*, router_request_t*, bool arrv);
 
 int router_result_dump(router_t*, router_request_t*, char *buf, int buflen); // return num of chars written
 

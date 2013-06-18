@@ -1,4 +1,5 @@
-/* transitdata.c : handles memory mapped data file with timetable etc. */
+/* tdata.c : handles memory mapped data file containing transit timetable etc. */
+
 #include "tdata.h" // make sure it works alone
 #include "util.h"
 #include <fcntl.h>
@@ -12,8 +13,8 @@
 typedef struct tdata_header tdata_header_t;
 struct tdata_header {
     char version_string[8]; // should read "TTABLEV1"
-    int nstops;
-    int nroutes;
+    int n_stops;
+    int n_routes;
     int loc_stops;
     int loc_routes;
     int loc_route_stops;
@@ -66,8 +67,8 @@ void tdata_load(char *filename, tdata_t *td) {
     tdata_header_t *header = b;
     if( strncmp("TTABLEV1", header->version_string, 8) )
         die("the input file does not appear to be a timetable");
-    td->nstops = header->nstops;
-    td->nroutes = header->nroutes;
+    td->n_stops = header->n_stops;
+    td->n_routes = header->n_routes;
     td->stop_coords = (coord_t*) (b + 8 + 8 * sizeof(int)); // position 40
     td->stops = (stop_t*) (b + header->loc_stops);
     td->routes = (route_t*) (b + header->loc_routes);
@@ -103,8 +104,7 @@ inline int tdata_routes_for_stop(tdata_t *td, int stop, int **routes_ret) {
 }
 
 inline stoptime_t *tdata_stoptimes_for_route(tdata_t *td, int route_index) {
-    route_t *route = &( td->routes[route_index] );
-    return td->stop_times + route->stop_times_offset;
+    return td->stop_times + td->routes[route_index].stop_times_offset;
 }
 
 void tdata_dump_route(tdata_t *td, int route_idx) {
@@ -127,10 +127,10 @@ void tdata_dump_route(tdata_t *td, int route_idx) {
 
 void tdata_dump(tdata_t *td) {
     printf("\nCONTEXT\n"
-           "nstops: %d\n"
-           "nroutes: %d\n", td->nstops, td->nroutes);
+           "n_stops: %d\n"
+           "n_routes: %d\n", td->n_stops, td->n_routes);
     printf("\nSTOPS\n");
-    for (int i = 0; i < td->nstops; i++) {
+    for (int i = 0; i < td->n_stops; i++) {
         printf("stop %d at lat %f lon %f\n", i, td->stop_coords[i].lat, td->stop_coords[i].lon);
         stop_t s0 = td->stops[i];
         stop_t s1 = td->stops[i+1];
@@ -144,7 +144,7 @@ void tdata_dump(tdata_t *td) {
         printf("\n");
     }
     printf("\nROUTES\n");
-    for (int i = 0; i < td->nroutes; i++) {
+    for (int i = 0; i < td->n_routes; i++) {
         printf("route %d\n", i);
         route_t r0 = td->routes[i];
         route_t r1 = td->routes[i+1];
@@ -158,11 +158,11 @@ void tdata_dump(tdata_t *td) {
         printf("\n");
     }
     printf("\nSTOPIDS\n");
-    for (int i = 0; i < td->nstops; i++) {
+    for (int i = 0; i < td->n_stops; i++) {
         printf("stop %03d has id %s \n", i, tdata_stop_id_for_index(td, i));
     }
     printf("\nROUTEIDS, TRIPIDS\n");
-    for (int i = 0; i < td->nroutes; i++) {
+    for (int i = 0; i < td->n_routes; i++) {
         printf("route %03d has id %s and first trip id %s \n", i, 
             tdata_route_id_for_index(td, i),
             tdata_trip_ids_for_route(td, i));

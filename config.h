@@ -12,6 +12,8 @@
 // specify in internal 2-second intervals!
 #define RRRR_XFER_SLACK_2SEC 0
 
+// TODO: Max transfer time to avoid unnecessary branching?
+
 // bind does not work with names (localhost) but does work with * (all interfaces)
 #define CLIENT_ENDPOINT "tcp://127.0.0.1:9292"
 #define WORKER_ENDPOINT "tcp://127.0.0.1:9293"
@@ -20,7 +22,7 @@
 // #define CLIENT_ENDPOINT "ipc://client_pipe"
 // #define WORKER_ENDPOINT "ipc://worker_pipe"
 
-// #define INFO
+//#define INFO
 // #define DEBUG
 // #define TRACE
 

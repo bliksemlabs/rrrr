@@ -40,8 +40,8 @@ struct tdata {
     void *base;
     size_t size;
     // required data
-    int nstops;
-    int nroutes;
+    int n_stops;
+    int n_routes;
     stop_t *stops;
     route_t *routes;
     int *route_stops;

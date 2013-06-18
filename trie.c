@@ -85,7 +85,7 @@ unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
 int trie_load(trie_t *t, tdata_t *td) {
     trie_t *root = t;
 
-    for (int i = 0; i < td->nstops; i++) {
+    for (int i = 0; i < td->n_stops; i++) {
         char *stopname = tdata_stop_id_for_index(td, i);
         int c, word_len = strlen(stopname);
 
@@ -105,7 +105,7 @@ int trie_load(trie_t *t, tdata_t *td) {
 //        t->chars[TRIE_SENTINEL] = trie_init();
         t = root;
     }
-    return td->nstops;
+    return td->n_stops;
 }
 
 void trie_strip(trie_t *t, char *src, char *dest) {

@@ -1,5 +1,5 @@
-# CC=clang
-# CFLAGS=-g -march=native -Wall -std=gnu99 -O2 -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+#CC=clang
+#CFLAGS=-g -march=native -Wall -std=gnu99 -O2 -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 CC=gcc
 CFLAGS=-g -march=native -Wall -std=gnu99 -O2
 LIBS=-lzmq -lczmq

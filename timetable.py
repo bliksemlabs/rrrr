@@ -60,7 +60,8 @@ def find_max_service () :
 try :
     start_date = date( *map(int, sys.argv[2].split('-')) )
 except :
-    print 'scanning service calendar to find the month with maximum service...'
+    print 'Scanning service calendar to find the month with maximum service.'
+    print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
     start_date = find_max_service()
 print 'calendar start date is %s' % start_date
 
@@ -282,7 +283,6 @@ modes = { 0: 'tram',
           2: 'train',
           3: 'bus',
           4: 'ferry',
-          # very popular in the netherlands
           5: 'cable car',
           6: 'gondola',
           7: 'funicular' }
@@ -344,7 +344,7 @@ print "saving the stop times for each trip of each route"
 # departures table offsets, which point to the same location if the route has no dwells. This
 # should achieve about 25% space savings with very simple implementation.
 # The problem is that this gets in the way of using the address of the next route block as a termination condition for loops.
-# The pointer arithmetic would need to be replaced with array indexing.
+# The pointer arithmetic would need to be replaced with array indexing (this has now been done, so the change can be made).
 write_text_comment("STOP TIMES")
 loc_stop_times = tell()
 stop_times_offsets = []
