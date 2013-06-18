@@ -77,7 +77,7 @@ unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
         }
     }
 
-    suffix[extra] = NULL;
+    suffix[extra] = 0;
 
     return t->index;
 }
