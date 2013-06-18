@@ -231,7 +231,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             int board_time = NONE; // time when that trip was boarded
             // Iterate over stop indexes within the route. Each one corresponds to a global stop index.
             // Note that the stop times array should be accessed with [trip][route_stop] not [trip][stop].
-            for (int route_stop = req.arrive_by ? route.n_stops : 0;
+            for (int route_stop = req.arrive_by ? route.n_stops - 1 : 0;
                  req.arrive_by ? route_stop >= 0 : route_stop < route.n_stops; 
                  req.arrive_by ? --route_stop : ++route_stop ) {
                 int stop = route_stops[route_stop];
