@@ -5,13 +5,14 @@
 
 #define EARTH_EQUATORIAL_CIRCUMFERENCE 40075017.0
 #define EARTH_MERIDIONAL_CIRCUMFERENCE 40007860.0
-#define INT32_RANGE (2 * INT32_MAX - 1)
+#define INT32_RANGE (2.0 * INT32_MAX - 1.0)
 #define METERS_PER_BRAD_X (EARTH_EQUATORIAL_CIRCUMFERENCE / INT32_RANGE)
-#define METERS_PER_BRAD_Y (EARTH_MERIDIONAL_CIRCUMFERENCE / 2 / INT32_RANGE)
+#define METERS_PER_BRAD_Y (EARTH_MERIDIONAL_CIRCUMFERENCE / 2.0 / INT32_RANGE)
 
 double radians (double degrees) {
     return degrees * M_PI / 180.0;
 }
+
 double degrees (double radians) {
     return radians * 180.0 / M_PI;
 }
@@ -19,6 +20,11 @@ double degrees (double radians) {
 void coord_from_degrees (coord_t *coord, double lat, double lon) {
     coord->y = lat * INT32_MAX / 90.0;
     coord->x = lon * INT32_MAX / 180.0 * cos(radians(lat));
+}
+
+void coord_from_meters (coord_t *coord, double meters_x, double meters_y) {
+    coord->y = meters_y / METERS_PER_BRAD_Y; 
+    coord->x = meters_x / METERS_PER_BRAD_X; 
 }
 
 double coord_xdiff_meters (coord_t *c1, coord_t *c2) {

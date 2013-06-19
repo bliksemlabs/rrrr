@@ -253,10 +253,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     states[last_round][stop].time < UNREACHED - RRRR_XFER_SLACK_2SEC && 
                     states[last_round][stop].time + RRRR_XFER_SLACK_2SEC < 
                     stop_times[trip][route_stop].departure)) {
-                    /* If we have not yet boarded a trip on this route, see if we can board one.
-                       Also handle the case where we hit a stop with an existing better arrival time. 
-                       It would be "more efficient" if we scan backward but scanning forward seems 
-                       reasonably performant. */
+                    // If we have not yet boarded a trip on this route, see if we can board one.
+                    // Also handle the case where we hit a stop with an existing better arrival time.
                     if (router.best_time[stop] == UNREACHED) {
                         // This stop has not been reached, move on to the next one.
                         continue; 

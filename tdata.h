@@ -49,7 +49,7 @@ struct tdata {
     int *stop_routes;
     transfer_t *transfers; 
     // optional data -- NULL pointer means it is not available
-    coord_t *stop_coords;
+    latlon_t *stop_coords;
     int stop_id_width;
     char *stop_ids;
     int route_id_width;

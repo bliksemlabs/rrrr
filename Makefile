@@ -15,7 +15,7 @@ all: $(BINS)
 brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
-workerrrr: bitset.o qstring.o router.o tdata.o util.o worker.o bitset.o
+workerrrr: bitset.o qstring.o router.o tdata.o util.o worker.o bitset.o hashgrid.o geometry.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 client: bitset.o qstring.o router.o tdata.o util.o client.o

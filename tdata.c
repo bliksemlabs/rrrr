@@ -69,7 +69,7 @@ void tdata_load(char *filename, tdata_t *td) {
         die("the input file does not appear to be a timetable");
     td->n_stops = header->n_stops;
     td->n_routes = header->n_routes;
-    td->stop_coords = (coord_t*) (b + 8 + 8 * sizeof(int)); // position 40
+    td->stop_coords = (latlon_t*) (b + 8 + 8 * sizeof(int)); // position 40
     td->stops = (stop_t*) (b + header->loc_stops);
     td->routes = (route_t*) (b + header->loc_routes);
     td->route_stops = (int*) (b + header->loc_route_stops);
