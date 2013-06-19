@@ -10,26 +10,27 @@
 #include "bitset.h"
 #include "util.h"
 
+// Supplemented with the associated stop index, a router_state_t describes a leg of an itinerary.
 typedef struct router_state router_state_t;
 struct router_state {
-    rtime_t time;
-    int back_stop;
-    int back_route;
-    rtime_t board_time;
-    char *back_trip_id;
+    rtime_t time;        // The time when this stop was reached
+    int back_stop;       // The index of the previous stop in the itinerary
+    int back_route;      // The index of the route used to travel from back_stop to here, or WALK
+    rtime_t board_time;  // The time at which the trip within back_route left back_stop
+    char *back_trip_id;  // A text description of the trip used within back_route
 };
 
+// Scratch space for use by the routing algorithm.
+// Making this opaque requires more dynamic allocation.
 typedef struct router router_t;
 struct router {
-    tdata_t tdata;
-    // scratch space for solving
-    // making this opaque requires more dynamic allocation
-    int table_size;
-    rtime_t *best_time;
-    router_state_t *states;
-    BitSet *updated_stops;
-    BitSet *updated_routes;
-    // maybe we should store more routing state in here, like round and sub-scratch pointers
+    tdata_t tdata;          // The transit / timetable data tables
+    rtime_t *best_time;     // The best known time at each stop 
+    router_state_t *states; // One router_state_t per stop, per round
+    BitSet *updated_stops;  // Used to track which stops improved during each round
+    BitSet *updated_routes; // Used to track which routes might have changed during each round
+
+    // We should move more routing state in here, like round and sub-scratch pointers.
 };
 
 typedef struct router_request router_request_t;

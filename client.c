@@ -24,16 +24,14 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     int request_count = 0;
     while (true) {
         router_request_t req;
+        router_request_initialize (&req);
         if (randomize) 
-            router_request_randomize(&req);
+            router_request_randomize (&req);
         else {
             req.from=from_s;
             req.to=to_s;
-            req.time=3600 * 18;
-            req.walk_speed=1.5;
-            req.arrive_by = true;
         }
-        // if (verbose) router_request_dump(&req);
+        // if (verbose) router_request_dump(&router, &req); // router is not available in client
         zmq_send(sock, &req, sizeof(req), 0);
         // syslog (LOG_INFO, "test client thread has sent %d requests\n", request_count);
         char *reply = zstr_recv (sock);

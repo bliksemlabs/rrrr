@@ -17,9 +17,8 @@
 void router_setup(router_t *router, tdata_t *td) {
     srand(time(NULL));
     router->tdata = *td;
-    router->table_size = td->n_stops * RRRR_MAX_ROUNDS;
     router->best_time = malloc(sizeof(rtime_t) * td->n_stops); 
-    router->states = malloc(sizeof(router_state_t) * router->table_size);
+    router->states = malloc(sizeof(router_state_t) * (td->n_stops * RRRR_MAX_ROUNDS));
     router->updated_stops = bitset_new(td->n_stops);
     router->updated_routes = bitset_new(td->n_routes);
     if ( ! (router->best_time && router->states && router->updated_stops && router->updated_routes))
@@ -412,6 +411,16 @@ int rrrrandom(int limit) {
     return (int) (limit * (random() / (RAND_MAX + 1.0)));
 }
 
+void router_request_initialize(router_request_t *req) {
+    req->walk_speed = 1.5; // m/sec
+    req->from = 0;
+    req->to = 0;
+    req->time = 3600 * 18;
+    req->arrive_by = true;
+    req->time_cutoff = UNREACHED;
+    req->max_transfers = RRRR_MAX_ROUNDS - 1;
+}
+
 void router_request_randomize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
     req->from = rrrrandom(6600);
@@ -449,8 +458,8 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     // find the solution with the most transfers and the earliest arrival
     for (int round = max_transfers; round >= 0; --round) { 
         if (states[round][stop].time != UNREACHED) {
-            printf ("State present at round %d \n", round);
-            router_state_dump (&(states[round][stop]));
+            D printf ("State present at round %d \n", round);
+            D router_state_dump (&(states[round][stop]));
             req->max_transfers = round;
             req->time_cutoff = req->time >> 1; // fix units situation
             req->time = states[round][stop].time << 1;

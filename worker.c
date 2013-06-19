@@ -48,33 +48,29 @@ int main(int argc, char **argv) {
             break; 
         if (++request_count % 100 == 0)
             syslog(LOG_INFO, "worker received %d requests\n", request_count);
-
         // only manipulate the last frame, then send the recycled message back to the broker
         zframe_t *frame = zmsg_last (msg);
         if (zframe_size (frame) == sizeof (router_request_t)) {
-            router_request_t *req;
-            req = (router_request_t*) zframe_data (frame);
-            printf ("Searching with request: \n");
-            router_request_dump (&router, req);
-            router_route (&router, req);
+            router_request_t *preq;
+            preq = (router_request_t*) zframe_data (frame);
+            router_request_t req = *preq; // protective copy, since we're going to reverse it
+            D printf ("Searching with request: \n");
+            I router_request_dump (&router, &req);
+            router_route (&router, &req);
             // repeat search in reverse to compact transfers
-            int n_reversals = req->arrive_by ? 1 : 2;
+            int n_reversals = req.arrive_by ? 1 : 2;
             for (int i = 0; i < n_reversals; ++i) {
-                if ( ! (router_request_reverse (&router, req))) {
-                    break;
-                }
-                printf ("Repeating search with reversed request: \n");
-                router_request_dump (&router, req);
-                router_route (&router, req);
+                router_request_reverse (&router, &req); // handle case where route is not reversed
+                D printf ("Repeating search with reversed request: \n");
+                I router_request_dump (&router, &req);
+                router_route (&router, &req);
             }
-            int result_length = router_result_dump(&router, req, result_buf, 4096);
+            int result_length = router_result_dump(&router, &req, result_buf, 8000);
             zframe_reset (frame, result_buf, result_length);
-            //zframe_reset (frame, "OK", 2);
         } else {
             syslog (LOG_WARNING, "worker received reqeust with wrong length");
             zframe_reset (frame, "ERR", 3);
         }
-
         // send response to broker, thereby requesting more work
         zmsg_send (&msg, zsock);
     }
