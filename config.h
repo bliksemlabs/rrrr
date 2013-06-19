@@ -24,24 +24,24 @@
 // #define CLIENT_ENDPOINT "ipc://client_pipe"
 // #define WORKER_ENDPOINT "ipc://worker_pipe"
 
-// #define INFO
-// #define DEBUG
-// #define TRACE
+// #define LOG_INFO
+// #define LOG_DEBUG // do not name this DEBUG because some IDEs may define DEBUG
+// #define LOG_TRACE
 
 /* http://stackoverflow.com/questions/1644868/c-define-macro-for-debug-printing */
-#ifdef INFO
+#ifdef LOG_INFO
  #define I 
 #else
  #define I for(;0;)
 #endif
 
-#ifdef DEBUG
+#ifdef LOG_DEBUG
  #define D 
 #else
  #define D for(;0;)
 #endif
 
-#ifdef TRACE
+#ifdef LOG_TRACE
  #define T 
 #else
  #define T for(;0;)
