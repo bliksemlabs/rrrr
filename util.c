@@ -12,7 +12,8 @@ void die(const char *msg) {
 
 static char buf[32];
 
-char *btimetext(rtime_t rt, char *buf, int buflen) {
+// buffer should always be at least 9 characters long, including terminating null
+char *btimetext(rtime_t rt, char *buf) {
     if (rt == UNREACHED) {
         return "   --   ";
     }
@@ -26,7 +27,7 @@ char *btimetext(rtime_t rt, char *buf, int buflen) {
 }
 
 char *timetext(rtime_t t) {
-    return btimetext(t, buf, 32);
+    return btimetext(t, buf);
 }
 
 //assumes little endian http://stackoverflow.com/a/3974138/778449

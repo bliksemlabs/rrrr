@@ -29,8 +29,9 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
         else {
             req.from=from_s;
             req.to=to_s;
-            req.time=3600 * 8;
+            req.time=3600 * 18;
             req.walk_speed=1.5;
+            req.arrive_by = true;
         }
         // if (verbose) router_request_dump(&req);
         zmq_send(sock, &req, sizeof(req), 0);

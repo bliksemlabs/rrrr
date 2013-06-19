@@ -7,8 +7,10 @@
 // though with target pruning it no longer seems to have as much effect
 #define RRRR_MAX_ROUNDS 8
 
+/* note that these values can cause missed transfers until we have guaranteed / timed transfers */
+
 // specify in seconds
-#define RRRR_WALK_SLACK_SEC 60
+#define RRRR_WALK_SLACK_SEC  0
 // specify in internal 2-second intervals!
 #define RRRR_XFER_SLACK_2SEC 0
 

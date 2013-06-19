@@ -188,7 +188,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     
     I printf("Initializing router state \n");
     // Router state is a C99 dynamically dimensioned array of size [RRRR_MAX_ROUNDS][n_stops]
-    router_state_t (*states)[n_stops] = (void*) router.states; 
+    router_state_t (*states)[n_stops] = (router_state_t(*)[]) router.states; 
     for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {
         for (int stop = 0; stop < n_stops; ++stop) {
             states[round][stop].time = UNREACHED;
@@ -198,10 +198,20 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     for (int s = 0; s < n_stops; ++s) {
         router.best_time[s] = UNREACHED;
     }
-    router.best_time[req.from] = start_time;
-    states[0][req.from].time = start_time;
+    // stop indexes where the search process begins and ends, independent of arrive_by
+    int origin, target; 
+    // bool rev = req.arrive_by
+    if (req.arrive_by) {
+        origin = req.to;
+        target = req.from;
+    } else {
+        origin = req.from;
+        target = req.to;
+    }
+    router.best_time[origin] = start_time;
+    states[0][origin].time = start_time;
     bitset_reset(router.updated_stops);
-    bitset_set(router.updated_stops, req.from);
+    bitset_set(router.updated_stops, origin);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
     apply_transfers(router, 0, req.walk_speed, date_mask, req.arrive_by);
     I dump_results(prouter);
@@ -298,11 +308,12 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     rtime_t time = req.arrive_by ? stop_times[trip][route_stop].departure 
                                                  : stop_times[trip][route_stop].arrival;
                     T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
-                    if ((router.best_time[req.to] != UNREACHED) && 
-                        (req.arrive_by ? time < router.best_time[req.to] 
-                                       : time > router.best_time[req.to])) { // "target pruning" sec. 3.1
+                    if ((router.best_time[target] != UNREACHED) && 
+                        (req.arrive_by ? time < router.best_time[target] 
+                                       : time > router.best_time[target])) { 
                         T printf("    (target pruning)\n");
-                        continue; // could we even break out of this route entirely?
+                        // Target pruning, sec. 3.1. (Could we break out of this route entirely?)
+                        continue;
                     }
                     bool improved = (router.best_time[stop] == UNREACHED) || 
                                     (req.arrive_by ? time > router.best_time[stop] 
@@ -311,7 +322,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         I printf("    (no improvement)\n");
                         continue; // the current trip does not improve on the best time at this stop
                     }
-                    char *route_id = tdata_route_id_for_index(&(router.tdata), route_idx); // for demo, actually contains a detailed route description
+                    // for demo, route_id actually contains a detailed route description
+                    char *route_id = tdata_route_id_for_index(&(router.tdata), route_idx); 
                     I printf("    setting stop to %s \n", timetext(time)); 
                     router.best_time[stop] = time;
                     states[round][stop].time = time;
@@ -327,9 +339,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         // Update list of routes for next round based on stops that were touched in this round.
         apply_transfers(router, round, req.walk_speed, date_mask, req.arrive_by);
         // just in case
-        states[round][req.from].time = start_time;
-        states[round][req.from].back_stop = -1;
-        states[round][req.from].back_route = -1;
+        states[round][origin].time = start_time;
+        states[round][origin].back_stop = -1;
+        states[round][origin].back_route = -1;
         // dump_results(prouter); // DEBUG
         // exit(0);
     } // end for (round)
@@ -342,7 +354,7 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
     char *b = buf;
     char *b_end = buf + buflen;
     for (int round_outer = 0; round_outer < RRRR_MAX_ROUNDS; ++round_outer) {
-        int s = req.to;
+        int s = (req.arrive_by ? req.from : req.to);
         router_state_t *states = router.states + router.tdata.n_stops * round_outer;
         if (states[s].time == UNREACHED)
             continue;
@@ -367,10 +379,10 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
             char *this_stop_id = tdata_stop_id_for_index(&(router.tdata), s);
             int board  = states[s].board_time;
             int alight = states[s].time;
-            char cboard[255];
-            char calight[255];
-            btimetext(board, cboard, 255);
-            btimetext(alight, calight, 255);
+            char cboard[10];
+            char calight[10];
+            btimetext(board, cboard);
+            btimetext(alight, calight);
             char *trip_id = states[s].back_trip_id;
 
             b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
@@ -379,7 +391,7 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
                 printf ("buffer overflow\n");
                 break;
             }
-            if (last_stop == req.from) 
+            if (last_stop == (req.arrive_by ? req.to : req.from))
                 break;
             if (route >= 0 && round > 0)
                 round -= 1;
@@ -406,6 +418,49 @@ void router_request_randomize(router_request_t *req) {
     req->to = rrrrandom(6600);
     req->time = 3600 * 12 + rrrrandom(3600 * 6);
     req->arrive_by = true;
+    req->time_cutoff = UNREACHED;
+    req->max_transfers = RRRR_MAX_ROUNDS - 1;
+}
+
+void router_state_dump (router_state_t *state) {
+    printf ("-- Router State --\n");
+    printf ("time:         %s \n", timetext(state->time));
+    printf ("board time:   %s \n", timetext(state->board_time));
+    printf ("back trip id: %s \n", state->back_trip_id);
+    printf ("back route:   ");
+    if (state->back_route >= 0)
+        printf ("%d\n", state->back_route);
+    else
+        printf ("%s\n", (state->back_route == WALK ? "WALK" : "NONE"));
+    printf ("back stop     %d \n", state->back_stop);
+}
+
+/* 
+   Reverse the direction of the search leaving most request parameters unchanged but applying time 
+   and transfer cutoffs based on an existing result for the same request. 
+   Returns a boolean value indicating whether the request was reversed. 
+*/
+bool router_request_reverse(router_t *router, router_request_t *req) {
+    router_state_t (*states)[router->tdata.n_stops] = (router_state_t(*)[]) (router->states);
+    int stop = (req->arrive_by ? req->from : req->to);
+    int max_transfers = req->max_transfers;
+    if (max_transfers >= RRRR_MAX_ROUNDS) // range-check to keep search within states array
+        max_transfers = RRRR_MAX_ROUNDS - 1;
+    // find the solution with the most transfers and the earliest arrival
+    for (int round = max_transfers; round >= 0; --round) { 
+        if (states[round][stop].time != UNREACHED) {
+            printf ("State present at round %d \n", round);
+            router_state_dump (&(states[round][stop]));
+            req->max_transfers = round;
+            req->time_cutoff = req->time >> 1; // fix units situation
+            req->time = states[round][stop].time << 1;
+            req->arrive_by = !(req->arrive_by);
+            // router_request_dump(router, req);
+            return true;
+        }
+    }
+    // in the case that no previous solution is found, the request will remain unchanged
+    return false;
 }
 
 inline static bool range_check(router_request_t *req) {
@@ -447,10 +502,18 @@ bool router_request_from_qstring(router_request_t *req) {
 void router_request_dump(router_t *router, router_request_t *req) {
     char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
     char *to_stop_id = tdata_stop_id_for_index(&(router->tdata), req->to);
-    printf("from: %s [%d]\n"
-           "to:   %s [%d]\n"
-           "time: %s [%ld]\n"
-           "speed: %f\n", from_stop_id, req->from, to_stop_id, req->to, 
-                timetext(req->time >> 1), req->time, req->walk_speed);
+    char time[10], time_cutoff[10];
+    btimetext(req->time >> 1, time);
+    btimetext(req->time_cutoff, time_cutoff);    // oh, different units...
+    printf("-- Router Request --\n"
+           "from:  %s [%d]\n"
+           "to:    %s [%d]\n"
+           "time:  %s [%ld]\n"
+           "speed: %f m/sec\n"
+           "arrive-by: %s\n"
+           "max xfers: %d\n"
+           "max time:  %s\n",
+           from_stop_id, req->from, to_stop_id, req->to, time, req->time, req->walk_speed, 
+           (req->arrive_by ? "true" : "false"), req->max_transfers, time_cutoff);
 }
 

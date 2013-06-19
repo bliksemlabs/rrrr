@@ -20,7 +20,7 @@ typedef uint16_t rtime_t;
 
 void die(const char* message);
 
-char *btimetext(rtime_t t, char *buf, int buflen);
+char *btimetext(rtime_t t, char *buf); // minimum buffer size is 9 characters
 
 char *timetext(rtime_t t);
 
