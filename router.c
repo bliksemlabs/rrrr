@@ -36,7 +36,8 @@ void router_teardown(router_t *router) {
     bitset_destroy(router->updated_routes);
 }
 
-// flag_routes_for_stops... all at once after doing transfers?
+// flag_routes_for_stops... all at once after doing transfers? 
+// Proper transfers require another stops bitset for transfer target stops.
 /* Given a stop index, mark all routes that serve it as updated. */
 static inline void flag_routes_for_stop (router_t *r, int stop_index, uint32_t date_mask) {
     /*restrict*/ int *routes;
@@ -180,9 +181,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // uint32_t date_masks[3] = {date_mask >> 1, date_mask, date_mask << 1};
 
     // Internal router time units are 2 seconds in order to fit 1.5 days into a uint16_t.
-    rtime_t start_time = req.time >> 1; // TODO: make a function for this
+    rtime_t origin_time = req.time >> 1; // TODO: make a function for this
     I router_request_dump(prouter, preq);
-    T printf("\nstart_time %s \n", timetext(start_time));
+    T printf("\norigin_time %s \n", timetext(origin_time));
     T tdata_dump(&(router.tdata));
     
     I printf("Initializing router state \n");
@@ -207,8 +208,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         origin = req.from;
         target = req.to;
     }
-    router.best_time[origin] = start_time;
-    states[0][origin].time = start_time;
+    router.best_time[origin] = origin_time;
+    states[0][origin].time = origin_time;
     bitset_reset(router.updated_stops);
     bitset_set(router.updated_stops, origin);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
@@ -297,7 +298,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         board_time = best_time;
                         board_stop = stop;
                         trip = best_trip;
-                        if (req.arrive_by ? best_time > start_time : best_time < start_time)
+                        if (req.arrive_by ? best_time > origin_time : best_time < origin_time)
                             printf("ERROR: boarded before start time, trip %d stop %d \n", trip, stop);
                     } else {
                         T printf("    no suitable trip to board.\n");
@@ -338,7 +339,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         // Update list of routes for next round based on stops that were touched in this round.
         apply_transfers(router, round, req.walk_speed, date_mask, req.arrive_by);
         // just in case
-        states[round][origin].time = start_time;
+        states[round][origin].time = origin_time;
         states[round][origin].back_stop = -1;
         states[round][origin].back_route = -1;
         // dump_results(prouter); // DEBUG
