@@ -197,19 +197,27 @@ int main(int argc, char** argv) {
     for (int c = 0; c < tdata.n_stops; ++c) {
         coord_from_latlon(coords + c, tdata.stop_coords + c);
     }
-    HashGrid_init (&hg, 100, 100.0, coords, tdata.n_stops);
+    HashGrid_init (&hg, 50, 100.0, coords, tdata.n_stops);
     HashGrid_dump (&hg);
-    latlon_t ll;
-    ll.lat = 52.37091;
-    ll.lon = 4.87036;
+    latlon_t qll;
+    qll.lat = 52.37790;
+    qll.lon = 4.89787;
+    coord_t qc;
+    coord_from_latlon (&qc, &qll);
     HashGridResult result;
-    HashGrid_query (&hg, &result, ll, 150.0);
+    HashGrid_query (&hg, &result, qll, 150.0);
     int item;
     while ((item = HashGridResult_next(&result)) != -1) {
         // printf ("item %d ", item);
         // latlon_dump (tdata.stop_coords + item);
-        latlon_t ll = tdata.stop_coords[item];
-        printf ("%f,%f\n", ll.lat, ll.lon);
+        latlon_t rll = tdata.stop_coords[item];
+        coord_t rc;
+        coord_from_latlon (&rc, &rll);
+        if (abs(coord_xdiff_meters(&qc, &rc)) > 150)
+            continue;
+        if (abs(coord_ydiff_meters(&qc, &rc)) > 150)
+            continue;
+        printf ("%f,%f\n", rll.lat, rll.lon);
     }
     HashGrid_teardown (&hg);
     // geometry_test (tdata.stop_coords, tdata.n_stops);

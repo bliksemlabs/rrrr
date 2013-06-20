@@ -23,6 +23,10 @@ void coord_from_degrees(coord_t*, double lat, double lon);
 
 void coord_from_meters (coord_t*, double meters_x, double meters_y);
 
+double coord_xdiff_meters (coord_t *c1, coord_t *c2);
+
+double coord_ydiff_meters (coord_t *c1, coord_t *c2);
+
 void latlon_dump (latlon_t*);
 
 void latlon_from_coord (latlon_t*, coord_t*);
