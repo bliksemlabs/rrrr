@@ -1,11 +1,14 @@
 /* geometry.h */
 
+#ifndef _GEOMETRY_H
+#define _GEOMETRY_H
+
 #include <stdint.h>
 
 typedef struct latlon latlon_t;
 struct latlon {
-    float lat;
     float lon;
+    float lat; // reverse this in python script
 };
 
 typedef struct coord coord_t;
@@ -14,7 +17,16 @@ struct coord {
     int32_t y;
 };
 
+void coord_from_latlon (coord_t*, latlon_t*);
+
 void coord_from_degrees(coord_t*, double lat, double lon);
 
 void coord_from_meters (coord_t*, double meters_x, double meters_y);
 
+void latlon_dump (latlon_t*);
+
+void latlon_from_coord (latlon_t*, coord_t*);
+
+void coord_dump (coord_t*);
+
+#endif // _GEOMETRY_H

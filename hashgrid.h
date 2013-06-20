@@ -1,10 +1,20 @@
 /* hashgrid.h */
 
+#ifndef _HASHGRID_H
+#define _HASHGRID_H
+
 #include "geometry.h"
-#include <malloc.h>
 
-void HashGrid_init (HashGrid*, int bin_size_meters, int grid_dim);
+typedef struct HashGrid HashGrid;
 
-void HashGrid_count (HashGrid*, coord*);
+typedef struct HashGridResult HashGridResult;
 
-void HashGrid_teardown(HashGrid*);
+void HashGrid_init (HashGrid *hg, int grid_dim, double bin_size_meters, coord_t *coords, int n_items);
+
+void HashGrid_dump (HashGrid*);
+
+void HashGrid_query (HashGrid*, HashGridResult*, latlon_t, double radius_meters);
+
+void HashGrid_teardown (HashGrid*);
+
+#endif // _HASHGRID_H

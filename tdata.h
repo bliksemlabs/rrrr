@@ -60,7 +60,7 @@ struct tdata {
     uint32_t *route_active;
 };
 
-void tdata_load(char* /*filename*/, tdata_t*);
+void tdata_load(char* filename, tdata_t*);
 
 void tdata_close(tdata_t*);
 
