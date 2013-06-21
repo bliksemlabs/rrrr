@@ -13,7 +13,7 @@ void HashGrid_init (HashGrid *hg, int grid_dim, double bin_size_meters, coord_t 
 
 void HashGrid_dump (HashGrid*);
 
-void HashGrid_query (HashGrid*, HashGridResult*, latlon_t, double radius_meters);
+void HashGrid_query (HashGrid*, HashGridResult*, coord_t, double radius_meters);
 
 void HashGrid_teardown (HashGrid*);
 

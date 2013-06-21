@@ -19,13 +19,11 @@ struct coord {
 
 void coord_from_latlon (coord_t*, latlon_t*);
 
-void coord_from_degrees(coord_t*, double lat, double lon);
+void coord_from_lat_lon (coord_t*, double lat, double lon);
 
 void coord_from_meters (coord_t*, double meters_x, double meters_y);
 
-double coord_xdiff_meters (coord_t *c1, coord_t *c2);
-
-double coord_ydiff_meters (coord_t *c1, coord_t *c2);
+double coord_distance_meters (coord_t*, coord_t*);
 
 void latlon_dump (latlon_t*);
 
