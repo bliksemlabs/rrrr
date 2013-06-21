@@ -15,7 +15,8 @@ static char buf[32];
 // buffer should always be at least 9 characters long, including terminating null
 char *btimetext(rtime_t rt, char *buf) {
     if (rt == UNREACHED) {
-        return "   --   ";
+        strcpy(buf, "   --   ");
+        return buf;
     }
     int t = (int)rt << 1;
     int s = t % 60;
