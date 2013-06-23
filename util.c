@@ -1,8 +1,10 @@
 /* util.c : various utility functions */
 #include "util.h"
+
 #include <syslog.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 
 void die(const char *msg) {

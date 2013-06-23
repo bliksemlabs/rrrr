@@ -5,13 +5,14 @@
 #include "tdata.h"
 #include "config.h"
 #include <syslog.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h> // be sure to link with math library (-lm) 
 
-typedef struct HashGrid {
+// Opaque struct, typedef in header
+struct HashGrid {
     int     grid_dim;
     double  bin_size_meters;
     coord_t bin_size;
@@ -20,9 +21,10 @@ typedef struct HashGrid {
     int     *(*bins)[];  // 2D array of int pointers
     int     *items;      // array containing all the binned items, aliased by the bins array
     coord_t *coords;     // the array of coords that were indexed (note: may have been deallocated by caller)
-} HashGrid;
+};
 
-typedef struct HashGridResult {
+// Opaque struct, typedef in header
+struct HashGridResult {
     HashGrid *hg;
     coord_t coord;              // the query coordinate
     double radius_meters;       // query radius in meters
@@ -30,7 +32,7 @@ typedef struct HashGridResult {
     int xmin, xmax, ymin, ymax; // bins that correspond to the bounding box
     int x, y, i;                // current position within the hashgrid for iterating over results
     bool has_next;
-} HashGridResult;
+}; 
 
 // http://stackoverflow.com/a/859694/778449
 // cdecl> declare items as pointer to array 10 of pointer to void
@@ -100,13 +102,13 @@ int HashGridResult_next (HashGridResult *r) {
 }
 
 /*
-  Pre-filter the results, removing most false positives using a bounding box.
-  This will only work if the initial coordinate list is still available (was not freed)
-  We could also return a boolean to indicate whether there is a result, and have an out-parameter 
+  Pre-filter the results, removing most false positives using a bounding box. This will only work if 
+  the initial coordinate list is still available (was not freed or did not go out of scope). We 
+  could also return a boolean to indicate whether there is a result, and have an out-parameter 
   for the index.
   The hashgrid can provide many false positives, but no false negatives (what is the term?).
-  Bounding box or squared distance can both be used to filter points. 
-  Note that most false positives are quite far away so bounding box is effective.
+  A bounding box or the squared distance can both be used to filter points. 
+  Note that most false positives are quite far away so a bounding box is effective.
 */
 int HashGridResult_next_filtered (HashGridResult *r, double *distance) {
     int item;
