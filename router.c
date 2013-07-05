@@ -400,20 +400,13 @@ int router_result_dump(router_t *prouter, router_request_t *preq, char *buf, int
     return b - buf;
 }
 
-inline static void set_defaults(router_request_t *req) {
-    req->walk_speed = 1.3; // m/sec
-    req->from = req->to = req->time = NONE; 
-    req->arrive_by = false;
-}
-
 int rrrrandom(int limit) {
     return (int) (limit * (random() / (RAND_MAX + 1.0)));
 }
 
 void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
-    req->from = 0;
-    req->to = 0;
+    req->from = req->to = req->time = NONE; 
     req->time = 3600 * 18;
     req->arrive_by = true;
     req->time_cutoff = UNREACHED;
@@ -484,17 +477,17 @@ bool router_request_from_qstring(router_request_t *req) {
     char *qstring = getenv("QUERY_STRING");
     if (qstring == NULL) 
         qstring = "";
-    set_defaults(req);
+    router_request_initialize(req);
     char key[BUFLEN];
     char *val;
     while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
         if (strcmp(key, "time") == 0) {
             req->time = atoi(val);
-        } else if (strcmp(key, "from") == 0) {
+        } else if (strcmp(key, "fromPlace") == 0) {
             req->from = atoi(val);
-        } else if (strcmp(key, "to") == 0) {
+        } else if (strcmp(key, "toPlace") == 0) {
             req->to = atoi(val);
-        } else if (strcmp(key, "speed") == 0) {
+        } else if (strcmp(key, "walkSpeed") == 0) {
             req->walk_speed = atof(val);
         } else if (strcmp(key, "randomize") == 0) {
             printf("RANDOMIZING\n");
