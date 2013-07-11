@@ -247,7 +247,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 uint32_t stop = route_stops[route_stop];
                 I printf("    stop %2d [%d] %s %s\n", route_stop, stop,
                     timetext(router.best_time[stop]), tdata_stop_id_for_index (&(router.tdata), stop));
-                // TODO: check if this is the last stop -- no pouint32_t boarding there or marking routes
+                // TODO: check if this is the last stop -- no point boarding there or marking routes
                 if (trip == NONE || (
                     // check to avoid overflow since UNREACHED is UINT16_MAX
                     states[last_round][stop].time < UNREACHED - RRRR_XFER_SLACK_2SEC && 

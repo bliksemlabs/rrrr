@@ -42,7 +42,7 @@ static inline double coord_diff_meters (int32_t o1, int32_t o2) {
 Several mappings from lat/lon to integers to are possible.
 The three major decisions are:
 1. Signed or unsigned brads.
-2. Zero pouint32_t in brads is at the prime meridian or its antipode.
+2. Zero uint32_t in brads is at the prime meridian or its antipode.
 3. Whether or not to store scaled x values.
 
 Design decisions and reflections:
