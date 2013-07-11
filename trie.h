@@ -9,7 +9,7 @@
 typedef struct _trie_t {
     struct _trie_t *chars[TRIE_SIZE];
     unsigned char node;
-    uint32_t index;
+    int32_t index;
 } trie_t;
 
 trie_t *trie_init(void);
