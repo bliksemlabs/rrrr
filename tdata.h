@@ -6,7 +6,6 @@
 #include "util.h"
 #include <stddef.h>
 
-// hide these details?
 typedef struct stop stop_t;
 struct stop {
     uint32_t stop_routes_offset;
@@ -14,7 +13,7 @@ struct stop {
 };
 
 typedef struct route route_t;
-struct route { // switch to unsigned
+struct route {
     uint32_t route_stops_offset;
     uint32_t stop_times_offset;
     uint32_t trip_ids_offset;
