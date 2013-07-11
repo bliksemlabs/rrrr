@@ -16,7 +16,7 @@ static int to_s = 1;
 
 static void client_task (void *args, zctx_t *ctx, void *pipe) {
     int n_requests = *((int*) args);
-    syslog (LOG_INFO, "test client thread will send %d requests", n_requests);
+    syslog (RRRR_INFO, "test client thread will send %d requests", n_requests);
     // connect client thread to load balancer
     void *sock = zsocket_new (ctx, ZMQ_REQ); // auto-deleted with thread
     int rc = zsocket_connect (sock, CLIENT_ENDPOINT);
@@ -33,7 +33,7 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
         }
         // if (verbose) router_request_dump(&router, &req); // router is not available in client
         zmq_send(sock, &req, sizeof(req), 0);
-        // syslog (LOG_INFO, "test client thread has sent %d requests\n", request_count);
+        // syslog (RRRR_INFO, "test client thread has sent %d requests\n", request_count);
         char *reply = zstr_recv (sock);
         if (!reply) 
             break;
@@ -43,7 +43,7 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
         if (++request_count >= n_requests)
             break;
     }
-    syslog (LOG_INFO, "test client thread terminating");
+    syslog (RRRR_INFO, "test client thread terminating");
     zstr_send (pipe, "done");
 }
 
@@ -55,9 +55,9 @@ void usage() {
 int main (int argc, char **argv) {
     
     // initialize logging
-    setlogmask(LOG_UPTO(LOG_DEBUG));
-    openlog (PROGRAM_NAME, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
-    syslog (LOG_INFO, "test client starting");
+    setlogmask(RRRR_UPTO(RRRR_DEBUG));
+    openlog (PROGRAM_NAME, RRRR_CONS | RRRR_PID | RRRR_PERROR, RRRR_USER);
+    syslog (RRRR_INFO, "test client starting");
 
     // ensure different random requests on different runs
     srand(time(NULL)); 
@@ -93,8 +93,8 @@ int main (int argc, char **argv) {
     if (concurrency > n_requests)
         concurrency = n_requests;
 
-    syslog (LOG_INFO, "test client number of requests: %d", n_requests);
-    syslog (LOG_INFO, "test client concurrency: %d", concurrency);
+    syslog (RRRR_INFO, "test client number of requests: %d", n_requests);
+    syslog (RRRR_INFO, "test client concurrency: %d", concurrency);
     verbose = (n_requests == 1);
     
     // divide up work between threads
@@ -124,7 +124,7 @@ int main (int argc, char **argv) {
     // output summary information
     gettimeofday(&t1, NULL);
     double dt = ((t1.tv_usec + 1000000 * t1.tv_sec) - (t0.tv_usec + 1000000 * t0.tv_sec)) / 1000000.0;
-    syslog (LOG_INFO, "%d threads, %d total requests, %f sec total time (%f req/sec)",
+    syslog (RRRR_INFO, "%d threads, %d total requests, %f sec total time (%f req/sec)",
         concurrency, n_requests, dt, n_requests / dt);
     
     //printf("%c", '\0x1A');

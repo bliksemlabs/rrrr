@@ -230,8 +230,8 @@ static void geometry_test (latlon_t *lls, int n) {
 
 // Test HashGrid
 int main(int argc, char** argv) {
-    setlogmask(LOG_UPTO(LOG_DEBUG));
-    openlog("hashgrid", LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
+    setlogmask(RRRR_UPTO(RRRR_DEBUG));
+    openlog("hashgrid", RRRR_CONS | RRRR_PID | RRRR_PERROR, RRRR_USER);
     tdata_t tdata;
     tdata_load (RRRR_INPUT_FILE, &tdata);
     // geometry_test (tdata.stop_coords, tdata.n_stops);

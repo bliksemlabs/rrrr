@@ -8,7 +8,7 @@
 #include <limits.h>
 
 void die(const char *msg) {
-    syslog(LOG_ERR, "%s", msg);
+    syslog(RRRR_ERR, "%s", msg);
     exit(EXIT_FAILURE);
 }
 
