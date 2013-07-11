@@ -118,7 +118,7 @@ static void read_input (uint32_t nc) {
     struct in_addr      client_ip_addr;
 }
 
-uint32_t main (void) {
+int main (void) {
     
     // Set up TCP/IP stream socket for incoming HTTP requests
     struct sockaddr_in	server_in_addr = {

@@ -6,7 +6,7 @@
 #include "rrrr.h"
 #include "config.h"
 
-uint32_t main (void) {
+int main (void) {
 
     // initialize logging
     setlogmask(LOG_UPTO(LOG_DEBUG));

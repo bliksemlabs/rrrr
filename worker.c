@@ -10,7 +10,7 @@
 #include "tdata.h"
 #include "router.h"
 
-uint32_t main(uint32_t argc, char **argv) {
+int main(int argc, char **argv) {
 
     /* SETUP */
     

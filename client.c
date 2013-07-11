@@ -52,7 +52,7 @@ void usage() {
     exit (1);
 }
 
-uint32_t main (uint32_t argc, char **argv) {
+int main (int argc, char **argv) {
     
     // initialize logging
     setlogmask(LOG_UPTO(LOG_DEBUG));

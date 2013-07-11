@@ -33,7 +33,7 @@ static void old_attr(void){
 
 
 // main function
-uint32_t main(uint32_t argc, char *argv[]){
+int main(int argc, char *argv[]){
   char ch;
   static char init;
   struct termios new_kbd_mode;

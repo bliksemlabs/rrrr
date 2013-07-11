@@ -15,7 +15,7 @@
 #define PORT   9393 
 #define BUFLEN 1024
 
-uint32_t main (uint32_t argc, char **argv) {    
+int main (int argc, char **argv) {    
     uint32_t iterations = 10;
     if (argc > 1)
         iterations = atoi (argv[1]);
