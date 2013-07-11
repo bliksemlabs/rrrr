@@ -229,7 +229,7 @@ static void geometry_test (latlon_t *lls, uint32_t n) {
 }
 
 // Test HashGrid
-uint32_t main(uint32_t argc, char** argv) {
+int main(int argc, char** argv) {
     setlogmask(LOG_UPTO(LOG_DEBUG));
     openlog("hashgrid", LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
     tdata_t tdata;
