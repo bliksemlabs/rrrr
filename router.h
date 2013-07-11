@@ -14,8 +14,8 @@
 typedef struct router_state router_state_t;
 struct router_state {
     rtime_t time;        // The time when this stop was reached
-    int back_stop;       // The index of the previous stop in the itinerary
-    int back_route;      // The index of the route used to travel from back_stop to here, or WALK
+    uint32_t back_stop;       // The index of the previous stop in the itinerary
+    uint32_t back_route;      // The index of the route used to travel from back_stop to here, or WALK
     rtime_t board_time;  // The time at which the trip within back_route left back_stop
     char *back_trip_id;  // A text description of the trip used within back_route
 };
@@ -35,13 +35,13 @@ struct router {
 
 typedef struct router_request router_request_t;
 struct router_request {
-    int from;           // start stop index from the user's perspective, independent of arrive_by
-    int to;             // destination stop index from the user's perspective, independent of arrive_by
+    uint32_t from;           // start stop index from the user's perspective, independent of arrive_by
+    uint32_t to;             // destination stop index from the user's perspective, independent of arrive_by
     time_t time;        // the departure or arrival time at which to search
     double walk_speed;  // in meters per second
     bool arrive_by;     // whether the given time is an arrival time rather than a departure time
     rtime_t time_cutoff;// the latest (or earliest in arrive_by) time to reach the destination
-    int max_transfers;  // the largest number of transfers to allow in the result
+    uint32_t max_transfers;  // the largest number of transfers to allow in the result
 };
 
 void router_setup(router_t*, tdata_t*);
@@ -60,7 +60,7 @@ void router_teardown(router_t*);
 
 bool router_route(router_t*, router_request_t*);
 
-int router_result_dump(router_t*, router_request_t*, char *buf, int buflen); // return num of chars written
+uint32_t router_result_dump(router_t*, router_request_t*, char *buf, uint32_t buflen); // return num of chars written
 
 #endif // _ROUTER_H
 

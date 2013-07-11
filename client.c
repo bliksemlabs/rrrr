@@ -11,17 +11,17 @@
 
 static bool verbose = false;
 static bool randomize = false;
-static int from_s = 0;
-static int to_s = 1;
+static uint32_t from_s = 0;
+static uint32_t to_s = 1;
 
 static void client_task (void *args, zctx_t *ctx, void *pipe) {
-    int n_requests = *((int*) args);
+    uint32_t n_requests = *((uint32_t *) args);
     syslog (LOG_INFO, "test client thread will send %d requests", n_requests);
     // connect client thread to load balancer
     void *sock = zsocket_new (ctx, ZMQ_REQ); // auto-deleted with thread
-    int rc = zsocket_connect (sock, CLIENT_ENDPOINT);
+    uint32_t rc = zsocket_connect (sock, CLIENT_ENDPOINT);
     assert (rc == 0);
-    int request_count = 0;
+    uint32_t request_count = 0;
     while (true) {
         router_request_t req;
         router_request_initialize (&req);
@@ -52,7 +52,7 @@ void usage() {
     exit (1);
 }
 
-int main (int argc, char **argv) {
+uint32_t main (uint32_t argc, char **argv) {
     
     // initialize logging
     setlogmask(LOG_UPTO(LOG_DEBUG));
@@ -63,8 +63,8 @@ int main (int argc, char **argv) {
     srand(time(NULL)); 
     
     // read and range-check parameters
-    int n_requests = 1;
-    int concurrency = RRRR_TEST_CONCURRENCY;
+    uint32_t n_requests = 1;
+    uint32_t concurrency = RRRR_TEST_CONCURRENCY;
     if (argc != 4)
         usage();
     
@@ -98,10 +98,10 @@ int main (int argc, char **argv) {
     verbose = (n_requests == 1);
     
     // divide up work between threads
-    int n_reqs[concurrency];
-    for (int i = 0; i < concurrency; i++)
+    uint32_t n_reqs[concurrency];
+    for (uint32_t i = 0; i < concurrency; i++)
         n_reqs[i] = n_requests / concurrency;
-    for (int i = 0; i < n_requests % concurrency; i++)
+    for (uint32_t i = 0; i < n_requests % concurrency; i++)
         n_reqs[i] += 1;
 
     // track runtime
@@ -111,11 +111,11 @@ int main (int argc, char **argv) {
     void *pipes[concurrency];
     zctx_t *ctx = zctx_new ();
     gettimeofday(&t0, NULL);
-    for (int n = 0; n < concurrency; n++)
+    for (uint32_t n = 0; n < concurrency; n++)
         pipes[n] = zthread_fork (ctx, client_task, n_reqs + n);
 
     // wait for all threads to complete
-    for (int n = 0; n < concurrency; n++) {
+    for (uint32_t n = 0; n < concurrency; n++) {
         char *s = zstr_recv (pipes[n]);
         if (s == NULL) break; // interrupted
         free (s);

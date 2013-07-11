@@ -31,7 +31,7 @@ static void url_decode (char *buf) {
 }
 
 /* parse a cgi query string returning one key-value pair at a time */
-bool qstring_next_pair(const char *qstring, char *buf, char **vbuf, int buflen) {
+bool qstring_next_pair(const char *qstring, char *buf, char **vbuf, uint32_t buflen) {
     static const char *q = NULL;
     // set up if not currently working on a qstring
     if (q == NULL) 

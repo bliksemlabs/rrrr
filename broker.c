@@ -6,7 +6,7 @@
 #include "rrrr.h"
 #include "config.h"
 
-int main (void) {
+uint32_t main (void) {
 
     // initialize logging
     setlogmask(LOG_UPTO(LOG_DEBUG));
@@ -18,7 +18,7 @@ int main (void) {
     void *backend = zsocket_new (ctx, ZMQ_ROUTER);
     zsocket_bind (frontend, CLIENT_ENDPOINT);
     zsocket_bind (backend, WORKER_ENDPOINT);
-    int frx = 0, ftx = 0, brx = 0, btx = 0, nworkers = 0, npoll = 0;
+    uint32_t frx = 0, ftx = 0, brx = 0, btx = 0, nworkers = 0, npoll = 0;
     
     //  Queue of available workers
     zlist_t *workers = zlist_new ();
@@ -32,7 +32,7 @@ int main (void) {
             { frontend, 0, ZMQ_POLLIN, 0 }
         };
         //  Poll frontend only if we have available workers
-        int rc = zmq_poll (items, zlist_size (workers)? 2: 1, -1);
+        uint32_t rc = zmq_poll (items, zlist_size (workers)? 2: 1, -1);
         if (rc == -1)
             break;              //  Interrupted
         //  Handle worker activity on backend

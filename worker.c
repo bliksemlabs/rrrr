@@ -10,7 +10,7 @@
 #include "tdata.h"
 #include "router.h"
 
-int main(int argc, char **argv) {
+uint32_t main(uint32_t argc, char **argv) {
 
     /* SETUP */
     
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     // establish zmq connection
     zctx_t *zctx = zctx_new ();
     void *zsock = zsocket_new(zctx, ZMQ_REQ);
-    int zrc = zsocket_connect(zsock, WORKER_ENDPOINT);
+    uint32_t zrc = zsocket_connect(zsock, WORKER_ENDPOINT);
     if (zrc != 0) exit(1);
     
     // signal to the broker/load balancer that this worker is ready
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     syslog(LOG_INFO, "worker sent ready message to load balancer");
 
     /* MAIN LOOP */
-    int request_count = 0;
+    uint32_t request_count = 0;
     char result_buf[8000];
     while (true) {
         zmsg_t *msg = zmsg_recv (zsock);
@@ -58,14 +58,14 @@ int main(int argc, char **argv) {
             I router_request_dump (&router, &req);
             router_route (&router, &req);
             // repeat search in reverse to compact transfers
-            int n_reversals = req.arrive_by ? 1 : 2;
-            for (int i = 0; i < n_reversals; ++i) {
+            uint32_t n_reversals = req.arrive_by ? 1 : 2;
+            for (uint32_t i = 0; i < n_reversals; ++i) {
                 router_request_reverse (&router, &req); // handle case where route is not reversed
                 D printf ("Repeating search with reversed request: \n");
                 I router_request_dump (&router, &req);
                 router_route (&router, &req);
             }
-            int result_length = router_result_dump(&router, &req, result_buf, 8000);
+            uint32_t result_length = router_result_dump(&router, &req, result_buf, 8000);
             zframe_reset (frame, result_buf, result_length);
         } else {
             syslog (LOG_WARNING, "worker received reqeust with wrong length");

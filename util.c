@@ -20,10 +20,10 @@ char *btimetext(rtime_t rt, char *buf) {
         strcpy(buf, "   --   ");
         return buf;
     }
-    int t = (int)rt << 1;
-    int s = t % 60;
-    int m = t / 60;
-    int h = m / 60;
+    uint32_t t = (uint32_t)rt << 1;
+    uint32_t s = t % 60;
+    uint32_t m = t / 60;
+    uint32_t h = m / 60;
     m = m % 60;
     sprintf(buf, "%02d:%02d:%02d", h, m, s);
     return buf;
@@ -38,7 +38,7 @@ char *timetext(rtime_t t) {
 void printBits(size_t const size, void const * const ptr) {
     unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
-    int i, j;
+    uint32_t i, j;
     for (i=size-1;i>=0;i--) {
         for (j=7;j>=0;j--) {
             byte = b[i] & (1<<j);

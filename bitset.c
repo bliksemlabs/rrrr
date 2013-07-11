@@ -10,7 +10,7 @@ inline void bitset_reset(BitSet *self) {
     memset(self->chunks, 0, sizeof(uint64_t) * self->nchunks);
 }
 
-static void bitset_init(BitSet *self, int capacity) {
+static void bitset_init(BitSet *self, uint32_t capacity) {
     self->capacity = capacity;
     self->nchunks = capacity / 64;
     if (capacity % 64) 
@@ -23,7 +23,7 @@ static void bitset_init(BitSet *self, int capacity) {
     bitset_reset(self);
 }
 
-BitSet *bitset_new(int capacity) {
+BitSet *bitset_new(uint32_t capacity) {
     BitSet *bs = malloc(sizeof(BitSet));
     if (bs == NULL) {
         printf("bitset allocation failure.");
@@ -33,52 +33,52 @@ BitSet *bitset_new(int capacity) {
     return bs;
 }
 
-static inline void index_check(BitSet *self, int index) {
+static inline void index_check(BitSet *self, uint32_t index) {
     if (index >= self->capacity) {
         printf("bitset index %d out of range [0, %d)\n", index, self->capacity);
         exit(1);    
    }
 }
 
-void bitset_set(BitSet *self, int index) {
+void bitset_set(BitSet *self, uint32_t index) {
     index_check(self, index);
     uint64_t bitmask = 1ull << (index % 64);
     self->chunks[index / 64] |= bitmask;
 }
 
-void bitset_clear(BitSet *self, int index) {
+void bitset_clear(BitSet *self, uint32_t index) {
     index_check(self, index);
     uint64_t bitmask = ~(1ull << (index % 64));
     self->chunks[index / 64] &= bitmask;
 }
 
-bool bitset_get(BitSet *self, int index) {
+bool bitset_get(BitSet *self, uint32_t index) {
     index_check(self, index);
     uint64_t bitmask = 1ull << (index % 64); // need to specify that literal 1 is >= 64 bits wide.
     return self->chunks[index / 64] & bitmask;
 }
 
 void bitset_dump(BitSet *self) {
-    for (int i = 0; i < self->capacity; ++i)
+    for (uint32_t i = 0; i < self->capacity; ++i)
         if (bitset_get(self, i))
             printf("%d ", i);
     printf("\n\n");
 }
 
-int bitset_enumerate(BitSet *self) {
+uint32_t bitset_enumerate(BitSet *self) {
     BitSetIterator bsi;
     bitset_iter_begin(&bsi, self);
-    int total = 0;
-    int elem;
+    uint32_t total = 0;
+    uint32_t elem;
     while ((elem = bitset_iter_next(&bsi)) >= 0)
         //printf ("%d ", elem);
         total += elem;
     return total;
 }
 
-int bitset_enumerate2(BitSet *self) {
-    int total = 0;
-    for (int elem = bitset_next_set_bit(self, 0); elem >= 0; elem = bitset_next_set_bit(self, elem + 1)) {
+uint32_t bitset_enumerate2(BitSet *self) {
+    uint32_t total = 0;
+    for (uint32_t elem = bitset_next_set_bit(self, 0); elem >= 0; elem = bitset_next_set_bit(self, elem + 1)) {
         //printf ("%d ", elem); 
         total += elem;
     }
@@ -97,7 +97,7 @@ void bitset_iter_begin(BitSetIterator *iter, BitSet *bs) {
     iter->capacity = bs->capacity;
 }
 
-int bitset_iter_next_old(BitSetIterator *bsi) {
+uint32_t bitset_iter_next_old(BitSetIterator *bsi) {
 
     if (bsi->index >= bsi->capacity)
         return -1;
@@ -133,7 +133,7 @@ int bitset_iter_next_old(BitSetIterator *bsi) {
 
 }
 
-int bitset_iter_next(BitSetIterator *bsi) {
+uint32_t bitset_iter_next(BitSetIterator *bsi) {
 
     while (bsi->index < bsi->capacity) {
         /* find next set bit in current chunk, if it exists */
@@ -161,7 +161,7 @@ int bitset_iter_next(BitSetIterator *bsi) {
     return -1;
 }
 
-inline int bitset_next_set_bit(BitSet *bs, int index) {
+inline uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
     uint64_t *chunk = bs->chunks + (index >> 6);
     uint64_t mask = 1ull << (index & 0x3F);
     while (index < bs->capacity) {
@@ -214,12 +214,12 @@ Adding inline keyword and -O2 reduces to 0.064 seconds (0.641 sec for 1M enumera
 
 */
 
-int test_main (void) {
-    int max = 50000;
+uint32_t test_main (void) {
+    uint32_t max = 50000;
     BitSet *bs = bitset_new(max);
-    for (int i = 0; i < 50000; i += 2)
+    for (uint32_t i = 0; i < 50000; i += 2)
         bitset_set(bs, i);
-    for (int i = 0; i < 100000; i++) {
+    for (uint32_t i = 0; i < 100000; i++) {
         bitset_enumerate2(bs);
     }
     bitset_destroy(bs);

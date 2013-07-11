@@ -93,7 +93,6 @@ for (tid, sid) in db.execute(query) :
 ############################
 
 
-#switch to unsigned
 #pack arrival and departure into 4 bytes w/ offset?
 
 # C structs, must match those defined in .h files.
@@ -189,7 +188,7 @@ def fetch_stop_times(trip_ids) :
             yield(arrival_time, departure_time)
 
 # make this into a method on a Header class 
-struct_header = Struct('8s13i')
+struct_header = Struct('8s13I')
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -412,7 +411,7 @@ transfers_offsets = []
 query = """
 select from_stop_id, to_stop_id, transfer_type, min_transfer_time
 from transfers where from_stop_id = ?"""
-struct_2i = Struct('if')
+struct_2i = Struct('If')
 for from_idx, from_sid in enumerate(stop_id_for_idx) :
     transfers_offsets.append(offset)
     for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
@@ -427,14 +426,14 @@ assert len(transfers_offsets) == nstops + 1
 print "saving stop indexes"
 write_text_comment("STOP STRUCTS")
 loc_stops = tell()
-struct_2i = Struct('ii')
+struct_2i = Struct('II')
 for stop in zip (stop_routes_offsets, transfers_offsets) :
     out.write(struct_2i.pack(*stop));
 
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-route_t = Struct('iiiii') # change to unsigned
+route_t = Struct('IIIII')
 route_t_fields = [route_stops_offsets, stop_times_offsets, trip_ids_offsets, route_n_stops, route_n_trips]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :

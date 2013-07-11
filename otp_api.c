@@ -24,12 +24,12 @@
 #define QUEUE_CONN  500
 #define MAX_CONN    100 // maximum number of simultaneous incoming HTTP connections
 
-int n_conn;
+uint32_t n_conn;
 struct pollfd *conn;
 char conn_buffers[MAX_CONN][BUFLEN];
-int buf_sizes[MAX_CONN];
+uint32_t buf_sizes[MAX_CONN];
 
-static void add_conn (int sd) {
+static void add_conn (uint32_t sd) {
     if (n_conn < MAX_CONN - 1) {
         conn[n_conn].fd = sd;
         conn[n_conn].events = POLLIN;
@@ -41,7 +41,7 @@ static void add_conn (int sd) {
 }
 
 /* Returns true if the item was removed, false if the operation failed. */
-static bool remove_conn (int sd) {
+static bool remove_conn (uint32_t sd) {
     if (n_conn < 1) {
         return false; // called remove on an empty list
     }
@@ -61,11 +61,11 @@ static bool remove_conn (int sd) {
 }
 
 /* parameter nc: open HTTP connection number to read from */
-static void read_input (int nc) {
+static void read_input (uint32_t nc) {
     char *buf = conn_buffers[nc];
     char *c = buf + buf_sizes[nc]; // position of the first new character in the buffer
-    int remaining = BUFLEN - buf_sizes[nc];
-    int received = recv (conn[nc].fd, buf, remaining, 0);
+    uint32_t remaining = BUFLEN - buf_sizes[nc];
+    uint32_t received = recv (conn[nc].fd, buf, remaining, 0);
     if (received <= 0) {
         printf ("receive error \n");
         return; //buf_reset (nc);
@@ -118,7 +118,7 @@ static void read_input (int nc) {
     struct in_addr      client_ip_addr;
 }
 
-int main (void) {
+uint32_t main (void) {
     
     // Set up TCP/IP stream socket for incoming HTTP requests
     struct sockaddr_in	server_in_addr = {
@@ -127,7 +127,7 @@ int main (void) {
         .sin_addr.s_addr = htonl(INADDR_ANY)
     };
     // Socket is nonblocking -- connections or bytes may not be waiting
-    unsigned int server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    uint32_t server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     socklen_t in_addr_length = sizeof (server_in_addr);
     bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr));
     listen(server_socket, PENDING);
@@ -155,7 +155,7 @@ int main (void) {
     for (;;) {
         // Blocking poll for queued connections and ZMQ broker events and block forever.
         // TODO we should change the number of items if MAX_CONN reached, to stop checking for incoming
-        int n_waiting = zmq_poll (items, 2 + n_conn, -1); 
+        uint32_t n_waiting = zmq_poll (items, 2 + n_conn, -1); 
         if (n_waiting < 1) {
             printf ("zmq socket poll error %d\n", n_waiting);
             continue;
@@ -165,7 +165,7 @@ int main (void) {
             // convert to JSON and write out to client socket, then close socket
             n_waiting--;
         }
-        for (int c = 0; c < n_conn && n_waiting > 0; ++c) {
+        for (uint32_t c = 0; c < n_conn && n_waiting > 0; ++c) {
             // Read from any incoming HTTP connections that have available input.
             // Check existing connections before adding new ones, since adding will change count.
             // This is potentially inefficient since a single new incoming connection will cause an iteration through the whole list of existing connections.
@@ -176,7 +176,7 @@ int main (void) {
         }
         if (items[1].revents & ZMQ_POLLIN) {
             // Listening TCP/IP socket has a queued connection
-            unsigned int client_socket;
+            uint32_t client_socket;
             // Will client sockets necessarily be nonblocking because the listening socket is?
             client_socket = accept(server_socket, (struct sockaddr *) &client_in_addr, &in_addr_length);
             if (client_socket < 0) {
