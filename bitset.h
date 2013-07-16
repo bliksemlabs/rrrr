@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define BITSET_NONE UINT32_MAX
+
 typedef struct bitset_s BitSet;
 struct bitset_s {
     uint32_t capacity;

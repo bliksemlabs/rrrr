@@ -12,8 +12,6 @@
 #include <time.h>
 #include <stdint.h>
 
-#define WALK -2
-
 void router_setup(router_t *router, tdata_t *td) {
     srand(time(NULL));
     router->tdata = *td;
@@ -65,8 +63,9 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
     tdata_t d = r.tdata; // this is copying... 
     router_state_t *states = r.states + (round * d.n_stops);
     bitset_reset (r.updated_routes);
-    for (uint32_t stop_index_from = bitset_next_set_bit (r.updated_stops, 0); stop_index_from >= 0;
-             stop_index_from = bitset_next_set_bit (r.updated_stops, stop_index_from + 1)) {
+    for (uint32_t stop_index_from  = bitset_next_set_bit (r.updated_stops, 0); 
+                  stop_index_from != BITSET_NONE;
+                  stop_index_from  = bitset_next_set_bit (r.updated_stops, stop_index_from + 1)) {
         I printf ("stop %d was marked as updated \n", stop_index_from);
         flag_routes_for_stop (&r, stop_index_from, date_mask);
         router_state_t *state_from = states + stop_index_from;
@@ -125,7 +124,7 @@ static void dump_results(router_t *prouter) {
     for (uint32_t stop = 0; stop < router.tdata.n_stops; ++stop) {
         bool set = false;
         for (uint32_t round = 0; round < RRRR_MAX_ROUNDS; ++round) {
-            if (states[round][stop].time < UNREACHED) {
+            if (states[round][stop].time != UNREACHED) {
                 set = true;
                 break;
             } 
@@ -218,11 +217,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
 
     // TODO restrict pointers?
     // Iterate over rounds. In round N, we have made N transfers.
-    for (uint32_t round = 0; round < RRRR_MAX_ROUNDS; ++round) { // RRRR_MAX_ROUNDS
-        uint32_t last_round = (round == 0) ? 0 : round - 1;
+    for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) { // RRRR_MAX_ROUNDS
+        int last_round = (round == 0) ? 0 : round - 1;
         I printf("round %d\n", round);
         // Iterate over all routes which contain a stop that was updated in the last round.
-        for (uint32_t route_idx = bitset_next_set_bit (router.updated_routes, 0); route_idx >= 0;
+        for (uint32_t route_idx = bitset_next_set_bit (router.updated_routes, 0); route_idx != BITSET_NONE;
                  route_idx = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
             route_t route = router.tdata.routes[route_idx];
             I printf("  route %d: %s\n", route_idx, tdata_route_id_for_index(&(router.tdata), route_idx));
@@ -241,7 +240,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             uint32_t board_time = NONE; // time when that trip was boarded
             // Iterate over stop indexes within the route. Each one corresponds to a global stop index.
             // Note that the stop times array should be accessed with [trip][route_stop] not [trip][stop].
-            for (uint32_t route_stop = req.arrive_by ? route.n_stops - 1 : 0;
+            // The iteration variable is signed to allow ending the iteration at the beginning of the route.
+            for (int route_stop = req.arrive_by ? route.n_stops - 1 : 0;
                  req.arrive_by ? route_stop >= 0 : route_stop < route.n_stops; 
                  req.arrive_by ? --route_stop : ++route_stop ) {
                 uint32_t stop = route_stops[route_stop];
@@ -268,8 +268,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     T tdata_dump_route(&(router.tdata), route_idx);
                     // Real-time updates can ruin FIFO ordering within routes; track the best trip.
                     // Scanning through the whole list reduces speed by ~20 percent.
-                    uint32_t     best_trip = NONE;
-                    rtime_t best_time = req.arrive_by ? 0 : UINT16_MAX; // should just add a conditional on UNREACHED below for readability
+                    uint32_t best_trip = NONE;
+                    rtime_t  best_time = req.arrive_by ? 0 : UINT16_MAX; // should just add a conditional on UNREACHED below for readability
                     for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
                         T printf("    board option %d at %s \n", this_trip, 
                                  timetext(stop_times[this_trip][route_stop].departure));
@@ -351,13 +351,13 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
     router_request_t req = *preq;
     char *b = buf;
     char *b_end = buf + buflen;
-    for (uint32_t round_outer = 0; round_outer < RRRR_MAX_ROUNDS; ++round_outer) {
+    for (int round_outer = 0; round_outer < RRRR_MAX_ROUNDS; ++round_outer) {
         uint32_t s = (req.arrive_by ? req.from : req.to);
         router_state_t *states = router.states + router.tdata.n_stops * round_outer;
         if (states[s].time == UNREACHED)
             continue;
         b += sprintf (b, "\nA %d VEHICLES \n", round_outer + 1);
-        uint32_t round = round_outer;
+        int round = round_outer;
         while (round >= 0) {
             states = router.states + router.tdata.n_stops * round;
             if (states[s].time == UNREACHED) {
@@ -391,7 +391,7 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
             }
             if (last_stop == (req.arrive_by ? req.to : req.from))
                 break;
-            if (route >= 0 && round > 0)
+            if (route != WALK && route != NONE && round > 0)
                 round -= 1;
             s = last_stop;
         }
@@ -406,7 +406,7 @@ uint32_t rrrrandom(uint32_t limit) {
 
 void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
-    req->from = req->to = req->time = NONE; 
+    req->from = req->to = req->time = UNREACHED; 
     req->time = 3600 * 18;
     req->arrive_by = true;
     req->time_cutoff = UNREACHED;
@@ -448,7 +448,8 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     if (max_transfers >= RRRR_MAX_ROUNDS) // range-check to keep search within states array
         max_transfers = RRRR_MAX_ROUNDS - 1;
     // find the solution with the most transfers and the earliest arrival
-    for (uint32_t round = max_transfers; round >= 0; --round) { 
+    // index variable is signed to allow ending iteration at round 0
+    for (int32_t round = max_transfers; round >= 0; --round) { 
         if (states[round][stop].time != UNREACHED) {
             D printf ("State present at round %d \n", round);
             D router_state_dump (&(states[round][stop]));

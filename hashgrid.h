@@ -4,6 +4,9 @@
 #define _HASHGRID_H
 
 #include "geometry.h"
+#include <stdint.h>
+
+#define HASHGRID_NONE UINT32_MAX
 
 typedef struct HashGrid HashGrid;
 

@@ -78,7 +78,7 @@ void HashGrid_query (HashGrid *hg, HashGridResult *result, coord_t coord, double
 
 uint32_t HashGridResult_next (HashGridResult *r) {
     if ( ! (r->has_next))
-        return -1;
+        return HASHGRID_NONE;
     uint32_t (*counts)[r->hg->grid_dim] = r->hg->counts;
     uint32_t *(*bins)[r->hg->grid_dim] = r->hg->bins;
     r->i += 1;
@@ -88,7 +88,7 @@ uint32_t HashGridResult_next (HashGridResult *r) {
             r->x = r->xmin;
             if (r->y == r->ymax) {
                 r->has_next = false;
-                return -1;
+                return HASHGRID_NONE;
             } else {
                 r->y = (r->y + 1) % r->hg->grid_dim;
             }
@@ -112,7 +112,7 @@ uint32_t HashGridResult_next (HashGridResult *r) {
 */
 uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
     uint32_t item;
-    while ((item = HashGridResult_next(r)) != -1) {
+    while ((item = HashGridResult_next(r)) != HASHGRID_NONE) {
         coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
@@ -127,7 +127,7 @@ uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
             }
         }
     }
-    return -1;
+    return HASHGRID_NONE;
 }
 
 void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items) {
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
     HashGrid_query (&hg, &result, qc, radius_meters);
     uint32_t item;
     double distance;
-    while ((item = HashGridResult_next_filtered(&result, &distance)) != -1) {
+    while ((item = HashGridResult_next_filtered(&result, &distance)) != HASHGRID_NONE) {
         latlon_t *ll = tdata.stop_coords + item;
         // latlon_dump (tdata.stop_coords + item);
         printf ("%d,%f,%f,%f\n", item, ll->lat, ll->lon, distance);

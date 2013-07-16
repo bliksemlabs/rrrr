@@ -161,6 +161,7 @@ uint32_t bitset_iter_next(BitSetIterator *bsi) {
     return -1;
 }
 
+/* Returns BITSET_NONE if there are not more set bits. */
 inline uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
     uint64_t *chunk = bs->chunks + (index >> 6);
     uint64_t mask = 1ull << (index & 0x3F);
@@ -180,11 +181,11 @@ inline uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
                 ++chunk;
                 index += 64;
                 if (index >= bs->capacity)
-                    return -1;
+                    return BITSET_NONE;
             }
         }
     }
-    return -1;
+    return BITSET_NONE;
 }
 
 /*
@@ -214,7 +215,7 @@ Adding inline keyword and -O2 reduces to 0.064 seconds (0.641 sec for 1M enumera
 
 */
 
-uint32_t test_main (void) {
+int test_main (void) {
     uint32_t max = 50000;
     BitSet *bs = bitset_new(max);
     for (uint32_t i = 0; i < 50000; i += 2)
