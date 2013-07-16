@@ -78,7 +78,7 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
             // uint32_t n_transfers_for_stop = tr_end - tr;
             for ( ; tr < tr_end ; ++tr) {
                 uint32_t stop_index_to = tr->target_stop;
-                rtime_t transfer_duration = (((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC)) >> 1); // 2-sec units
+                rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
                 rtime_t time_to = arrv ? time_from - transfer_duration
                                        : time_from + transfer_duration;
                 if (arrv ? time_to > time_from : time_to < time_from) {
@@ -179,8 +179,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // yesterday, today, tomorrow
     // uint32_t date_masks[3] = {date_mask >> 1, date_mask, date_mask << 1};
 
-    // Internal router time units are 2 seconds in order to fit 1.5 days into a uint16_t.
-    rtime_t origin_time = req.time >> 1; // TODO: make a function for this
+    // Internal router time units are 4 seconds in order to fit 3 days into a uint16_t.
+    rtime_t origin_time = SEC_TO_RTIME(req.time);
     I router_request_dump(prouter, preq);
     T printf("\norigin_time %s \n", timetext(origin_time));
     T tdata_dump(&(router.tdata));
@@ -454,8 +454,8 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             D printf ("State present at round %d \n", round);
             D router_state_dump (&(states[round][stop]));
             req->max_transfers = round;
-            req->time_cutoff = req->time >> 1; // fix units situation
-            req->time = states[round][stop].time << 1;
+            req->time_cutoff = SEC_TO_RTIME(req->time); // fix units situation
+            req->time = RTIME_TO_SEC(states[round][stop].time);
             req->arrive_by = !(req->arrive_by);
             // router_request_dump(router, req);
             return true;
@@ -505,7 +505,7 @@ void router_request_dump(router_t *router, router_request_t *req) {
     char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
     char *to_stop_id = tdata_stop_id_for_index(&(router->tdata), req->to);
     char time[10], time_cutoff[10];
-    btimetext(req->time >> 1, time);
+    btimetext(SEC_TO_RTIME(req->time), time);
     btimetext(req->time_cutoff, time_cutoff);    // oh, different units...
     printf("-- Router Request --\n"
            "from:  %s [%d]\n"
