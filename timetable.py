@@ -97,11 +97,11 @@ for (tid, sid) in db.execute(query) :
 
 # C structs, must match those defined in .h files.
 
-struct_1I = Struct('I') # a single UNSIGNED int
+struct_1I = Struct('I')
 def writeint(x) :
     out.write(struct_1I.pack(x));
 
-struct_2H = Struct('HH') # a single UNSIGNED short 
+struct_2H = Struct('HH') 
 def write_2ushort(x, y) : 
     out.write(struct_2H.pack(x, y));
         
@@ -351,7 +351,7 @@ stoffset = 0
 all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
 tioffset = 0
-crazy_threshold = 60 * 60 * 24 * 1.3 
+crazy_threshold = 60 * 60 * (24 + 8)
 for idx, route in enumerate(route_for_idx) :
     if idx > 0 and idx % 1000 == 0 :
         print 'wrote %d routes' % idx
@@ -411,14 +411,14 @@ transfers_offsets = []
 query = """
 select from_stop_id, to_stop_id, transfer_type, min_transfer_time
 from transfers where from_stop_id = ?"""
-struct_2i = Struct('If')
+struct_If = Struct('If')
 for from_idx, from_sid in enumerate(stop_id_for_idx) :
     transfers_offsets.append(offset)
     for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
         if ttime == None :
             continue # skip non-time/non-distance transfers for now
         to_idx = idx_for_stop_id[to_sid]
-        out.write(struct_2i.pack(to_idx, float(ttime))) # must convert time/dist
+        out.write(struct_If.pack(to_idx, float(ttime))) # must convert time/dist
         offset += 1
 transfers_offsets.append(offset) # sentinel
 assert len(transfers_offsets) == nstops + 1
@@ -426,9 +426,9 @@ assert len(transfers_offsets) == nstops + 1
 print "saving stop indexes"
 write_text_comment("STOP STRUCTS")
 loc_stops = tell()
-struct_2i = Struct('II')
+struct_2I = Struct('II')
 for stop in zip (stop_routes_offsets, transfers_offsets) :
-    out.write(struct_2i.pack(*stop));
+    out.write(struct_2I.pack(*stop));
 
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
