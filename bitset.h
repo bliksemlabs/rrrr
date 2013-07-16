@@ -35,10 +35,6 @@ void bitset_dump(BitSet *self);
 
 void bitset_destroy(BitSet *self);
 
-void bitset_iter_begin(BitSetIterator*, BitSet*);
-
-uint32_t bitset_iter_next(BitSetIterator *self);
-
 uint32_t bitset_next_set_bit(BitSet*, uint32_t index);
 
 #endif // _BITSET_H
