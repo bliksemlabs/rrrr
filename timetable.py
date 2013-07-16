@@ -351,7 +351,7 @@ stoffset = 0
 all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
 tioffset = 0
-crazy_threshold = 60 * 60 * (24 + 8)
+two_days = 60 * 60 * 24 * 2
 for idx, route in enumerate(route_for_idx) :
     if idx > 0 and idx % 1000 == 0 :
         print 'wrote %d routes' % idx
@@ -366,13 +366,13 @@ for idx, route in enumerate(route_for_idx) :
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
         if departure_time < arrival_time :
             print "negative dwell time"
-            # do not write UNREACHABLE in util.h because this may cause problems
-            write_2ushort(0xFFF0 - 1, 0xFFF0 - 1) 
-        elif departure_time > crazy_threshold :
-            print 'suspect departure time:', departure_time, time_string_from_seconds(departure_time)
-            write_2ushort(0xFFF0 - 1, 0xFFF0 - 1) 
+            # do not write UNREACHABLE, this may cause problems
+            write_2ushort(two_days >> 2, two_days >> 2)
+        elif departure_time > two_days :
+            print 'time greater than two days:', departure_time, time_string_from_seconds(departure_time)
+            write_2ushort(two_days >> 2, two_days >> 2)
         else :
-            write_2ushort(arrival_time >> 1, departure_time >> 1) 
+            write_2ushort(arrival_time >> 2, departure_time >> 2)
         stoffset += 1 
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
