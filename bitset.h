@@ -15,14 +15,6 @@ struct bitset_s {
     uint32_t nchunks;
 };
 
-typedef struct bitset_iter_s BitSetIterator;
-struct bitset_iter_s {
-    uint64_t *chunk;
-    uint64_t mask;
-    uint32_t index;
-    uint32_t capacity;
-};
-
 BitSet *bitset_new(uint32_t capacity);
 
 void bitset_reset(BitSet *self); // rename to bitset_clear?
