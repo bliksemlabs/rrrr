@@ -89,15 +89,15 @@ Return the next set index in this BitSet greater than or equal to the specified 
 Returns BITSET_NONE if there are no more set bits. 
 */
 inline uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
-    uint64_t *chunk = bs->chunks + (index >> 6);
-    uint64_t mask = 1ull << (index & 0x3F);
+    uint64_t *chunk = bs->chunks + (index >> 6);  // 2^6 == 64
+    uint64_t mask = 1ull << (index & 0x3F);       // binary 111111, i.e. the six lowest-order bits 
     while (index < bs->capacity) {
-        /* check current bit */
+        /* check current bit in current chunk */
         if (mask & *chunk)
             return index;
         /* move to next bit in current chunk */
-        mask <<= 1; // no-op on first call because mask is 0
-        index += 1; // brings index to 0 on first call
+        mask <<= 1;
+        index += 1;
         /* begin a new chunk */
         if (mask == 0) {
             mask = 1ull;
@@ -106,8 +106,9 @@ inline uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
             while ( ! *chunk ) {
                 ++chunk;
                 index += 64;
-                if (index >= bs->capacity)
+                if (index >= bs->capacity) {
                     return BITSET_NONE;
+                }
             }
         }
     }
