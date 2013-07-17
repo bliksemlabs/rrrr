@@ -406,7 +406,7 @@ uint32_t rrrrandom(uint32_t limit) {
 
 void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
-    req->from = req->to = req->time = UNREACHED; 
+    req->from = req->to = NONE;
     req->time = 3600 * 18;
     req->arrive_by = true;
     req->time_cutoff = UNREACHED;
