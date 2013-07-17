@@ -20,7 +20,7 @@ char *btimetext(rtime_t rt, char *buf) {
         strcpy(buf, "   --   ");
         return buf;
     }
-    uint32_t t = (uint32_t)rt << 1;
+    uint32_t t = RTIME_TO_SEC(rt);
     uint32_t s = t % 60;
     uint32_t m = t / 60;
     uint32_t h = m / 60;
