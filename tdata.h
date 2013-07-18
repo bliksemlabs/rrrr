@@ -23,12 +23,6 @@ struct route {
     rtime_t  last;
 };
 
-typedef struct transfer transfer_t;
-struct transfer {
-    uint32_t target_stop;
-    float dist_meters;
-};
-
 typedef struct stoptime stoptime_t;
 struct stoptime {
     rtime_t arrival;
@@ -49,7 +43,8 @@ struct tdata {
     uint32_t *route_stops;
     stoptime_t *stop_times;
     uint32_t *stop_routes;
-    transfer_t *transfers; 
+    uint32_t *transfer_target_stops;
+    uint8_t  *transfer_dist_meters;
     // optional data -- NULL pointer means it is not available
     latlon_t *stop_coords;
     uint32_t stop_id_width;

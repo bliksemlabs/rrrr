@@ -25,7 +25,8 @@ struct tdata_header {
     uint32_t loc_route_stops;
     uint32_t loc_stop_times;
     uint32_t loc_stop_routes;
-    uint32_t loc_transfers; 
+    uint32_t loc_transfer_target_stops; 
+    uint32_t loc_transfer_dist_meters; 
     uint32_t loc_stop_ids; 
     uint32_t loc_route_ids; 
     uint32_t loc_trip_ids; 
@@ -91,7 +92,8 @@ void tdata_load(char *filename, tdata_t *td) {
     td->route_stops = (uint32_t *) (b + header->loc_route_stops);
     td->stop_times = (stoptime_t*) (b + header->loc_stop_times);
     td->stop_routes = (uint32_t *) (b + header->loc_stop_routes);
-    td->transfers = (transfer_t*) (b + header->loc_transfers);
+    td->transfer_target_stops = (uint32_t *) (b + header->loc_transfer_target_stops);
+    td->transfer_dist_meters = (uint8_t *) (b + header->loc_transfer_dist_meters);
     //maybe replace with pointers because there's a lot of wasted space?
     td->stop_id_width = *((uint32_t *) (b + header->loc_stop_ids));
     td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(uint32_t));

@@ -101,11 +101,12 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
             flag_routes_for_stop (&r, stop_index_from, day_mask);
         }
         /* Then apply transfers from the stop to nearby stops */
-        transfer_t *tr     = d.transfers + d.stops[stop_index_from    ].transfers_offset;
-        transfer_t *tr_end = d.transfers + d.stops[stop_index_from + 1].transfers_offset;
+        uint32_t tr     = d.stops[stop_index_from    ].transfers_offset;
+        uint32_t tr_end = d.stops[stop_index_from + 1].transfers_offset;        
         for ( ; tr < tr_end ; ++tr) {
-            uint32_t stop_index_to = tr->target_stop;
-            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
+            uint32_t stop_index_to = d.transfer_target_stops[tr];
+            uint16_t dist_meters = d.transfer_dist_meters[tr] << 2;
+            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
             rtime_t time_to = arrv ? time_from - transfer_duration
                                    : time_from + transfer_duration;
             /* Avoid reserved values including UNREACHED */
