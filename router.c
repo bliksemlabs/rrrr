@@ -180,7 +180,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // uint32_t date_masks[3] = {date_mask >> 1, date_mask, date_mask << 1};
 
     // Internal router time units are 4 seconds in order to fit 3 days into a uint16_t.
-    rtime_t origin_time = SEC_TO_RTIME(req.time);
+    rtime_t origin_time = epoch_to_rtime (req.time, NULL);
     I router_request_dump(prouter, preq);
     T printf("\norigin_time %s \n", timetext(origin_time));
     T tdata_dump(&(router.tdata));

@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 /*
   2^16 / 60 / 60 is 18.2 hours at one-second resolution.
@@ -20,7 +21,8 @@ typedef uint16_t rtime_t;
 
 #define SEC_IN_ONE_DAY  (24 * 60 * 60)
 #define SEC_IN_TWO_DAYS (2 * SEC_IN_ONE_DAY)
-#define RTIME_ONE_DAY (SEC_TO_RTIME(SEC_IN_ONE_DAY))
+#define RTIME_ONE_DAY   (SEC_TO_RTIME(SEC_IN_ONE_DAY))
+#define RTIME_TWO_DAYS  (SEC_TO_RTIME(SEC_IN_TWO_DAYS))
 
 
 // We should avoid relying on the relative value of these preprocessor constants (inequalities)
@@ -36,5 +38,7 @@ char *btimetext(rtime_t t, char *buf); // minimum buffer size is 9 characters
 char *timetext(rtime_t t);
 
 void printBits(size_t const size, void const * const ptr);
+
+rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm);
 
 #endif // _UTIL_H
