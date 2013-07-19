@@ -9,9 +9,9 @@
 int main (void) {
 
     // initialize logging
-    setlogmask(RRRR_UPTO(RRRR_DEBUG));
-    openlog(PROGRAM_NAME, RRRR_CONS | RRRR_PID | RRRR_PERROR, RRRR_USER);
-    syslog(RRRR_INFO, "broker starting up");
+    setlogmask(LOG_UPTO(LOG_DEBUG));
+    openlog(PROGRAM_NAME, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
+    syslog(LOG_INFO, "broker starting up");
 
     zctx_t *ctx = zctx_new ();
     void *frontend = zsocket_new (ctx, ZMQ_ROUTER);
@@ -25,7 +25,7 @@ int main (void) {
 
     while (true) {
         if (++npoll % 1000 == 0)
-            syslog(RRRR_INFO, "broker: frx %04d ftx %04d brx %04d btx %04d / %d workers\n", 
+            syslog(LOG_INFO, "broker: frx %04d ftx %04d brx %04d btx %04d / %d workers\n", 
                 frx, ftx, brx, btx, nworkers);
         zmq_pollitem_t items [] = {
             { backend,  0, ZMQ_POLLIN, 0 },
@@ -68,7 +68,7 @@ int main (void) {
     }
     
     //  When we're done, clean up properly
-    syslog(RRRR_INFO, "broker terminating");
+    syslog(LOG_INFO, "broker terminating");
     while (zlist_size (workers)) {
         zframe_t *frame = (zframe_t *) zlist_pop (workers);
         zframe_destroy (&frame);

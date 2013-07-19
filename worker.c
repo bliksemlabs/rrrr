@@ -15,9 +15,9 @@ int main(int argc, char **argv) {
     /* SETUP */
     
     // logging
-    setlogmask(RRRR_UPTO(RRRR_DEBUG));
-    openlog(PROGRAM_NAME, RRRR_CONS | RRRR_PID | RRRR_PERROR, RRRR_USER);
-    syslog(RRRR_INFO, "worker starting up");
+    setlogmask(LOG_UPTO(LOG_DEBUG));
+    openlog(PROGRAM_NAME, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
+    syslog(LOG_INFO, "worker starting up");
     
     // load transit data from disk
     tdata_t tdata;
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     // signal to the broker/load balancer that this worker is ready
     zframe_t *frame = zframe_new (WORKER_READY, 1);
     zframe_send (&frame, zsock, 0);
-    syslog(RRRR_INFO, "worker sent ready message to load balancer");
+    syslog(LOG_INFO, "worker sent ready message to load balancer");
 
     /* MAIN LOOP */
     int request_count = 0;
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         if (!msg) // interrupted (signal)
             break; 
         if (++request_count % 100 == 0)
-            syslog(RRRR_INFO, "worker received %d requests\n", request_count);
+            syslog(LOG_INFO, "worker received %d requests\n", request_count);
         // only manipulate the last frame, then send the recycled message back to the broker
         zframe_t *frame = zmsg_last (msg);
         if (zframe_size (frame) == sizeof (router_request_t)) {
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
             int result_length = router_result_dump(&router, &req, result_buf, 8000);
             zframe_reset (frame, result_buf, result_length);
         } else {
-            syslog (RRRR_WARNING, "worker received reqeust with wrong length");
+            syslog (LOG_WARNING, "worker received reqeust with wrong length");
             zframe_reset (frame, "ERR", 3);
         }
         // send response to broker, thereby requesting more work
@@ -76,10 +76,10 @@ int main(int argc, char **argv) {
     }
     
     /* TEAR DOWN */
-    syslog(RRRR_INFO, "worker terminating");
+    syslog(LOG_INFO, "worker terminating");
     // frame = zframe_new (WORKER_LEAVING, 1);
     // zframe_send (&frame, zmq_sock, 0);
-    // syslog(RRRR_INFO, "departure message sent to load balancer");
+    // syslog(LOG_INFO, "departure message sent to load balancer");
     // zmsg_t *msg = zmsg_recv (zmq_sock);
     tdata_close(&tdata);
     zctx_destroy (&zctx); //zmq_close(socket) necessary before context destroy?
