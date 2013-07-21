@@ -4,6 +4,7 @@ import sys, struct, time
 from struct import Struct
 # requires graphserver to be installed
 from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
+import datetime
 from datetime import timedelta, date
 
 if len(sys.argv) < 2 :
@@ -64,6 +65,8 @@ except :
     print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
     start_date = find_max_service()
 print 'calendar start date is %s' % start_date
+calendar_start_time = time.mktime(datetime.datetime.combine(start_date, datetime.time.min).timetuple())
+print 'epoch time at which calendar starts: %d' % calendar_start_time
 
 sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
@@ -188,14 +191,14 @@ def fetch_stop_times(trip_ids) :
             yield(arrival_time, departure_time)
 
 # make this into a method on a Header class 
-struct_header = Struct('8s13I')
+struct_header = Struct('8sL13I')
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, nstops, nroutes, loc_stops, loc_routes, loc_route_stops, 
-        loc_stop_times, loc_stop_routes, loc_transfers, 
+    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_routes, 
+        loc_route_stops, loc_stop_times, loc_stop_routes, loc_transfers, 
         loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active)
     out.write(packed)
 
