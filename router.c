@@ -173,16 +173,28 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     router_t router = *prouter; 
     router_request_t req = *preq;
     //router_request_dump(prouter, preq);
-
     uint32_t n_stops = router.tdata.n_stops;
-    uint32_t date_mask = 1 << 3; // as a demo, search on the 3rd day of the schedule
-    // yesterday, today, tomorrow
-    // uint32_t date_masks[3] = {date_mask >> 1, date_mask, date_mask << 1};
-
-    // Internal router time units are 4 seconds in order to fit 3 days into a uint16_t.
-    rtime_t origin_time = epoch_to_rtime (req.time, NULL);
+    
+    struct tm origin_tm;
+    rtime_t origin_rtime = epoch_to_rtime (req.time, &origin_tm);
+    // origin_rtime += RTIME_ONE_DAY; // shift to day 1, day 0 is yesterday.
+    int32_t day = (mktime(&origin_tm) - router.tdata.calendar_start_time) / SEC_IN_ONE_DAY;
+    if (day < 0 || day > 31 ) {
+        /* date not within validity period of the timetable file, wrap to validity range */
+        day %= 32;
+        if (day < 0)
+            day += 32;
+        /* should set a flag in response to say that results are estimated */
+    }
+    uint32_t date_mask = 1 << day;
+    printf ("day %d, date mask ", day);
+    printBits (4, &date_mask);
+    /* Yesterday, today, tomorrow. */
+    /* Note that yesterday will be 0 if we are on the first day of the calendar. */
+    uint32_t date_masks[3] = {date_mask >> 1, date_mask, date_mask << 1};
+    
     I router_request_dump(prouter, preq);
-    T printf("\norigin_time %s \n", timetext(origin_time));
+    T printf("\norigin_time %s \n", timetext(origin_rtime));
     T tdata_dump(&(router.tdata));
     
     I printf("Initializing router state \n");
@@ -207,17 +219,23 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         origin = req.from;
         target = req.to;
     }
-    router.best_time[origin] = origin_time;
-    states[0][origin].time = origin_time;
+    router.best_time[origin] = origin_rtime;
+    states[0][origin].time = origin_rtime;
     bitset_reset(router.updated_stops);
     bitset_set(router.updated_stops, origin);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
     apply_transfers(router, 0, req.walk_speed, date_mask, req.arrive_by);
     I dump_results(prouter);
 
+    /* apply upper bounds (speeds up second and third reversed searches) */
+    uint32_t n_rounds = req.max_transfers + 1;
+    if (n_rounds > RRRR_MAX_ROUNDS)
+        n_rounds = RRRR_MAX_ROUNDS;
+    //router.best_time[target] = req.time_cutoff; // time cutoff is already in rtime units
+    
     // TODO restrict pointers?
     // Iterate over rounds. In round N, we have made N transfers.
-    for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) { // RRRR_MAX_ROUNDS
+    for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {  // < n_rounds to apply upper bound on transfers...
         int last_round = (round == 0) ? 0 : round - 1;
         I printf("round %d\n", round);
         // Iterate over all routes which contain a stop that was updated in the last round.
@@ -296,7 +314,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         board_time = best_time;
                         board_stop = stop;
                         trip = best_trip;
-                        if (req.arrive_by ? best_time > origin_time : best_time < origin_time)
+                        if (req.arrive_by ? best_time > origin_rtime : best_time < origin_rtime)
                             printf("ERROR: boarded before start time, trip %d stop %d \n", trip, stop);
                     } else {
                         T printf("    no suitable trip to board.\n");
@@ -337,7 +355,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         // Update list of routes for next round based on stops that were touched in this round.
         apply_transfers(router, round, req.walk_speed, date_mask, req.arrive_by);
         // just in case
-        states[round][origin].time = origin_time;
+        states[round][origin].time = origin_rtime;
         states[round][origin].back_stop = -1;
         states[round][origin].back_route = -1;
         // dump_results(prouter); // DEBUG
