@@ -46,7 +46,7 @@ char *timetext(rtime_t t) {
 void printBits(size_t const size, void const * const ptr) {
     unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
-    uint32_t i, j;
+    int i, j;
     for (i=size-1;i>=0;i--) {
         for (j=7;j>=0;j--) {
             byte = b[i] & (1<<j);
@@ -86,14 +86,14 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) {
         *localtm = ltm;
     }
     uint32_t seconds = (((ltm.tm_hour * 60) + ltm.tm_min) * 60) + ltm.tm_sec;
-//    /*
+    rtime_t rtime = SEC_TO_RTIME(seconds);
+    /*
     printf ("epoch time is %ld \n", epochtime);
     printf ("epoch time is %s", ctime(&epochtime)); // ctime and asctime include newlines
     printf ("ltm is %s", asctime(&ltm));    
     printf ("seconds is %d \n", seconds);
-//    */
-    rtime_t rtime = SEC_TO_RTIME(seconds);
     printf ("rtime is %d \n", rtime);
+    */
     return rtime;
 }
 
