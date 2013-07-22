@@ -19,11 +19,12 @@ typedef uint16_t rtime_t;
 #define SEC_TO_RTIME(x) ((x) >> 2)
 #define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
 
-#define SEC_IN_ONE_DAY  (24 * 60 * 60)
-#define SEC_IN_TWO_DAYS (2 * SEC_IN_ONE_DAY)
-#define RTIME_ONE_DAY   (SEC_TO_RTIME(SEC_IN_ONE_DAY))
-#define RTIME_TWO_DAYS  (SEC_TO_RTIME(SEC_IN_TWO_DAYS))
-
+#define SEC_IN_ONE_DAY    (24 * 60 * 60)
+#define SEC_IN_TWO_DAYS   (2 * SEC_IN_ONE_DAY)
+#define SEC_IN_THREE_DAYS (3 * SEC_IN_ONE_DAY)
+#define RTIME_ONE_DAY     (SEC_TO_RTIME(SEC_IN_ONE_DAY))
+#define RTIME_TWO_DAYS    (SEC_TO_RTIME(SEC_IN_TWO_DAYS))
+#define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
 
 // We should avoid relying on the relative value of these preprocessor constants (inequalities)
 // since they will be used in both departAfter and arriveBy searches.
