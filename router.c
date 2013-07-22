@@ -239,8 +239,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         int last_round = (round == 0) ? 0 : round - 1;
         I printf("round %d\n", round);
         // Iterate over all routes which contain a stop that was updated in the last round.
-        for (uint32_t route_idx = bitset_next_set_bit (router.updated_routes, 0); route_idx != BITSET_NONE;
-                 route_idx = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
+        for (uint32_t route_idx = bitset_next_set_bit (router.updated_routes, 0); 
+                      route_idx != BITSET_NONE;
+                      route_idx = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
             route_t route = router.tdata.routes[route_idx];
             I printf("  route %d: %s\n", route_idx, tdata_route_id_for_index(&(router.tdata), route_idx));
             T tdata_dump_route(&(router.tdata), route_idx);
@@ -249,11 +250,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             // C99 dynamically dimensioned array of size [route.n_trips][route.n_stops]
             stoptime_t (*stop_times)[route.n_stops] = (void*)
                  tdata_stoptimes_for_route(&(router.tdata), route_idx);
-            char (*trip_ids)[router.tdata.trip_id_width] = (void*)
-                 tdata_trip_ids_for_route(&(router.tdata), route_idx); 
             uint32_t *trip_masks = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
             uint32_t trip = NONE;       // trip index within the route. NONE means not yet boarded.
-            char *trip_id = NULL;  // the trip_id of the currently boarded trip
             uint32_t board_stop = NONE; // stop index where that trip was boarded
             uint32_t board_time = NONE; // time when that trip was boarded
             // Iterate over stop indexes within the route. Each one corresponds to a global stop index.
@@ -310,7 +308,6 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     if (best_trip != NONE) {
                         I printf("    boarding trip %d at %s \n", best_trip, timetext(best_time));
                         // use a router_state struct for all this?
-                        trip_id = trip_ids[best_trip];
                         board_time = best_time;
                         board_stop = stop;
                         trip = best_trip;
