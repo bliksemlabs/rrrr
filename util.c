@@ -21,18 +21,22 @@ char *btimetext(rtime_t rt, char *buf) {
         strcpy(buf, "   --   ");
         return buf;
     }
+    char *day = "D0";
+    if (rt >= RTIME_THREE_DAYS) {
+        day = "D3!";
+        rt -= RTIME_THREE_DAYS;
+    } else if (rt >= RTIME_TWO_DAYS) {
+        day = "D2";
+        rt -= RTIME_TWO_DAYS;
+    } else if (rt >= RTIME_ONE_DAY) {
+        day = "D1";
+        rt -= RTIME_ONE_DAY;
+    }
     uint32_t t = RTIME_TO_SEC(rt);
     uint32_t s = t % 60;
     uint32_t m = t / 60;
     uint32_t h = m / 60;
     m = m % 60;
-    char *day;
-    if (rt >= RTIME_TWO_DAYS)
-        day = "D2";
-    else if (rt >= RTIME_ONE_DAY)
-        day = "D1";
-    else 
-        day = "D0";
     sprintf(buf, "%02d:%02d:%02d%s", h, m, s, day);
     return buf;
 }
@@ -64,16 +68,16 @@ void printBits(size_t const size, void const * const ptr) {
   The intermediate struct tm will be copied to the location pointed to by *stm, unless stm is null.
   The date should be range checked in the router, where we can see the validity of the tdata file.
 */
-rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) {
+rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     struct tm ltm;
     if (epochtime < SEC_IN_ONE_DAY) {
         time_t now;
         time(&now);
-        localtime_r (&now, &ltm);
+        localtime_r (&now, &ltm); // LOCAL date and time
         if (epochtime > 0) {
             /* use current date but specified time */
             struct tm etm;
-            localtime_r (&epochtime, &etm);
+            gmtime_r (&epochtime, &etm); // UTC so timezone doesn't affect interpretation of time
             ltm.tm_hour = etm.tm_hour;
             ltm.tm_min  = etm.tm_min;
             ltm.tm_sec  = etm.tm_sec;
@@ -82,8 +86,8 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) {
         /* use specified time and date */
         localtime_r (&epochtime, &ltm);
     }
-    if (localtm != NULL) {
-        *localtm = ltm;
+    if (tm_out != NULL) {
+        *tm_out = ltm;
     }
     uint32_t seconds = (((ltm.tm_hour * 60) + ltm.tm_min) * 60) + ltm.tm_sec;
     rtime_t rtime = SEC_TO_RTIME(seconds);
