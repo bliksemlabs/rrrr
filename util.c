@@ -15,22 +15,24 @@ void die(const char *msg) {
 
 static char buf[32];
 
-// buffer should always be at least 12 characters long, including terminating null
+// buffer should always be at least 13 characters long, including terminating null
 char *btimetext(rtime_t rt, char *buf) {
     if (rt == UNREACHED) {
         strcpy(buf, "   --   ");
         return buf;
     }
-    char *day = "D0";
+    char *day;
     if (rt >= RTIME_THREE_DAYS) {
-        day = "D3!";
+        day = " +2D";
         rt -= RTIME_THREE_DAYS;
     } else if (rt >= RTIME_TWO_DAYS) {
-        day = "D2";
+        day = " +1D";
         rt -= RTIME_TWO_DAYS;
     } else if (rt >= RTIME_ONE_DAY) {
-        day = "D1";
+        day = "";
         rt -= RTIME_ONE_DAY;
+    } else {
+        day = " -1D";
     }
     uint32_t t = RTIME_TO_SEC(rt);
     uint32_t s = t % 60;
@@ -91,6 +93,8 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     }
     uint32_t seconds = (((ltm.tm_hour * 60) + ltm.tm_min) * 60) + ltm.tm_sec;
     rtime_t rtime = SEC_TO_RTIME(seconds);
+    /* shift rtime to day 1. day 0 is yesterday. */
+    rtime += RTIME_ONE_DAY;
     /*
     printf ("epoch time is %ld \n", epochtime);
     printf ("epoch time is %s", ctime(&epochtime)); // ctime and asctime include newlines
