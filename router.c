@@ -67,43 +67,46 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
                   stop_index_from != BITSET_NONE;
                   stop_index_from  = bitset_next_set_bit (r.updated_stops, stop_index_from + 1)) {
         I printf ("stop %d was marked as updated \n", stop_index_from);
-        flag_routes_for_stop (&r, stop_index_from, day_mask);
-        router_state_t *state_from = states + stop_index_from;
         rtime_t time_from = r.best_time[stop_index_from];
-        if (time_from != UNREACHED) {
-            I printf ("  applying transfer at %d (%s) \n", stop_index_from, tdata_stop_id_for_index(&d, stop_index_from));
-            /* change to begin, length rather than begin, end in order to restrict pointers ? */
-            transfer_t *tr     = d.transfers + d.stops[stop_index_from    ].transfers_offset;
-            transfer_t *tr_end = d.transfers + d.stops[stop_index_from + 1].transfers_offset;
-            // uint32_t n_transfers_for_stop = tr_end - tr;
-            for ( ; tr < tr_end ; ++tr) {
-                uint32_t stop_index_to = tr->target_stop;
-                rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
-                rtime_t time_to = arrv ? time_from - transfer_duration
-                                       : time_from + transfer_duration;
-                if (arrv ? time_to > time_from : time_to < time_from) {
-                    printf ("\ntransfer overflow: %d %d\n", time_from, time_to);
-                    continue;
-                }
-                I printf ("    target %d %s (%s) \n", stop_index_to, timetext(r.best_time[stop_index_to]), 
-                          tdata_stop_id_for_index(&d, stop_index_to));
-                I printf ("    transfer time   %s\n", timetext(transfer_duration));
-                I printf ("    transfer result %s\n", timetext(time_to));
-                bool better = (r.best_time[stop_index_to] == UNREACHED) ||
-                              (arrv ? time_to > r.best_time[stop_index_to]
-                                    : time_to < r.best_time[stop_index_to]);
-                if (better) {
-                    router_state_t *state_to = states + stop_index_to;
-                    I printf ("      setting %d to %s\n", stop_index_to, timetext(time_to));
-                    state_to->time = time_to; 
-                    r.best_time[stop_index_to] = time_to;
-                    state_to->back_route = WALK; // need sym const for walk distinct from NONE
-                    state_to->back_stop = stop_index_from;
-                    state_to->back_trip_id = "walk;walk"; // semicolon to provide headsign field in demo
-                    state_to->board_time = state_from->time;
-                    flag_routes_for_stop (&r, stop_index_to, day_mask);
-                }
-            } 
+        if (time_from == UNREACHED) {
+            printf ("ERROR: transferring from unreached stop.");
+            continue;
+        }
+        if (states[stop_index_from].back_route == WALK) {
+            /* A transfer has already improved this state, do not allow more transfers. */
+            continue;
+        }
+        I printf ("  applying transfer at %d (%s) \n", stop_index_from, tdata_stop_id_for_index(&d, stop_index_from));
+        flag_routes_for_stop (&r, stop_index_from, day_mask);
+        transfer_t *tr     = d.transfers + d.stops[stop_index_from    ].transfers_offset;
+        transfer_t *tr_end = d.transfers + d.stops[stop_index_from + 1].transfers_offset;
+        for ( ; tr < tr_end ; ++tr) {
+            uint32_t stop_index_to = tr->target_stop;
+            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
+            rtime_t time_to = arrv ? time_from - transfer_duration
+                                   : time_from + transfer_duration;
+            if (arrv ? time_to > time_from : time_to < time_from) {
+                printf ("\ntransfer overflow: %d %d\n", time_from, time_to);
+                continue;
+            }
+            I printf ("    target %d %s (%s) \n", stop_index_to, timetext(r.best_time[stop_index_to]), 
+                      tdata_stop_id_for_index(&d, stop_index_to));
+            I printf ("    transfer time   %s\n", timetext(transfer_duration));
+            I printf ("    transfer result %s\n", timetext(time_to));
+            bool better = (r.best_time[stop_index_to] == UNREACHED) ||
+                          (arrv ? time_to > r.best_time[stop_index_to]
+                                : time_to < r.best_time[stop_index_to]);
+            if (better) {
+                router_state_t *state_to = states + stop_index_to;
+                I printf ("      setting %d to %s\n", stop_index_to, timetext(time_to));
+                state_to->time = time_to; 
+                r.best_time[stop_index_to] = time_to;
+                state_to->back_route = WALK;
+                state_to->back_stop = stop_index_from;
+                state_to->back_trip_id = "walk;walk"; // semicolon to provide headsign field in demo
+                state_to->board_time = states[stop_index_from].time;
+                flag_routes_for_stop (&r, stop_index_to, day_mask);
+            }
         }
     }
     bitset_reset (r.updated_stops);
