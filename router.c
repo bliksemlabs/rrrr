@@ -57,7 +57,7 @@ static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint3
  For each updated stop and each destination of a transfer from an updated stop, 
  set the associated routes as updated. The routes bitset is cleared before the operation, 
  and the stops bitset is cleared after all transfers have been computed and all routes have been set.
- */
+*/
 static inline void apply_transfers (router_t r, uint32_t round, float speed_meters_sec, 
                                     uint32_t day_mask, bool arrv) {
     tdata_t d = r.tdata; // this is copying... 
@@ -86,7 +86,8 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
             rtime_t time_to = arrv ? time_from - transfer_duration
                                    : time_from + transfer_duration;
             if (arrv ? time_to > time_from : time_to < time_from) {
-                printf ("\ntransfer overflow: %d %d\n", time_from, time_to);
+                /* This happens normally on overnight routing but should be avoided rather than caught. */
+                // printf ("\ntransfer overflow: %d %d\n", time_from, time_to);
                 continue;
             }
             I printf ("    target %d %s (%s) \n", stop_index_to, timetext(r.best_time[stop_index_to]), 
@@ -200,8 +201,6 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     
     struct tm origin_tm;
     rtime_t origin_rtime = epoch_to_rtime (req.time, &origin_tm);
-    /* shift origin time to day 1. day 0 is yesterday. */
-    origin_rtime += RTIME_ONE_DAY;
     
     int32_t cal_day = (mktime(&origin_tm) - router.tdata.calendar_start_time) / SEC_IN_ONE_DAY;
     if (cal_day < 0 || cal_day > 31 ) {
@@ -221,11 +220,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     days[1].mask = day_mask;
     days[2].midnight = RTIME_TWO_DAYS;
     days[2].mask = day_mask << 1;
-    for (int i = 0; i < 3; ++i) service_day_dump (&days[i]);
+    // for (int i = 0; i < 3; ++i) service_day_dump (&days[i]);
     
     /* set day_mask to catch all days (0, 1, 2) */
     day_mask |= ((day_mask << 1) | (day_mask >> 1));
-    day_mask_dump (day_mask);
+    // day_mask_dump (day_mask);
     
 
     I router_request_dump(prouter, preq);
@@ -238,7 +237,12 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     for (uint32_t round = 0; round < RRRR_MAX_ROUNDS; ++round) {
         for (uint32_t stop = 0; stop < n_stops; ++stop) {
             states[round][stop].time = UNREACHED;
-            // printf("%li ", &(states[round][stop]) - router.states);
+            /*
+            states[round][stop].back_stop = NONE;
+            states[round][stop].back_route = NONE;
+            states[round][stop].board_time = UNREACHED;
+            states[round][stop].back_trip_id = NULL; 
+            */
         }
     }
     for (uint32_t s = 0; s < n_stops; ++s) {
@@ -254,8 +258,13 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         origin = req.from;
         target = req.to;
     }
+    /* Initialize origin state */
     router.best_time[origin] = origin_rtime;
     states[0][origin].time   = origin_rtime;
+    states[0][origin].back_stop  = NONE;
+    states[0][origin].back_route = NONE; // important for initial transfers
+    states[0][origin].board_time = UNREACHED;
+
     bitset_reset(router.updated_stops);
     bitset_set(router.updated_stops, origin);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
@@ -304,8 +313,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 // TODO: check if this is the last stop -- no point boarding there or marking routes
                 if (trip == NONE || (
                     // check to avoid overflow since UNREACHED is UINT16_MAX
-                    states[last_round][stop].time < UNREACHED - RRRR_XFER_SLACK_2SEC && 
-                    states[last_round][stop].time + RRRR_XFER_SLACK_2SEC < stop_times[trip][route_stop].departure)) {
+                    states[last_round][stop].time < UNREACHED - RRRR_XFER_SLACK_4SEC && 
+                    states[last_round][stop].time + RRRR_XFER_SLACK_4SEC < stop_times[trip][route_stop].departure)) {
                     // If we have not yet boarded a trip on this route, see if we can board one.
                     // Also handle the case where we hit a stop with an existing better arrival time.
                     if (router.best_time[stop] == UNREACHED) {
@@ -343,8 +352,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                                 printf ("! time overflow at boarding\n");
                             time += sday->midnight;
                             /* board trip if the time improves on the best known one for this stop */
-                            if (req.arrive_by ? time + RRRR_XFER_SLACK_2SEC <= router.best_time[stop] && time > best_time
-                                              : time - RRRR_XFER_SLACK_2SEC >= router.best_time[stop] && time < best_time) {
+                            if (req.arrive_by ? time + RRRR_XFER_SLACK_4SEC <= router.best_time[stop] && time > best_time
+                                              : time - RRRR_XFER_SLACK_4SEC >= router.best_time[stop] && time < best_time) {
                                 best_trip = this_trip;
                                 best_time = time;
                                 best_midnight = sday->midnight;
@@ -406,10 +415,6 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         // if (round < RRRR_MAX_ROUNDS - 1) { /* can only do this optimization when transfers and marking are separated */
         // Update list of routes for next round based on stops that were touched in this round.
         apply_transfers(router, round, req.walk_speed, day_mask, req.arrive_by);
-        // just in case
-        states[round][origin].time = origin_rtime;
-        states[round][origin].back_stop = -1;
-        states[round][origin].back_route = -1;
         // dump_results(prouter); // DEBUG
         // exit(0);
     } // end for (round)
@@ -524,8 +529,8 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             D printf ("State present at round %d \n", round);
             D router_state_dump (&(states[round][stop]));
             req->max_transfers = round;
-            req->time_cutoff = SEC_TO_RTIME(req->time); // fix units situation
-            req->time = RTIME_TO_SEC(states[round][stop].time);
+            req->time_cutoff = SEC_TO_RTIME(req->time); // fix units situation -- use durations in seconds or rtimes?
+            req->time = RTIME_TO_SEC(states[round][stop].time - RTIME_ONE_DAY);
             req->arrive_by = !(req->arrive_by);
             // router_request_dump(router, req);
             return true;
@@ -574,8 +579,8 @@ bool router_request_from_qstring(router_request_t *req) {
 void router_request_dump(router_t *router, router_request_t *req) {
     char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
     char *to_stop_id = tdata_stop_id_for_index(&(router->tdata), req->to);
-    char time[10], time_cutoff[10];
-    btimetext(SEC_TO_RTIME(req->time), time);
+    char time[32], time_cutoff[32];
+    btimetext(epoch_to_rtime (req->time, NULL), time);
     btimetext(req->time_cutoff, time_cutoff);    // oh, different units...
     printf("-- Router Request --\n"
            "from:  %s [%d]\n"
