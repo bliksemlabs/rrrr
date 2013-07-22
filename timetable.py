@@ -355,6 +355,7 @@ all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
 tioffset = 0
 two_days = 60 * 60 * 24 * 2
+rhf = open('route_hours.txt', 'w')
 for idx, route in enumerate(route_for_idx) :
     if idx > 0 and idx % 1000 == 0 :
         print 'wrote %d routes' % idx
@@ -364,6 +365,9 @@ for idx, route in enumerate(route_for_idx) :
     trip_ids_offsets.append(tioffset)
     trip_ids = sorted_trip_ids(db, route)
     # print idx, route, len(trip_ids)
+    hours_active = [False] * 48
+    min_hour = 47
+    max_hour = 0
     for arrival_time, departure_time in fetch_stop_times(trip_ids) :
         # 2**16 / 60 / 60 is only 18 hours
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
@@ -376,13 +380,24 @@ for idx, route in enumerate(route_for_idx) :
             write_2ushort(two_days >> 2, two_days >> 2)
         else :
             write_2ushort(arrival_time >> 2, departure_time >> 2)
+            hour = arrival_time / 60 / 60
+            hours_active[hour] = True
+            if hour < min_hour :
+                min_hour = hour
+            if hour > max_hour :
+                max_hour = hour
         stoffset += 1 
+    hours = ''.join([('X' if h else '_') for h in hours_active])
+    hours_string = ('%s|%s min=%d max=%d \n' % (hours[:24], hours[24:], min_hour, max_hour))
+    rhf.write(hours_string)
+    # print hours_string
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
 stop_times_offsets.append(stoffset) # sentinel
 trip_ids_offsets.append(tioffset) # sentinel
 assert len(stop_times_offsets) == nroutes + 1
 assert len(trip_ids_offsets) == nroutes + 1
+rhf.close()
 
 print "saving a list of routes serving each stop"
 write_text_comment("ROUTES BY STOP")
