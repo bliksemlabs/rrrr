@@ -181,7 +181,7 @@ void HashGrid_dump (HashGrid* hg) {
     printf ("number of items: %d \n", hg->n_items);
     uint32_t (*counts)[hg->grid_dim] = hg->counts;
     uint32_t  *(*bins)[hg->grid_dim] = hg->bins;
-    uint32_t *items = hg->items;
+    // uint32_t *items = hg->items;
     // Grid of counts
     uint32_t total = 0;
     for (uint32_t y = 0; y < hg->grid_dim; ++y) {
