@@ -191,7 +191,7 @@ def fetch_stop_times(trip_ids) :
             yield(arrival_time, departure_time)
 
 # make this into a method on a Header class 
-struct_header = Struct('8sL13I')
+struct_header = Struct('8sQ13I')
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
