@@ -579,18 +579,20 @@ bool router_request_from_qstring(router_request_t *req) {
 void router_request_dump(router_t *router, router_request_t *req) {
     char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
     char *to_stop_id = tdata_stop_id_for_index(&(router->tdata), req->to);
-    char time[32], time_cutoff[32];
+    char time[32], date[11], time_cutoff[32];
+    strftime(&date, 11, "%Y-%m-%d\0", localtime(&req->time));
     btimetext(epoch_to_rtime (req->time, NULL), time);
     btimetext(req->time_cutoff, time_cutoff);    // oh, different units...
     printf("-- Router Request --\n"
            "from:  %s [%d]\n"
            "to:    %s [%d]\n"
+           "date:  %s\n"
            "time:  %s [%ld]\n"
            "speed: %f m/sec\n"
            "arrive-by: %s\n"
            "max xfers: %d\n"
            "max time:  %s\n",
-           from_stop_id, req->from, to_stop_id, req->to, time, req->time, req->walk_speed, 
+           from_stop_id, req->from, to_stop_id, req->to, date, time, req->time, req->walk_speed, 
            (req->arrive_by ? "true" : "false"), req->max_transfers, time_cutoff);
 }
 
