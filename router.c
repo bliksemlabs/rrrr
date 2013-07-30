@@ -580,7 +580,7 @@ void router_request_dump(router_t *router, router_request_t *req) {
     char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
     char *to_stop_id = tdata_stop_id_for_index(&(router->tdata), req->to);
     char time[32], date[11], time_cutoff[32];
-    strftime(&date, 11, "%Y-%m-%d\0", localtime(&req->time));
+    strftime(date, 11, "%Y-%m-%d\0", localtime(&req->time));
     btimetext(epoch_to_rtime (req->time, NULL), time);
     btimetext(req->time_cutoff, time_cutoff);    // oh, different units...
     printf("-- Router Request --\n"
