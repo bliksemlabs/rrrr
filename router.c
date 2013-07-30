@@ -452,8 +452,8 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
             char *this_stop_id = tdata_stop_id_for_index(&(router.tdata), s);
             uint32_t board  = states[s].board_time;
             uint32_t alight = states[s].time;
-            char cboard[10];
-            char calight[10];
+            char cboard[13];
+            char calight[13];
             btimetext(board, cboard);
             btimetext(alight, calight);
             char *trip_id = states[s].back_trip_id;
