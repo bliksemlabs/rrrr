@@ -1,6 +1,7 @@
 /* tdata.c : handles memory mapped data file containing transit timetable etc. */
 
 #include "tdata.h" // make sure it works alone
+#include "config.h"
 #include "util.h"
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -88,6 +89,8 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(uint32_t));
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);
     td->route_active = (uint32_t*) (b + header->loc_route_active);
+
+    D tdata_dump(td);
 }
 
 void tdata_close(tdata_t *td) {
@@ -149,6 +152,7 @@ void tdata_dump(tdata_t *td) {
     printf("\nROUTES\n");
     for (uint32_t i = 0; i < td->n_routes; i++) {
         printf("route %d\n", i);
+        printf("having trips %d\n", td->routes[i].n_trips);
         route_t r0 = td->routes[i];
         route_t r1 = td->routes[i+1];
         uint32_t j0 = r0.route_stops_offset;
@@ -164,12 +168,14 @@ void tdata_dump(tdata_t *td) {
     for (uint32_t i = 0; i < td->n_stops; i++) {
         printf("stop %03d has id %s \n", i, tdata_stop_id_for_index(td, i));
     }
+#if 0
     printf("\nROUTEIDS, TRIPIDS\n");
     for (uint32_t i = 0; i < td->n_routes; i++) {
         printf("route %03d has id %s and first trip id %s \n", i, 
             tdata_route_id_for_index(td, i),
             tdata_trip_ids_for_route(td, i));
     }
+#endif
 }
 
 
