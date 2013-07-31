@@ -3,7 +3,7 @@
 import sys, struct, time
 from struct import Struct
 # requires graphserver to be installed
-from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
+from gtfsdb import GTFSDatabase
 import datetime
 from datetime import timedelta, date
 
@@ -434,7 +434,7 @@ for from_idx, from_sid in enumerate(stop_id_for_idx) :
     transfers_offsets.append(offset)
     for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
         if ttime == None :
-            continue # skip non-time/non-distance transfers for now
+            ttime = 0 #continue # skip non-time/non-distance transfers for now
         to_idx = idx_for_stop_id[to_sid]
         out.write(struct_If.pack(to_idx, float(ttime))) # must convert time/dist
         offset += 1
