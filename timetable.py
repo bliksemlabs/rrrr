@@ -428,12 +428,18 @@ loc_transfers = tell()
 offset = 0
 transfers_offsets = []
 query = """
-select from_stop_id, to_stop_id, transfer_type, min_transfer_time
-from transfers where from_stop_id = ?"""
+SELECT DISTINCT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM(
+SELECT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM transfers WHERE from_stop_id = ?
+UNION
+SELECT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM transfers WHERE to_stop_id = ?) as x
+"""
 struct_If = Struct('If')
 for from_idx, from_sid in enumerate(stop_id_for_idx) :
     transfers_offsets.append(offset)
-    for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
+    for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,from_sid,)) :
         if ttime == None :
             if ttype <= 2:
                 ttime = 0
