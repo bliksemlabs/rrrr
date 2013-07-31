@@ -397,13 +397,14 @@ class GTFSDatabase:
             if reporter and i%(n_trips//50+1)==0: reporter.write( "%d/%d trips grouped by %d patterns\n"%(i,n_trips,len(bundles)))
             
             d = self.get_cursor()
-            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id FROM stop_times WHERE trip_id=? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY stop_sequence", (trip_id,) )
+            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id,route_id FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY stop_sequence", (trip_id,) )
             
             stop_times = list(d)
             
-            stop_ids = [stop_id for trip_id, arrival_time, departure_time, stop_id in stop_times]
-            dwells = [departure_time-arrival_time for trip_id, arrival_time, departure_time, stop_id in stop_times]
-            pattern_signature = (tuple(stop_ids), tuple(dwells))
+            stop_ids = [stop_id for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times]
+            dwells = [departure_time-arrival_time for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times]
+            route_id = [route_id for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times][0]
+            pattern_signature = (tuple(stop_ids), tuple(dwells),route_id)
             
             if pattern_signature not in patterns:
                 pattern = Pattern( len(patterns), stop_ids, dwells )
