@@ -3,7 +3,7 @@
 import sys, struct, time
 from struct import Struct
 # requires graphserver to be installed
-from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
+from gtfsdb import GTFSDatabase
 import datetime
 from datetime import timedelta, date
 

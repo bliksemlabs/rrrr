@@ -1,11 +1,11 @@
 /* config.h */
 
 #define RRRR_TEST_CONCURRENCY 4
-#define RRRR_INPUT_FILE "/home/abyrd/git/rrrr/timetable.dat"
+#define RRRR_INPUT_FILE "timetable.dat"
 
 // runtime increases roughly linearly with this value
 // though with target pruning it no longer seems to have as much effect
-#define RRRR_MAX_ROUNDS 6
+#define RRRR_MAX_ROUNDS 3
 
 /* note that these values can cause missed transfers until we have guaranteed / timed transfers */
 
@@ -24,24 +24,24 @@
 // #define CLIENT_ENDPOINT "ipc://client_pipe"
 // #define WORKER_ENDPOINT "ipc://worker_pipe"
 
-// #define LOG_INFO
-// #define LOG_DEBUG // do not name this DEBUG because some IDEs may define DEBUG
-// #define LOG_TRACE
+#define RRRR_INFO
+#define RRRR_DEBUG // do not name this DEBUG because some IDEs may define DEBUG
+//#define RRRR_TRACE
 
 /* http://stackoverflow.com/questions/1644868/c-define-macro-for-debug-printing */
-#ifdef LOG_INFO
+#ifdef RRRR_INFO
  #define I 
 #else
  #define I for(;0;)
 #endif
 
-#ifdef LOG_DEBUG
+#ifdef RRRR_DEBUG
  #define D 
 #else
  #define D for(;0;)
 #endif
 
-#ifdef LOG_TRACE
+#ifdef RRRR_TRACE
  #define T 
 #else
  #define T for(;0;)

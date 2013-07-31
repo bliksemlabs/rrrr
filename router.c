@@ -530,7 +530,13 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             D router_state_dump (&(states[round][stop]));
             req->max_transfers = round;
             req->time_cutoff = SEC_TO_RTIME(req->time); // fix units situation -- use durations in seconds or rtimes?
-            req->time = RTIME_TO_SEC(states[round][stop].time - RTIME_ONE_DAY);
+            struct tm origin_tm;
+            rtime_t origin_rtime = epoch_to_rtime (req->time, &origin_tm);
+            origin_tm.tm_min = 0;
+            origin_tm.tm_hour = 0;
+            origin_tm.tm_sec = 0;
+
+            req->time = RTIME_TO_SEC(states[round][stop].time - RTIME_ONE_DAY) + mktime(&origin_tm);
             req->arrive_by = !(req->arrive_by);
             // router_request_dump(router, req);
             return true;
