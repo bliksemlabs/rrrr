@@ -52,6 +52,9 @@ def find_max_service () :
         else :
             n_services_on_day[day_offset] -= 1
     n_month = [ sum(n_services_on_day[i:i+32]) for i in range(len(n_services_on_day) - 32) ]
+    if len(n_month) == 0:
+        print "1-day service on %s" % (feed_start_date)  
+        return feed_start_date
     max_date, max_n_services = max(enumerate(n_month), key = lambda x : x[1])
     max_date = feed_start_date + timedelta(days = max_date)
     print "32-day period with the maximum number of services begins %s (%d services)" % (max_date, max_n_services)  
