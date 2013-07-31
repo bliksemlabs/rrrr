@@ -458,8 +458,13 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
             btimetext(alight, calight);
             char *trip_id = states[s].back_trip_id;
 
-            b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
-                last_stop_id, cboard, this_stop_id, calight);
+            if (req.arrive_by)
+                b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
+                    this_stop_id, calight, last_stop_id, cboard);
+            else
+                b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
+                    last_stop_id, cboard, this_stop_id, calight);
+ 
             if (b > b_end) {
                 printf ("buffer overflow\n");
                 break;
