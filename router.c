@@ -433,6 +433,11 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
             continue;
         b += sprintf (b, "\nA %d VEHICLES \n", round_outer + 1);
         int round = round_outer;
+
+        char rev_buf[buflen];
+        char *br = rev_buf + buflen; 
+        char line[80];
+
         while (round >= 0) {
             states = router.states + router.tdata.n_stops * round;
             if (states[s].time == UNREACHED) {
@@ -458,13 +463,15 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
             btimetext(alight, calight);
             char *trip_id = states[s].back_trip_id;
 
-            if (req.arrive_by)
-                b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
-                    this_stop_id, calight, last_stop_id, cboard);
-            else
-                b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, 
-                    last_stop_id, cboard, this_stop_id, calight);
- 
+            int len = 0;
+            if (req.arrive_by) {
+                len = sprintf (line, "%s;%s;%s;%s;%s\n", trip_id, this_stop_id, calight, last_stop_id, cboard);
+            } else {
+                len = sprintf (line, "%s;%s;%s;%s;%s\n", trip_id, last_stop_id, cboard, this_stop_id, calight);
+            }
+            br -= len;
+            strncpy(br, line, len);
+
             if (b > b_end) {
                 printf ("buffer overflow\n");
                 break;
@@ -475,6 +482,8 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
                 round -= 1;
             s = last_stop;
         }
+        strncpy(b, br, buflen - (br - rev_buf));
+        b += buflen - (br - rev_buf);
     }
     *b = '\0';
     return b - buf;
