@@ -17,6 +17,7 @@ struct tdata_header {
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t loc_stops;
+    uint32_t loc_stop_coords;
     uint32_t loc_routes;
     uint32_t loc_route_stops;
     uint32_t loc_stop_times;
@@ -71,8 +72,8 @@ void tdata_load(char *filename, tdata_t *td) {
     td->calendar_start_time = header->calendar_start_time;
     td->n_stops = header->n_stops;
     td->n_routes = header->n_routes;
-    td->stop_coords = (latlon_t*) (b + 8 + 8 * sizeof(uint32_t)); // position 40
     td->stops = (stop_t*) (b + header->loc_stops);
+    td->stop_coords = (latlon_t*) (b + header->loc_stop_coords);
     td->routes = (route_t*) (b + header->loc_routes);
     td->route_stops = (uint32_t *) (b + header->loc_route_stops);
     td->stop_times = (stoptime_t*) (b + header->loc_stop_times);

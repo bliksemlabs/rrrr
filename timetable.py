@@ -191,14 +191,14 @@ def fetch_stop_times(trip_ids) :
             yield(arrival_time, departure_time)
 
 # make this into a method on a Header class 
-struct_header = Struct('8sQ13I')
+struct_header = Struct('8sQ14I')
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_routes, 
-        loc_route_stops, loc_stop_times, loc_stop_routes, loc_transfers, 
+    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords,
+        loc_routes, loc_route_stops, loc_stop_times, loc_stop_routes, loc_transfers, 
         loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active)
     out.write(packed)
 
@@ -220,6 +220,7 @@ query = """
         """
 # Write timetable segment 0 : stop coordinates
 # (loop over all stop IDs in alphabetical order)
+loc_stop_coords = out.tell() 
 for (sid, name, lat, lon) in db.execute(query) :
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
