@@ -340,9 +340,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
                             T printf("    board option %d at %s \n", this_trip, 
                                      timetext(stop_times[this_trip][route_stop].departure));
-                            D printBits(4, & (trip_masks[this_trip]));
-                            D printBits(4, & (sday->mask));
-                            D printf("\n");
+                            // D printBits(4, & (trip_masks[this_trip]));
+                            // D printBits(4, & (sday->mask));
+                            // D printf("\n");
                             /* skip this trip if it is not running on the current service day */
                             if ( ! (sday->mask & trip_masks[this_trip])) continue;
                             /* consider the arrival or departure time on the current service day */                                                       
@@ -465,7 +465,7 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
 
             int len = 0;
             if (req.arrive_by) {
-                len = sprintf (line, "%s;%s;%s;%s;%s\n", trip_id, this_stop_id, calight, last_stop_id, cboard);
+                b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, this_stop_id, calight, last_stop_id, cboard);
             } else {
                 len = sprintf (line, "%s;%s;%s;%s;%s\n", trip_id, last_stop_id, cboard, this_stop_id, calight);
             }
@@ -482,8 +482,10 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
                 round -= 1;
             s = last_stop;
         }
-        strncpy(b, br, buflen - (br - rev_buf));
-        b += buflen - (br - rev_buf);
+        if (!req.arrive_by) {
+            strncpy(b, br, buflen - (br - rev_buf));
+            b += buflen - (br - rev_buf);
+        }
     }
     *b = '\0';
     return b - buf;
