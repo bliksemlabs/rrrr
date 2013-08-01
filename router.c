@@ -15,8 +15,8 @@
 void router_setup(router_t *router, tdata_t *td) {
     srand(time(NULL));
     router->tdata = *td;
-    router->best_time = malloc(sizeof(rtime_t) * td->n_stops); 
-    router->states = malloc(sizeof(router_state_t) * (td->n_stops * RRRR_MAX_ROUNDS));
+    router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * td->n_stops); 
+    router->states = (router_state_t *) malloc(sizeof(router_state_t) * (td->n_stops * RRRR_MAX_ROUNDS));
     router->updated_stops = bitset_new(td->n_stops);
     router->updated_routes = bitset_new(td->n_routes);
     if ( ! (router->best_time && router->states && router->updated_stops && router->updated_routes))
@@ -103,6 +103,7 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
                 state_to->time = time_to; 
                 r.best_time[stop_index_to] = time_to;
                 state_to->back_route = WALK;
+                state_to->back_trip = WALK;
                 state_to->back_stop = stop_index_from;
                 state_to->back_trip_id = "walk;walk"; // semicolon to provide headsign field in demo
                 state_to->board_time = states[stop_index_from].time;
@@ -240,6 +241,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             /*
             states[round][stop].back_stop = NONE;
             states[round][stop].back_route = NONE;
+            states[round][stop].back_trip = NONE;
             states[round][stop].board_time = UNREACHED;
             states[round][stop].back_trip_id = NULL; 
             */
@@ -263,6 +265,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     states[0][origin].time   = origin_rtime;
     states[0][origin].back_stop  = NONE;
     states[0][origin].back_route = NONE; // important for initial transfers
+    states[0][origin].back_trip = NONE;
     states[0][origin].board_time = UNREACHED;
 
     bitset_reset(router.updated_stops);
@@ -288,7 +291,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                       route_idx = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
             route_t route = router.tdata.routes[route_idx];
             I printf("  route %d: %s\n", route_idx, tdata_route_id_for_index(&(router.tdata), route_idx));
-            T tdata_dump_route(&(router.tdata), route_idx);
+            T tdata_dump_route(&(router.tdata), route_idx, NONE);
             // For each stop in this route, its global stop index.
             uint32_t *route_stops = tdata_stops_for_route(router.tdata, route_idx);
             // C99 dynamically dimensioned array of size [route.n_trips][route.n_stops]
@@ -326,7 +329,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         continue;
                     }
                     D printf("hit previously-reached stop %d\n", stop);
-                    T tdata_dump_route(&(router.tdata), route_idx);
+                    T tdata_dump_route(&(router.tdata), route_idx, NONE);
                     /* 
                     Scan all trips to find the nearest trip that can be boarded, if any.
                     Real-time updates can ruin FIFO ordering within routes.
@@ -404,6 +407,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         router.best_time[stop] = time;
                         states[round][stop].time = time;
                         states[round][stop].back_route = route_idx; 
+                        states[round][stop].back_trip = trip; 
                         states[round][stop].back_trip_id = route_id;  // changed for demo, was: trip_id; 
                         states[round][stop].back_stop = board_stop;
                         states[round][stop].board_time = board_time;
@@ -465,9 +469,9 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
 
             int len = 0;
             if (req.arrive_by) {
-                b += sprintf (b, "%s;%s;%s;%s;%s\n", trip_id, this_stop_id, calight, last_stop_id, cboard);
+                b += sprintf (b, "%d %d %s;%s;%s;%s;%s\n", states[s].back_route, states[s].back_trip, trip_id, this_stop_id, calight, last_stop_id, cboard);
             } else {
-                len = sprintf (line, "%s;%s;%s;%s;%s\n", trip_id, last_stop_id, cboard, this_stop_id, calight);
+                len = sprintf (line, "%d %d %s;%s;%s;%s;%s\n", states[s].back_route, states[s].back_trip, trip_id, last_stop_id, cboard, this_stop_id, calight);
             }
             br -= len;
             strncpy(br, line, len);
