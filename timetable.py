@@ -173,12 +173,14 @@ def sorted_trip_ids(db, bundle) :
     order by departure_time
     """ % (",".join( ["'%s'"%x for x in bundle.trip_ids] ))
     # get all trip ids in this pattern ordered by first departure time
-    sorted_trips = [trip_id for (trip_id, departure_time) in db.execute(query, (firststop,))]
+    sorted_trips = [trip_id for (trip_id, departure_time) in db.execute(query)]
     return sorted_trips
     
 def fetch_stop_times(trip_ids) :
     """ generator that takes a list of trip_ids 
     and returns all stop times in order for those trip_ids """
+    if len(trip_ids) != len(set(trip_ids)):
+        raise Exception("Duplicate trip_id")
     for trip_id in trip_ids :
         last_time = 0
         query = """
