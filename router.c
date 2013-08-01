@@ -436,7 +436,7 @@ uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf
 
         char rev_buf[buflen];
         char *br = rev_buf + buflen; 
-        char line[80];
+        char line[180];
 
         while (round >= 0) {
             states = router.states + router.tdata.n_stops * round;
