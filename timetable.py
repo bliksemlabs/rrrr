@@ -167,9 +167,9 @@ def sorted_trip_ids(db, bundle) :
     sorted by first departure time of each trip """
     firststop = bundle.pattern.stop_ids[0]
     query = """
-    select trip_id, departure_time from stop_times
-    where stop_id = ?
-    and trip_id in (%s)
+    select trip_id,min(departure_time) as departure_time from stop_times
+    where trip_id in (%s)
+    group by trip_id
     order by departure_time
     """ % (",".join( ["'%s'"%x for x in bundle.trip_ids] ))
     # get all trip ids in this pattern ordered by first departure time
