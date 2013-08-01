@@ -73,7 +73,7 @@ uint32_t tdata_routes_for_stop(tdata_t*, uint32_t stop, uint32_t **routes_ret);
 
 stoptime_t *tdata_stoptimes_for_route(tdata_t*, uint32_t route_index);
 
-void tdata_dump_route(tdata_t*, uint32_t route_index);
+void tdata_dump_route(tdata_t*, uint32_t route_index, uint32_t trip_index);
 
 char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
 
