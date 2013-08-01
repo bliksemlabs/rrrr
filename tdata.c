@@ -113,7 +113,7 @@ inline stoptime_t *tdata_stoptimes_for_route(tdata_t *td, uint32_t route_index) 
     return td->stop_times + td->routes[route_index].stop_times_offset;
 }
 
-void tdata_dump_route(tdata_t *td, uint32_t route_idx) {
+void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
     stoptime_t (*times)[route.n_stops] = (void*) tdata_stoptimes_for_route(td, route_idx);
@@ -123,8 +123,12 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx) {
     for (uint32_t si = 0; si < route.n_stops; ++si) {
         char *stop_id = tdata_stop_id_for_index (td, stops[si]);
         printf("%4d %35s [%06d] : ", si, stop_id, stops[si]);
-        for (uint32_t ti = 0; ti < route.n_trips; ++ti) {
-            printf("%s ", timetext(times[ti][si].departure));
+        if (trip_idx != NONE) {
+            printf("%s ", timetext(times[trip_idx][si].departure));
+        } else {
+            for (uint32_t ti = 0; ti < route.n_trips; ++ti) {
+                printf("%s ", timetext(times[ti][si].departure));
+            }
         }
         printf("\n");
     }
