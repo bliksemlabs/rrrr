@@ -350,6 +350,8 @@ class GTFSDatabase:
         c.execute( "CREATE INDEX stops_stop_lon ON stops (stop_lon)" )
         c.execute( "CREATE INDEX route_route_id ON routes (route_id)" )
         c.execute( "CREATE INDEX trips_route_id ON trips (route_id)" )
+        c.execute( "CREATE INDEX transfers_fromstop_id ON transfers (from_stop_id)" )
+        c.execute( "CREATE INDEX transfers_tostop_id ON transfers (to_stop_id)" )
 
     def stops(self):
         c = self.get_cursor()
