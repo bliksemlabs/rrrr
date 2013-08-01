@@ -77,6 +77,8 @@ void tdata_dump_route(tdata_t*, uint32_t route_index, uint32_t trip_index);
 
 char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
 
+uint32_t tdata_stop_name_for_index(tdata_t*, char* stop_name, uint32_t start_index);
+
 char *tdata_route_id_for_index(tdata_t*, uint32_t route_index);
 
 char *tdata_trip_ids_for_route(tdata_t*, uint32_t route_index);
