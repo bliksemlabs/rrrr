@@ -425,70 +425,77 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     return true;
 }
 
-uint32_t router_result_dump(router_t *prouter, router_request_t *preq, char *buf, uint32_t buflen) {
-    router_t router = *prouter;
-    router_request_t req = *preq;
+/*
+  Call after routing to convert the router state into a readable list of itinerary legs.
+*/
+uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
+    int max_legs = RRRR_MAX_ROUNDS * 2 + 1;
+    uint32_t n_stops = router->tdata.n_stops;
+    /* Router states are a 2D array of stride n_stops */
+    router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states;
+    // Loop over the rounds to get ending states of itineraries using different numbers of vehicles
     for (int round_outer = 0; round_outer < RRRR_MAX_ROUNDS; ++round_outer) {
-        uint32_t s = (req.arrive_by ? req.from : req.to);
-        router_state_t *states = router.states + router.tdata.n_stops * round_outer;
-        if (states[s].time == UNREACHED)
-            continue;
         b += sprintf (b, "\nA %d VEHICLES \n", round_outer + 1);
-        int round = round_outer;
-
-        char rev_buf[buflen];
-        char *br = rev_buf + buflen; 
-        char line[180];
-
-        while (round >= 0) {
-            states = router.states + router.tdata.n_stops * round;
-            if (states[s].time == UNREACHED) {
-                round -= 1;
-                b += sprintf (b, "%d UNREACHED \n", s);
-                continue;
-            } 
-            //b += sprintf (b, "round %d  ", round);
-            uint32_t last_stop = states[s].back_stop;
-            if (s < 0 || s > router.tdata.n_stops) { 
+        // printf ("round_outer = %d \n", round_outer);
+        uint32_t stop = (req->arrive_by ? req->from : req->to);
+        /* skip rounds that were not reached */
+        if (states[round_outer][stop].time == UNREACHED) {
+            b += sprintf (b, "no state. \n");
+            continue;
+        }
+        router_state_t *(legs[max_legs]);
+        uint32_t stops[max_legs];
+        uint32_t n_legs = 0;
+        int leg_rounds[max_legs]; // the round at which each leg was set, for debugging purposes
+        for (int i = 0; i < max_legs; ++i) leg_rounds[i] = -1;
+        for (int round = round_outer; round >= 0; /* decrement manually */ ) {
+            // printf ("round = %d \n", round);
+            if (stop > router->tdata.n_stops) { 
                 // this was causing segfaults
-                b += sprintf (b, "neg stopid %d\n", s);
+                printf ("ERROR: negative stopid %d.\n", stop);
                 break;
             }
-            uint32_t route = states[s].back_route;
-            char *last_stop_id = tdata_stop_id_for_index(&(router.tdata), last_stop);
-            char *this_stop_id = tdata_stop_id_for_index(&(router.tdata), s);
-            uint32_t board  = states[s].board_time;
-            uint32_t alight = states[s].time;
-            char cboard[13];
-            char calight[13];
-            btimetext(board, cboard);
-            btimetext(alight, calight);
-            char *trip_id = states[s].back_trip_id;
-
-            int len = 0;
-            if (req.arrive_by) {
-                b += sprintf (b, "%d %d %s;%s;%s;%s;%s\n", states[s].back_route, states[s].back_trip, trip_id, this_stop_id, calight, last_stop_id, cboard);
-            } else {
-                len = sprintf (line, "%d %d %s;%s;%s;%s;%s\n", states[s].back_route, states[s].back_trip, trip_id, last_stop_id, cboard, this_stop_id, calight);
+            router_state_t *s = &(states[round][stop]);
+            if (s->time == UNREACHED) {
+                printf ("ERROR: stop %d was unreached.\n", stop);
+                break;
+            } 
+            if (n_legs >= max_legs) {
+                printf ("ERROR: too many legs at round %d.\n", round);
+                break;
             }
-            br -= len;
-            strncpy(br, line, len);
-
+            legs[n_legs]  = s;
+            stops[n_legs] = stop;
+            leg_rounds[n_legs] = round;
+            ++n_legs;
+            if (s->back_stop == (req->arrive_by ? req->to : req->from)) break;
+            /* follow the chain of states backward as needed */
+            if (s->back_route != WALK && s->back_route != NONE && round > 0) round -= 1;
+            stop = s->back_stop;
+        }
+        for (int i = 0; i < n_legs; ++i) {
+            // printf ("leg = %d \n", i);
+            int l = (req->arrive_by) ? i : n_legs - i - 1;
+            router_state_t *leg = legs[l];
+            uint32_t board_stop  = (req->arrive_by) ? stops[l] : leg->back_stop;
+            uint32_t alight_stop = (req->arrive_by) ? leg->back_stop : stops[l];
+            rtime_t board  = (req->arrive_by) ? leg->time : leg->board_time;
+            rtime_t alight = (req->arrive_by) ? leg->board_time : leg->time;
+            char cboard[16];
+            char calight[16];
+            btimetext(board,  cboard);
+            btimetext(alight, calight);
+            char *board_stop_id = tdata_stop_id_for_index(&(router->tdata), board_stop);
+            char *alight_stop_id = tdata_stop_id_for_index(&(router->tdata), alight_stop);
+            char *trip_id = leg->back_trip_id;
+            // char *route_id = tdata_id_for_route(&(router->tdata), leg->back_route);
+            b += sprintf (b, "R%02d %4d %2d %s; %s; %s; %s; %s\n", leg_rounds[l], leg->back_route, leg->back_trip, trip_id, board_stop_id, cboard, alight_stop_id, calight);
             if (b > b_end) {
                 printf ("buffer overflow\n");
                 break;
             }
-            if (last_stop == (req.arrive_by ? req.to : req.from))
-                break;
-            if (route != WALK && route != NONE && round > 0)
-                round -= 1;
-            s = last_stop;
-        }
-        if (!req.arrive_by) {
-            strncpy(b, br, buflen - (br - rev_buf));
-            b += buflen - (br - rev_buf);
         }
     }
     *b = '\0';
@@ -524,11 +531,9 @@ void router_state_dump (router_state_t *state) {
     printf ("board time:   %s \n", timetext(state->board_time));
     printf ("back trip id: %s \n", state->back_trip_id);
     printf ("back route:   ");
-    if (state->back_route >= 0)
-        printf ("%d\n", state->back_route);
-    else
-        printf ("%s\n", (state->back_route == WALK ? "WALK" : "NONE"));
-    printf ("back stop     %d \n", state->back_stop);
+    if (state->back_route == WALK) printf ("WALK\n");
+    else if (state->back_route == NONE) printf ("NONE\n");
+    else printf ("%d\n", state->back_route);
 }
 
 /* 
