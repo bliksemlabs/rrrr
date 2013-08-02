@@ -5,7 +5,7 @@ CFLAGS=-g -march=native -Wall -Wno-unused-function -Wno-unused-variable -std=gnu
 LIBS=-lzmq -lczmq -lm 
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
-BINS=workerrrr brrrroker client lookup-console hashgrid testerrrr
+BINS=workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr
 
 all: $(BINS)
 
@@ -22,6 +22,9 @@ workerrrr: bitset.o qstring.o router.o tdata.o util.o worker.o bitset.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o 
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+
+explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o 
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 client: bitset.o qstring.o router.o tdata.o util.o client.o
