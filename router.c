@@ -34,8 +34,8 @@ void router_teardown(router_t *router) {
     bitset_destroy(router->updated_routes);
 }
 
-// flag_routes_for_stops... all at once after doing transfers? 
-// Proper transfers require another stops bitset for transfer target stops.
+// TODO? flag_routes_for_stops all at once after doing transfers? this would require another stops 
+// bitset for transfer target stops.
 /* Given a stop index, mark all routes that serve it as updated. */
 static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint32_t day_mask) {
     /*restrict*/ uint32_t *routes;
@@ -69,7 +69,8 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
         I printf ("stop %d was marked as updated \n", stop_index_from);
         rtime_t time_from = r.best_time[stop_index_from];
         if (time_from == UNREACHED) {
-            printf ("ERROR: transferring from unreached stop.");
+            printf ("ERROR: transferring from unreached stop %d in round %d. \n", stop_index_from, round);
+            
             continue;
         }
         if (states[stop_index_from].back_route == WALK) {
@@ -85,7 +86,8 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
             rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
             rtime_t time_to = arrv ? time_from - transfer_duration
                                    : time_from + transfer_duration;
-            if (arrv ? time_to > time_from : time_to < time_from) {
+            if (arrv > RTIME_THREE_DAYS) continue; /* Reserved values including UNREACHED */
+            if (arrv ? time_to > time_from : time_to < time_from) { /* Wrapping/overflow. */
                 /* This happens normally on overnight routing but should be avoided rather than caught. */
                 // printf ("\ntransfer overflow: %d %d\n", time_from, time_to);
                 continue;
@@ -286,9 +288,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         int last_round = (round == 0) ? 0 : round - 1;
         I printf("round %d\n", round);
         // Iterate over all routes which contain a stop that was updated in the last round.
-        for (uint32_t route_idx = bitset_next_set_bit (router.updated_routes, 0); 
+        for (uint32_t route_idx  = bitset_next_set_bit (router.updated_routes, 0); 
                       route_idx != BITSET_NONE;
-                      route_idx = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
+                      route_idx  = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
             route_t route = router.tdata.routes[route_idx];
             I printf("  route %d: %s\n", route_idx, tdata_route_id_for_index(&(router.tdata), route_idx));
             T tdata_dump_route(&(router.tdata), route_idx, NONE);
@@ -397,8 +399,10 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         I printf("    (no improvement)\n");
                         continue; // the current trip does not improve on the best time at this stop
                     }
-                    if (req.arrive_by ? time > origin_rtime : time < origin_rtime) {
-                        /* This happens due to overnight trips on day 2. Prune them. */
+                    if (time > RTIME_THREE_DAYS) {
+                        /* Reserve all time past three days for special values like UNREACHED. */
+                    } else if (req.arrive_by ? time > origin_rtime : time < origin_rtime) {
+                        /* Wrapping/overflow. This happens due to overnight trips on day 2. Prune them. */
                         // printf("ERROR: setting state to time before start time. route %d trip %d stop %d \n", route_idx, trip, stop);
                     } else {
                         // for demo, route_id actually contains a detailed route description
@@ -477,6 +481,7 @@ uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, 
         }
         for (int i = 0; i < n_legs; ++i) {
             // printf ("leg = %d \n", i);
+            /* Output legs in chronological order, accounting for arrive_by. */
             int l = (req->arrive_by) ? i : n_legs - i - 1;
             router_state_t *leg = legs[l];
             uint32_t board_stop  = (req->arrive_by) ? stops[l] : leg->back_stop;
@@ -520,7 +525,7 @@ void router_request_randomize(router_request_t *req) {
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = 3600 * 12 + rrrrandom(3600 * 6);
-    req->arrive_by = true;
+    req->arrive_by = false;
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
 }
