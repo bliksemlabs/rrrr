@@ -16,7 +16,7 @@ struct router_state {
     rtime_t time;        // The time when this stop was reached
     uint32_t back_stop;  // The index of the previous stop in the itinerary
     uint32_t back_route; // The index of the route used to travel from back_stop to here, or WALK
-    uint32_t back_trip; // The index of the trip used to travel from back_stop to here, or WALK
+    uint32_t back_trip;  // The index of the trip used to travel from back_stop to here, or WALK
     rtime_t board_time;  // The time at which the trip within back_route left back_stop
     char *back_trip_id;  // A text description of the trip used within back_route
 };

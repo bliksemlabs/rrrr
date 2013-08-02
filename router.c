@@ -571,11 +571,17 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     return false;
 }
 
-inline static bool range_check(router_request_t *req) {
+/*
+  Check the given request against the characteristics of the router that will be used. 
+  Indexes larger than array lengths for the given router, signed values less than zero, etc. 
+  can and will cause segfaults and present security risks.
+*/
+inline static bool range_check(struct router_request *req, struct router *router) {
+    uint32_t n_stops = router->tdata.n_stops;
+    if (req->time < 0)         return false;
     if (req->walk_speed < 0.1) return false;
-    if (req->from < 0) return false;
-    if (req->to < 0) return false;
-    if (req->time < 0) return false;
+    if (req->from >= n_stops)  return false;
+    if (req->to >= n_stops)    return false;
     return true;
 }
 

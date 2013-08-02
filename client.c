@@ -78,8 +78,6 @@ int main (int argc, char **argv) {
 
     if (randomize && argc > 2) {
         n_requests = atoi(argv[2]);
-        if (n_requests < 0)
-            n_requests = 1;
         if (argc > 3)
             concurrency = atoi(argv[3]);
     } else {
