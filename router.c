@@ -86,7 +86,7 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
             rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(tr->dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
             rtime_t time_to = arrv ? time_from - transfer_duration
                                    : time_from + transfer_duration;
-            if (arrv > RTIME_THREE_DAYS) continue; /* Reserved values including UNREACHED */
+            if (time_to > RTIME_THREE_DAYS) continue; /* Reserved values including UNREACHED */
             if (arrv ? time_to > time_from : time_to < time_from) { /* Wrapping/overflow. */
                 /* This happens normally on overnight routing but should be avoided rather than caught. */
                 // printf ("\ntransfer overflow: %d %d\n", time_from, time_to);
