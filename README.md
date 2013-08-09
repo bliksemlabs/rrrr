@@ -105,20 +105,19 @@ rrrr[31144]: 4 threads, 1000 total requests, 3.893521 sec total time (256.836935
 Testing Bliksem using testerrrr
 -------------------------------
 
-Unit tests are an important process to validate the expected results of a planner.
-We have build the testerrrr tool as one binary planner which allows to plan simple queries.
+Unit tests are important for validating the expected results of a planner. The testerrrr tool is
+a single-binary planner which allows planning simple queries without starting up a broker or worker processes.
 The process of using the tool in colaboration with a planner validation set such as MMRI is simple.
 
-Given a test, zip the test to a GTFS-file and compile the GTFS-file to a GTFSdb.
-Use the resulting GTFSdb as input for our timetable builder.
+Given a test, zip the test to a GTFS-file and compile the GTFS-file to a GTFSdb. Use the resulting GTFSdb as input for our timetable builder.
 
 ```bash
-zip test.zip *txt
+zip test.zip *.txt
 gs_gtfsdb_compile test.zip test.gtfsdb
 timetable.py test.gtfsdb
 ```
 
-The tool can be execute now:
+The tool can now be executed:
 
 ```bash
 ./testerrrr 1 2 ARRIVE 2014-01-01T00:00:00 timetable.dat
