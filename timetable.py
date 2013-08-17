@@ -394,8 +394,10 @@ for idx, route in enumerate(route_for_idx) :
                 max_hour = hour
         stoffset += 1 
     hours = ''.join([('X' if h else '_') for h in hours_active])
-    hours_string = ('%s|%s min=%d max=%d \n' % (hours[:24], hours[24:], min_hour, max_hour))
+    hours_string = ('%s|%s min=%d max=%d exemplar trip %s\n' % (hours[:24], hours[24:], min_hour, max_hour, trip_ids[0]))
     rhf.write(hours_string)
+    if (max_hour - 24 > min_hour) :
+        print "route %d has overlapping trips mod 24 hours: min %dh, max %dh (exemplar trip %s)" % (idx, min_hour, max_hour, trip_ids[0]) 
     # print hours_string
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
