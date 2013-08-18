@@ -10,10 +10,13 @@
 #include "bitset.h"
 #include "util.h"
 
-// When associated with a stop index, a router_state_t describes a leg of an itinerary.
+/* When associated with a stop index, a router_state_t describes a leg of an itinerary. */
 typedef struct router_state router_state_t;
+/* We could potentially remove the back_time from router_state, but this requires implementing some 
+   lookup functions and storing the back_trip_stop rather than the back_stop (global stop index): 
+   a trip can pass through a stop more than once.
+   TODO rename members to ride_from, walk_from, route, trip, ride_time, walk_time ? */
 struct router_state {
-    char *back_trip_id;  // A text description of the trip used within back_route (eliminate and look up!)
     uint32_t back_stop;  // The index of the previous stop in the itinerary
     uint32_t back_route; // The index of the route used to travel from back_stop to here, or WALK
     uint32_t back_trip;  // The index of the trip used to travel from back_stop to here, or WALK

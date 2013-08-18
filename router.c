@@ -440,14 +440,12 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         /* Wrapping/overflow. This happens due to overnight trips on day 2. Prune them. */
                         // printf("ERROR: setting state to time before start time. route %d trip %d stop %d \n", route_idx, trip, stop);
                     } else {
-                        char *route_id = tdata_route_id_for_index(&(router.tdata), route_idx); 
                         I printf("    setting stop to %s \n", timetext(time)); 
                         router.best_time[stop] = time;
                         states[round][stop].time = time;
                         states[round][stop].back_route = route_idx; 
-                        states[round][stop].back_trip = trip; 
-                        states[round][stop].back_trip_id = route_id;  // changed for demo, was: trip_id; 
-                        states[round][stop].back_stop = board_stop;
+                        states[round][stop].back_trip  = trip; 
+                        states[round][stop].back_stop  = board_stop;
                         states[round][stop].board_time = board_time;
                         bitset_set(router.updated_stops, stop);   // mark stop for next round.
                     }
@@ -499,8 +497,6 @@ static inline uint32_t render_leg(struct leg *leg, tdata_t *tdata, char *buf) {
   TODO add output formatting callbacks for JSON, CSV
 */
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
-    char *b = buf;
-    char *b_end = buf + buflen;
 
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
@@ -571,6 +567,8 @@ uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, 
         l->trip  = WALK;
 
         /* Render the legs, which are now in chronological order. */
+        char *b = buf;
+        char *b_end = buf + buflen;
         b += sprintf (b, "\nITIN %d rides \n", itin.n_rides);
         for (int i = 0; i < itin.n_legs; ++i) {
             b += render_leg (&(itin.legs[i]), &(router->tdata), b);
@@ -613,7 +611,6 @@ void router_state_dump (router_state_t *state) {
     printf ("walk from:    %d \n", state->walk_from);
     printf ("time:         %s \n", timetext(state->time));
     printf ("board time:   %s \n", timetext(state->board_time));
-    printf ("back tripid:  %s \n", state->back_trip_id);
     printf ("back route:   ");
     if (state->back_route == NONE) printf ("NONE\n");
     else printf ("%d\n", state->back_route);
