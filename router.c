@@ -463,6 +463,15 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     return true;
 }
 
+/* Reverse the times and stops in a leg. Used for creating arrive-by itineraries. */
+static void leg_swap (struct leg *leg) {
+    struct leg temp = *leg;
+    leg->s0 = temp.s1;
+    leg->s1 = temp.s0;
+    leg->t0 = temp.t1;
+    leg->t1 = temp.t0;
+}
+
 static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
