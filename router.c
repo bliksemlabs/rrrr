@@ -497,6 +497,8 @@ static inline uint32_t render_leg(struct leg *leg, tdata_t *tdata, char *buf) {
   TODO add output formatting callbacks for JSON, CSV
 */
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
+    char *b = buf;
+    char *b_end = buf + buflen;
 
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
@@ -567,8 +569,6 @@ uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, 
         l->trip  = WALK;
 
         /* Render the legs, which are now in chronological order. */
-        char *b = buf;
-        char *b_end = buf + buflen;
         b += sprintf (b, "\nITIN %d rides \n", itin.n_rides);
         for (int i = 0; i < itin.n_legs; ++i) {
             b += render_leg (&(itin.legs[i]), &(router->tdata), b);
