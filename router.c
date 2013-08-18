@@ -12,6 +12,9 @@
 #include <time.h>
 #include <stdint.h>
 
+#define RRRR_RESULT_BUFLEN 16000
+static char result_buf[RRRR_RESULT_BUFLEN];
+
 void router_setup(router_t *router, tdata_t *td) {
     srand(time(NULL));
     router->tdata = *td;
@@ -460,59 +463,22 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     return true;
 }
 
-struct leg {
-    uint32_t s0; 
-    uint32_t s1;
-    rtime_t  t0; 
-    rtime_t  t1;
-    uint32_t route; 
-    uint32_t trip;
-};
-
-struct itinerary {
-    uint32_t n_rides;
-    uint32_t n_legs;
-    struct leg legs[RRRR_MAX_ROUNDS * 2 + 1];
-};
-
-/* Write one leg. */
-static inline uint32_t render_leg(struct leg *leg, tdata_t *tdata, char *buf) {
-    char ct0[16];
-    char ct1[16];
-    btimetext(leg->t0, ct0);
-    btimetext(leg->t1, ct1);
-    char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
-    char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
-    char *leg_type = (leg->route == WALK ? "WALK" : "RIDE");
-    char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index(tdata, leg->route); 
-    // char *trip_id = ride->back_trip_id;
-    // char *route_id = tdata_id_for_route(&(router->tdata), leg->back_route);
-    size_t bytes_written = sprintf (buf, "%s %5d %3d %5d %5d %s %s; %s; %s; %s \n", 
-        leg_type, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, route_desc, s0_id, s1_id);
-    return bytes_written;
-}
-
-/*
-  Call after routing to convert the router state into a readable list of itinerary legs.
-  TODO add output formatting callbacks for JSON, CSV
-*/
-uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
-    char *b = buf;
-    char *b_end = buf + buflen;
-
+static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
     router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states;
+    plan->n_itineraries = 0;
+    struct itinerary *itin = plan->itineraries;
     /* Loop over the rounds to get ending states of itineraries using different numbers of vehicles */
     for (int n_xfers = 0; n_xfers < RRRR_MAX_ROUNDS; ++n_xfers) {
-        /* skip rounds that were not reached */
+        /* Work backward from the target to the origin */
         uint32_t stop = (req->arrive_by ? req->from : req->to);
+        /* skip rounds that were not reached */
         if (states[n_xfers][stop].walk_time == UNREACHED) continue;
-        struct itinerary itin;
-        itin.n_rides = n_xfers + 1;
-        itin.n_legs = itin.n_rides * 2 + 1; // always same number of legs for same number of transfers
-        struct leg *l = itin.legs; // the slot in which record a leg, reversing them for forward trips
-        if ( ! req->arrive_by) l += itin.n_legs - 1; 
+        itin->n_rides = n_xfers + 1;
+        itin->n_legs = itin->n_rides * 2 + 1; // always same number of legs for same number of transfers
+        struct leg *l = itin->legs; // the slot in which record a leg, reversing them for forward trips
+        if ( ! req->arrive_by) l += itin->n_legs - 1; 
         /* Follow the chain of states backward */
         for (int round = n_xfers; round >= 0; --round) {
             if (stop > router->tdata.n_stops) { 
@@ -563,24 +529,60 @@ uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, 
         uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
         l->s0 = (req->arrive_by) ? stop : origin_stop;
         l->s1 = (req->arrive_by) ? origin_stop : stop;
+        /* Final leg time handling is probably incorrect */
         l->t0 = (req->arrive_by) ? final_walk->walk_time : states[0][origin_stop].time;
         l->t1 = (req->arrive_by) ? states[0][origin_stop].time : final_walk->walk_time; 
         l->route = WALK;
         l->trip  = WALK;
 
-        /* Render the legs, which are now in chronological order. */
-        b += sprintf (b, "\nITIN %d rides \n", itin.n_rides);
-        for (int i = 0; i < itin.n_legs; ++i) {
-            b += render_leg (&(itin.legs[i]), &(router->tdata), b);
+        /* Move to the next itinerary in the plan. */
+        plan->n_itineraries += 1;
+        itin += 1;
+    }
+}
+
+/* 
+  Write a plan structure out to a text buffer in tabular format.
+  TODO add an alternate formatting function for JSON
+*/
+static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
+    char *b = buf;
+    char *b_end = buf + buflen;
+    /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
+    for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
+        b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
+        /* Render the legs of this itinerary, which are in chronological order */
+        for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
+            char ct0[16];
+            char ct1[16];
+            btimetext(leg->t0, ct0);
+            btimetext(leg->t1, ct1);
+            char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
+            char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
+            char *leg_type = (leg->route == WALK ? "WALK" : "RIDE");
+            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index(tdata, leg->route); 
+            b += sprintf (b, "%s %5d %3d %5d %5d %s %s; %s; %s; %s \n", 
+                          leg_type, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, route_desc, s0_id, s1_id);
             if (b > b_end) {
                 printf ("buffer overflow\n");
-                break;
+                exit(2);
             }
-        }
+        }    
     }
     *b = '\0';
     return b - buf;
 }
+
+/*
+  After routing, call to convert the router state into a readable list of itinerary legs.
+  Returns the number of bytes written to the buffer.
+*/
+uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
+    struct plan plan;
+    router_result_to_plan (&plan, router, req);
+    return render_plan (&plan, &(router->tdata), buf, buflen);
+}
+
 
 uint32_t rrrrandom(uint32_t limit) {
     return (uint32_t) (limit * (random() / (RAND_MAX + 1.0)));

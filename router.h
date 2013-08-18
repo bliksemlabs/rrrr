@@ -9,6 +9,7 @@
 #include "tdata.h"
 #include "bitset.h"
 #include "util.h"
+#include "config.h"
 
 /* When associated with a stop index, a router_state_t describes a leg of an itinerary. */
 typedef struct router_state router_state_t;
@@ -50,6 +51,35 @@ struct router_request {
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) time to reach the destination (in internal rtime_t 4 second intervals)
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
 };
+
+
+/* ROUTING RESULT STRUCTURES */
+
+/* A leg represesnts one ride or walking transfer. */
+struct leg {
+    uint32_t s0; 
+    uint32_t s1;
+    rtime_t  t0; 
+    rtime_t  t1;
+    uint32_t route; 
+    uint32_t trip;
+};
+
+/* An itinerary is a chain of legs leading from one place to another. */
+struct itinerary {
+    uint32_t n_rides;
+    uint32_t n_legs;
+    struct leg legs[RRRR_MAX_ROUNDS * 2 + 1];
+};
+
+/* A plan is several pareto-optimal itineraries connecting the same two stops. */
+struct plan {
+    uint32_t n_itineraries;
+    struct itinerary itineraries[RRRR_MAX_ROUNDS];
+};
+
+
+/* FUNCTION PROTOTYPES */
 
 void router_setup(router_t*, tdata_t*);
 
