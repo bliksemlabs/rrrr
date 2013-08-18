@@ -75,12 +75,12 @@ int main(int argc, char **argv) {
     // n_reversals = 0; // DEBUG turn off reversals
     for (uint32_t i = 0; i < n_reversals; ++i) {
         router_request_reverse (&router, &req); // handle case where route is not reversed
-        D printf ("Repeating search with reversed request: \n");
-        I router_request_dump (&router, &req);
+        printf ("Repeating search with reversed request: \n");
+        router_request_dump (&router, &req);
         router_route (&router, &req);
+        router_result_dump(&router, &req, result_buf, 8000);
+        printf("%s", result_buf);
     }
-    router_result_dump(&router, &req, result_buf, 8000);
-    printf("%s", result_buf);
     
     tdata_close(&tdata);
     exit(EXIT_SUCCESS);
