@@ -53,7 +53,7 @@ struct router_request {
 };
 
 
-/* ROUTING RESULT STRUCTURES */
+/* ROUTING RESULT STRUCTURES */ // TODO add summary data like duration, begin/end times?
 
 /* A leg represesnts one ride or walking transfer. */
 struct leg {

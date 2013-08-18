@@ -464,7 +464,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
 }
 
 /* Reverse the times and stops in a leg. Used for creating arrive-by itineraries. */
-static void leg_swap (struct leg *leg) {
+static inline void leg_swap (struct leg *leg) {
     struct leg temp = *leg;
     leg->s0 = temp.s1;
     leg->s1 = temp.s0;
@@ -513,23 +513,26 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
             uint32_t ride_stop = stop;
             stop = ride->back_stop;  /* follow the chain of states backward */                                    
             
-            /* Walk phase */ // TODO this could be done more elegantly with swap functions
-            l->s0 = (req->arrive_by) ? walk_stop : walk->walk_from;
-            l->s1 = (req->arrive_by) ? walk->walk_from : walk_stop;
-            l->t0 = (req->arrive_by) ? walk->walk_time : ride->time; /* Rendering the walk requires already having the ride arrival time */
-            l->t1 = (req->arrive_by) ? ride->time : walk->walk_time; /* Rendering the walk requires already having the ride arrival time */
+            /* Walk phase */
+            l->s0 = walk->walk_from;
+            l->s1 = walk_stop;
+            l->t0 = ride->time; /* Rendering the walk requires already having the ride arrival time */
+            l->t1 = walk->walk_time;
             l->route = WALK;
             l->trip  = WALK;
-            l += (req->arrive_by ? 1 : -1);
+            if (req->arrive_by) leg_swap (l);
+            l += (req->arrive_by ? 1 : -1); /* next leg */
 
             /* Ride phase */
-            l->s0 = (req->arrive_by) ? ride_stop : ride->back_stop;
-            l->s1 = (req->arrive_by) ? ride->back_stop : ride_stop;
-            l->t0 = (req->arrive_by) ? ride->time : ride->board_time;
-            l->t1 = (req->arrive_by) ? ride->board_time : ride->time;
+            l->s0 = ride->back_stop;
+            l->s1 = ride_stop;
+            l->t0 = ride->board_time;
+            l->t1 = ride->time;
             l->route = ride->back_route;
             l->trip  = ride->back_trip;
+            if (req->arrive_by) leg_swap (l);
             l += (req->arrive_by ? 1 : -1);   /* next leg */
+            
         }
         
         /* The initial/final walk leg reaching the search origin in round 0 */ 
@@ -548,11 +551,15 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
         plan->n_itineraries += 1;
         itin += 1;
     }
+    /* 
+      TODO add functions to check invariants: 
+      all stops should chain, all times should be increasing, all waits should be at the ends of legs. 
+    */
 }
 
 /* 
   Write a plan structure out to a text buffer in tabular format.
-  TODO add an alternate formatting function for JSON
+  TODO add an alternate formatting function for JSON, protobuf
 */
 static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
     char *b = buf;
