@@ -20,7 +20,7 @@ struct router_state {
     rtime_t  time;       // The time when this stop was reached
     rtime_t  board_time; // The time at which the trip within back_route left back_stop
     /* Second phase footpath/transfer results */
-    uint32_t walk_stop;  // The stop from which this stop was reached by walking (2nd phase)
+    uint32_t walk_from;  // The stop from which this stop was reached by walking (2nd phase)
     rtime_t  walk_time;  // The time when this stop was reached by walking (2nd phase)
 };
 
