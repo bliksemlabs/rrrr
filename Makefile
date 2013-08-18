@@ -29,7 +29,7 @@ testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o
 explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o 
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-rrrrealtime: realtime.o protobuf/gtfs-realtime.pb-c.o
+rrrrealtime: realtime.o gtfs-realtime.pb-c.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
 client: bitset.o qstring.o router.o tdata.o util.o client.o
