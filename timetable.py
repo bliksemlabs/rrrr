@@ -3,7 +3,8 @@
 import sys, struct, time
 from struct import Struct
 # requires graphserver to be installed
-from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
+from gtfsdb import GTFSDatabase
+import datetime
 from datetime import timedelta, date
 
 if len(sys.argv) < 2 :
@@ -51,6 +52,9 @@ def find_max_service () :
         else :
             n_services_on_day[day_offset] -= 1
     n_month = [ sum(n_services_on_day[i:i+32]) for i in range(len(n_services_on_day) - 32) ]
+    if len(n_month) == 0:
+        print "1-day service on %s" % (feed_start_date)  
+        return feed_start_date
     max_date, max_n_services = max(enumerate(n_month), key = lambda x : x[1])
     max_date = feed_start_date + timedelta(days = max_date)
     print "32-day period with the maximum number of services begins %s (%d services)" % (max_date, max_n_services)  
@@ -64,6 +68,8 @@ except :
     print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
     start_date = find_max_service()
 print 'calendar start date is %s' % start_date
+calendar_start_time = time.mktime(datetime.datetime.combine(start_date, datetime.time.min).timetuple())
+print 'epoch time at which calendar starts: %d' % calendar_start_time
 
 sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
@@ -93,16 +99,15 @@ for (tid, sid) in db.execute(query) :
 ############################
 
 
-#switch to unsigned
 #pack arrival and departure into 4 bytes w/ offset?
 
 # C structs, must match those defined in .h files.
 
-struct_1I = Struct('I') # a single UNSIGNED int
+struct_1I = Struct('I')
 def writeint(x) :
     out.write(struct_1I.pack(x));
 
-struct_2H = Struct('HH') # a single UNSIGNED short 
+struct_2H = Struct('HH') 
 def write_2ushort(x, y) : 
     out.write(struct_2H.pack(x, y));
         
@@ -162,18 +167,20 @@ def sorted_trip_ids(db, bundle) :
     sorted by first departure time of each trip """
     firststop = bundle.pattern.stop_ids[0]
     query = """
-    select trip_id, departure_time from stop_times
-    where stop_id = ?
-    and trip_id in (%s)
+    select trip_id,min(departure_time) as departure_time from stop_times
+    where trip_id in (%s)
+    group by trip_id
     order by departure_time
     """ % (",".join( ["'%s'"%x for x in bundle.trip_ids] ))
     # get all trip ids in this pattern ordered by first departure time
-    sorted_trips = [trip_id for (trip_id, departure_time) in db.execute(query, (firststop,))]
+    sorted_trips = [trip_id for (trip_id, departure_time) in db.execute(query)]
     return sorted_trips
     
 def fetch_stop_times(trip_ids) :
     """ generator that takes a list of trip_ids 
     and returns all stop times in order for those trip_ids """
+    if len(trip_ids) != len(set(trip_ids)):
+        raise Exception("Duplicate trip_id")
     for trip_id in trip_ids :
         last_time = 0
         query = """
@@ -189,14 +196,14 @@ def fetch_stop_times(trip_ids) :
             yield(arrival_time, departure_time)
 
 # make this into a method on a Header class 
-struct_header = Struct('8s13i')
+struct_header = Struct('8sQ14I')
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, nstops, nroutes, loc_stops, loc_routes, loc_route_stops, 
-        loc_stop_times, loc_stop_routes, loc_transfers, 
+    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords,
+        loc_routes, loc_route_stops, loc_stop_times, loc_stop_routes, loc_transfers, 
         loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active)
     out.write(packed)
 
@@ -218,6 +225,7 @@ query = """
         """
 # Write timetable segment 0 : stop coordinates
 # (loop over all stop IDs in alphabetical order)
+loc_stop_coords = out.tell() 
 for (sid, name, lat, lon) in db.execute(query) :
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
@@ -352,7 +360,8 @@ stoffset = 0
 all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
 tioffset = 0
-crazy_threshold = 60 * 60 * 24 * 1.3 
+two_days = 60 * 60 * 24 * 2
+rhf = open('route_hours.txt', 'w')
 for idx, route in enumerate(route_for_idx) :
     if idx > 0 and idx % 1000 == 0 :
         print 'wrote %d routes' % idx
@@ -362,25 +371,41 @@ for idx, route in enumerate(route_for_idx) :
     trip_ids_offsets.append(tioffset)
     trip_ids = sorted_trip_ids(db, route)
     # print idx, route, len(trip_ids)
+    hours_active = [False] * 48
+    min_hour = 47
+    max_hour = 0
     for arrival_time, departure_time in fetch_stop_times(trip_ids) :
         # 2**16 / 60 / 60 is only 18 hours
         # by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution
         if departure_time < arrival_time :
             print "negative dwell time"
-            # do not write UNREACHABLE in util.h because this may cause problems
-            write_2ushort(0xFFF0 - 1, 0xFFF0 - 1) 
-        elif departure_time > crazy_threshold :
-            print 'suspect departure time:', departure_time, time_string_from_seconds(departure_time)
-            write_2ushort(0xFFF0 - 1, 0xFFF0 - 1) 
+            # do not write UNREACHABLE, this may cause problems
+            write_2ushort(two_days >> 2, two_days >> 2)
+        elif departure_time > two_days :
+            print 'time greater than two days:', departure_time, time_string_from_seconds(departure_time)
+            write_2ushort(two_days >> 2, two_days >> 2)
         else :
-            write_2ushort(arrival_time >> 1, departure_time >> 1) 
+            write_2ushort(arrival_time >> 2, departure_time >> 2)
+            hour = arrival_time / 60 / 60
+            hours_active[hour] = True
+            if hour < min_hour :
+                min_hour = hour
+            if hour > max_hour :
+                max_hour = hour
         stoffset += 1 
+    hours = ''.join([('X' if h else '_') for h in hours_active])
+    hours_string = ('%s|%s min=%d max=%d exemplar trip %s\n' % (hours[:24], hours[24:], min_hour, max_hour, trip_ids[0]))
+    rhf.write(hours_string)
+    if (max_hour - 24 > min_hour) :
+        print "route %d has overlapping trips mod 24 hours: min %dh, max %dh (exemplar trip %s)" % (idx, min_hour, max_hour, trip_ids[0]) 
+    # print hours_string
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
 stop_times_offsets.append(stoffset) # sentinel
 trip_ids_offsets.append(tioffset) # sentinel
 assert len(stop_times_offsets) == nroutes + 1
 assert len(trip_ids_offsets) == nroutes + 1
+rhf.close()
 
 print "saving a list of routes serving each stop"
 write_text_comment("ROUTES BY STOP")
@@ -410,16 +435,25 @@ loc_transfers = tell()
 offset = 0
 transfers_offsets = []
 query = """
-select from_stop_id, to_stop_id, transfer_type, min_transfer_time
-from transfers where from_stop_id = ?"""
-struct_2i = Struct('if')
+SELECT DISTINCT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM(
+SELECT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM transfers WHERE from_stop_id = ?
+UNION
+SELECT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM transfers WHERE to_stop_id = ?) as x
+"""
+struct_If = Struct('If')
 for from_idx, from_sid in enumerate(stop_id_for_idx) :
     transfers_offsets.append(offset)
-    for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,)) :
+    for from_sid, to_sid, ttype, ttime in db.execute(query, (from_sid,from_sid,)) :
         if ttime == None :
-            continue # skip non-time/non-distance transfers for now
+            if ttype <= 2:
+                ttime = 0
+            else:
+                continue
         to_idx = idx_for_stop_id[to_sid]
-        out.write(struct_2i.pack(to_idx, float(ttime))) # must convert time/dist
+        out.write(struct_If.pack(to_idx, float(ttime))) # must convert time/dist
         offset += 1
 transfers_offsets.append(offset) # sentinel
 assert len(transfers_offsets) == nstops + 1
@@ -427,14 +461,14 @@ assert len(transfers_offsets) == nstops + 1
 print "saving stop indexes"
 write_text_comment("STOP STRUCTS")
 loc_stops = tell()
-struct_2i = Struct('ii')
+struct_2I = Struct('II')
 for stop in zip (stop_routes_offsets, transfers_offsets) :
-    out.write(struct_2i.pack(*stop));
+    out.write(struct_2I.pack(*stop));
 
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-route_t = Struct('iiiii') # change to unsigned
+route_t = Struct('IIIII')
 route_t_fields = [route_stops_offsets, stop_times_offsets, trip_ids_offsets, route_n_stops, route_n_trips]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :

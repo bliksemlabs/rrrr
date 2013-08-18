@@ -16,7 +16,7 @@
 #define BUFLEN 1024
 
 int main (int argc, char **argv) {    
-    int iterations = 10;
+    uint32_t iterations = 10;
     if (argc > 1)
         iterations = atoi (argv[1]);
     struct sockaddr_in	server_in_addr = {
@@ -24,8 +24,8 @@ int main (int argc, char **argv) {
         .sin_port = htons(PORT),
         .sin_addr.s_addr = htonl(INADDR_LOOPBACK)
     };
-    for (int i = 0; i < iterations; ++i) {
-        unsigned int server_socket = socket (AF_INET, SOCK_STREAM, 0);
+    for (uint32_t i = 0; i < iterations; ++i) {
+        uint32_t server_socket = socket (AF_INET, SOCK_STREAM, 0);
         if (connect (server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr))) {
             printf ("failed to connect socket \n");
             exit (1);

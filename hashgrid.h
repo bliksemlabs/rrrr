@@ -4,12 +4,15 @@
 #define _HASHGRID_H
 
 #include "geometry.h"
+#include <stdint.h>
+
+#define HASHGRID_NONE UINT32_MAX
 
 typedef struct HashGrid HashGrid;
 
 typedef struct HashGridResult HashGridResult;
 
-void HashGrid_init (HashGrid *hg, int grid_dim, double bin_size_meters, coord_t *coords, int n_items);
+void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items);
 
 void HashGrid_dump (HashGrid*);
 

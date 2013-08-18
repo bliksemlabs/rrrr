@@ -8,7 +8,7 @@
 #include "trie.h"
 #include "tdata.h"
 
-unsigned int global_index = 0;
+uint32_t global_index = 0;
 
 inline trie_t *trie_init(void) {
     trie_t *t = (trie_t *) malloc(sizeof(trie_t));
@@ -19,7 +19,7 @@ inline trie_t *trie_init(void) {
 }
 
 void trie_add(trie_t *t, char *word) {
-    int c;
+    uint32_t c;
     while ((c = *word++)) {
         assert(c >= 0 && c < TRIE_SIZE);
         if (t->chars[c] == NULL) {
@@ -34,8 +34,8 @@ void trie_add(trie_t *t, char *word) {
     t->chars[TRIE_SENTINEL] = trie_init();
 }
 
-int trie_exists(trie_t *t, char *word) {
-    int c;
+uint32_t trie_exists(trie_t *t, char *word) {
+    uint32_t c;
     while ((c = *word++)) {
         if (t->chars[c] == NULL) {
             return 0;
@@ -45,8 +45,8 @@ int trie_exists(trie_t *t, char *word) {
     return t->chars[TRIE_SENTINEL] != NULL ? 1 : 0;
 }
 
-int trie_prefix(trie_t *t, char *prefix) {
-    int c;
+uint32_t trie_prefix(trie_t *t, char *prefix) {
+    uint32_t c;
     while ((c = *prefix++)) {
         if (t->chars[c] == NULL) {
             return 0;
@@ -56,9 +56,9 @@ int trie_prefix(trie_t *t, char *prefix) {
     return t->node;
 }
 
-unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
-    int extra = 0;
-    int c;
+uint32_t trie_complete(trie_t *t, char *prefix, char *suffix) {
+    uint32_t extra = 0;
+    uint32_t c;
     while ((c = *prefix++)) {
         if (t->chars[c] == NULL) {
             return -1;
@@ -82,14 +82,14 @@ unsigned int trie_complete(trie_t *t, char *prefix, char *suffix) {
     return t->index;
 }
 
-int trie_load(trie_t *t, tdata_t *td) {
+uint32_t trie_load(trie_t *t, tdata_t *td) {
     trie_t *root = t;
 
-    for (int i = 0; i < td->n_stops; i++) {
+    for (uint32_t i = 0; i < td->n_stops; i++) {
         char *stopname = tdata_stop_id_for_index(td, i);
-        int c, word_len = strlen(stopname);
+        uint32_t c, word_len = strlen(stopname);
 
-        for (int j = 0; j < word_len; j++) {
+        for (uint32_t j = 0; j < word_len; j++) {
             /* lowercase */
             c = stopname[j] >= 'A' && stopname[j] <= 'Z' ? stopname[j] | 0x60 : stopname[j];
             assert(c >= 0 && c < TRIE_SIZE);
@@ -115,7 +115,7 @@ void trie_strip(trie_t *t, char *src, char *dest) {
     if (dest == NULL) {
         dest = src;
     }
-    int c, i = 0, last_break = 0, in_trie = 1;
+    uint32_t c, i = 0, last_break = 0, in_trie = 1;
     trie_t *root = t;
 
     while ((c = dest[i++] = *src++)) {
@@ -142,7 +142,7 @@ void trie_strip(trie_t *t, char *src, char *dest) {
 }
 
 void trie_free(trie_t *t) {
-    int i;
+    uint32_t i;
     for (i = 0; i < TRIE_SIZE; i++) {
         if (t->chars[i] != NULL) {
             trie_free(t->chars[i]);

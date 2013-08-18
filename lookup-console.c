@@ -13,10 +13,10 @@
 static struct termios g_old_kbd_mode;
 
 // did somebody press somthing???
-static int kbhit(void){
+static uint32_t kbhit(void){
   struct timeval timeout;
   fd_set read_handles;
-  int status;
+  uint32_t status;
 
   // check stdin (fd 0) for activity
   FD_ZERO(&read_handles);
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
   tcsetattr(0, TCSANOW, &new_kbd_mode);
   atexit(old_attr);
 
-  int len = 0;
+  uint32_t len = 0;
   unsigned index = 0;
   char text[255];
   tdata_t tdata;

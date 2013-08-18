@@ -1,18 +1,18 @@
 /* config.h */
 
 #define RRRR_TEST_CONCURRENCY 4
-#define RRRR_INPUT_FILE "/home/abyrd/git/rrrr/timetable.dat"
+#define RRRR_INPUT_FILE "timetable.dat"
 
 // runtime increases roughly linearly with this value
 // though with target pruning it no longer seems to have as much effect
-#define RRRR_MAX_ROUNDS 8
+#define RRRR_MAX_ROUNDS 6
 
 /* note that these values can cause missed transfers until we have guaranteed / timed transfers */
 
 // specify in seconds
 #define RRRR_WALK_SLACK_SEC  0
-// specify in internal 2-second intervals!
-#define RRRR_XFER_SLACK_2SEC 0
+// specify in internal 4-second intervals!
+#define RRRR_XFER_SLACK_4SEC 0
 
 // TODO: Max transfer time to avoid unnecessary branching?
 

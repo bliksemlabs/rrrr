@@ -6,38 +6,28 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define BITSET_NONE UINT32_MAX
+
 typedef struct bitset_s BitSet;
 struct bitset_s {
-    int capacity;
+    uint32_t capacity;
     uint64_t *chunks;
-    int nchunks;
+    uint32_t nchunks;
 };
 
-typedef struct bitset_iter_s BitSetIterator;
-struct bitset_iter_s {
-    uint64_t *chunk;
-    uint64_t mask;
-    int index;
-    int capacity;
-};
-
-BitSet *bitset_new(int capacity);
+BitSet *bitset_new(uint32_t capacity);
 
 void bitset_reset(BitSet *self); // rename to bitset_clear?
 
-void bitset_set(BitSet *self, int index);
+void bitset_set(BitSet *self, uint32_t index);
 
-bool bitset_get(BitSet *self, int index);
+bool bitset_get(BitSet *self, uint32_t index);
 
 void bitset_dump(BitSet *self);
 
 void bitset_destroy(BitSet *self);
 
-void bitset_iter_begin(BitSetIterator*, BitSet*);
-
-int bitset_iter_next(BitSetIterator *self);
-
-int bitset_next_set_bit(BitSet*, int index);
+uint32_t bitset_next_set_bit(BitSet*, uint32_t index);
 
 #endif // _BITSET_H
 
