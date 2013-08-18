@@ -1,12 +1,13 @@
 # "By default, Clang builds C code according to the C99 standard..."
-CC=clang
-CFLAGS=-g -march=native -Wall -Wno-unused-function -Wno-unused-variable # -O2 -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CC      := clang
+CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable # -O2 -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
+SOURCES := $(wildcard *.c)
+OBJECTS := $(SOURCES:.c=.o)
+BINS    := workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime
+
 #CC=gcc
 #CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
-LIBS=-lzmq -lczmq -lm 
-SOURCES=$(wildcard *.c)
-OBJECTS=$(SOURCES:.c=.o)
-BINS=workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr
 
 all: $(BINS)
 
@@ -27,6 +28,9 @@ testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o
 
 explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o 
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+
+rrrrealtime: realtime.o protobuf/gtfs-realtime.pb-c.o
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
 client: bitset.o qstring.o router.o tdata.o util.o client.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
