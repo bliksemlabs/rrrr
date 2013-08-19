@@ -23,19 +23,57 @@
 #include <libwebsockets.h>
 #include "gtfs-realtime.pb-c.h"
 
-#define MAX_GTFS_RT_LENGTH (500 * 1024)
+/* 
+Websockets exchange frames. Messages can be split across frames.  
+Libwebsockets does not aggregate frames into messages, you must do it manually.
+"The configuration-time option MAX_USER_RX_BUFFER has been replaced by a
+buffer size chosen per-protocol.  For compatibility, there's a default
+of 4096 rx buffer, but user code should set the appropriate size for
+the protocol frames."
+If your frames ever exceed the set size, you need to detect it with libwebsockets_remaining_packet_payload.
+See README.coding on how to support fragmented messages (multiple frames per message).
+Also libwebsockets-test-fraggle.
 
-static bool socket_closed = false;
-static bool force_exit = false;
- 
+Test fragmented messages with /alerts endpoint, since it dumps around 23k in the first message.
+
+http://stackoverflow.com/questions/13010354/chunking-websocket-transmission
+http://autobahn.ws/
+http://www.lenholgate.com/blog/2011/07/websockets-is-a-stream-not-a-message-based-protocol.html
+ */
+
+#define MAX_FRAME_LENGTH (10 * 1024)
+#define MAX_MESSAGE_LENGTH (1000 * 1024)
+
+uint8_t msg[MAX_MESSAGE_LENGTH];
+size_t msg_len = 0;
+
+static void msg_add_frame (uint8_t *frame, size_t len) { 
+    if (msg_len + len > MAX_MESSAGE_LENGTH) {
+        fprintf (stderr, "message exceeded maximum message length\n");
+        msg_len = 0;
+        return;
+    }
+    memcpy(msg + msg_len, frame, len);
+    msg_len += len;
+}
+
+static void msg_reset () { msg_len = 0; }
+
+static void msg_dump () {
+    for (uint8_t *c = msg; c < msg + msg_len; ++c) {
+        if (*c >= 32 && *c < 127) printf ("%c", *c);
+        else printf ("[%02X]", *c);
+    }
+    printf ("\n===============  END OF MESSAGE  ================\n");
+}
  
 /* Protocol: Incremental GTFS-RT */
 
-static void show_gtfsrt (size_t len, uint8_t *buf) {
+static void show_gtfsrt (uint8_t *buf, size_t len) {
     TransitRealtime__FeedMessage *msg;
     msg = transit_realtime__feed_message__unpack (NULL, len, buf);
     if (msg == NULL) {
-        fprintf(stderr, "error unpacking incoming gtfs-rt message\n");
+        fprintf (stderr, "error unpacking incoming gtfs-rt message\n");
         return;
     }
     printf("Received feed message with %lu entities.\n", msg->n_entity);
@@ -46,6 +84,9 @@ static void show_gtfsrt (size_t len, uint8_t *buf) {
     transit_realtime__feed_message__free_unpacked (msg, NULL);
 }
 
+static bool socket_closed = false;
+static bool force_exit = false;
+ 
 static int callback_gtfs_rt (struct libwebsocket_context *this,
 			                 struct libwebsocket *wsi,
 			                 enum libwebsocket_callback_reasons reason,
@@ -58,9 +99,30 @@ static int callback_gtfs_rt (struct libwebsocket_context *this,
 		break;
 
 	case LWS_CALLBACK_CLIENT_RECEIVE:
-		fprintf(stderr, "rx %d\n", (int)len);
-		if (len >= MAX_GTFS_RT_LENGTH) break; // received more than the buffer could hold
-		show_gtfsrt (len, (uint8_t *) in);
+	    fprintf(stderr, "rx %d bytes: ", (int)len);
+	    if (libwebsockets_remaining_packet_payload (wsi)) {
+	        fprintf (stderr, "frame exceeds maximum allowed frame length\n");
+	    } else if (libwebsocket_is_final_fragment (wsi)) {
+    	    fprintf(stderr, "final frame, ");
+	        if (msg_len == 0) {
+	            /* single frame message, nothing in the buffer */
+        	    fprintf(stderr, "single-frame message. ");
+	            if (len > 0) show_gtfsrt (in, len);
+            } else { 
+                /* last frame in a multi-frame message */
+        	    fprintf(stderr, "had previous fragment frames. ");
+                msg_add_frame (in, len);
+                // msg_dump (); // visualize assembled message
+                show_gtfsrt (msg, msg_len);
+        	    fprintf(stderr, "emptying message buffer. ");
+                msg_reset();
+            }
+	    } else {
+    	    /* non-final fragment frame */
+    	    fprintf(stderr, "message fragment frame. ");
+            msg_add_frame (in, len);
+        }
+	    fprintf(stderr, "\n");
 		break;
 
 	case LWS_CALLBACK_CLIENT_CONFIRM_EXTENSION_SUPPORTED:
@@ -85,8 +147,8 @@ static struct libwebsocket_protocols protocols[] = {
 	{
 		"incremental-gtfs-rt",
 		callback_gtfs_rt,
-		0,                   // session buffer size
-		MAX_GTFS_RT_LENGTH,  // message buffer size
+		0,                 // shared protocol data size
+		MAX_FRAME_LENGTH,  // frame buffer size
 	},
 	{ NULL, NULL, 0, 0 } /* end */
 };
@@ -168,7 +230,7 @@ int main(int argc, char **argv) {
 
 	/* service the websocket context to handle incoming packets */
 	int n = 0;
-	while (n >= 0 && !socket_closed && !force_exit) n = libwebsocket_service(context, 10);
+	while (n >= 0 && !socket_closed && !force_exit) n = libwebsocket_service(context, 500);
 
 bail:
     fprintf(stderr, "Exiting\n");
