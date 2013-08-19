@@ -120,14 +120,13 @@ def load_gtfs_table_to_sqlite(fp, gtfs_basename, cc, header=None, verbose=False)
         cc.execute(insert_template, _line)
         
 class Pattern:
-    def __init__(self, pattern_id, stop_ids, dwells):
+    def __init__(self, pattern_id, stop_ids):
         self.pattern_id = pattern_id
         self.stop_ids = stop_ids
-        self.dwells = dwells
     
     @property
     def signature(self):
-        return (tuple(self.stops), tuple(self.dwells))
+        return (tuple(self.stops))
 
 class TripBundle:
     def __init__(self, gtfsdb, pattern):
@@ -404,9 +403,8 @@ class GTFSDatabase:
             stop_times = list(d)
             
             stop_ids = [stop_id for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times]
-            dwells = [departure_time-arrival_time for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times]
             route_id = [route_id for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times][0]
-            pattern_signature = (tuple(stop_ids), tuple(dwells),route_id)
+            pattern_signature = (tuple(stop_ids), route_id)
             
             if pattern_signature not in patterns:
                 pattern = Pattern( len(patterns), stop_ids)
