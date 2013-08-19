@@ -1,6 +1,8 @@
 /* json.c */
 
 #include "json.h"
+#include "geometry.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -32,6 +34,10 @@ static void comma() { if (in_list) check(','); }
 
 /* Write a string out to the buffer, surrounding it in quotes and escaping all quotes or slashes. */
 static void string (const char *s) {
+    if (s == NULL) {
+        if (remaining(4)) b += sprintf(b, "null");
+        return;
+    }
     check('"');
     for (const char *c = s; *c != '\0'; ++c) {
         if (*c == '"' || *c == '/') check('/');
@@ -72,6 +78,11 @@ static void json_kv(char *key, char *value) {
 static void json_kd(char *key, int value) {
     ekey(key);
     if (remaining(11)) b += sprintf(b, "%d", value);
+}
+
+static void json_kf(char *key, double value) {
+    ekey(key);
+    if (remaining(12)) b += sprintf(b, "%5.5f", value);
 }
 
 static void json_kl(char *key, long value) {
@@ -118,9 +129,29 @@ static void json_end_arr() {
     in_list = true;
 }
 
+static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
+    char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
+    latlon_t coords = tdata->stop_coords[stop_index];
+    json_key_obj(key);
+        json_kv("name", stop_id);
+        json_key_obj("stopId");
+            json_kv("agencyId", "NL");
+            json_kv("id", stop_id);
+        json_end_obj();
+        json_kv("stopCode", stop_id);
+        json_kv("platformCode", NULL);
+        json_kf("lat", coords.lat);
+        json_kf("lon", coords.lon);
+        json_kd("arrival", 0);
+        json_kd("departure", 10);
+    json_end_obj();
+}
+
 static void json_leg (struct leg *leg, tdata_t *tdata) {
     json_obj(); /* one leg */
-                        
+        json_place("from", leg->s0, tdata);
+        json_place("to",   leg->s1, tdata);
+        json_kv("legGeometry", NULL);
 /* 
     "startTime": 1376897760000,
     "endTime": 1376898480000,
@@ -222,29 +253,18 @@ void render_plan_json(struct plan *plan, tdata_t *tdata) {
     json_obj();
         json_kv("error", "null");
         json_key_obj("requestParameters");
-            json_kv("time", "9:12am");
-            json_kv("arriveBy", "false");
-            json_kv("maxWalkDistance", "1500");
-            json_kv("fromPlace", "51.93749209045435,4.51263427734375");
-            json_kv("toPlace", "52.36469901960148,4.9053955078125");
+            json_kv("time", timetext(SEC_TO_RTIME(plan->req.time)));
+            json_kb("arriveBy", plan->req.arrive_by);
+            json_kf("maxWalkDistance", 1500.0);
+            json_kv("fromPlace", tdata_stop_id_for_index(tdata, plan->req.from));
+            json_kv("toPlace",   tdata_stop_id_for_index(tdata, plan->req.to));
             json_kv("date", "08-19-2013");
             json_kv("mode", "TRANSIT,WALK");
         json_end_obj();
         json_key_obj("plan");
             json_kl("date", 1376896320000);
-            json_key_obj("from");
-                json_kv("name", "Langepad");
-                json_kd("stopId", 0);
-                json_kd("stopCode", 0);
-                json_kd("platformCode", 0);
-                json_kd("lon", 4.50870);
-                json_kd("lat", 51.9364);
-            json_end_obj();
-            json_key_obj("to");
-                json_kv("name", "Weesperstraat");
-                json_kd("lon", 4.9057266219348);
-                json_kd("lat", 52.364778630779);
-            json_end_obj();
+            json_place("from", plan->req.from, tdata);
+            json_place("to", plan->req.to, tdata);
             json_key_arr("itineraries");
                 for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata);
             json_end_arr();    

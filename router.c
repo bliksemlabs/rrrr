@@ -478,6 +478,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
     /* Router states are a 2D array of stride n_stops */
     router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states;
     plan->n_itineraries = 0;
+    plan->req = *req; // copy the request into the plan for use in rendering
     struct itinerary *itin = plan->itineraries;
     /* Loop over the rounds to get ending states of itineraries using different numbers of vehicles */
     for (int n_xfers = 0; n_xfers < RRRR_MAX_ROUNDS; ++n_xfers) {

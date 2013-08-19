@@ -37,6 +37,7 @@ inline char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
     return td->stop_ids + (td->stop_id_width * stop_index);
 }
 
+// TODO rename this, confusing.
 inline uint32_t tdata_stop_name_for_index(tdata_t *td, char* stop_name, uint32_t start_index) {
     for (uint32_t stop_index = start_index; stop_index < td->n_stops; stop_index++) {
         if (strcasestr(td->stop_ids + (td->stop_id_width * stop_index), stop_name)) {
