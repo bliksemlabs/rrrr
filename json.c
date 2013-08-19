@@ -59,6 +59,7 @@ static void ekey (const char *k) {
 
 static void json_begin() { 
     b = buf; 
+    in_list = false;
     overflowed = false; 
 }
 
