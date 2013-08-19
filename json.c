@@ -4,54 +4,63 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BUFLEN (1024 * 500)
+#define BUFLEN (1024 * 32)
 
 static bool in_list = false;
 static char buf[BUFLEN];
 static char *buf_end = buf + BUFLEN - 1; // -1 to allow for final terminator char
 static char *b = buf;
+static bool overflowed = false;
 
 /* private functions */
 
-static void overflow() { 
-    fprintf(stderr, "prevented json buffer overflow.\n");
+/* Check an operation that will write multiple characters to the buffer, when the maximum number of characters is known. */
+static bool remaining(size_t n) {
+    if (b + n < buf_end) return true;
+    overflowed = true;
+    return false; 
 }
 
-static void check(const char c) { 
-    if (b >= buf_end) overflow();
+/* Overflow-checked copy of a single char to the buffer. */
+static void check(char c) { 
+    if (b >= buf_end) overflowed = true;
     else *(b++) = c;
 }
 
-static void comma() { if (in_list) *(b++) = ','; }
+/* Add a comma to the buffer, but only if we are currently in a list. */
+static void comma() { if (in_list) check(','); }
 
 /* Write a string out to the buffer, surrounding it in quotes and escaping all quotes or slashes. */
 static void string (const char *s) {
-    size_t n = 2; // first, check that there is enough space in the buffer (at least two quotes).
-    for (const char *c = s; *c != '\0'; ++c) if (*c == '"' || *c == '/') n += 2; else ++n;
-    if (b + n < buf_end) {
-        *(b++) = '"';
-        for (const char *c = s; *c != '\0'; ++c) {
-            if (*c == '"' || *c == '/') (*b++) = '/';
-            (*b++) = *c;
-        }
-        *(b++) = '"';
-    } else overflow();        
+    check('"');
+    for (const char *c = s; *c != '\0'; ++c) {
+        if (*c == '"' || *c == '/') check('/');
+        check(*c);
+    }
+    check('"');
 }
 
 /* Escape a key and copy it to the buffer, preparing for a single value. 
-   This should only be used internally, since it sets in_list before the value is printed. */
+   This should only be used internally, since it sets in_list _before_ the value is added. */
 static void ekey (const char *k) {
     comma();
     string(k);
-    *(b++) = ':';
+    check(':');
     in_list = true;
 }
 
 /* public functions (eventually) */
 
-static void json_begin() { b = buf; }
+static void json_begin() { 
+    b = buf; 
+    overflowed = false; 
+}
 
-static void json_dump() { *b = '\0'; printf("%s\n", buf); }
+static void json_dump() { 
+    *b = '\0'; 
+    if (overflowed) printf ("[JSON OVERFLOW]\n");
+    printf("%s\n", buf); 
+}
 
 static size_t json_length() { return b - buf; }
 
@@ -62,50 +71,50 @@ static void json_kv(char *key, char *value) {
 
 static void json_kd(char *key, int value) {
     ekey(key);
-    b += sprintf(b, "%d", value);
+    if (remaining(11)) b += sprintf(b, "%d", value);
 }
 
 static void json_kl(char *key, long value) {
     ekey(key);
-    b += sprintf(b, "%ld", value);
+    if (remaining(21)) b += sprintf(b, "%ld", value);
 }
 
 static void json_kb(char *key, bool value) {
     ekey(key);
-    b += sprintf(b, value ? "true" : "false");
+    if (remaining(5)) b += sprintf(b, value ? "true" : "false");
 }
 
 static void json_key_obj(char *key) {
     ekey(key);
-    *(b++) = '{';
+    check('{');
     in_list = false;
 }
 
 static void json_key_arr(char *key) {
     ekey(key);
-    *(b++) = '[';
+    check('[');
     in_list = false;
 }
 
 static void json_obj() {
     comma();
-    *(b++) = '{';
+    check('{');
     in_list = false;
 }
 
 static void json_arr() {
     comma();
-    *(b++) = '[';
+    check('[');
     in_list = false;
 }
 
 static void json_end_obj() {
-    *(b++) = '}';
+    check('}');
     in_list = true;
 }
 
 static void json_end_arr() {
-    *(b++) = ']';
+    check(']');
     in_list = true;
 }
 
