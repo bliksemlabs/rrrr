@@ -2,62 +2,111 @@
 
 #include "json.h"
 #include <stdio.h>
+#include <string.h>
 
-static bool json_comma = false;
-static char json_buf[30000];
-static char *jb = json_buf;
+#define BUFLEN (1024 * 500)
 
-static void json_begin() { 
-    jb = json_buf; 
+static bool in_list = false;
+static char buf[BUFLEN];
+static char *buf_end = buf + BUFLEN - 1; // -1 to allow for final terminator char
+static char *b = buf;
+
+/* private functions */
+
+static void overflow() { 
+    fprintf(stderr, "prevented json buffer overflow.\n");
 }
 
-static void json_dump() { 
-    printf("%s\n", json_buf);
+static void check(const char c) { 
+    if (b >= buf_end) overflow();
+    else *(b++) = c;
 }
+
+static void comma() { if (in_list) *(b++) = ','; }
+
+/* Write a string out to the buffer, surrounding it in quotes and escaping all quotes or slashes. */
+static void string (const char *s) {
+    size_t n = 2; // first, check that there is enough space in the buffer (at least two quotes).
+    for (const char *c = s; *c != '\0'; ++c) if (*c == '"' || *c == '/') n += 2; else ++n;
+    if (b + n < buf_end) {
+        *(b++) = '"';
+        for (const char *c = s; *c != '\0'; ++c) {
+            if (*c == '"' || *c == '/') (*b++) = '/';
+            (*b++) = *c;
+        }
+        *(b++) = '"';
+    } else overflow();        
+}
+
+/* Escape a key and copy it to the buffer, preparing for a single value. 
+   This should only be used internally, since it sets in_list before the value is printed. */
+static void ekey (const char *k) {
+    comma();
+    string(k);
+    *(b++) = ':';
+    in_list = true;
+}
+
+/* public functions (eventually) */
+
+static void json_begin() { b = buf; }
+
+static void json_dump() { *b = '\0'; printf("%s\n", buf); }
+
+static size_t json_length() { return b - buf; }
 
 static void json_kv(char *key, char *value) {
-    jb += sprintf(jb, "%s\"%s\":\"%s\"", json_comma ? "," : "", key, value);
-    json_comma = true;
+    ekey(key);
+    string(value);
 }
 
 static void json_kd(char *key, int value) {
-    jb += sprintf(jb, "%s\"%s\":%d", json_comma ? "," : "", key, value);
-    json_comma = true;
+    ekey(key);
+    b += sprintf(b, "%d", value);
 }
 
 static void json_kl(char *key, long value) {
-    jb += sprintf(jb, "%s\"%s\":%ld", json_comma ? "," : "", key, value);
-    json_comma = true;
+    ekey(key);
+    b += sprintf(b, "%ld", value);
 }
 
 static void json_kb(char *key, bool value) {
-    jb += sprintf(jb, "%s\"%s\":%s", json_comma ? "," : "", key, value ? "true" : "false");
-    json_comma = true;
+    ekey(key);
+    b += sprintf(b, value ? "true" : "false");
 }
 
 static void json_key_obj(char *key) {
-    jb += sprintf(jb, "%s\"%s\":{", json_comma ? "," : "", key);
-    json_comma = false;
+    ekey(key);
+    *(b++) = '{';
+    in_list = false;
 }
 
 static void json_key_arr(char *key) {
-    jb += sprintf(jb, "%s\"%s\":[", json_comma ? "," : "", key);
-    json_comma = false;
+    ekey(key);
+    *(b++) = '[';
+    in_list = false;
 }
 
 static void json_obj() {
-    jb += sprintf (jb, "%s{", json_comma ? "," : "");
-    json_comma = false;
+    comma();
+    *(b++) = '{';
+    in_list = false;
+}
+
+static void json_arr() {
+    comma();
+    *(b++) = '[';
+    in_list = false;
 }
 
 static void json_end_obj() {
-    jb += sprintf (jb, "}");
-    json_comma = true;
+    *(b++) = '}';
+    in_list = true;
 }
 
 static void json_end_arr() {
-    jb += sprintf (jb, "]");
-    json_comma = true;
+    *(b++) = ']';
+    in_list = true;
 }
 
 static void json_leg (struct leg *leg, tdata_t *tdata) {
