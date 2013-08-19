@@ -409,7 +409,7 @@ class GTFSDatabase:
             pattern_signature = (tuple(stop_ids), tuple(dwells),route_id)
             
             if pattern_signature not in patterns:
-                pattern = Pattern( len(patterns), stop_ids, dwells )
+                pattern = Pattern( len(patterns), stop_ids)
                 patterns[pattern_signature] = pattern
             else:
                 pattern = patterns[pattern_signature]
