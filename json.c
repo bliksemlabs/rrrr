@@ -46,7 +46,7 @@ static void json_key_arr(char *key) {
 }
 
 static void json_obj() {
-    jb += sprintf (jb, "{");
+    jb += sprintf (jb, "%s{", json_comma ? "," : "");
     json_comma = false;
 }
 
@@ -60,54 +60,10 @@ static void json_end_arr() {
     json_comma = true;
 }
 
-
-void render_plan_json(struct plan *plan, tdata_t *tdata) {
-    
-    json_begin();
-    json_obj();
-        json_kv("error", "null");
-        json_key_obj("requestParameters");
-            json_kv("time", "9:12am");
-            json_kv("arriveBy", "false");
-            json_kv("maxWalkDistance", "1500");
-            json_kv("fromPlace", "51.93749209045435,4.51263427734375");
-            json_kv("toPlace", "52.36469901960148,4.9053955078125");
-            json_kv("date", "08-19-2013");
-            json_kv("mode", "TRANSIT,WALK");
-        json_end_obj();
-        json_key_obj("plan");
-            json_kl("date", 1376896320000);
-            json_key_obj("from");
-                json_kv("name", "Langepad");
-                json_kd("stopId", 0);
-                json_kd("stopCode", 0);
-                json_kd("platformCode", 0);
-                json_kd("lon", 4.50870);
-                json_kd("lat", 51.9364);
-            json_end_obj();
-            json_key_obj("to");
-                json_kv("name", "Weesperstraat");
-                json_kd("lon", 4.9057266219348);
-                json_kd("lat", 52.364778630779);
-            json_end_obj();
-            json_key_arr("itineraries");
-                json_obj(); /* one itinerary */
-                    json_kd("duration", 5190000);
-                    json_kl("startTime", 1376896831000);
-                    json_kl("endTime", 1376902021000);
-                    json_kd("walkTime", 1491);
-                    json_kd("transitTime", 3267);
-                    json_kd("waitingTime", 432);
-                    json_kd("walkDistance", 1887);
-                    json_kb("walkLimitExceeded",true);
-                    json_kd("elevationLost",0);
-                    json_kd("elevationGained",0);
-                    json_kd("transfers", 2);
-                    json_key_arr("legs");
-                        json_obj(); /* one leg */
+static void json_leg (struct leg *leg, tdata_t *tdata) {
+    json_obj(); /* one leg */
                         
-/* A LEG 
-  {
+/* 
     "startTime": 1376897760000,
     "endTime": 1376898480000,
     "departureDelay": 0,
@@ -180,11 +136,59 @@ void render_plan_json(struct plan *plan, tdata_t *tdata) {
     "steps": [
       
     ]
-  }                        
 */                        
-                        json_end_obj();
-                    json_end_arr();    
-                json_end_obj();
+    json_end_obj();
+}
+
+static void json_itinerary (struct itinerary *itin, tdata_t *tdata) {
+    json_obj(); /* one itinerary */
+        json_kd("duration", 5190000);
+        json_kl("startTime", 1376896831000);
+        json_kl("endTime", 1376902021000);
+        json_kd("walkTime", 1491);
+        json_kd("transitTime", 3267);
+        json_kd("waitingTime", 432);
+        json_kd("walkDistance", 1887);
+        json_kb("walkLimitExceeded",true);
+        json_kd("elevationLost",0);
+        json_kd("elevationGained",0);
+        json_kd("transfers", 2);
+        json_key_arr("legs");
+            for (int l = 0; l < itin->n_legs; ++l) json_leg (itin->legs + l, tdata);
+        json_end_arr();    
+    json_end_obj();
+}
+
+void render_plan_json(struct plan *plan, tdata_t *tdata) {
+    json_begin();
+    json_obj();
+        json_kv("error", "null");
+        json_key_obj("requestParameters");
+            json_kv("time", "9:12am");
+            json_kv("arriveBy", "false");
+            json_kv("maxWalkDistance", "1500");
+            json_kv("fromPlace", "51.93749209045435,4.51263427734375");
+            json_kv("toPlace", "52.36469901960148,4.9053955078125");
+            json_kv("date", "08-19-2013");
+            json_kv("mode", "TRANSIT,WALK");
+        json_end_obj();
+        json_key_obj("plan");
+            json_kl("date", 1376896320000);
+            json_key_obj("from");
+                json_kv("name", "Langepad");
+                json_kd("stopId", 0);
+                json_kd("stopCode", 0);
+                json_kd("platformCode", 0);
+                json_kd("lon", 4.50870);
+                json_kd("lat", 51.9364);
+            json_end_obj();
+            json_key_obj("to");
+                json_kv("name", "Weesperstraat");
+                json_kd("lon", 4.9057266219348);
+                json_kd("lat", 52.364778630779);
+            json_end_obj();
+            json_key_arr("itineraries");
+                for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata);
             json_end_arr();    
         json_end_obj();
         json_key_obj("debug");
