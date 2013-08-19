@@ -6,6 +6,7 @@
 #include "qstring.h"
 #include "tdata.h"
 #include "bitset.h"
+#include "json.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -559,7 +560,6 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
 
 /* 
   Write a plan structure out to a text buffer in tabular format.
-  TODO add an alternate formatting function for JSON, protobuf
 */
 static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
     char *b = buf;
@@ -596,6 +596,7 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
     struct plan plan;
     router_result_to_plan (&plan, router, req);
+    render_plan_json (&plan, &(router->tdata));
     return render_plan (&plan, &(router->tdata), buf, buflen);
 }
 

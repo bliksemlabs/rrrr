@@ -20,19 +20,19 @@ hashgrid: hashgrid.o geometry.o tdata.o util.o
 brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
-workerrrr: bitset.o qstring.o router.o tdata.o util.o worker.o bitset.o 
+workerrrr: bitset.o qstring.o router.o tdata.o util.o worker.o bitset.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o 
+testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o 
+explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 rrrrealtime: realtime.o gtfs-realtime.pb-c.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
-client: bitset.o qstring.o router.o tdata.o util.o client.o
+client: bitset.o qstring.o router.o tdata.o util.o client.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 lookup-console: tdata.o util.o lookup-console.o trie.o
