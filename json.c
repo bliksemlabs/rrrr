@@ -129,6 +129,8 @@ static void json_end_arr() {
     in_list = true;
 }
 
+static long rtime_to_msec(rtime_t rtime) { return (rtime << 4) * 1000L; }
+
 static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
@@ -148,16 +150,25 @@ static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
 }
 
 static void json_leg (struct leg *leg, tdata_t *tdata) {
+    char *mode = NULL;
+    char *route_id = NULL;
+    if (leg->route == WALK) mode = "WALK";
+    else {
+        mode = "BUS";
+        route_id = tdata_route_id_for_index(tdata, leg->route);
+    }
     json_obj(); /* one leg */
         json_place("from", leg->s0, tdata);
         json_place("to",   leg->s1, tdata);
         json_kv("legGeometry", NULL);
-        json_kv("mode", leg->route == WALK ? "WALK" : "BUS");
+        json_kv("mode", mode);
+        json_kl("startTime", rtime_to_msec(leg->t0));
+        json_kl("endTime",   rtime_to_msec(leg->t1));
+        json_kl("departureDelay", 0);
+        json_kl("arrivalDelay", 0);
+        json_kl("departureDelay", 0);
+        json_kv("headsign", route_id);
 /* 
-    "startTime": 1376897760000,
-    "endTime": 1376898480000,
-    "departureDelay": 0,
-    "arrivalDelay": 0,
     "realTime": false,
     "distance": 2656.2383456335,
     "mode": "BUS",
