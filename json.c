@@ -136,9 +136,9 @@ static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
         json_kv("name", stop_id);
         json_key_obj("stopId");
             json_kv("agencyId", "NL");
-            json_kv("id", stop_id);
+            json_kd("id", stop_index);
         json_end_obj();
-        json_kv("stopCode", stop_id);
+        json_kd("stopCode", stop_index);
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
@@ -152,6 +152,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata) {
         json_place("from", leg->s0, tdata);
         json_place("to",   leg->s1, tdata);
         json_kv("legGeometry", NULL);
+        json_kv("mode", leg->route == WALK ? "WALK" : "BUS");
 /* 
     "startTime": 1376897760000,
     "endTime": 1376898480000,
@@ -241,7 +242,7 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata) {
         json_kb("walkLimitExceeded",true);
         json_kd("elevationLost",0);
         json_kd("elevationGained",0);
-        json_kd("transfers", 2);
+        json_kd("transfers", itin->n_legs / 2 - 1);
         json_key_arr("legs");
             for (int l = 0; l < itin->n_legs; ++l) json_leg (itin->legs + l, tdata);
         json_end_arr();    
