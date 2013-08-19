@@ -15,10 +15,20 @@ It looks like in may be possible to keep memory consumption for a Portland, Oreg
 Dependencies
 ------------
 
-1. Graphserver (for its SQLite GTFS tools)
-2. zeromq and libczmq
-3. gcc
+1. **graphserver**:
+We use its SQLite GTFS tools when building our timetable files.
 
+1. **zeromq** and **libczmq**:
+Message passing / concurrency framework used by RRRR for load balancing and scaling.
+
+1. **libprotobuf-c**:
+For decoding incoming realtime messages. https://code.google.com/p/protobuf-c/downloads/list, Ubuntu packages libprotobuf-c0 and libprotobuf-c0-dev.
+
+1. **libwebsockets**:
+For receiving incremental realtime messages. https://github.com/warmcat/libwebsockets.
+
+1. **gcc** or **clang**:
+clang provides very good error messages and warnings. RRRR benefits greatly from -O2 and link-time optimization.
 
 Building transit data
 ---------------------
