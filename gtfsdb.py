@@ -4,7 +4,7 @@ import sys
 import os
 from zipfile import ZipFile
 from codecs import iterdecode
-import datetime
+from datetime import timedelta,datetime,date
 
 # Extended from gtfsdb.py, wich was part of the grapserver code.
 #
@@ -39,7 +39,6 @@ import datetime
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 
 def withProgress(seq, modValue=100):
     c = -1
@@ -118,75 +117,50 @@ def load_gtfs_table_to_sqlite(fp, gtfs_basename, cc, header=None, verbose=False)
                 _line.append( None )
                 
         cc.execute(insert_template, _line)
-        
+
 class Pattern:
-    def __init__(self, pattern_id, stop_ids, dwells):
-        self.pattern_id = pattern_id
+    def __init__(self,route_id,stop_ids,pickup_types,drop_off_types):
         self.stop_ids = stop_ids
-        self.dwells = dwells
+        self.pickup_types = pickup_types
+        self.drop_off_types = drop_off_types
+        self.route_id = route_id
     
     @property
     def signature(self):
-        return (tuple(self.stops), tuple(self.dwells))
+        return (tuple(self.stop_ids),tuple(self.pickup_types),tuple(drop_off_types),route_id)
 
 class TripBundle:
     def __init__(self, gtfsdb, pattern):
         self.gtfsdb = gtfsdb
         self.pattern = pattern
         self.trip_ids = []
+
+    def find_time_range(self):
+        min_time = 99999999
+        max_time = 0
+        for trip_id in self.trip_ids:
+            if self.gtfsdb.departuretime_trip[trip_id] < min_time:
+                min_time = self.gtfsdb.departuretime_trip[trip_id]
+            if self.gtfsdb.timedemandgroups[self.gtfsdb.timedemandgroup_for_trip[trip_id]][-1][0] > max_time:
+                max_time = self.gtfsdb.timedemandgroups[self.gtfsdb.timedemandgroup_for_trip[trip_id]][-1][0]
+        return (min_time,max_time)
+
+    def sorted_trip_ids(self) :
+        """ function from a route (TripBundle) to a list of all trip_ids for that route,
+        sorted by first departure time of each trip """
+        query = """
+    select trip_id,min(departure_time) as departure_time from stop_times
+    where trip_id in (%s)
+    group by trip_id
+    order by departure_time
+        """ % (",".join( ["'%s'"%x for x in self.trip_ids] ))
+        # get all trip ids in this pattern ordered by first departure time
+        sorted_trips = [trip_id for (trip_id, departure_time) in self.gtfsdb.get_cursor().execute(query)]
+        return sorted_trips
+
         
     def add_trip(self, trip_id):
         self.trip_ids.append( trip_id )
-        
-    def stop_time_bundle( self, stop_id, service_id ):
-        c = self.gtfsdb.conn.cursor()
-        
-        query = """
-SELECT stop_times.* FROM stop_times, trips 
-  WHERE stop_times.trip_id = trips.trip_id 
-        AND trips.trip_id IN (%s) 
-        AND trips.service_id = ? 
-        AND stop_times.stop_id = ?
-        AND arrival_time NOT NULL
-        AND departure_time NOT NULL
-  ORDER BY departure_time"""%(",".join(["'%s'"%x for x in self.trip_ids]))
-      
-        c.execute(query, (service_id,str(stop_id)))
-        
-        return list(c)
-    
-    def stop_time_bundles( self, service_id ):
-        
-        c = self.gtfsdb.conn.cursor()
-        
-        query = """
-        SELECT stop_times.trip_id, 
-               stop_times.arrival_time, 
-               stop_times.departure_time, 
-               stop_times.stop_id, 
-               stop_times.stop_sequence, 
-               stop_times.shape_dist_traveled 
-        FROM stop_times, trips
-        WHERE stop_times.trip_id = trips.trip_id
-        AND trips.trip_id IN (%s)
-        AND trips.service_id = ?
-        AND arrival_time NOT NULL
-        AND departure_time NOT NULL
-        ORDER BY stop_sequence"""%(",".join(["'%s'"%x for x in self.trip_ids]))
-            
-        #bundle queries by trip_id
-        
-        trip_id_sorter = {}
-        for trip_id, arrival_time, departure_time, stop_id, stop_sequence, shape_dist_traveled in c.execute(query, (service_id,)):
-            if trip_id not in trip_id_sorter:
-                trip_id_sorter[trip_id] = []
-                
-            trip_id_sorter[trip_id].append( (trip_id, arrival_time, departure_time, stop_id, stop_sequence, shape_dist_traveled) )
-        
-        return zip(*(trip_id_sorter.values()))
-            
-    def __repr__(self):
-        return "<TripBundle n_trips: %d n_stops: %d>"%(len(self.trip_ids), len(self.pattern.stop_ids))
 
 class GTFSDatabase:
     AGENCIES_DEF = ("agencies", (("agency_id",   None, None),
@@ -289,18 +263,19 @@ class GTFSDatabase:
                 TRANSFERS_DEF,
                 SHAPES_DEF,
                 FEED_DEF)
-    
+
     def __init__(self, sqlite_filename, overwrite=False):
         self.dbname = sqlite_filename
-        
+        self.timedemandgroups = {}
+        self.timedemandgroup_for_trip = {}
+        self.departuretime_trip = {}
         if overwrite:
             try:
                 os.remove(sqlite_filename)
             except:
                 pass
-        
         self.conn = sqlite3.connect( sqlite_filename )
-        
+
     def get_cursor(self):
         # Attempts to get a cursor using the current connection to the db. If we've found ourselves in a different thread
         # than that which the connection was made in, re-make the connection.
@@ -353,29 +328,144 @@ class GTFSDatabase:
         c.execute( "CREATE INDEX transfers_fromstop_id ON transfers (from_stop_id)" )
         c.execute( "CREATE INDEX transfers_tostop_id ON transfers (to_stop_id)" )
 
+    def date_range(self):
+        start_date, end_date = list( self.get_cursor().execute("select min(start_date), max(end_date) from calendar") )[0]
+        
+        start_date = start_date or "99999999" #sorted greater than any date
+        end_date = end_date or "00000000" #sorted earlier than any date
+        
+        first_exception_date, last_exception_date = list( self.get_cursor().execute("select min(date), max(date) from calendar_dates WHERE exception_type=1") )[0]
+          
+        first_exception_date = first_exception_date or "99999999"
+        last_exceptoin_date = last_exception_date or "00000000"
+        
+        start_date = min(start_date, first_exception_date)
+        end_date = max(end_date, last_exception_date )
+
+        return date( *parse_gtfs_date(start_date) ), date( *parse_gtfs_date(end_date) )
+
+    def gettransfers(self,from_stop_id,maxdistance=None):
+        query = """
+SELECT DISTINCT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM(
+SELECT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM transfers WHERE from_stop_id = ?
+UNION
+SELECT from_stop_id, to_stop_id, transfer_type, min_transfer_time
+FROM transfers WHERE to_stop_id = ?) as x"""
+        return self.get_cursor().execute(query, (from_stop_id,from_stop_id,)) 
+
+    def find_max_service (self) :
+        n_services_on_day = []
+        # apply calendars (day-of-week)
+        day_masks = [ [ x != 0 for x in c[1:8] ] for c in self.get_cursor().execute('select * from calendar') ]
+        feed_start_date, feed_end_date = self.date_range()
+        feed_date = feed_start_date
+        while feed_date <= feed_end_date :
+            feed_date += timedelta(days = 1)
+            count = 0
+            for day_mask in day_masks :
+                if day_mask[feed_date.weekday()] :
+                    count += 1
+            n_services_on_day.append(count)
+        # apply single-day exceptions
+        for service_id, text_date, exception_type in self.get_cursor().execute('select * from calendar_dates') :
+            service_date = date( *map(int, (text_date[:4], text_date[4:6], text_date[6:8])) )
+            date_offset = service_date - feed_start_date
+            day_offset = date_offset.days
+            # print service_date, day_offset
+            if exception_type == 1 :
+                n_services_on_day[day_offset] += 1
+            else :
+                n_services_on_day[day_offset] -= 1
+        n_month = [ sum(n_services_on_day[i:i+32]) for i in range(len(n_services_on_day) - 32) ]
+        if len(n_month) == 0:
+            print "1-day service on %s" % (feed_start_date)  
+            return feed_start_date
+        max_date, max_n_services = max(enumerate(n_month), key = lambda x : x[1])
+        max_date = feed_start_date + timedelta(days = max_date)
+        print "32-day period with the maximum number of services begins %s (%d services)" % (max_date, max_n_services)  
+        return max_date 
+   
+    def tripids_in_serviceperiods(self):
+        service_id_for_trip_id = {}        
+        query = """ select trip_id, service_id from trips """
+        return self.get_cursor().execute(query)
+
+    DOWS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    DOW_INDEX = dict(zip(range(len(DOWS)),DOWS))
+    
+    def service_periods(self, sample_date):
+        datetimestr = sample_date.strftime( "%Y%m%d" ) #sample_date to string like "20081225"
+        datetimeint = int(datetimestr)              #int like 20081225. These ints have the same ordering as regular dates, so comparison operators work
+        
+        # Get the gtfs date range. If the sample_date is out of the range, no service periods are in effect
+        start_date, end_date = self.date_range()
+        if sample_date < start_date or sample_date > end_date:
+            return []
+        
+        # Use the day-of-week name to query for all service periods that run on that day
+        dow_name = self.DOW_INDEX[sample_date.weekday()]
+        service_periods = list( self.get_cursor().execute( "SELECT service_id, start_date, end_date FROM calendar WHERE %s=1"%dow_name ) )
+         
+        # Exclude service periods whose range does not include this sample_date
+        service_periods = [x for x in service_periods if (int(x[1]) <= datetimeint and int(x[2]) >= datetimeint)]
+        
+        # Cut service periods down to service IDs
+        sids = set( [x[0] for x in service_periods] )
+            
+        # For each exception on the given sample_date, add or remove service_id to the accumulating list
+        
+        for exception_sid, exception_type in self.get_cursor().execute( "select service_id, exception_type from calendar_dates WHERE date = ?", (datetimestr,) ):
+            if exception_type == 1:
+                sids.add( exception_sid )
+            elif exception_type == 2:
+                if exception_sid in sids:
+                    sids.remove( exception_sid )
+                
+        return list(sids)
+
     def stops(self):
         c = self.get_cursor()
-        
-        c.execute( "SELECT * FROM stops" )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops" )
         ret = list(c)
-        
         c.close()
         return ret
-        
-    def stop(self, stop_id):
-        c = self.get_cursor()
-        c.execute( "SELECT * FROM stops WHERE stop_id = ?", (stop_id,) )
-        ret = c.next()
-        c.close()
-        return ret
-        
+
+    def tripinfo(self,trip_id):
+        query = """ select trips.route_id, trips.trip_headsign, 
+                     routes.agency_id, routes.route_short_name, routes.route_long_name, routes.route_type
+              from trips, routes
+              where trips.trip_id = ?
+              and trips.route_id = routes.route_id """
+        return list(self.get_cursor().execute(query, (trip_id,)))[0]    
+
+
+    def fetch_timedemandgroups(self,trip_ids) :
+        """ generator that takes a list of trip_ids 
+        and returns all timedemandgroups in order for those trip_ids """
+        for trip_id in trip_ids :
+            yield (self.timedemandgroup_for_trip[trip_id],self.departuretime_trip[trip_id])
+
     def count_stops(self):
         c = self.get_cursor()
         c.execute( "SELECT count(*) FROM stops" )
-        
         ret = c.next()[0]
         c.close()
         return ret
+
+
+    def gettimepatterns(self):
+        timepatterns = []
+        for timedemandgroup_id,timedemandgroup in self.timedemandgroups.items():
+            drivetimes,stopwaittimes = timedemandgroup
+            timepatterns.append( (timedemandgroup_id,zip(drivetimes,stopwaittimes) ))
+        return timepatterns
+            
+
+    def service_ids(self):
+        query = "SELECT DISTINCT service_id FROM (SELECT service_id FROM calendar UNION SELECT service_id FROM calendar_dates)"
+        return [x[0] for x in self.get_cursor().execute( query )]
 
     def compile_trip_bundles(self, maxtrips=None, reporter=None):
         
@@ -399,17 +489,33 @@ class GTFSDatabase:
             if reporter and i%(n_trips//50+1)==0: reporter.write( "%d/%d trips grouped by %d patterns\n"%(i,n_trips,len(bundles)))
             
             d = self.get_cursor()
-            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id,route_id FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY stop_sequence", (trip_id,) )
+            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY stop_sequence", (trip_id,) )
             
             stop_times = list(d)
-            
-            stop_ids = [stop_id for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times]
-            dwells = [departure_time-arrival_time for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times]
-            route_id = [route_id for trip_id, arrival_time, departure_time, stop_id,route_id in stop_times][0]
-            pattern_signature = (tuple(stop_ids), tuple(dwells),route_id)
-            
+
+            trip_departure_time = [departure_time for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times][0]
+            trip_id = [trip_id for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times][0]
+            self.departuretime_trip[trip_id] = trip_departure_time
+            drive_times = [departure_time-trip_departure_time for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times]
+            stop_wait_times = [departure_time-arrival_time for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times]
+            timedemandgroup_signature = (tuple(drive_times),tuple(stop_wait_times))
+            timedemandgroup_uniques = {}
+            if timedemandgroup_signature in timedemandgroup_uniques:
+                timedemandgroup_id = timedemandgroup_uniques[timedemandgroup_signature]
+            else:
+                timedemandgroup_id = len(self.timedemandgroups)
+                self.timedemandgroups[timedemandgroup_id] = (drive_times,stop_wait_times)
+                timedemandgroup_uniques[timedemandgroup_signature] = timedemandgroup_id
+            self.timedemandgroup_for_trip[trip_id] = timedemandgroup_id
+            stop_ids = [stop_id for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times]
+            pickup_types = [pickup_type for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times]
+            drop_off_types = [drop_off_type for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times]
+            route_id = [route_id for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times][0]
+
+            pattern_signature = (tuple(stop_ids),tuple(drop_off_types) ,tuple(pickup_types),route_id)
+
             if pattern_signature not in patterns:
-                pattern = Pattern( len(patterns), stop_ids, dwells )
+                pattern = Pattern( route_id,stop_ids,pickup_types,drop_off_types)
                 patterns[pattern_signature] = pattern
             else:
                 pattern = patterns[pattern_signature]
@@ -422,192 +528,6 @@ class GTFSDatabase:
         c.close()
         
         return bundles.values()
-        
-    def nearby_stops(self, lat, lng, range):
-        c = self.get_cursor()
-        
-        c.execute( "SELECT * FROM stops WHERE stop_lat BETWEEN ? AND ? AND stop_lon BETWEEN ? And ?", (lat-range, lat+range, lng-range, lng+range) )
-        
-        for row in c:
-            yield row
-
-    def extent(self):
-        c = self.get_cursor()
-        
-        c.execute( "SELECT min(stop_lon), min(stop_lat), max(stop_lon), max(stop_lat) FROM stops" )
-        
-        ret = c.next()
-        c.close()
-        return ret
-        
-    def execute(self, query, args=None):
-        
-        c = self.get_cursor()
-        
-        if args:
-            c.execute( query, args )
-        else:
-            c.execute( query )
-            
-        for record in c:
-            yield record
-        c.close()
-        
-    def agency_timezone_name(self, agency_id_or_name=None):
-
-        if agency_id_or_name is None:
-            agency_timezone_name = list(self.execute( "SELECT agency_timezone FROM agency LIMIT 1" ))
-        else:
-            agency_timezone_name = list(self.execute( "SELECT agency_timezone FROM agency WHERE agency_id=? OR agency_name=?", (agency_id_or_name,agency_id_or_name) ))
-        
-        return agency_timezone_name[0][0]
-        
-    def day_bounds(self):
-        daymin = list( self.execute("select min(departure_time) from stop_times") )[0][0]
-        daymax = list( self.execute("select max(arrival_time) from stop_times") )[0][0]
-        
-        return (daymin, daymax)
-        
-    def date_range(self):
-        start_date, end_date = list( self.execute("select min(start_date), max(end_date) from calendar") )[0]
-        
-        start_date = start_date or "99999999" #sorted greater than any date
-        end_date = end_date or "00000000" #sorted earlier than any date
-        
-        first_exception_date, last_exception_date = list( self.execute("select min(date), max(date) from calendar_dates WHERE exception_type=1") )[0]
-          
-        first_exception_date = first_exception_date or "99999999"
-        last_exceptoin_date = last_exception_date or "00000000"
-        
-        start_date = min(start_date, first_exception_date)
-        end_date = max(end_date, last_exception_date )
-
-        return datetime.date( *parse_gtfs_date(start_date) ), datetime.date( *parse_gtfs_date(end_date) )
-    
-    DOWS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    DOW_INDEX = dict(zip(range(len(DOWS)),DOWS))
-    
-    def service_periods(self, sample_date):
-        datetimestr = sample_date.strftime( "%Y%m%d" ) #sample_date to string like "20081225"
-        datetimeint = int(datetimestr)              #int like 20081225. These ints have the same ordering as regular dates, so comparison operators work
-        
-        # Get the gtfs date range. If the sample_date is out of the range, no service periods are in effect
-        start_date, end_date = self.date_range()
-        if sample_date < start_date or sample_date > end_date:
-            return []
-        
-        # Use the day-of-week name to query for all service periods that run on that day
-        dow_name = self.DOW_INDEX[sample_date.weekday()]
-        service_periods = list( self.execute( "SELECT service_id, start_date, end_date FROM calendar WHERE %s=1"%dow_name ) )
-         
-        # Exclude service periods whose range does not include this sample_date
-        service_periods = [x for x in service_periods if (int(x[1]) <= datetimeint and int(x[2]) >= datetimeint)]
-        
-        # Cut service periods down to service IDs
-        sids = set( [x[0] for x in service_periods] )
-            
-        # For each exception on the given sample_date, add or remove service_id to the accumulating list
-        
-        for exception_sid, exception_type in self.execute( "select service_id, exception_type from calendar_dates WHERE date = ?", (datetimestr,) ):
-            if exception_type == 1:
-                sids.add( exception_sid )
-            elif exception_type == 2:
-                if exception_sid in sids:
-                    sids.remove( exception_sid )
-                
-        return list(sids)
-        
-    def service_ids(self):
-        query = "SELECT DISTINCT service_id FROM (SELECT service_id FROM calendar UNION SELECT service_id FROM calendar_dates)"
-        
-        return [x[0] for x in self.execute( query )]
-    
-    def shape(self, shape_id):
-        query = "SELECT shape_pt_lon, shape_pt_lat, shape_dist_traveled from shapes where shape_id = ? order by shape_pt_sequence"
-        
-        return list(self.execute( query, (shape_id,) ))
-    
-    def shape_from_stops(self, trip_id, stop_sequence1, stop_sequence2):
-        query = """SELECT stops.stop_lon, stop_lat 
-                   FROM stop_times as st, stops 
-                   WHERE trip_id=? and st.stop_id=stops.stop_id and stop_sequence between ? and ? 
-                   ORDER by stop_sequence"""
-                   
-        return list(self.execute( query, (trip_id, stop_sequence1, stop_sequence2) ))
-    
-    def shape_between(self, trip_id, stop_sequence1, stop_sequence2):
-        # get shape_id of trip
-        shape_id = list(self.execute( "SELECT shape_id FROM trips WHERE trip_id=?", (trip_id,) ))[0][0]
-        
-        if shape_id is None:
-            return self.shape_from_stops( trip_id, stop_sequence1, stop_sequence2 )
-        
-        query = """SELECT min(shape_dist_traveled), max(shape_dist_traveled)
-                     FROM stop_times
-                     WHERE trip_id=? and (stop_sequence = ? or stop_sequence = ?)"""
-        t_min, t_max = list(self.execute( query, (trip_id, stop_sequence1, stop_sequence2) ))[0]
-        
-        if t_min is None or \
-           ( hasattr(t_min,"strip") and t_min.strip()=="" ) or \
-           t_max is None or \
-           ( hasattr(t_max,"strip") and t_max.strip()=="" ) :
-            return self.shape_from_stops( trip_id, stop_sequence1, stop_sequence2 )
-                
-        ret = []
-        for (lon1, lat1, dist1), (lon2, lat2, dist2) in cons(self.shape(shape_id)):
-            if between( t_min, dist1, dist2 ):
-                percent_along = (t_min-dist1)/float((dist2-dist1)) if dist2!=dist1 else 0
-                lat = lat1+percent_along*(lat2-lat1)
-                lon = lon1+percent_along*(lon2-lon1)
-                ret.append( (lon, lat) )
-
-            if between( dist2, t_min, t_max ):
-                ret.append( (lon2, lat2) )
-                
-            if between( t_max, dist1, dist2):
-                percent_along = (t_max-dist1)/float((dist2-dist1)) if dist2!=dist1 else 0
-                lat = lat1+percent_along*(lat2-lat1)
-                lon = lon1+percent_along*(lon2-lon1)
-                ret.append( (lon, lat) )
-                
-        return ret
-                
-
-def main_inspect_gtfsdb():
-    from sys import argv
-    
-    if len(argv) < 2:
-        print("usage: python gtfsdb.py gtfsdb_filename [query]")
-        exit()
-    
-    gtfsdb_filename = argv[1]
-    gtfsdb = GTFSDatabase( gtfsdb_filename )
-    
-    if len(argv) == 2:
-        for table_name, fields in gtfsdb.GTFS_DEF:
-            print("Table: %s"%table_name)
-            for field_name, field_type, field_converter in fields:
-                print("\t%s %s"%(field_type, field_name))
-        exit()
-    
-    query = argv[2]
-    for record in gtfsdb.execute( query ):
-        print(record)
-    
-    #for stop_id, stop_name, stop_lat, stop_lon in gtfsdb.stops():
-    #    print( stop_lat, stop_lon )
-    #    gtfsdb.nearby_stops( stop_lat, stop_lon, 0.05 )
-    #    break
-    
-    #bundles = gtfsdb.compile_trip_bundles()
-    #for bundle in bundles:
-    #    for departure_set in bundle.iter_departures("WKDY"):
-    #        print( departure_set )
-    #    
-    #    #print( len(bundle.trip_ids) )
-    #    sys.stdout.flush()
-
-    pass
 
 from optparse import OptionParser
 
