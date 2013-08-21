@@ -23,6 +23,13 @@ struct route {
     rtime_t  last;
 };
 
+/* An individual VehicleJourney, a materialized instance of a time demand type. */
+typedef struct trip trip_t;
+struct trip {
+    uint32_t stop_times_offset; // The offset of the first stoptime of the time demand type used by this trip
+    uint32_t first_departure;   // This could be rtime_t but struct will be 64 bits anyway due to padding.
+};
+
 typedef struct stoptime stoptime_t;
 struct stoptime {
     rtime_t arrival;
@@ -42,6 +49,7 @@ struct tdata {
     route_t *routes;
     uint32_t *route_stops;
     stoptime_t *stop_times;
+    trip_t *trips;
     uint32_t *stop_routes;
     uint32_t *transfer_target_stops;
     uint8_t  *transfer_dist_meters;
@@ -82,5 +90,15 @@ char *tdata_trip_ids_for_route(tdata_t*, uint32_t route_index);
 
 uint32_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
 
+/* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must 
+   be shifted in time to get the true scheduled arrival and departure times. */
+stoptime_t *tdata_timedemand_type(tdata_t*, uint32_t route_index, uint32_t trip_index);
+
+/* Get one specific departure time for the given route, trip, and stop (stop number within the trip, not global stop index) */ 
+rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index);
+
+/* Get one specific arrival time for the given route, trip, and stop (stop number within the trip, not global stop index) */ 
+rtime_t tdata_arrive(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index);
+ 
 #endif // _TDATA_H
 

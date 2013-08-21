@@ -24,6 +24,7 @@ struct tdata_header {
     uint32_t loc_routes;
     uint32_t loc_route_stops;
     uint32_t loc_stop_times;
+    uint32_t loc_trips;
     uint32_t loc_stop_routes;
     uint32_t loc_transfer_target_stops; 
     uint32_t loc_transfer_dist_meters; 
@@ -91,6 +92,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->routes = (route_t*) (b + header->loc_routes);
     td->route_stops = (uint32_t *) (b + header->loc_route_stops);
     td->stop_times = (stoptime_t*) (b + header->loc_stop_times);
+    td->trips = (trip_t*) (b + header->loc_trips);
     td->stop_routes = (uint32_t *) (b + header->loc_stop_routes);
     td->transfer_target_stops = (uint32_t *) (b + header->loc_transfer_target_stops);
     td->transfer_dist_meters = (uint8_t *) (b + header->loc_transfer_dist_meters);
@@ -123,28 +125,35 @@ inline uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **rou
     return stop1.stop_routes_offset - stop0.stop_routes_offset;
 }
 
-inline stoptime_t *tdata_stoptimes_for_route(tdata_t *td, uint32_t route_index) {
-    return td->stop_times + td->routes[route_index].stop_times_offset;
+// TODO used only in dumping routes; trip_index is not used in the expression?
+inline stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
+    return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset].stop_times_offset;
 }
 
+inline rtime_t tdata_departure_for_trip_stop(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+    trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
+    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].departure;
+}
+
+inline rtime_t tdata_arrival_for_trip_stop(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+    trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
+    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].arrival;
+}
+ 
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
-    stoptime_t (*times)[route.n_stops] = (void*) tdata_stoptimes_for_route(td, route_idx);
     printf("\nRoute details for '%s' [%d] (n_stops %d, n_trips %d)\n", 
         tdata_route_id_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
     printf("stop sequence, stop name (index), departures  \n");
-    for (uint32_t si = 0; si < route.n_stops; ++si) {
-        char *stop_id = tdata_stop_id_for_index (td, stops[si]);
-        printf("%4d %35s [%06d] : ", si, stop_id, stops[si]);
-        if (trip_idx != NONE) {
-            printf("%s ", timetext(times[trip_idx][si].departure));
-        } else {
-            for (uint32_t ti = 0; ti < route.n_trips; ++ti) {
-                printf("%s ", timetext(times[ti][si].departure));
-            }
-        }
-        printf("\n");
+    for (uint32_t ti = 0; ti < route.n_trips; ++ti) {
+        // TODO should this really be a 2D array ?
+        stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_idx, ti);
+        for (uint32_t si = 0; si < route.n_stops; ++si) {
+            char *stop_id = tdata_stop_id_for_index (td, stops[si]);
+            printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[ti][si].departure + td->trips[ti].first_departure));
+         }
+         printf("\n");
     }
     printf("\n");
 }
