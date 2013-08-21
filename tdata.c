@@ -113,6 +113,7 @@ void tdata_close(tdata_t *td) {
     munmap(td->base, td->size);
 }
 
+// TODO should pass pointer to tdata?
 inline uint32_t *tdata_stops_for_route(tdata_t td, uint32_t route) {
     route_t route0 = td.routes[route];
     return td.route_stops + route0.route_stops_offset;
@@ -130,12 +131,16 @@ inline stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint
     return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset].stop_times_offset;
 }
 
-inline rtime_t tdata_departure_for_trip_stop(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+inline trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index) {
+    return td->trips + td->routes[route_index].trip_ids_offset;
+}
+
+inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
     return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].departure;
 }
 
-inline rtime_t tdata_arrival_for_trip_stop(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
     return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].arrival;
 }

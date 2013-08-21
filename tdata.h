@@ -94,6 +94,9 @@ uint32_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t*, uint32_t route_index, uint32_t trip_index);
 
+/* Get a pointer to the array of trip structs for this route. */
+trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index);
+
 /* Get one specific departure time for the given route, trip, and stop (stop number within the trip, not global stop index) */ 
 rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index);
 

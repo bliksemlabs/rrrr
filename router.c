@@ -66,7 +66,7 @@ static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint3
 */
 static inline void apply_transfers (router_t r, uint32_t round, float speed_meters_sec, 
                                     uint32_t day_mask, bool arrv) {
-    tdata_t d = r.tdata; // this is copying... 
+    tdata_t d = r.tdata; // this is copying... or will the optimizer understand?
     router_state_t *states = r.states + (round * d.n_stops);
     /* The transfer process will flag routes that should be explored in the next round */
     bitset_reset (r.updated_routes);
@@ -319,10 +319,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             T tdata_dump_route(&(router.tdata), route_idx, NONE);
             // For each stop in this route, its global stop index.
             uint32_t *route_stops = tdata_stops_for_route(router.tdata, route_idx);
-            // C99 dynamically dimensioned array of size [route.n_trips][route.n_stops]
-            stoptime_t (*stop_times)[route.n_stops] = (void*)
-                 tdata_stoptimes_for_route(&(router.tdata), route_idx);
-            uint32_t *trip_masks = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
+            trip_t   *route_trips = tdata_trips_for_route(&(router.tdata), route_idx); // TODO use to avoid calculating at every stop
+            uint32_t *trip_masks  = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
             uint32_t trip = NONE; // trip index within the route. NONE means not yet boarded.
             uint32_t board_stop;  // stop index where that trip was boarded
             rtime_t  board_time;  // time when that trip was boarded
@@ -349,8 +347,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         attempt_board = true;
                     } else { // removed xfer slack for simplicity
                         rtime_t prev_time = states[last_round][stop].walk_time;
-                        rtime_t trip_time = req.arrive_by ? stop_times[trip][route_stop].arrival
-                                                          : stop_times[trip][route_stop].departure ;
+                        rtime_t trip_time = req.arrive_by ? tdata_arrive(&(router.tdata), route_idx, trip, route_stop)
+                                                          : tdata_depart(&(router.tdata), route_idx, trip, route_stop);
                         trip_time += midnight;
                         if (req.arrive_by ? prev_time > trip_time
                                           : prev_time < trip_time) {
@@ -385,16 +383,15 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     /* Search trips within days. The loop nesting could also be inverted. */
                     for (struct service_day *sday = days; sday <= days + 2; ++sday) { // 60 percent reduction in throughput using 3 days over 1
                         for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
-                            T printf("    board option %d at %s \n", this_trip, 
-                                     timetext(stop_times[this_trip][route_stop].departure));
                             // D printBits(4, & (trip_masks[this_trip]));
                             // D printBits(4, & (sday->mask));
                             // D printf("\n");
                             /* skip this trip if it is not running on the current service day */
                             if ( ! (sday->mask & trip_masks[this_trip])) continue;
                             /* consider the arrival or departure time on the current service day */                                                       
-                            rtime_t time = req.arrive_by ? stop_times[this_trip][route_stop].arrival
-                                                         : stop_times[this_trip][route_stop].departure;
+                            rtime_t time = req.arrive_by ? tdata_arrive(&(router.tdata), route_idx, this_trip, route_stop)
+                                                         : tdata_depart(&(router.tdata), route_idx, this_trip, route_stop);
+                            // T printf("    board option %d at %s \n", this_trip, ...
                             if (time + sday->midnight < time) printf ("ERROR: time overflow at boarding\n");
                             time += sday->midnight;
                             /* board trip if it improves on the current best known trip at this stop */
@@ -422,8 +419,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     }
                     continue; // to the next stop in the route
                 } else if (trip != NONE) { // We have already boarded a trip along this route.
-                    rtime_t time = req.arrive_by ? stop_times[trip][route_stop].departure 
-                                                 : stop_times[trip][route_stop].arrival;
+                    rtime_t time = req.arrive_by ? tdata_depart(&(router.tdata), route_idx, trip, route_stop)  
+                                                 : tdata_arrive(&(router.tdata), route_idx, trip, route_stop);
                     time += midnight;
                     T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
                     if ((router.best_time[target] != UNREACHED) && 
