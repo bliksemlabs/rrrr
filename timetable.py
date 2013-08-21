@@ -65,9 +65,9 @@ struct_1I = Struct('I') # a single UNSIGNED int
 def writeint(x) :
     out.write(struct_1I.pack(x));
 
-struct_1H = Struct('H') # a single UNSIGNED short
-def writeshort(x) :
-    out.write(struct_1H.pack(x));
+struct_1B = Struct('B') # a single UNSIGNED byte
+def writebyte(x) :
+    out.write(struct_1B.pack(x));
 
 struct_2H = Struct('HH') # a two UNSIGNED shorts
 def write_2ushort(x, y) : 
@@ -392,9 +392,8 @@ for from_idx, from_sid in enumerate(stop_id_for_idx) :
         if ttime == None :
             continue # skip non-time/non-distance transfers for now
         to_idx = idx_for_stop_id[to_sid]
-        writeshort((int(ttime) + 8) >> 4) # must convert time/dist
-                                          # we round to the nearest 16
-                                          # by truncating towards zero
+        # Store distances in units of 16 meters (rounding by adding 8)
+        writebyte((int(ttime) + 8) >> 4)
         offset += 1
 transfers_offsets.append(offset) # sentinel
 assert len(transfers_offsets) == nstops + 1

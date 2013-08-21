@@ -105,7 +105,8 @@ static inline void apply_transfers (router_t r, uint32_t round, float speed_mete
         uint32_t tr_end = d.stops[stop_index_from + 1].transfers_offset;        
         for ( ; tr < tr_end ; ++tr) {
             uint32_t stop_index_to = d.transfer_target_stops[tr];
-            uint16_t dist_meters = d.transfer_dist_meters[tr] << 2;
+            /* Transfer distances are stored in units of 16 meters, rounded not truncated, in a uint8_t */
+            uint32_t dist_meters = d.transfer_dist_meters[tr] << 4; 
             rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
             rtime_t time_to = arrv ? time_from - transfer_duration
                                    : time_from + transfer_duration;
