@@ -15,17 +15,26 @@ It looks like in may be possible to keep memory consumption for a Portland, Oreg
 Dependencies
 ------------
 
-1. Graphserver (for its SQLite GTFS tools)
-2. zeromq and libczmq
-3. gcc
+1. **zeromq** and **libczmq**:
+Message passing / concurrency framework used by RRRR for load balancing and scaling.
 
+1. **libprotobuf-c**:
+For decoding incoming realtime messages. https://code.google.com/p/protobuf-c/downloads/list, Ubuntu packages libprotobuf-c0 and libprotobuf-c0-dev.
+
+1. **libwebsockets**:
+For receiving incremental realtime messages. https://github.com/warmcat/libwebsockets.
+
+1. **gcc** or **clang**:
+clang provides very good error messages and warnings. RRRR benefits greatly from -O2 and link-time optimization.
 
 Building transit data
 ---------------------
 
-Download a GTFS feed for your favorite transit agency (stick with small ones for now).
-Run `gs_gtfsdb_compile input.gtfs.zip output.gtfsdb` to load your GTFS feed into an SQLite database.
-Next, run `python transfers.py output.gtfsdb` to add distance-based transfers to the database.
+Download a GTFS feed for your favorite transit agency. We typically work with http://gtfs.ovapi.nl/gtfs-nl.zip.
+We used to depend on Graphserver for its gtfsdb Python class which loads a GTFS feed into Sqlite and 
+provides query methods. We have now copied our customized gtfsdb class into the RRRR repository.
+First, run `python gtfsdb.py input.gtfs.zip output.gtfsdb` to load your GTFS feed into an SQLite database.
+Next, run `python transfers.py output.gtfsdb` to add distance-based transfers to the transfers table in the database.
 Finally, run `python timetable.py output.gtfsdb` to create the timetable file `timetable.dat` based on that GTFS database.
 
 
