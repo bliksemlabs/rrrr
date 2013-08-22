@@ -57,6 +57,25 @@ static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint3
     }
 }
 
+/* Because the first round begins with so few reached stops, the initial state doesn't get its own full array of states. 
+   Instead we reuse one of the later rounds (round 1) for the initial state. This means we need to reset the walks in
+   round 1 back to UNREACHED before using them in routing. Rather than iterating over all of them, we only initialize
+   the stops that can be reached by transfers.
+   Alternatively we could instead initialize walks to UNREACHED at the beginning of the transfer calculation function. 
+   We should not however reset the best times for those stops reached from the initial stop on foot. This will prevent 
+   finding circuitous itineraries that return to them.
+   */
+static void initialize_transfer (router_t *r, uint32_t round, uint32_t stop_index_from) {
+    tdata_t *d = &(r->tdata);
+    router_state_t *states = r->states + (round * d->n_stops);
+    uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
+    uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
+    for ( ; t < tN ; ++t) {
+        uint32_t stop_index_to = d->transfer_target_stops[t];
+        states[stop_index_to].walk_time = UNREACHED;
+    }
+}
+
 /* 
  For each updated stop and each destination of a transfer from an updated stop, 
  set the associated routes as updated. The routes bitset is cleared before the operation, 
@@ -64,8 +83,8 @@ static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint3
  Transfer results are computed within the same round, based on arrival time in the ride phase and
  stored in the walk time member of states.
 */
-static inline void apply_transfers (router_t r, uint32_t round, float speed_meters_sec, 
-                                    uint32_t day_mask, bool arrv) {
+static void 
+apply_transfers (router_t r, uint32_t round, float speed_meters_sec, uint32_t day_mask, bool arrv) {
     tdata_t d = r.tdata; // this is copying... or will the optimizer understand?
     router_state_t *states = r.states + (round * d.n_stops);
     /* The transfer process will flag routes that should be explored in the next round */
@@ -262,6 +281,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     router_state_t (*states)[n_stops] = (router_state_t(*)[]) router.states; 
     for (uint32_t round = 0; round < RRRR_MAX_ROUNDS; ++round) {
         for (uint32_t stop = 0; stop < n_stops; ++stop) {
+            // We use the time fields to record when stops have been reached. 
+            // When times are UNREACHED the other fields in the same state should never be read.
             states[round][stop].time = UNREACHED;
             states[round][stop].walk_time = UNREACHED;
             /*
