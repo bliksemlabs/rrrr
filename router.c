@@ -572,9 +572,11 @@ static void check_plan_invariants (struct plan *plan) {
                     /* This will fail unless reversal is being performed */
                     // fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
                 }
-                if (leg->t1 < leg->t0 || leg->t0 < prev_leg->t1) {
-                    fprintf(stderr, "non-increasing times at legs %d and %d (%d, %d) (%d, %d)\n", l - 1, l, 
-                        prev_leg->t0, prev_leg->t1, leg->t0, leg->t1);
+                if (leg->t1 < leg->t0) {
+                    fprintf(stderr, "non-increasing times within leg %d: %d, %d\n", l, leg->t0, leg->t1);
+                }
+                if (leg->t0 < prev_leg->t1) {
+                    fprintf(stderr, "non-increasing times between legs %d and %d: %d, %d\n", l - 1, l, prev_leg->t1, leg->t0);
                 }
             }
             prev_leg = leg;
