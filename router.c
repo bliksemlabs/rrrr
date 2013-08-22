@@ -596,7 +596,7 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
     struct plan plan;
     router_result_to_plan (&plan, router, req);
-    render_plan_json (&plan, &(router->tdata));
+    // render_plan_json (&plan, &(router->tdata));
     return render_plan (&plan, &(router->tdata), buf, buflen);
 }
 
