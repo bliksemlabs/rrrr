@@ -76,15 +76,19 @@ static inline void initialize_transfers (router_t *r, uint32_t round, uint32_t s
     }
 }
 
-/* Rather than reserving a place to store the transfers used to create the initial state, we look them up on the fly. */
-static inline uint32_t find_transfer (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to) {
+/* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
+static inline rtime_t 
+transfer_duration (tdata_t *d, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to) {
     if (stop_index_from == stop_index_to) return 0;
     uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
     uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
     for ( ; t < tN ; ++t) {
-        if (d->transfer_target_stops[t] == stop_index_to) return t;
+        if (d->transfer_target_stops[t] == stop_index_to) {
+            uint32_t distance_meters = d->transfer_dist_meters[t] << 4; // actually in units of 16 meters
+            return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + RRRR_WALK_SLACK_SEC));
+        }
     }
-    return NONE;
+    return UNREACHED;
 }
 
 
@@ -95,7 +99,7 @@ static inline uint32_t find_transfer (tdata_t *d, uint32_t stop_index_from, uint
  Transfer results are computed within the same round, based on arrival time in the ride phase and
  stored in the walk time member of states.
 */
-static void 
+static inline void 
 apply_transfers (router_t r, uint32_t round, float speed_meters_sec, uint32_t day_mask, bool arrv) {
     tdata_t d = r.tdata; // this is copying... or will the optimizer understand?
     router_state_t *states = r.states + (round * d.n_stops);
@@ -326,6 +330,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     states[1][origin].back_route = NONE;
     states[1][origin].back_trip  = NONE;
     states[1][origin].board_time = UNREACHED;
+    /* Hack to communicate the origin time to itinerary renderer. It would be better to just include rtime_t in request structs. */
+    states[0][origin].time = origin_rtime;
 
     bitset_reset(router.updated_stops);
     // This is inefficient, as it depends on iterative over a bitset with only one bit true.
@@ -573,16 +579,18 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
             
         }
         
-        /* The initial/final walk leg leading out of the search origin. This is not stored explicitly. */ 
+        /* The initial walk leg leading out of the search origin. This is inferred, not stored explicitly. */ 
         router_state_t *final_walk = &(states[0][stop]);
         uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
-        l->s0 = (req->arrive_by) ? stop : origin_stop;
-        l->s1 = (req->arrive_by) ? origin_stop : stop;
-        /* Final leg time handling is probably incorrect */
-        l->t0 = (req->arrive_by) ? final_walk->walk_time : states[0][origin_stop].time;
-        l->t1 = (req->arrive_by) ? states[0][origin_stop].time : final_walk->walk_time; 
+        l->s0 = origin_stop;
+        l->s1 = stop;
+        /* It would also be possible to work from s1 to s0 and compress out the wait time. */
+        l->t0 = states[0][origin_stop].time;
+        rtime_t duration = transfer_duration (&(router->tdata), req, l->s0, l->s1);
+        l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
         l->route = WALK;
         l->trip  = WALK;
+        if (req->arrive_by) leg_swap (l);
 
         /* Move to the next itinerary in the plan. */
         plan->n_itineraries += 1;
