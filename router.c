@@ -515,6 +515,54 @@ static inline void leg_swap (struct leg *leg) {
     leg->t1 = temp.t0;
 }
 
+/* All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc. */
+static void check_plan_invariants (struct plan *plan) {
+    for (int i = 0; i < plan->n_itineraries; ++i) {
+        struct itinerary *itin = plan->itineraries + i;
+        if (itin->n_legs > 0) {
+            /* Check that itinerary does indeed connect the places in the request. */
+            if (itin->legs[0].s0 != plan->req.from) fprintf(stderr, "itinerary does not begin at from location.\n");
+            if (itin->legs[itin->n_legs - 1].s1 != plan->req.to) fprintf(stderr, "itinerary does not end at to location.\n");
+            /* Check that the itinerary respects the depart after or arrive-by criterion */
+            /* finish when rtimes are
+            
+             in requests
+            if (plan->req.arrive_by) {
+                if (itin->legs[itin->n_legs - 1].s1 > plan->req.time)...
+            } else {
+                if (itin->legs[0].s0 < plan->req.time)...
+            }
+            */
+            /* All itineraries are composed of ride-walk pairs, prefixed by a single walk leg. */
+            if (itin->n_legs % 2 != 1)
+                fprintf(stderr, "itinerary has an inexplicable number of legs: %d\n", itin->n_legs);
+        }
+        /* Check leg-based invariants */
+        struct leg *prev_leg = NULL;
+        for (int l = 0; l < itin->n_legs; ++l) {
+            struct leg *leg = itin->legs + l;
+            if (l % 2 == 0) {
+                if (leg->route != WALK) fprintf(stderr, "even numbered leg %d has route %d not WALK.\n", l, leg->route);
+            } else {
+                if (leg->route == WALK) fprintf(stderr, "odd numbered leg %d has route WALK.\n", l);
+            }
+            if (l > 0) {
+                if (leg->s0 != prev_leg->s1) {
+                    fprintf(stderr, "legs do not chain: leg %d begins with stop %d, previous leg ends with stop %d.\n", l, leg->s0, prev_leg->s1);
+                }
+                if (leg->route == WALK && leg->t0 != prev_leg->t1) {
+                    /* This will fail unless reversal is being performed */
+                    // fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
+                }
+                if (leg->t1 < leg->t0 || leg->t0 < prev_leg->t1) {
+                    fprintf(stderr, "non-increasing times at legs %d and %d (%d, %d) (%d, %d)\n", l - 1, l, prev_leg->t0, prev_leg->t1, leg->t0, leg->t1);
+                }
+            }
+            prev_leg = leg;
+        }
+    }
+}
+
 static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
@@ -596,10 +644,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
         plan->n_itineraries += 1;
         itin += 1;
     }
-    /* 
-      TODO add functions to check invariants: 
-      all stops should chain, all times should be increasing, all waits should be at the ends of legs. 
-    */
+    check_plan_invariants (plan);
 }
 
 /* 
