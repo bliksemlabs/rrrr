@@ -3,8 +3,8 @@
 #define RRRR_TEST_CONCURRENCY 4
 #define RRRR_INPUT_FILE "timetable.dat"
 
-// runtime increases roughly linearly with this value
-// though with target pruning it no longer seems to have as much effect
+// runtime increases roughly linearly with this value, though with target pruning it no longer seems to have as much effect
+// this must be set to at least 2, because we re-use one array for the initial state
 #define RRRR_MAX_ROUNDS 6
 
 /* note that these values can cause missed transfers until we have guaranteed / timed transfers */

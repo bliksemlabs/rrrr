@@ -65,7 +65,7 @@ static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint3
    We should not however reset the best times for those stops reached from the initial stop on foot. This will prevent 
    finding circuitous itineraries that return to them.
    */
-static void initialize_transfer (router_t *r, uint32_t round, uint32_t stop_index_from) {
+static inline void initialize_transfers (router_t *r, uint32_t round, uint32_t stop_index_from) {
     tdata_t *d = &(r->tdata);
     router_state_t *states = r->states + (round * d->n_stops);
     uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
@@ -307,17 +307,19 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     }
     
     /* Initialize origin state */
+    /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
     router.best_time[origin] = origin_rtime;
-    states[0][origin].time   = origin_rtime;
-    states[0][origin].back_stop  = NONE;
-    states[0][origin].back_route = NONE; // important for initial transfers
-    states[0][origin].back_trip = NONE;
-    states[0][origin].board_time = UNREACHED;
+    states[1][origin].time   = origin_rtime;
+    states[1][origin].back_stop  = NONE;
+    states[1][origin].back_route = NONE;
+    states[1][origin].back_trip  = NONE;
+    states[1][origin].board_time = UNREACHED;
 
     bitset_reset(router.updated_stops);
-    bitset_set(router.updated_stops, origin); // inefficient way, iterates over almost empty set
+    // This is inefficient, as it depends on iterative over a bitset with only one bit true.
+    bitset_set(router.updated_stops, origin); 
     // Apply transfers to initial state, which also initializes the updated routes bitset.
-    apply_transfers(router, 0, req.walk_speed, day_mask, req.arrive_by);
+    apply_transfers(router, 1, req.walk_speed, day_mask, req.arrive_by);
     // dump_results(prouter);
 
     /* apply upper bounds (speeds up second and third reversed searches) */
@@ -329,7 +331,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // TODO restrict pointers?
     // Iterate over rounds. In round N, we have made N transfers.
     for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {  // < n_rounds to apply upper bound on transfers...
-        int last_round = (round == 0) ? 0 : round - 1;
+        int last_round = (round == 0) ? 1 : round - 1;
         I printf("round %d\n", round);
         // Iterate over all routes which contain a stop that was updated in the last round.
         for (uint32_t route_idx  = bitset_next_set_bit (router.updated_routes, 0); 
@@ -480,6 +482,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         apply_transfers(router, round, req.walk_speed, day_mask, req.arrive_by);
         // dump_results(prouter); // DEBUG
         // exit(0);
+        /* Initialize the stops in round 1 that were used as starting points for round 0. */
+        if (round == 0) initialize_transfers (&router, 1, origin);
     } // end for (round)
     return true;
 }
