@@ -3,7 +3,7 @@
 import math, sys    
 
 # requires graphserver to be installed
-from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
+from gtfsdb import GTFSDatabase
 
 verbose = False
 RADIUS = 800 # meters
@@ -70,7 +70,7 @@ for sid, sname, lat, lon in db.execute(all_query) :
 
 cur = db.get_cursor()
 cur.execute('delete from transfers;') # where transfer_type = 9;')
-cur.executemany('insert into transfers values (?,?,9,?);', transfers)
+cur.executemany('insert into transfers values (?,?,null,null,null,null,9,?);', transfers)
 cur.execute('create index if not exists transfers_from_stop_id ON transfers (from_stop_id)')
 print 'committing...'
 db.conn.commit()
