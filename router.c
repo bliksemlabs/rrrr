@@ -76,6 +76,18 @@ static inline void initialize_transfers (router_t *r, uint32_t round, uint32_t s
     }
 }
 
+/* Rather than reserving a place to store the transfers used to create the initial state, we look them up on the fly. */
+static inline uint32_t find_transfer (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from == stop_index_to) return 0;
+    uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
+    uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
+    for ( ; t < tN ; ++t) {
+        if (d->transfer_target_stops[t] == stop_index_to) return t;
+    }
+    return NONE;
+}
+
+
 /* 
  For each updated stop and each destination of a transfer from an updated stop, 
  set the associated routes as updated. The routes bitset is cleared before the operation, 
@@ -561,8 +573,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
             
         }
         
-        /* The initial/final walk leg reaching the search origin in round 0 */ 
-        // would work as one final loop, breaking before the ride ?
+        /* The initial/final walk leg leading out of the search origin. This is not stored explicitly. */ 
         router_state_t *final_walk = &(states[0][stop]);
         uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
         l->s0 = (req->arrive_by) ? stop : origin_stop;
