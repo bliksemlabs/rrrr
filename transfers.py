@@ -3,7 +3,7 @@
 import math, sys    
 
 # requires graphserver to be installed
-from graphserver.ext.gtfs.gtfsdb import GTFSDatabase
+from gtfsdb import GTFSDatabase
 
 verbose = False
 RADIUS = 800 # meters
