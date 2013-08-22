@@ -1,5 +1,6 @@
 import sys, struct, time
 from struct import Struct
+import datetime
 from datetime import timedelta, date
 from gtfsdb import GTFSDatabase
 import os
@@ -30,6 +31,8 @@ except :
     print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
     start_date = db.find_max_service()
 print 'calendar start date is %s' % start_date
+calendar_start_time = time.mktime(datetime.datetime.combine(start_date, datetime.time.min).timetuple())
+print 'epoch time at which calendar starts: %d' % calendar_start_time
 
 sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
@@ -125,13 +128,15 @@ def write_string_table(strings) :
     return loc
 
 # make this into a method on a Header class 
-struct_header = Struct('8s15I')
+# On 64-bit architectures using gcc long int is at least an int64_t.
+# We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
+struct_header = Struct('8sQ16I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, nstops, nroutes, loc_stops, loc_routes, loc_route_stops, 
+    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords, loc_routes, loc_route_stops, 
         loc_timedemandgroups, loc_trips, loc_stop_routes, loc_transfer_target_stops, loc_transfer_dist_meters, 
         loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active)
     out.write(packed)
@@ -167,6 +172,7 @@ CREATE VIRTUAL TABLE stops_fts USING FTS4 (
 stopnames = set([])
 # Write timetable segment 0 : stop coordinates
 # (loop over all stop IDs in alphabetical order)
+loc_stop_coords = out.tell() 
 for sid, name, lat, lon in db.stops() :
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
