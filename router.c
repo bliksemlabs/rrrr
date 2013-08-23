@@ -252,12 +252,12 @@ static void service_day_dump (struct service_day *sd) {
     day_mask_dump (sd->mask);
 }
 
-inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+static inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
     return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].departure;
 }
 
-inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+static inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
     return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].arrival;
 }
