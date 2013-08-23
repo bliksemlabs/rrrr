@@ -366,6 +366,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                       route_idx != BITSET_NONE;
                       route_idx  = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
             route_t route = router.tdata.routes[route_idx];
+            /*
+            printf ("route %d has min_time %d and max_time %d. \n", route_idx, route.min_time, route.max_time);
+            printf ("  actual first time: %d \n", tdata_depart(&(router.tdata), route_idx, 0, 0));
+            printf ("  actual last time:  %d \n", tdata_arrive(&(router.tdata), route_idx, route.n_trips - 1, route.n_stops - 1));
+            */
             I printf("  route %d: %s\n", route_idx, tdata_route_id_for_index(&(router.tdata), route_idx));
             T tdata_dump_route(&(router.tdata), route_idx, NONE);
             // For each stop in this route, its global stop index.
@@ -435,11 +440,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     for (struct service_day *sday = days; sday <= days + 2; ++sday) {
                         /* Check that this route still has any trips running on this day. */
                         // we should really define a variable for the current time at the stop
-                        if (req.arrive_by ? router.best_time[stop] < sday->midnight + route.first 
-                                          : router.best_time[stop] > sday->midnight + route.last) continue;
+                        if (req.arrive_by ? router.best_time[stop] < sday->midnight + route.min_time 
+                                          : router.best_time[stop] > sday->midnight + route.max_time) continue;
                         /* Check whether there's any chance of improvement by scanning another day. */
-                        if (best_trip != NONE && (req.arrive_by ? best_time > sday->midnight + route.last 
-                                                                : best_time < sday->midnight + route.first)) continue;
+                        if (best_trip != NONE && (req.arrive_by ? best_time > sday->midnight + route.min_time 
+                                                                : best_time < sday->midnight + route.max_time)) continue;
                         for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
                             // D printBits(4, & (trip_masks[this_trip]));
                             // D printBits(4, & (sday->mask));

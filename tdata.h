@@ -19,8 +19,8 @@ struct route {
     uint32_t trip_ids_offset;
     uint32_t n_stops;
     uint32_t n_trips;
-    rtime_t  first;
-    rtime_t  last;
+    rtime_t  min_time;
+    rtime_t  max_time;
 };
 
 /* An individual VehicleJourney, a materialized instance of a time demand type. */
