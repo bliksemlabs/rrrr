@@ -423,6 +423,13 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     rtime_t  best_midnight;
                     /* Search trips within days. The loop nesting could also be inverted. */
                     for (struct service_day *sday = days; sday <= days + 2; ++sday) { // 60 percent reduction in throughput using 3 days over 1
+                        /* Check that this route still has any trips running on this day. */
+                        // we should really define a variable for the current time at the stop
+                        if (req.arrive_by ? router.best_time[stop] < sday->midnight + route.first 
+                                          : router.best_time[stop] > sday->midnight + route.last) continue;
+                        /* Check whether there's any chance of improvement by scanning another day. */
+                        if (best_trip != NONE && (req.arrive_by ? best_time > sday->midnight + route.last 
+                                                                : best_time < sday->midnight + route.first)) continue;
                         for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
                             // D printBits(4, & (trip_masks[this_trip]));
                             // D printBits(4, & (sday->mask));
