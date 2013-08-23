@@ -432,7 +432,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     rtime_t  best_time = req.arrive_by ? 0 : UINT16_MAX;
                     rtime_t  best_midnight;
                     /* Search trips within days. The loop nesting could also be inverted. */
-                    for (struct service_day *sday = days; sday <= days + 2; ++sday) { // 60 percent reduction in throughput using 3 days over 1
+                    for (struct service_day *sday = days; sday <= days + 2; ++sday) {
                         /* Check that this route still has any trips running on this day. */
                         // we should really define a variable for the current time at the stop
                         if (req.arrive_by ? router.best_time[stop] < sday->midnight + route.first 
@@ -580,6 +580,9 @@ static void check_plan_invariants (struct plan *plan) {
             } else {
                 if (leg->route == WALK) fprintf(stderr, "odd numbered leg %d has route WALK.\n", l);
             }
+            if (leg->t1 < leg->t0) {
+                fprintf(stderr, "non-increasing times within leg %d: %d, %d\n", l, leg->t0, leg->t1);
+            }
             if (l > 0) {
                 if (leg->s0 != prev_leg->s1) {
                     fprintf(stderr, "legs do not chain: leg %d begins with stop %d, previous leg ends with stop %d.\n", 
@@ -588,9 +591,6 @@ static void check_plan_invariants (struct plan *plan) {
                 if (leg->route == WALK && leg->t0 != prev_leg->t1) {
                     /* This will fail unless reversal is being performed */
                     // fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
-                }
-                if (leg->t1 < leg->t0) {
-                    fprintf(stderr, "non-increasing times within leg %d: %d, %d\n", l, leg->t0, leg->t1);
                 }
                 if (leg->t0 < prev_leg->t1) {
                     fprintf(stderr, "non-increasing times between legs %d and %d: %d, %d\n", l - 1, l, prev_leg->t1, leg->t0);
@@ -682,7 +682,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
         plan->n_itineraries += 1;
         itin += 1;
     }
-//    check_plan_invariants (plan);
+    //check_plan_invariants (plan);
 }
 
 /* 
