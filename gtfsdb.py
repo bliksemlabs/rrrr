@@ -141,8 +141,9 @@ class TripBundle:
         for trip_id in self.trip_ids:
             if self.gtfsdb.departuretime_trip[trip_id] < min_time:
                 min_time = self.gtfsdb.departuretime_trip[trip_id]
-            if self.gtfsdb.timedemandgroups[self.gtfsdb.timedemandgroup_for_trip[trip_id]][-1][0] > max_time:
-                max_time = self.gtfsdb.timedemandgroups[self.gtfsdb.timedemandgroup_for_trip[trip_id]][-1][0]
+            endOfTrip = self.gtfsdb.timedemandgroups[self.gtfsdb.timedemandgroup_for_trip[trip_id]][0][-1] + self.gtfsdb.departuretime_trip[trip_id]
+            if endOfTrip > max_time:
+                max_time = endOfTrip
         return (min_time,max_time)
 
     def sorted_trip_ids(self) :
