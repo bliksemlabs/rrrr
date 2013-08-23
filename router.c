@@ -252,6 +252,16 @@ static void service_day_dump (struct service_day *sd) {
     day_mask_dump (sd->mask);
 }
 
+inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+    trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
+    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].departure;
+}
+
+inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
+    trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
+    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].arrival;
+}
+
 bool router_route(router_t *prouter, router_request_t *preq) {
     // why copy? consider changing though router contains mostly pointers.
     // or just assume a single router per thread, and move struct fields into this module
@@ -672,7 +682,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
         plan->n_itineraries += 1;
         itin += 1;
     }
-    check_plan_invariants (plan);
+//    check_plan_invariants (plan);
 }
 
 /* 

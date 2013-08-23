@@ -135,16 +135,6 @@ inline trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index) {
     return td->trips + td->routes[route_index].trip_ids_offset;
 }
 
-inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
-    trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
-    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].departure;
-}
-
-inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
-    trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
-    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].arrival;
-}
- 
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
