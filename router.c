@@ -254,12 +254,12 @@ static void service_day_dump (struct service_day *sd) {
 
 static inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
-    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].departure;
+    return trip.begin_time + td->stop_times[trip.stop_times_offset + stop_index].departure;
 }
 
 static inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
-    return trip.first_departure + td->stop_times[trip.stop_times_offset + stop_index].arrival;
+    return trip.begin_time + td->stop_times[trip.stop_times_offset + stop_index].arrival;
 }
 
 bool router_route(router_t *prouter, router_request_t *preq) {
@@ -285,12 +285,27 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     /* One struct service_day for each of: yesterday, today, tomorrow (for overnight searches) */
     /* Note that yesterday's bit flag will be 0 if today is the first day of the calendar. */
     struct service_day days[3];
-    days[0].midnight = 0;
-    days[0].mask = day_mask >> 1;
-    days[1].midnight = RTIME_ONE_DAY;
-    days[1].mask = day_mask;
-    days[2].midnight = RTIME_TWO_DAYS;
-    days[2].mask = day_mask << 1;
+    {
+        struct service_day yesterday;
+        yesterday.midnight = 0;
+        yesterday.mask = day_mask >> 1;
+        struct service_day today;
+        today.midnight = RTIME_ONE_DAY;
+        today.mask = day_mask;
+        struct service_day tomorrow;
+        tomorrow.midnight = RTIME_TWO_DAYS;
+        tomorrow.mask = day_mask << 1;
+        /* Iterate backward over days for arrive-by searches. */
+        if (req.arrive_by) {
+            days[0] = tomorrow;
+            days[1] = today;
+            days[2] = yesterday;        
+        } else {
+            days[0] = yesterday;
+            days[1] = today;
+            days[2] = tomorrow;        
+        }        
+    }
     // for (int i = 0; i < 3; ++i) service_day_dump (&days[i]);
     
     /* set day_mask to catch all days (0, 1, 2) */
@@ -366,7 +381,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                       route_idx != BITSET_NONE;
                       route_idx  = bitset_next_set_bit (router.updated_routes, route_idx + 1)) {
             route_t route = router.tdata.routes[route_idx];
+            bool route_overlap = route.min_time < route.max_time - RTIME_ONE_DAY;
             /*
+            if (route_overlap) printf ("min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
             printf ("route %d has min_time %d and max_time %d. \n", route_idx, route.min_time, route.max_time);
             printf ("  actual first time: %d \n", tdata_depart(&(router.tdata), route_idx, 0, 0));
             printf ("  actual last time:  %d \n", tdata_arrive(&(router.tdata), route_idx, route.n_trips - 1, route.n_stops - 1));
@@ -442,9 +459,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         // we should really define a variable for the current time at the stop
                         if (req.arrive_by ? router.best_time[stop] < sday->midnight + route.min_time 
                                           : router.best_time[stop] > sday->midnight + route.max_time) continue;
-                        /* Check whether there's any chance of improvement by scanning additional days. */ // note we are scanning the wrong way for arrive-by
-                        if (best_trip != NONE && (req.arrive_by ? best_time > sday->midnight + route.max_time 
-                                                                : best_time < sday->midnight + route.min_time)) break;
+                        /* Check whether there's any chance of improvement by scanning additional days. */ 
+                        /* Note that day list is reversed for arrive-by searches. */
+                        if (best_trip != NONE && ! route_overlap) break;
                         for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
                             // D printBits(4, & (trip_masks[this_trip]));
                             // D printBits(4, & (sday->mask));
@@ -513,6 +530,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         states[round][stop].back_trip  = trip; 
                         states[round][stop].back_stop  = board_stop;
                         states[round][stop].board_time = board_time;
+                        if (req.arrive_by) {
+                            if (board_time < time) printf ("board time non-decreasing\n");
+                        } else {
+                            if (board_time > time) printf ("board time non-increasing\n");
+                        }
                         bitset_set(router.updated_stops, stop);   // mark stop for next round.
                     }
                 } 
@@ -687,7 +709,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
         plan->n_itineraries += 1;
         itin += 1;
     }
-    //check_plan_invariants (plan);
+    check_plan_invariants (plan);
 }
 
 /* 
@@ -751,7 +773,7 @@ void router_request_randomize(router_request_t *req) {
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = 3600 * 14 + rrrrandom(3600 * 6);
-    req->arrive_by = false;
+    req->arrive_by = true;
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
 }
