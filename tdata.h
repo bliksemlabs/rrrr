@@ -27,7 +27,7 @@ struct route {
 typedef struct trip trip_t;
 struct trip {
     uint32_t stop_times_offset; // The offset of the first stoptime of the time demand type used by this trip
-    uint32_t first_departure;   // This could be rtime_t but struct will be 64 bits anyway due to padding.
+    uint32_t begin_time;        // This could be rtime_t but struct will be 64 bits anyway due to padding.
     // rtime_t first_departure
     // int16_t delay // signed, for early or late
 };

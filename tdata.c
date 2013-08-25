@@ -64,6 +64,45 @@ inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
     return td->trip_active + route.trip_ids_offset;
 }
 
+void tdata_check_coherent (tdata_t *td) {
+    /* Check that all lat/lon look like valid coordinates for this part of Europe (including Paris, Berlin etc. */
+    float min_lat = 42.0;
+    float max_lat = 54.0;
+    float min_lon = -1.0;
+    float max_lon = 15.0;
+    for (int s = 0; s < td->n_stops; ++s) {
+        latlon_t ll = td->stop_coords[s];
+        if (ll.lat < min_lat || ll.lat > max_lat || ll.lon < min_lon || ll.lon > max_lon) {
+            printf ("stop lat/lon out of range: lat=%f, lon=%f \n", ll.lat, ll.lon);
+        }
+    }
+    /* Check that all timedemand types start at 0 and consist of monotonically increasing times. */
+    for (int r = 0; r < td->n_routes; ++r) {
+        route_t route = td->routes[r];
+        trip_t *trips = td->trips + route.trip_ids_offset;
+        int n_nonincreasing_trips = 0;
+        for (int t = 0; t < route.n_trips; ++t) {
+            trip_t trip = trips[t];
+            stoptime_t *prev_st = NULL;
+            for (int s = 0; s < route.n_stops; ++s) {
+                stoptime_t *st = td->stop_times + trip.stop_times_offset + s;
+                if (s == 0 && st->arrival != 0) printf ("timedemand type begins at %d,%d not 0.\n", st->arrival, st->departure);
+                if (st->departure < st->arrival) printf ("departure before arrival at route %d, trip %d, stop %d.\n", r, t, s);
+                if (prev_st != NULL) {
+                    if (st->arrival < prev_st->departure) {
+                        // printf ("negative travel time arriving at route %d, trip %d, stop %d.\n", r, t, s);
+                        // printf ("(%d, %d) -> (%d, %d)\n", prev_st->arrival, prev_st->departure, st->arrival, st->departure);
+                        n_nonincreasing_trips += 1;
+                    } // there are also lots of 0 travel times...	
+                }
+                prev_st = st;                
+            }
+        }
+        if (n_nonincreasing_trips > 0) printf ("route %d has %d trips with negative travel times\n", r, n_nonincreasing_trips);
+    }
+
+}
+
 /* Map an input file into memory and reconstruct pointers to its contents. */
 void tdata_load(char *filename, tdata_t *td) {
 
@@ -106,6 +145,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);
     td->route_active = (uint32_t*) (b + header->loc_route_active);
 
+    tdata_check_coherent(td);
     D tdata_dump(td);
 }
 
@@ -146,7 +186,7 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
         stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_idx, ti);
         for (uint32_t si = 0; si < route.n_stops; ++si) {
             char *stop_id = tdata_stop_id_for_index (td, stops[si]);
-            printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[ti][si].departure + td->trips[ti].first_departure));
+            printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[ti][si].departure + td->trips[ti].begin_time));
          }
          printf("\n");
     }
