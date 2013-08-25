@@ -303,7 +303,7 @@ print "saving a list of timedemandgroups"
 write_text_comment("TIMEDEMANDGROUPS")
 loc_timedemandgroups = tell()
 offset = 0
-timedemandgroups_offsets = {}
+timedemandgroups_offsets = {} # the offset into the stoptimes for each timedemandgroup ID
 timedemandgroups_written = {}
 timedemandgroup_t = Struct('HH')
 n_nonincreasing_groups = 0
