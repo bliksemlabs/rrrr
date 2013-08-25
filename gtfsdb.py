@@ -488,6 +488,7 @@ FROM transfers WHERE to_stop_id = ?) as x"""
         else:
             c.execute( "SELECT trip_id FROM trips" )
             
+        timedemandgroup_id_for_signature = {} # map from timedemandgroup signatures to IDs
         for i, (trip_id,) in enumerate(c):
             if reporter and i%(n_trips//50+1)==0: reporter.write( "%d/%d trips grouped by %d patterns\n"%(i,n_trips,len(bundles)))
             
@@ -500,13 +501,12 @@ FROM transfers WHERE to_stop_id = ?) as x"""
             drive_times = [arrival_time - trip_begin_time for arrival_time in arrival_times]
             dwell_times = [departure_time - arrival_time for departure_time, arrival_time in zip(departure_times, arrival_times)]
             timedemandgroup_signature = (tuple(drive_times), tuple(dwell_times))
-            timedemandgroup_uniques = {}
-            if timedemandgroup_signature in timedemandgroup_uniques:
-                timedemandgroup_id = timedemandgroup_uniques[timedemandgroup_signature]
+            if timedemandgroup_signature in timedemandgroup_id_for_signature :
+                timedemandgroup_id = timedemandgroup_id_for_signature[timedemandgroup_signature]
             else:
                 timedemandgroup_id = len(self.timedemandgroups)
                 self.timedemandgroups[timedemandgroup_id] = (drive_times, dwell_times)
-                timedemandgroup_uniques[timedemandgroup_signature] = timedemandgroup_id
+                timedemandgroup_id_for_signature[timedemandgroup_signature] = timedemandgroup_id
             self.timedemandgroup_for_trip[trip_id] = timedemandgroup_id
             route_id = route_ids[0]
 
@@ -522,8 +522,9 @@ FROM transfers WHERE to_stop_id = ?) as x"""
                 bundles[pattern] = TripBundle( self, pattern )
             
             bundles[pattern].add_trip( trip_id )
-        print "%d unique time demand types." % (len(timedemandgroup_uniques))
+        print "%d unique time demand types." % (len(timedemandgroup_id_for_signature))
         print "%d time demand types." % (len(self.timedemandgroups))
+        del(timedemandgroup_id_for_signature)
         c.close()
         
         return bundles.values()
