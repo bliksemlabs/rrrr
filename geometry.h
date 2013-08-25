@@ -7,7 +7,7 @@
 
 typedef struct latlon latlon_t;
 struct latlon {
-    float lat; // reverse this in python script ?
+    float lat;
     float lon;
 };
 
