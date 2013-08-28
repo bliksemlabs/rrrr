@@ -18,7 +18,8 @@ if len(sys.argv) < 2 :
 db = GTFSDatabase(sys.argv[1])    
 
 out = open("./timetable.dat", "wb")
-stops_out = open("./stops", "wb") # ID <-> StopName map for the geocoder
+stops_out = open("./stops", "wb") # internal index <-> StopName map for the geocoder
+trips_out = open("./trips", "wb") # internal index <-> TripId map for realtime
 
 feed_start_date, feed_end_date = db.date_range()
 print 'feed covers %s -- %s' % (feed_start_date, feed_end_date)
@@ -334,7 +335,7 @@ write_text_comment("TRIPS BY ROUTE")
 loc_trips = tell()
 toffset = 0
 trips_offsets = []
-trip_t = Struct('II') # This is a padding fuckup
+trip_t = Struct('IHH') # Beware, Python structs do not have padding at the end.
 
 all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
@@ -351,7 +352,8 @@ for idx, route in enumerate(route_for_idx) :
     for timedemandgroupref, first_departure in db.fetch_timedemandgroups(trip_ids) :
         # 2**16 / 60 / 60 is only 18 hours
         # by right-shifting all times two bits we get 72 hours (3 days) at 4 second resolution
-        out.write(trip_t.pack(timedemandgroups_offsets[timedemandgroupref], first_departure >> 2))
+        # The last struct member is a realtime offset. The space is not wasted since it would be needed as struct padding anyway.
+        out.write(trip_t.pack(timedemandgroups_offsets[timedemandgroupref], first_departure >> 2, 0))
         toffset += 1 
     all_trip_ids.extend(trip_ids)
     tioffset += len(trip_ids)
@@ -359,6 +361,12 @@ trips_offsets.append(toffset) # sentinel
 trip_ids_offsets.append(tioffset) # sentinel
 assert len(trips_offsets) == nroutes + 1
 assert len(trip_ids_offsets) == nroutes + 1
+
+print "saving a list of tripids (outside timetable.dat)"
+for trip_id in all_trip_ids:
+    trips_out.write(trip_id)
+    trips_out.write('\0')
+trips_out.close()
 
 print "saving a list of routes serving each stop"
 write_text_comment("ROUTES BY STOP")
