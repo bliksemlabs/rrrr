@@ -4,7 +4,7 @@ CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable # -O
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime
+BINS    := workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime rrrrealtime-viz
 
 #CC=gcc
 #CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
@@ -29,8 +29,11 @@ testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o json.o
 explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-rrrrealtime: realtime.o gtfs-realtime.pb-c.o
+rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
+
+rrrrealtime-viz: realtime-viz.o gtfs-realtime.pb-c.o
+	$(CC) $(CFLAGS) $^ $(LIBS) -lGL `sdl-config --libs` -lshp -o $@
 
 client: bitset.o qstring.o router.o tdata.o util.o client.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
