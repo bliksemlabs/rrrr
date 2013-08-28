@@ -23,6 +23,8 @@
 #include <libwebsockets.h>
 #include "gtfs-realtime.pb-c.h"
 
+#include "radixtree.h"
+
 /* 
 Websockets exchange frames. Messages can be split across frames.  
 Libwebsockets does not aggregate frames into messages, you must do it manually.
@@ -46,6 +48,8 @@ http://www.lenholgate.com/blog/2011/07/websockets-is-a-stream-not-a-message-base
 
 uint8_t msg[MAX_MESSAGE_LENGTH];
 size_t msg_len = 0;
+
+RadixTree *tripid_index;
 
 static void msg_add_frame (uint8_t *frame, size_t len) { 
     if (msg_len + len > MAX_MESSAGE_LENGTH) {
@@ -80,7 +84,20 @@ static void show_gtfsrt (uint8_t *buf, size_t len) {
     for (int e = 0; e < msg->n_entity; ++e) {
         TransitRealtime__FeedEntity *entity = msg->entity[e];
         printf("  entity %d has id %s\n", e, entity->id);
+        if (entity == NULL) goto cleanup;
+        /*
+        TransitRealtime__VehiclePosition *vehicle = entity->vehicle;
+        if (vehicle == NULL) goto cleanup;
+        */
+        TransitRealtime__TripUpdate *trip_update = entity->trip_update;
+        if (trip_update == NULL) goto cleanup;
+        TransitRealtime__TripDescriptor *trip = trip_update->trip;
+        if (trip == NULL) goto cleanup;
+        char *trip_id = trip->trip_id;
+        uint32_t trip_index = rxt_find (tripid_index, trip_id);
+        printf("    trip_id is %s, internal index is %d\n", trip_id, trip_index);
     }
+    cleanup:
     transit_realtime__feed_message__free_unpacked (msg, NULL);
 }
 
@@ -165,14 +182,14 @@ static struct option long_options[] = {
     { NULL, 0, 0, 0 } /* end */
 };
 
-
 int main(int argc, char **argv) {
     int ret = 0;
     int port = 8088;
     bool use_ssl = false;
     struct libwebsocket_context *context;
     const char *address = "ovapi.nl";
-    const char *path = "/vehiclePositions";
+    //const char *path = "/vehiclePositions";
+    const char *path = "/tripUpdates";
     struct libwebsocket *wsi_gtfsrt;
     int ietf_version = -1; /* latest */
     struct lws_context_creation_info cc_info;
@@ -199,6 +216,8 @@ int main(int argc, char **argv) {
     }
 
     signal(SIGINT, sighandler);
+
+    tripid_index = rxt_load_strings ("trips");
 
     /*
      * create the websockets context.  This tracks open connections and
@@ -227,7 +246,7 @@ int main(int argc, char **argv) {
         goto bail;
     }
     fprintf(stderr, "websocket connections opened\n");
-
+    
     /* service the websocket context to handle incoming packets */
     int n = 0;
     while (n >= 0 && !socket_closed && !force_exit) n = libwebsocket_service(context, 500);
