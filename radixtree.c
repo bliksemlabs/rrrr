@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -170,6 +171,29 @@ struct node *compact (struct edge *root) {
     return NULL;
 }
 
+/* Compresses paths in place. Not well tested, and only seems to remove a few edges from 600k when using numbers. */
+void rxt_compress (struct edge *root) {
+    struct edge *e = root;
+    if (e == NULL) return;
+    while (e->child != NULL && e->child->next == NULL && e->value == RADIX_TREE_NONE) {
+        int l0 = edge_prefix_length(e);
+        int l1 = edge_prefix_length(e->child);
+        if (l0 + l1 <= RADIX_TREE_PREFIX_SIZE) {
+            printf ("compressing %.*s and %.*s.\n", RADIX_TREE_PREFIX_SIZE, e->prefix, RADIX_TREE_PREFIX_SIZE, e->child->prefix);
+            char *c0 = e->prefix + l0;
+            char *c1 = e->child->prefix;
+            for (int i = 0; i < l1; ++i) *(c0++) = *(c1++);
+            if (l0 + l1 < RADIX_TREE_PREFIX_SIZE) *c0 = '\0';
+            e->value = e->child->value;
+            struct edge *new_child = e->child->child;
+            free (e->child);
+            e->child = new_child;
+        }
+    }
+    rxt_compress (e->child);
+    rxt_compress (e->next);
+}
+
 RadixTree *rxt_load_strings (char *filename) {
     RadixTree *root = rxt_new (0); // files should contain number of strings as header
     int fd = open(filename, O_RDONLY);
@@ -183,9 +207,16 @@ RadixTree *rxt_load_strings (char *filename) {
     printf ("Indexing strings...\n");
     while (s < strings_end) {
         insert (root, s, idx);
-        s += strlen(s) + 1;
+        while(*(s++) != '\0') { }
         idx += 1;
     }
+    close(fd);
+    /*
+    rxt_compress (root);
+    printf ("total number of edges: %d\n", edge_count(root));
+    printf ("size of one edge: %ld\n", sizeof(struct edge));
+    printf ("total size of all edges: %ld\n", edge_count(root) * sizeof(struct edge));
+    */
     return root;
 }
 
