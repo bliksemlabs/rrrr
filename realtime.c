@@ -44,7 +44,8 @@ http://www.lenholgate.com/blog/2011/07/websockets-is-a-stream-not-a-message-base
  */
 
 #define MAX_FRAME_LENGTH (10 * 1024)
-#define MAX_MESSAGE_LENGTH (1000 * 1024)
+#define MAX_MESSAGE_LENGTH (10 * 1024 * 1024) 
+// initial receives can be huge
 
 uint8_t msg[MAX_MESSAGE_LENGTH];
 size_t msg_len = 0;
