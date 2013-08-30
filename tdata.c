@@ -106,7 +106,7 @@ void tdata_check_coherent (tdata_t *td) {
 /* Map an input file into memory and reconstruct pointers to its contents. */
 void tdata_load(char *filename, tdata_t *td) {
 
-    uint32_t fd = open(filename, O_RDONLY);
+    uint32_t fd = open(filename, O_RDWR);
     if (fd == -1) 
         die("could not find input file");
 
@@ -114,7 +114,7 @@ void tdata_load(char *filename, tdata_t *td) {
     if (stat(filename, &st) == -1) 
         die("could not stat input file");
     
-    td->base = mmap((void*)0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    td->base = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     td->size = st.st_size;
     if (td->base == (void*)(-1)) 
         die("could not map input file");
