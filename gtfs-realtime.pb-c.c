@@ -233,6 +233,49 @@ void   transit_realtime__vehicle_position__free_unpacked
   PROTOBUF_C_ASSERT (message->base.descriptor == &transit_realtime__vehicle_position__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   transit_realtime__ovapi_vehicle_position__init
+                     (TransitRealtime__OVapiVehiclePosition         *message)
+{
+  static TransitRealtime__OVapiVehiclePosition init_value = TRANSIT_REALTIME__OVAPI_VEHICLE_POSITION__INIT;
+  *message = init_value;
+}
+size_t transit_realtime__ovapi_vehicle_position__get_packed_size
+                     (const TransitRealtime__OVapiVehiclePosition *message)
+{
+  PROTOBUF_C_ASSERT (message->base.descriptor == &transit_realtime__ovapi_vehicle_position__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t transit_realtime__ovapi_vehicle_position__pack
+                     (const TransitRealtime__OVapiVehiclePosition *message,
+                      uint8_t       *out)
+{
+  PROTOBUF_C_ASSERT (message->base.descriptor == &transit_realtime__ovapi_vehicle_position__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t transit_realtime__ovapi_vehicle_position__pack_to_buffer
+                     (const TransitRealtime__OVapiVehiclePosition *message,
+                      ProtobufCBuffer *buffer)
+{
+  PROTOBUF_C_ASSERT (message->base.descriptor == &transit_realtime__ovapi_vehicle_position__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+TransitRealtime__OVapiVehiclePosition *
+       transit_realtime__ovapi_vehicle_position__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (TransitRealtime__OVapiVehiclePosition *)
+     protobuf_c_message_unpack (&transit_realtime__ovapi_vehicle_position__descriptor,
+                                allocator, len, data);
+}
+void   transit_realtime__ovapi_vehicle_position__free_unpacked
+                     (TransitRealtime__OVapiVehiclePosition *message,
+                      ProtobufCAllocator *allocator)
+{
+  PROTOBUF_C_ASSERT (message->base.descriptor == &transit_realtime__ovapi_vehicle_position__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   transit_realtime__alert__init
                      (TransitRealtime__Alert         *message)
 {
@@ -1102,7 +1145,7 @@ const ProtobufCEnumDescriptor transit_realtime__vehicle_position__congestion_lev
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
 static const TransitRealtime__VehiclePosition__VehicleStopStatus transit_realtime__vehicle_position__current_status__default_value = TRANSIT_REALTIME__VEHICLE_POSITION__VEHICLE_STOP_STATUS__IN_TRANSIT_TO;
-static const ProtobufCFieldDescriptor transit_realtime__vehicle_position__field_descriptors[8] =
+static const ProtobufCFieldDescriptor transit_realtime__vehicle_position__field_descriptors[9] =
 {
   {
     "trip",
@@ -1200,21 +1243,35 @@ static const ProtobufCFieldDescriptor transit_realtime__vehicle_position__field_
     0,            /* packed */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "ovapi_vehicle_position",
+    1003,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    PROTOBUF_C_OFFSETOF(TransitRealtime__VehiclePosition, ovapi_vehicle_position),
+    &transit_realtime__ovapi_vehicle_position__descriptor,
+    NULL,
+    0,            /* packed */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned transit_realtime__vehicle_position__field_indices_by_name[] = {
   5,   /* field[5] = congestion_level */
   3,   /* field[3] = current_status */
   2,   /* field[2] = current_stop_sequence */
+  8,   /* field[8] = ovapi_vehicle_position */
   1,   /* field[1] = position */
   6,   /* field[6] = stop_id */
   4,   /* field[4] = timestamp */
   0,   /* field[0] = trip */
   7,   /* field[7] = vehicle */
 };
-static const ProtobufCIntRange transit_realtime__vehicle_position__number_ranges[1 + 1] =
+static const ProtobufCIntRange transit_realtime__vehicle_position__number_ranges[2 + 1] =
 {
   { 1, 0 },
-  { 0, 8 }
+  { 1003, 8 },
+  { 0, 9 }
 };
 const ProtobufCMessageDescriptor transit_realtime__vehicle_position__descriptor =
 {
@@ -1224,11 +1281,49 @@ const ProtobufCMessageDescriptor transit_realtime__vehicle_position__descriptor 
   "TransitRealtime__VehiclePosition",
   "transit_realtime",
   sizeof(TransitRealtime__VehiclePosition),
-  8,
+  9,
   transit_realtime__vehicle_position__field_descriptors,
   transit_realtime__vehicle_position__field_indices_by_name,
-  1,  transit_realtime__vehicle_position__number_ranges,
+  2,  transit_realtime__vehicle_position__number_ranges,
   (ProtobufCMessageInit) transit_realtime__vehicle_position__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor transit_realtime__ovapi_vehicle_position__field_descriptors[1] =
+{
+  {
+    "delay",
+    1,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_OFFSETOF(TransitRealtime__OVapiVehiclePosition, has_delay),
+    PROTOBUF_C_OFFSETOF(TransitRealtime__OVapiVehiclePosition, delay),
+    NULL,
+    NULL,
+    0,            /* packed */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned transit_realtime__ovapi_vehicle_position__field_indices_by_name[] = {
+  0,   /* field[0] = delay */
+};
+static const ProtobufCIntRange transit_realtime__ovapi_vehicle_position__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor transit_realtime__ovapi_vehicle_position__descriptor =
+{
+  PROTOBUF_C_MESSAGE_DESCRIPTOR_MAGIC,
+  "transit_realtime.OVapiVehiclePosition",
+  "OVapiVehiclePosition",
+  "TransitRealtime__OVapiVehiclePosition",
+  "transit_realtime",
+  sizeof(TransitRealtime__OVapiVehiclePosition),
+  1,
+  transit_realtime__ovapi_vehicle_position__field_descriptors,
+  transit_realtime__ovapi_vehicle_position__field_indices_by_name,
+  1,  transit_realtime__ovapi_vehicle_position__number_ranges,
+  (ProtobufCMessageInit) transit_realtime__ovapi_vehicle_position__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 const ProtobufCEnumValue transit_realtime__alert__cause__enum_values_by_number[12] =

@@ -15,6 +15,7 @@ typedef struct _TransitRealtime__TripUpdate TransitRealtime__TripUpdate;
 typedef struct _TransitRealtime__TripUpdate__StopTimeEvent TransitRealtime__TripUpdate__StopTimeEvent;
 typedef struct _TransitRealtime__TripUpdate__StopTimeUpdate TransitRealtime__TripUpdate__StopTimeUpdate;
 typedef struct _TransitRealtime__VehiclePosition TransitRealtime__VehiclePosition;
+typedef struct _TransitRealtime__OVapiVehiclePosition TransitRealtime__OVapiVehiclePosition;
 typedef struct _TransitRealtime__Alert TransitRealtime__Alert;
 typedef struct _TransitRealtime__TimeRange TransitRealtime__TimeRange;
 typedef struct _TransitRealtime__Position TransitRealtime__Position;
@@ -185,10 +186,22 @@ struct  _TransitRealtime__VehiclePosition
   uint64_t timestamp;
   protobuf_c_boolean has_congestion_level;
   TransitRealtime__VehiclePosition__CongestionLevel congestion_level;
+  TransitRealtime__OVapiVehiclePosition *ovapi_vehicle_position;
 };
 #define TRANSIT_REALTIME__VEHICLE_POSITION__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&transit_realtime__vehicle_position__descriptor) \
-    , NULL, NULL, NULL, 0,0, NULL, 0,TRANSIT_REALTIME__VEHICLE_POSITION__VEHICLE_STOP_STATUS__IN_TRANSIT_TO, 0,0, 0,0 }
+    , NULL, NULL, NULL, 0,0, NULL, 0,TRANSIT_REALTIME__VEHICLE_POSITION__VEHICLE_STOP_STATUS__IN_TRANSIT_TO, 0,0, 0,0, NULL }
+
+
+struct  _TransitRealtime__OVapiVehiclePosition
+{
+  ProtobufCMessage base;
+  protobuf_c_boolean has_delay;
+  int32_t delay;
+};
+#define TRANSIT_REALTIME__OVAPI_VEHICLE_POSITION__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&transit_realtime__ovapi_vehicle_position__descriptor) \
+    , 0,0 }
 
 
 struct  _TransitRealtime__Alert
@@ -406,6 +419,25 @@ TransitRealtime__VehiclePosition *
 void   transit_realtime__vehicle_position__free_unpacked
                      (TransitRealtime__VehiclePosition *message,
                       ProtobufCAllocator *allocator);
+/* TransitRealtime__OVapiVehiclePosition methods */
+void   transit_realtime__ovapi_vehicle_position__init
+                     (TransitRealtime__OVapiVehiclePosition         *message);
+size_t transit_realtime__ovapi_vehicle_position__get_packed_size
+                     (const TransitRealtime__OVapiVehiclePosition   *message);
+size_t transit_realtime__ovapi_vehicle_position__pack
+                     (const TransitRealtime__OVapiVehiclePosition   *message,
+                      uint8_t             *out);
+size_t transit_realtime__ovapi_vehicle_position__pack_to_buffer
+                     (const TransitRealtime__OVapiVehiclePosition   *message,
+                      ProtobufCBuffer     *buffer);
+TransitRealtime__OVapiVehiclePosition *
+       transit_realtime__ovapi_vehicle_position__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   transit_realtime__ovapi_vehicle_position__free_unpacked
+                     (TransitRealtime__OVapiVehiclePosition *message,
+                      ProtobufCAllocator *allocator);
 /* TransitRealtime__Alert methods */
 void   transit_realtime__alert__init
                      (TransitRealtime__Alert         *message);
@@ -565,6 +597,9 @@ typedef void (*TransitRealtime__TripUpdate_Closure)
 typedef void (*TransitRealtime__VehiclePosition_Closure)
                  (const TransitRealtime__VehiclePosition *message,
                   void *closure_data);
+typedef void (*TransitRealtime__OVapiVehiclePosition_Closure)
+                 (const TransitRealtime__OVapiVehiclePosition *message,
+                  void *closure_data);
 typedef void (*TransitRealtime__Alert_Closure)
                  (const TransitRealtime__Alert *message,
                   void *closure_data);
@@ -606,6 +641,7 @@ extern const ProtobufCEnumDescriptor    transit_realtime__trip_update__stop_time
 extern const ProtobufCMessageDescriptor transit_realtime__vehicle_position__descriptor;
 extern const ProtobufCEnumDescriptor    transit_realtime__vehicle_position__vehicle_stop_status__descriptor;
 extern const ProtobufCEnumDescriptor    transit_realtime__vehicle_position__congestion_level__descriptor;
+extern const ProtobufCMessageDescriptor transit_realtime__ovapi_vehicle_position__descriptor;
 extern const ProtobufCMessageDescriptor transit_realtime__alert__descriptor;
 extern const ProtobufCEnumDescriptor    transit_realtime__alert__cause__descriptor;
 extern const ProtobufCEnumDescriptor    transit_realtime__alert__effect__descriptor;
