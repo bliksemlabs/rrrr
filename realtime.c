@@ -5,7 +5,7 @@
     Depends on https://github.com/warmcat/libwebsockets
     compile with -lwebsockets -lprotobuf-c
     
-    protoc-c --c_out . protobuf/gtfs-realtime.proto    
+    protoc-c --c_out . gtfs-realtime.proto    
     clang -O2 -c gtfs-realtime.pb-c.c -o gtfs-realtime.pb-c.o
     clang -O2 realtime.c gtfs-realtime.pb-c.o -o rrrrealtime -lwebsockets -lprotobuf-c
 
@@ -24,6 +24,8 @@
 #include "gtfs-realtime.pb-c.h"
 
 #include "radixtree.h"
+#include "tdata.h"
+#include "config.h"
 
 /* 
 Websockets exchange frames. Messages can be split across frames.  
@@ -44,13 +46,14 @@ http://www.lenholgate.com/blog/2011/07/websockets-is-a-stream-not-a-message-base
  */
 
 #define MAX_FRAME_LENGTH (10 * 1024)
-#define MAX_MESSAGE_LENGTH (10 * 1024 * 1024) 
-// initial receives can be huge
+#define MAX_MESSAGE_LENGTH (10 * 1024 * 1024) // initial receives can be huge
+#define V if (verbose) 
 
 uint8_t msg[MAX_MESSAGE_LENGTH];
 size_t msg_len = 0;
-
+bool verbose = true;
 RadixTree *tripid_index;
+tdata_t tdata;
 
 static void msg_add_frame (uint8_t *frame, size_t len) { 
     if (msg_len + len > MAX_MESSAGE_LENGTH) {
@@ -74,6 +77,17 @@ static void msg_dump () {
  
 /* Protocol: Incremental GTFS-RT */
 
+static void apply_delay (char *trip_id, int32_t delay_sec) {
+    uint32_t trip_index = rxt_find (tripid_index, trip_id);
+    if (trip_index == RADIX_TREE_NONE) {
+        printf ("    trip id was not found in the radix tree.\n");
+    } else {   
+        printf ("    trip_id %s, trip number %d, applying delay of %d sec.\n", trip_id, trip_index, delay_sec);
+        trip_t *trip = tdata.trips + trip_index;
+        trip->realtime_delay = SEC_TO_RTIME(delay_sec);
+    }
+}
+
 static void show_gtfsrt (uint8_t *buf, size_t len) {
     TransitRealtime__FeedMessage *msg;
     msg = transit_realtime__feed_message__unpack (NULL, len, buf);
@@ -84,19 +98,22 @@ static void show_gtfsrt (uint8_t *buf, size_t len) {
     printf("Received feed message with %lu entities.\n", msg->n_entity);
     for (int e = 0; e < msg->n_entity; ++e) {
         TransitRealtime__FeedEntity *entity = msg->entity[e];
-        printf("  entity %d has id %s\n", e, entity->id);
         if (entity == NULL) goto cleanup;
-        /*
+        printf("  entity %d has id %s\n", e, entity->id);
         TransitRealtime__VehiclePosition *vehicle = entity->vehicle;
         if (vehicle == NULL) goto cleanup;
-        */
-        TransitRealtime__TripUpdate *trip_update = entity->trip_update;
-        if (trip_update == NULL) goto cleanup;
-        TransitRealtime__TripDescriptor *trip = trip_update->trip;
+        TransitRealtime__TripDescriptor *trip = vehicle->trip;
         if (trip == NULL) goto cleanup;
         char *trip_id = trip->trip_id;
-        uint32_t trip_index = rxt_find (tripid_index, trip_id);
-        printf("    trip_id is %s, internal index is %d\n", trip_id, trip_index);
+        TransitRealtime__OVapiVehiclePosition *ovapi_vehicle_position = vehicle->ovapi_vehicle_position;
+        int32_t delay = 0;
+        if (ovapi_vehicle_position == NULL) printf ("    entity contains no delay message.\n");
+        else delay = ovapi_vehicle_position->delay;
+        if (abs(delay) > 60 * 120) {
+            printf ("    filtering out extreme delay of %d sec.\n", delay);
+            delay = 0;
+        }
+        apply_delay (trip_id, delay);
     }
     cleanup:
     transit_realtime__feed_message__free_unpacked (msg, NULL);
@@ -189,8 +206,8 @@ int main(int argc, char **argv) {
     bool use_ssl = false;
     struct libwebsocket_context *context;
     const char *address = "ovapi.nl";
-    //const char *path = "/vehiclePositions";
-    const char *path = "/tripUpdates";
+    const char *path = "/vehiclePositions";
+    //const char *path = "/tripUpdates";
     struct libwebsocket *wsi_gtfsrt;
     int ietf_version = -1; /* latest */
     struct lws_context_creation_info cc_info;
@@ -219,6 +236,7 @@ int main(int argc, char **argv) {
     signal(SIGINT, sighandler);
 
     tripid_index = rxt_load_strings ("trips");
+    tdata_load (RRRR_INPUT_FILE, &tdata);
 
     /*
      * create the websockets context.  This tracks open connections and
