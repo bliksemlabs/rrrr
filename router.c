@@ -254,12 +254,14 @@ static void service_day_dump (struct service_day *sd) {
 
 static inline rtime_t tdata_depart(tdata_t *td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
-    return trip.begin_time + td->stop_times[trip.stop_times_offset + stop_index].departure;
+    //printf ("saw delay of %d \n", trip.realtime_delay);
+    return trip.begin_time + td->stop_times[trip.stop_times_offset + stop_index].departure + trip.realtime_delay;
 }
 
 static inline rtime_t tdata_arrive(tdata_t* td, uint32_t route_index, uint32_t trip_index, uint32_t stop_index) {
     trip_t trip = td->trips[td->routes[route_index].trip_ids_offset + trip_index];
-    return trip.begin_time + td->stop_times[trip.stop_times_offset + stop_index].arrival;
+    //printf ("saw delay of %d \n", trip.realtime_delay);
+    return trip.begin_time + td->stop_times[trip.stop_times_offset + stop_index].arrival + trip.realtime_delay;
 }
 
 bool router_route(router_t *prouter, router_request_t *preq) {
