@@ -294,11 +294,20 @@ message VehiclePosition {
   }
   optional CongestionLevel congestion_level = 6;
 
+  optional OVapiVehiclePosition ovapi_vehicle_position = 1003;
   // The extensions namespace allows 3rd-party developers to extend the
   // GTFS-realtime specification in order to add and evaluate new features
   // and modifications to the spec.
-  extensions 1000 to 1999;
+  extensions 1004 to 1999;
 }
+
+message OVapiVehiclePosition {
+  // Estimated arrival-delay at the next stop (in seconds) can be positive (meaning that the vehicle is late) or
+  // negative (meaning that the vehicle is ahead of schedule). Delay of 0
+  // means that the vehicle is exactly on time.
+  optional int32 delay = 1;
+}
+
 
 // An alert, indicating some sort of incident in the public transit network.
 message Alert {
