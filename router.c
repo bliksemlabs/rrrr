@@ -732,9 +732,10 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
             char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
             char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
             char *leg_type = (leg->route == WALK ? "WALK" : "RIDE");
-            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index(tdata, leg->route); 
-            b += sprintf (b, "%s %5d %3d %5d %5d %s %s; %s; %s; %s \n", 
-                          leg_type, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, route_desc, s0_id, s1_id);
+            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route); 
+            float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
+            b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f %s; %s; %s \n", 
+                leg_type, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
             if (b > b_end) {
                 printf ("buffer overflow\n");
                 exit(2);

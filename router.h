@@ -55,14 +55,15 @@ struct router_request {
 
 /* ROUTING RESULT STRUCTURES */ // TODO add summary data like duration, begin/end times?
 
-/* A leg represesnts one ride or walking transfer. */
+/* A leg represents one ride or walking transfer. */
 struct leg {
-    uint32_t s0; 
-    uint32_t s1;
-    rtime_t  t0; 
-    rtime_t  t1;
-    uint32_t route; 
+    uint32_t s0;    // from stop index
+    uint32_t s1;    // to stop index
+    rtime_t  t0;    // start time
+    rtime_t  t1;    // end time
+    uint32_t route;
     uint32_t trip;
+//    int32_t  delay; // signed realtime delay, in seconds
 };
 
 /* An itinerary is a chain of legs leading from one place to another. */

@@ -171,8 +171,14 @@ inline stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint
     return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset].stop_times_offset;
 }
 
-inline trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index) {
+inline trip_t *tdata_trips_for_route (tdata_t *td, uint32_t route_index) {
     return td->trips + td->routes[route_index].trip_ids_offset;
+}
+
+/* Signed delay of the specified trip, in seconds. */
+inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_index) {
+    trip_t *trips = tdata_trips_for_route(td, route_index);
+    return RTIME_TO_SEC_SIGNED(trips[trip_index].realtime_delay) / 60.0;
 }
 
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {

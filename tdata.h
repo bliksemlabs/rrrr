@@ -97,6 +97,9 @@ stoptime_t *tdata_timedemand_type(tdata_t*, uint32_t route_index, uint32_t trip_
 
 /* Get a pointer to the array of trip structs for this route. */
 trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index);
+
+/* The signed delay of the specified trip in seconds. */
+float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_index);
  
 #endif // _TDATA_H
 
