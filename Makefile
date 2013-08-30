@@ -29,7 +29,7 @@ testerrrr: bitset.o qstring.o router.o tdata.o util.o unittest.o bitset.o json.o
 explorerrrr: bitset.o qstring.o router.o tdata.o util.o explorer.o bitset.o json.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o
+rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
 rrrrealtime-viz: realtime-viz.o gtfs-realtime.pb-c.o
