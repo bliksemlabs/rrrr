@@ -12,7 +12,7 @@ struct stop {
     uint32_t transfers_offset;
 };
 
-/* An individual Route in the RAPTOR sense: A group of VehicleJourneys all havng the same JourneyPattern. */
+/* An individual Route in the RAPTOR sense: A group of VehicleJourneys all having the same JourneyPattern. */
 typedef struct route route_t;
 struct route {
     uint32_t route_stops_offset;
