@@ -24,6 +24,9 @@ int main(int argc, char **argv) {
     req.from = strtol(argv[1], NULL, 10);
     req.to = strtol(argv[2], NULL, 10);
 
+    //srand(time(NULL));
+    //router_request_randomize(&req);
+    
     if (req.from == req.to) {  
         fprintf(stderr, "Dude, you are already there.\n");
         exit(-1);
