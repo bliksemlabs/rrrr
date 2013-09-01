@@ -416,12 +416,12 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                   this route at this location, indicate that we want to search for a trip.
                 */
                 bool attempt_board = false;
-                if (router.best_time[stop] != UNREACHED && states[last_round][stop].walk_time != UNREACHED) { 
-                    // only board at placed that have been reached. actually, reached in last round implies ever reached (best_time).
-                    if (trip == NONE) {
-                        attempt_board = true;
-                    } else { // removed xfer slack for simplicity
-                        rtime_t prev_time = states[last_round][stop].walk_time;
+                rtime_t prev_time = states[last_round][stop].walk_time;
+                if (prev_time != UNREACHED) { // Only board at placed that have been reached.
+                    if (trip == NONE) attempt_board = true;
+                    else {
+                        // removed xfer slack for simplicity
+                        // is this repetitively triggering re-boarding searches along a single route?
                         rtime_t trip_time = req.arrive_by ? tdata_arrive(&(router.tdata), route_idx, trip, route_stop)
                                                           : tdata_depart(&(router.tdata), route_idx, trip, route_stop);
                         trip_time += midnight;
@@ -439,10 +439,14 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     I printf ("    [attempting boarding] \n");
                     if (router.best_time[stop] == UNREACHED) {
                         // This stop has not been reached, move on to the next one.
+                        // TODO remove this check, it is tautological.
+                        printf ("TAUTOLOGICAL.\n");
                         continue; 
                     }
                     if (states[last_round][stop].walk_time == UNREACHED) {
                         // Only attempt boarding at places that were reached in the last round.
+                        // TODO remove this check, it is tautological.
+                        printf ("TAUTOLOGICAL.\n");
                         continue;
                     }
                     D printf("hit previously-reached stop %d\n", stop);
@@ -459,8 +463,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     for (struct service_day *sday = days; sday <= days + 2; ++sday) {
                         /* Check that this route still has any trips running on this day. */
                         // we should really define a variable for the current time at the stop
-                        if (req.arrive_by ? router.best_time[stop] < sday->midnight + route.min_time 
-                                          : router.best_time[stop] > sday->midnight + route.max_time) continue;
+                        if (req.arrive_by ? prev_time < sday->midnight + route.min_time
+                                          : prev_time > sday->midnight + route.max_time) continue;
                         /* Check whether there's any chance of improvement by scanning additional days. */ 
                         /* Note that day list is reversed for arrive-by searches. */
                         if (best_trip != NONE && ! route_overlap) break;
@@ -476,9 +480,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                             // T printf("    board option %d at %s \n", this_trip, ...
                             if (time + sday->midnight < time) printf ("ERROR: time overflow at boarding\n");
                             time += sday->midnight;
-                            /* board trip if it improves on the current best known trip at this stop */
-                            if (req.arrive_by ? time <= router.best_time[stop] && time > best_time
-                                              : time >= router.best_time[stop] && time < best_time) {
+                            /* Mark trip for boarding if it improves on the last round's post-walk time at this stop.
+                               Note: we should /not/ be comparing to the current best known time at this stop, because
+                               it may have been updated in this round by another trip (in the pre-walk transit phase). */
+                            if (req.arrive_by ? time <= prev_time && time > best_time
+                                              : time >= prev_time && time < best_time) {
                                 best_trip = this_trip;
                                 best_time = time;
                                 best_midnight = sday->midnight;
@@ -505,13 +511,15 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                                                  : tdata_arrive(&(router.tdata), route_idx, trip, route_stop);
                     time += midnight;
                     T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
+                    // Target pruning, sec. 3.1 of RAPTOR paper.
                     if ((router.best_time[target] != UNREACHED) && 
                         (req.arrive_by ? time < router.best_time[target] 
                                        : time > router.best_time[target])) { 
                         T printf("    (target pruning)\n");
-                        // Target pruning, sec. 3.1. (Could we break out of this route entirely?)
+                        // We cannot break out of this route entirely, because re-boarding may occur at a later stop.
                         continue;
                     }
+                    // Do we need best_time at all? yes, because the best time may not have been found in the previous round.
                     bool improved = (router.best_time[stop] == UNREACHED) || 
                                     (req.arrive_by ? time > router.best_time[stop] 
                                                    : time < router.best_time[stop]);
@@ -539,7 +547,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                         }
                         bitset_set(router.updated_stops, stop);   // mark stop for next round.
                     }
-                } 
+                }
             } // end for (stop)
         } // end for (route)
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
@@ -561,14 +569,19 @@ static inline void leg_swap (struct leg *leg) {
     leg->t1 = temp.t0;
 }
 
-/* All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc. */
-static void check_plan_invariants (struct plan *plan) {
+/* Checks charateristics that should be the same for all trip plans produced by this router:
+   All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc.
+   Returns true if any of the checks fail, false if no problems are detected. */
+static bool check_plan_invariants (struct plan *plan) {
+    bool fail = false;
     struct itinerary *prev_itin = NULL;
     rtime_t prev_target_time = UNREACHED;
+    /* Loop over all itineraries in this plan. */
     for (int i = 0; i < plan->n_itineraries; ++i) {
         struct itinerary *itin = plan->itineraries + i;
         if (itin->n_legs < 1) {
             fprintf(stderr, "itinerary contains no legs.\n");
+            fail = true;
         } else {
             /* Itinarary has at least one leg. Grab its first and last leg. */
             struct leg *leg0 = itin->legs;
@@ -576,18 +589,26 @@ static void check_plan_invariants (struct plan *plan) {
             /* Itineraries should be Pareto-optimal. Increase in number of rides implies improving arrival time. */
             rtime_t target_time = plan->req.arrive_by ? leg0->t0 : legN->t1;
             if (i > 0) {
-                if (itin->n_legs <= prev_itin->n_legs) 
+                if (itin->n_legs <= prev_itin->n_legs) {
                     fprintf(stderr, "itineraries do not have strictly increasing numbers of legs: %d, %d.\n", prev_itin->n_legs, itin->n_legs);
-                if (plan->req.arrive_by ? target_time <= prev_target_time : target_time >= prev_target_time)
+                    fail = true;
+                }
+                if (plan->req.arrive_by ? target_time <= prev_target_time : target_time >= prev_target_time) {
                     fprintf(stderr, "itineraries do not have strictly improving target times: %d, %d.\n", prev_target_time, target_time);
+                    fail = true;
+                }
             }
             prev_target_time = target_time;
             prev_itin = itin;
             /* Check that itinerary does indeed connect the places in the request. */
-            if (leg0->s0 != plan->req.from) 
+            if (leg0->s0 != plan->req.from) {
                 fprintf(stderr, "itinerary does not begin at from location.\n");
-            if (legN->s1 != plan->req.to) 
+                fail = true;
+            }
+            if (legN->s1 != plan->req.to) {
                 fprintf(stderr, "itinerary does not end at to location.\n");
+                fail = true;
+            }
             /* Check that the itinerary respects the depart after or arrive-by criterion */
             /* finish when rtimes are in requests
             if (plan->req.arrive_by) {
@@ -597,37 +618,45 @@ static void check_plan_invariants (struct plan *plan) {
             }
             */
             /* All itineraries are composed of ride-walk pairs, prefixed by a single walk leg. */
-            if (itin->n_legs % 2 != 1)
-                fprintf(stderr, "itinerary has an inexplicable number of legs: %d\n", itin->n_legs);
+            if (itin->n_legs % 2 != 1) {
+                fprintf(stderr, "itinerary has an inexplicable (even) number of legs: %d\n", itin->n_legs);
+                fail = true;
+            }
         }
-        /* Check leg-based invariants */
+        /* Check per-leg invariants within each itinerary. */
         struct leg *prev_leg = NULL;
         for (int l = 0; l < itin->n_legs; ++l) {
             struct leg *leg = itin->legs + l;
             if (l % 2 == 0) {
                 if (leg->route != WALK) fprintf(stderr, "even numbered leg %d has route %d not WALK.\n", l, leg->route);
+                fail = true;
             } else {
                 if (leg->route == WALK) fprintf(stderr, "odd numbered leg %d has route WALK.\n", l);
+                fail = true;
             }
             if (leg->t1 < leg->t0) {
                 fprintf(stderr, "non-increasing times within leg %d: %d, %d\n", l, leg->t0, leg->t1);
+                fail = true;
             }
             if (l > 0) {
                 if (leg->s0 != prev_leg->s1) {
-                    fprintf(stderr, "legs do not chain: leg %d begins with stop %d, previous leg ends with stop %d.\n", 
-                        l, leg->s0, prev_leg->s1);
+                    fprintf(stderr, "legs do not chain: leg %d begins with stop %d, previous leg ends with stop %d.\n", l, leg->s0, prev_leg->s1);
+                    fail = true;
                 }
                 if (leg->route == WALK && leg->t0 != prev_leg->t1) {
                     /* This will fail unless reversal is being performed */
                     // fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
+                    // fail = true;
                 }
                 if (leg->t0 < prev_leg->t1) {
-                    fprintf(stderr, "non-increasing times between legs %d and %d: %d, %d\n", l - 1, l, prev_leg->t1, leg->t0);
+                    fprintf(stderr, "itin %d: non-increasing times between legs %d and %d: %d, %d\n", i, l - 1, l, prev_leg->t1, leg->t0);
+                    fail = true;
                 }
             }
             prev_leg = leg;
-        }
-    }
+        } /* End for (legs) */
+    } /* End for (itineraries) */
+    return fail;
 }
 
 static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
@@ -714,9 +743,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
     check_plan_invariants (plan);
 }
 
-/* 
-  Write a plan structure out to a text buffer in tabular format.
-*/
+/* Write a plan structure out to a text buffer in tabular format. */
 static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
@@ -732,15 +759,15 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
             char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
             char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
             char *leg_type = (leg->route == WALK ? "WALK" : "RIDE");
-            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route); 
+            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
             float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
-            b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f %s; %s; %s \n", 
+            b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
                 leg_type, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
             if (b > b_end) {
                 printf ("buffer overflow\n");
                 exit(2);
             }
-        }    
+        }
     }
     *b = '\0';
     return b - buf;
@@ -806,8 +833,8 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     // find the solution with the most transfers and the earliest arrival
     for (int round = max_transfers; round >= 0; --round) { 
         if (states[round][stop].walk_time != UNREACHED) {
-            printf ("State present at round %d \n", round);
-            router_state_dump (&(states[round][stop]));
+            //printf ("State present at round %d \n", round);
+            //router_state_dump (&(states[round][stop]));
             req->max_transfers = round;
             req->time_cutoff = SEC_TO_RTIME(req->time); // fix units situation -- use durations in seconds or rtimes?
             struct tm origin_tm;
