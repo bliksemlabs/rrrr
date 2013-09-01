@@ -59,11 +59,11 @@ int main(int argc, char **argv) {
             router_route (&router, &req);
             // repeat search in reverse to compact transfers
             uint32_t n_reversals = req.arrive_by ? 1 : 2;
-            n_reversals = 0; // DEBUG turn off reversals
+            //n_reversals = 0; // DEBUG turn off reversals
             for (uint32_t i = 0; i < n_reversals; ++i) {
                 router_request_reverse (&router, &req); // handle case where route is not reversed
                 D printf ("Repeating search with reversed request: \n");
-                I router_request_dump (&router, &req);
+                D router_request_dump (&router, &req);
                 router_route (&router, &req);
             }
             uint32_t result_length = router_result_dump(&router, &req, result_buf, 8000);
