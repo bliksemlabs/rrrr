@@ -433,36 +433,20 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     }
                 }
                 /* If we have not yet boarded a trip on this route, see if we can board one.
-                   Also handle the case where we hit a stop with an existing better arrival time. */                    
+                   Also handle the case where we hit a stop with an existing better arrival time. */
                 // TODO: check if this is the last stop -- no point boarding there or marking routes
                 if (attempt_board) {
-                    I printf ("    [attempting boarding] \n");
-                    if (router.best_time[stop] == UNREACHED) {
-                        // This stop has not been reached, move on to the next one.
-                        // TODO remove this check, it is tautological.
-                        printf ("TAUTOLOGICAL.\n");
-                        continue; 
-                    }
-                    if (states[last_round][stop].walk_time == UNREACHED) {
-                        // Only attempt boarding at places that were reached in the last round.
-                        // TODO remove this check, it is tautological.
-                        printf ("TAUTOLOGICAL.\n");
-                        continue;
-                    }
-                    D printf("hit previously-reached stop %d\n", stop);
+                    I printf ("    attempting boarding at stop %d\n", stop);
                     T tdata_dump_route(&(router.tdata), route_idx, NONE);
-                    /* 
-                    Scan all trips to find the nearest trip that can be boarded, if any.
-                    Real-time updates can ruin FIFO ordering within routes.
-                    Scanning through the whole list reduces speed by ~20 percent over binary search.
-                    */
+                    /* Scan all trips to find the soonest trip that can be boarded, if any.
+                       Real-time updates can ruin FIFO ordering of trips within routes.
+                       Scanning through the whole list of trips reduces speed by ~20 percent over binary search. */
                     uint32_t best_trip = NONE;
                     rtime_t  best_time = req.arrive_by ? 0 : UINT16_MAX;
                     rtime_t  best_midnight;
                     /* Search trips within days. The loop nesting could also be inverted. */
                     for (struct service_day *sday = days; sday <= days + 2; ++sday) {
                         /* Check that this route still has any trips running on this day. */
-                        // we should really define a variable for the current time at the stop
                         if (req.arrive_by ? prev_time < sday->midnight + route.min_time
                                           : prev_time > sday->midnight + route.max_time) continue;
                         /* Check whether there's any chance of improvement by scanning additional days. */ 
