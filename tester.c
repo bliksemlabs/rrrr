@@ -1,4 +1,4 @@
-/* worker.c : worker processes that handle routing requests */
+/* tester.c : single-theaded test of router for unit tests and debugging */
 
 #define _GNU_SOURCE
 
