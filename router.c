@@ -41,7 +41,7 @@ void router_teardown(router_t *router) {
 // TODO? flag_routes_for_stops all at once after doing transfers? this would require another stops 
 // bitset for transfer target stops.
 /* Given a stop index, mark all routes that serve it as updated. */
-static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint32_t day_mask) {
+static inline void flag_routes_for_stop (router_t *r, router_request_t *req, uint32_t stop_index, uint32_t day_mask) {
     /*restrict*/ uint32_t *routes;
     uint32_t n_routes = tdata_routes_for_stop (&(r->tdata), stop_index, &routes);
     for (uint32_t i = 0; i < n_routes; ++i) {
@@ -50,7 +50,8 @@ static inline void flag_routes_for_stop (router_t *r, uint32_t stop_index, uint3
         // CHECK that there are any trips running on this route (another bitfield)
         // printf("route flags %d", route_active_flags);
         // printBits(4, &route_active_flags);
-        if (day_mask & route_active_flags) { // seems to provide about 14% increase in throughput
+        if ((day_mask & route_active_flags) && // seems to provide about 14% increase in throughput
+            (req->mode & r->tdata.routes[routes[i]].attributes) > 0) {
            bitset_set (r->updated_routes, routes[i]);
            I printf ("  route running\n");
         }
@@ -100,7 +101,7 @@ transfer_duration (tdata_t *d, router_request_t *req, uint32_t stop_index_from, 
  stored in the walk time member of states.
 */
 static inline void 
-apply_transfers (router_t r, uint32_t round, float speed_meters_sec, uint32_t day_mask, bool arrv) {
+apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_mask) {
     tdata_t d = r.tdata; // this is copying... or will the optimizer understand?
     router_state_t *states = r.states + (round * d.n_stops);
     /* The transfer process will flag routes that should be explored in the next round */
@@ -133,7 +134,7 @@ apply_transfers (router_t r, uint32_t round, float speed_meters_sec, uint32_t da
             state_from->walk_time = time_from; 
             state_from->walk_from = stop_index_from;
             // assert (r.best_time[stop_index_from] == time_from);
-            flag_routes_for_stop (&r, stop_index_from, day_mask);
+            flag_routes_for_stop (&r, &req, stop_index_from, day_mask);
         }
         /* Then apply transfers from the stop to nearby stops */
         uint32_t tr     = d.stops[stop_index_from    ].transfers_offset;
@@ -142,25 +143,25 @@ apply_transfers (router_t r, uint32_t round, float speed_meters_sec, uint32_t da
             uint32_t stop_index_to = d.transfer_target_stops[tr];
             /* Transfer distances are stored in units of 16 meters, rounded not truncated, in a uint8_t */
             uint32_t dist_meters = d.transfer_dist_meters[tr] << 4; 
-            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / speed_meters_sec + RRRR_WALK_SLACK_SEC));
-            rtime_t time_to = arrv ? time_from - transfer_duration
-                                   : time_from + transfer_duration;
+            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / req.walk_speed + RRRR_WALK_SLACK_SEC));
+            rtime_t time_to = req.arrive_by ? time_from - transfer_duration
+                                            : time_from + transfer_duration;
             /* Avoid reserved values including UNREACHED */
             if (time_to > RTIME_THREE_DAYS) continue; 
             /* Catch wrapping/overflow due to limited range of rtime_t (happens normally on overnight routing but should be avoided rather than caught) */
-            if (arrv ? time_to > time_from : time_to < time_from) continue;
+            if (req.arrive_by ? time_to > time_from : time_to < time_from) continue;
             I printf ("    target %d %s (%s) \n", stop_index_to, timetext(r.best_time[stop_index_to]), tdata_stop_id_for_index(&d, stop_index_to));
             I printf ("    transfer time   %s\n", timetext(transfer_duration));
             I printf ("    transfer result %s\n", timetext(time_to));
             router_state_t *state_to = states + stop_index_to;
             // TODO verify state_to->walk_time versus r.best_time[stop_index_to]
-            if (r.best_time[stop_index_to] == UNREACHED || (arrv ? time_to > r.best_time[stop_index_to]
-                                                                 : time_to < r.best_time[stop_index_to])) {
+            if (r.best_time[stop_index_to] == UNREACHED || (req.arrive_by ? time_to > r.best_time[stop_index_to]
+                                                                          : time_to < r.best_time[stop_index_to])) {
                 I printf ("      setting %d to %s\n", stop_index_to, timetext(time_to));
                 state_to->walk_time = time_to; 
                 state_to->walk_from = stop_index_from;
                 r.best_time[stop_index_to] = time_to;
-                flag_routes_for_stop (&r, stop_index_to, day_mask);
+                flag_routes_for_stop (&r, &req, stop_index_to, day_mask);
             }
         }
     }
@@ -364,7 +365,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // This is inefficient, as it depends on iterative over a bitset with only one bit true.
     bitset_set(router.updated_stops, origin); 
     // Apply transfers to initial state, which also initializes the updated routes bitset.
-    apply_transfers(router, 1, req.walk_speed, day_mask, req.arrive_by);
+    apply_transfers(router, req, 1, day_mask);
     // dump_results(prouter);
 
     /* apply upper bounds (speeds up second and third reversed searches) */
@@ -535,7 +536,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             } // end for (stop)
         } // end for (route)
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
-        apply_transfers(router, round, req.walk_speed, day_mask, req.arrive_by);
+        apply_transfers(router, req, round, day_mask);
         // dump_results(prouter); // DEBUG
         // exit(0);
         /* Initialize the stops in round 1 that were used as starting points for round 0. */
@@ -742,11 +743,23 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
             btimetext(leg->t1, ct1);
             char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
             char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
-            char *leg_type = (leg->route == WALK ? "WALK" : "RIDE");
             char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
             float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
+            
+            char *leg_mode = NULL;
+            if (leg->route == WALK) leg_mode = "WALK"; else
+            if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
+            if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
+            if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
+            if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
+            if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
+            if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
+            if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
+            if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
+            leg_mode = "INVALID";
+
             b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
-                leg_type, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
+                leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
             if (b > b_end) {
                 printf ("buffer overflow\n");
                 exit(2);
@@ -780,6 +793,7 @@ void router_request_initialize(router_request_t *req) {
     req->arrive_by = true;
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
+    req->mode = m_all;
 }
 
 void router_request_randomize(router_request_t *req) {
@@ -790,6 +804,7 @@ void router_request_randomize(router_request_t *req) {
     req->arrive_by = rrrrandom(2); // 0 or 1
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
+    req->mode = m_all;
 }
 
 void router_state_dump (router_state_t *state) {
@@ -894,8 +909,23 @@ void router_request_dump(router_t *router, router_request_t *req) {
            "speed: %f m/sec\n"
            "arrive-by: %s\n"
            "max xfers: %d\n"
-           "max time:  %s\n",
+           "max time:  %s\n"
+           "mode: ",
            from_stop_id, req->from, to_stop_id, req->to, date, time, req->time, req->walk_speed, 
            (req->arrive_by ? "true" : "false"), req->max_transfers, time_cutoff);
+
+    if (req->mode == m_all) {
+        printf("transit\n");
+    } else {
+         if ((req->mode & m_tram)      == m_tram)      printf("tram,");
+         if ((req->mode & m_subway)    == m_subway)    printf("subway,");
+         if ((req->mode & m_rail)      == m_rail)      printf("rail,");
+         if ((req->mode & m_bus)       == m_bus)       printf("bus,");
+         if ((req->mode & m_ferry)     == m_ferry)     printf("ferry,");
+         if ((req->mode & m_cablecar)  == m_cablecar)  printf("cablecar,");
+         if ((req->mode & m_gondola)   == m_gondola)   printf("gondola,");
+         if ((req->mode & m_funicular) == m_funicular) printf("funicular,");
+         printf("\b\n");
+    }
 }
 

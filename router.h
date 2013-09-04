@@ -41,6 +41,20 @@ struct router {
     // We should move more routing state in here, like round and sub-scratch pointers.
 };
 
+
+typedef enum tmode {
+    m_tram      =   1,
+    m_subway    =   2,
+    m_rail      =   4,
+    m_bus       =   8,
+    m_ferry     =  16,
+    m_cablecar  =  32,
+    m_gondola   =  64,
+    m_funicular = 128,
+    m_all       = 255
+} tmode_t;
+
+
 typedef struct router_request router_request_t;
 struct router_request {
     uint32_t from;       // start stop index from the user's perspective, independent of arrive_by
@@ -50,6 +64,7 @@ struct router_request {
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) time to reach the destination (in internal rtime_t 4 second intervals)
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
+    uint8_t mode;        // selects the mode by a bitfield
 };
 
 

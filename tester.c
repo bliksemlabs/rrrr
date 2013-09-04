@@ -25,6 +25,7 @@ static struct option long_options[] = {
     { "date",   required_argument, NULL, 'D' },
     { "from",   required_argument, NULL, 'f' },
     { "to",     required_argument, NULL, 't' },
+    { "mode",   required_argument, NULL, 'm' },
     { "gtfsrt", required_argument, NULL, 'g' },
     { "timetable", required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
@@ -41,7 +42,7 @@ int main(int argc, char **argv) {
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:f:t:g:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:f:t:m:g:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -67,6 +68,24 @@ int main(int argc, char **argv) {
         case 't':
             req.to = strtol(optarg, NULL, 10);
             break;
+        case 'm':
+            req.mode = 0;
+            const char delim[2] = ",";
+            char *token = strtok(optarg, delim);
+
+            while ( token  != NULL ) {
+                if (strcmp(token, "tram") == 0)      req.mode |= m_tram;
+                if (strcmp(token, "subway") == 0)    req.mode |= m_subway;
+                if (strcmp(token, "rail") == 0)      req.mode |= m_rail;
+                if (strcmp(token, "bus") == 0)       req.mode |= m_bus;
+                if (strcmp(token, "ferry") == 0)     req.mode |= m_ferry;
+                if (strcmp(token, "cablecar") == 0)  req.mode |= m_cablecar;
+                if (strcmp(token, "gondola") == 0)   req.mode |= m_gondola;
+                if (strcmp(token, "funicular") == 0) req.mode |= m_funicular;
+                if (strcmp(token, "all") == 0)       req.mode = m_all;
+
+                token = strtok(NULL, delim);
+            }
         case 'T':
             tdata_file = optarg;
             break;
