@@ -14,15 +14,19 @@
 #include "tdata.h"
 #include "router.h"
 
+// consider changing to --arrive TIME or --depart TIME --date DATE
+// also look up stop ids
+
 static struct option long_options[] = {
     { "arrive", no_argument, NULL, 'a' },
     { "depart", no_argument, NULL, 'd' },
     { "random", no_argument, NULL, 'r' },
     { "help",   no_argument, NULL, 'h' },
-    { "time",   required_argument, NULL, 'm' },
+    { "date",   required_argument, NULL, 'D' },
     { "from",   required_argument, NULL, 'f' },
     { "to",     required_argument, NULL, 't' },
     { "gtfsrt", required_argument, NULL, 'g' },
+    { "timetable", required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
 };
 
@@ -34,17 +38,18 @@ int main(int argc, char **argv) {
     char *tdata_file  = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
     
+    bool arrive_by = false;
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhm:f:t:g:", long_options, NULL);
+        opt = getopt_long(argc, argv, "arhd:f:t:g:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
-            req.arrive_by = true;
+            arrive_by = true;
             break;
         case 'd':
-            req.arrive_by = false;
+            arrive_by = false;
             break;
         case 'r':
             srand(time(NULL));
@@ -52,7 +57,7 @@ int main(int argc, char **argv) {
             break;
         case 'h':
             goto usage;
-        case 'm':
+        case 'D':
             printf ("%s\n", optarg);
             memset(&ltm, 0, sizeof(struct tm));
             strptime(optarg, "%Y-%m-%dT%H:%M:%S", &ltm);
@@ -64,7 +69,7 @@ int main(int argc, char **argv) {
         case 't':
             req.to = strtol(optarg, NULL, 10);
             break;
-        case 'l':
+        case 'T':
             tdata_file = optarg;
             break;
         case 'g':
@@ -125,7 +130,7 @@ int main(int argc, char **argv) {
     exit(EXIT_SUCCESS);
     
     usage:
-    printf("Usage:\n%s << from >> << to >> [ (A)rrive | (D)epart ] [ iso-timestamp ] [ timetable.dat ]\n", argv[0]);
+    printf("Usage:\n%stesterrrr [-r(andomize)] [-f from_stop] [-t to_stop] [-a(rrive)] [-d(epart)] [-D YYYY-MM-DDThh:mm:ss] [-g gtfsrt.pb] [-T timetable.dat]\n", argv[0]);
     exit(-2);
 }
 
