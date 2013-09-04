@@ -38,7 +38,6 @@ int main(int argc, char **argv) {
     char *tdata_file  = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
     
-    bool arrive_by = false;
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
@@ -46,10 +45,10 @@ int main(int argc, char **argv) {
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
-            arrive_by = true;
+            req.arrive_by = true;
             break;
         case 'd':
-            arrive_by = false;
+            req.arrive_by = false;
             break;
         case 'r':
             srand(time(NULL));
@@ -58,7 +57,6 @@ int main(int argc, char **argv) {
         case 'h':
             goto usage;
         case 'D':
-            printf ("%s\n", optarg);
             memset(&ltm, 0, sizeof(struct tm));
             strptime(optarg, "%Y-%m-%dT%H:%M:%S", &ltm);
             req.time = mktime(&ltm);
