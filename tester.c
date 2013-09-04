@@ -26,6 +26,7 @@ static struct option long_options[] = {
     { "from",   required_argument, NULL, 'f' },
     { "to",     required_argument, NULL, 't' },
     { "mode",   required_argument, NULL, 'm' },
+    { "banned-routes", required_argument, NULL, 'x' },
     { "gtfsrt", required_argument, NULL, 'g' },
     { "timetable", required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
@@ -38,6 +39,9 @@ int main(int argc, char **argv) {
 
     char *tdata_file  = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
+
+    const char delim[2] = ",";
+    char *token;
     
     struct tm ltm;
     int opt = 0;
@@ -70,8 +74,7 @@ int main(int argc, char **argv) {
             break;
         case 'm':
             req.mode = 0;
-            const char delim[2] = ",";
-            char *token = strtok(optarg, delim);
+            token = strtok(optarg, delim);
 
             while ( token  != NULL ) {
                 if (strcmp(token, "tram") == 0)      req.mode |= m_tram;
@@ -86,7 +89,29 @@ int main(int argc, char **argv) {
 
                 token = strtok(NULL, delim);
             }
-	    break;
+            break;
+        case 'x':
+            req.n_banned_routes = 1;
+            for (int i = 0; i < strlen(optarg); i++) {
+                if (optarg[i] == ',') req.n_banned_routes++;
+            }
+            req.banned_routes = (uint32_t *) calloc(req.n_banned_routes, sizeof(uint32_t));
+
+            req.n_banned_routes = 0;
+            token = strtok(optarg, delim);
+            while ( token  != NULL ) {
+                if (strlen(token) > 0) {
+                    long int tmp = strtol(token, NULL, 10);
+                    if (tmp > 0) {
+                       printf ("%ld", tmp);
+                        req.banned_routes[req.n_banned_routes] = tmp;
+                        req.n_banned_routes++;
+                    }
+                }
+
+                token = strtok(NULL, delim);
+            }
+            break;
         case 'T':
             tdata_file = optarg;
             break;
@@ -145,6 +170,10 @@ int main(int argc, char **argv) {
     }
     
     tdata_close(&tdata);
+
+    if (req.banned_routes)
+        free(req.banned_routes);
+
     exit(EXIT_SUCCESS);
     
     usage:

@@ -58,6 +58,12 @@ static inline void flag_routes_for_stop (router_t *r, router_request_t *req, uin
     }
 }
 
+static inline void unflag_banned_routes (router_t *r, router_request_t *req) {
+     for (uint32_t i = 0; i < req->n_banned_routes; ++i) {
+         bitset_unset (r->updated_routes, req->banned_routes[i]);
+     }
+}
+
 /* Because the first round begins with so few reached stops, the initial state doesn't get its own full array of states. 
    Instead we reuse one of the later rounds (round 1) for the initial state. This means we need to reset the walks in
    round 1 back to UNREACHED before using them in routing. Rather than iterating over all of them, we only initialize
@@ -135,6 +141,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
             state_from->walk_from = stop_index_from;
             // assert (r.best_time[stop_index_from] == time_from);
             flag_routes_for_stop (&r, &req, stop_index_from, day_mask);
+            unflag_banned_routes (&r, &req);
         }
         /* Then apply transfers from the stop to nearby stops */
         uint32_t tr     = d.stops[stop_index_from    ].transfers_offset;
@@ -162,6 +169,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
                 state_to->walk_from = stop_index_from;
                 r.best_time[stop_index_to] = time_to;
                 flag_routes_for_stop (&r, &req, stop_index_to, day_mask);
+                unflag_banned_routes (&r, &req);
             }
         }
     }
@@ -794,6 +802,8 @@ void router_request_initialize(router_request_t *req) {
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->n_banned_routes = 0;
+    req->banned_routes = NULL;
 }
 
 void router_request_randomize(router_request_t *req) {
@@ -805,6 +815,8 @@ void router_request_randomize(router_request_t *req) {
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->n_banned_routes = 0;
+    req->banned_routes = NULL;
 }
 
 void router_state_dump (router_state_t *state) {

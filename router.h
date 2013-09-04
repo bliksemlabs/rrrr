@@ -65,6 +65,8 @@ struct router_request {
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) time to reach the destination (in internal rtime_t 4 second intervals)
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     uint8_t mode;        // selects the mode by a bitfield
+    uint32_t n_banned_routes; // number of banned routes in the list below
+    uint32_t *banned_routes; // A dynamically allocated list of routes which are banned 
 };
 
 
