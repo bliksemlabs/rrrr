@@ -6,7 +6,7 @@ unittest1:
 	../../testerrrr --depart -D 2014-01-01T00:01:00 --from 0 --to 2 -T tmp/timetable.dat
 
 unittest2:
-	../../testerrrr --depart -D 2014-01-01T00:01:00 --from 0 --to 2 --mode bus -T tmp/timetable.dat --mode bus
+	../../testerrrr --depart -D 2014-01-01T00:01:00 --from 0 --to 2 --mode bus -T tmp/timetable.dat
 
 unittest3:
 	../../testerrrr --depart -D 2014-01-01T00:01:00 --from 0 --to 2 --optimise transfers -T tmp/timetable.dat
