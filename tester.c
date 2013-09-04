@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <getopt.h>
 #include <time.h>
 #include <string.h>
 #include "config.h"
@@ -13,54 +14,89 @@
 #include "tdata.h"
 #include "router.h"
 
+static struct option long_options[] = {
+    { "arrive", no_argument, NULL, 'a' },
+    { "depart", no_argument, NULL, 'd' },
+    { "random", no_argument, NULL, 'r' },
+    { "help",   no_argument, NULL, 'h' },
+    { "time",   required_argument, NULL, 'm' },
+    { "from",   required_argument, NULL, 'f' },
+    { "to",     required_argument, NULL, 't' },
+    { "gtfsrt", required_argument, NULL, 'g' },
+    { NULL, 0, 0, 0 } /* end */
+};
+
 int main(int argc, char **argv) {
-    if (argc < 3) {
-        printf("Usage:\n%s << from >> << to >> [ (A)rrive | (D)epart ] [ iso-timestamp ] [ timetable.dat ]\n", argv[0]);
-        exit(EXIT_SUCCESS);
-    }
 
     router_request_t req;
     router_request_initialize (&req);
-    req.from = strtol(argv[1], NULL, 10);
-    req.to = strtol(argv[2], NULL, 10);
 
-    //srand(time(NULL));
-    //router_request_randomize(&req);
+    char *tdata_file  = RRRR_INPUT_FILE;
+    char *gtfsrt_file = NULL;
+    
+    struct tm ltm;
+    int opt = 0;
+    while (opt >= 0) {
+        opt = getopt_long(argc, argv, "adrhm:f:t:g:", long_options, NULL);
+        if (opt < 0) continue;
+        switch (opt) {
+        case 'a':
+            req.arrive_by = true;
+            break;
+        case 'd':
+            req.arrive_by = false;
+            break;
+        case 'r':
+            srand(time(NULL));
+            router_request_randomize(&req);
+            break;
+        case 'h':
+            goto usage;
+        case 'm':
+            printf ("%s\n", optarg);
+            memset(&ltm, 0, sizeof(struct tm));
+            strptime(optarg, "%Y-%m-%dT%H:%M:%S", &ltm);
+            req.time = mktime(&ltm);
+            break;
+        case 'f':
+            req.from = strtol(optarg, NULL, 10);
+            break;
+        case 't':
+            req.to = strtol(optarg, NULL, 10);
+            break;
+        case 'l':
+            tdata_file = optarg;
+            break;
+        case 'g':
+            gtfsrt_file = optarg;
+            break;
+        }
+    }
+    
+    if (req.from == NONE || req.to == NONE) goto usage;
     
     if (req.from == req.to) {  
         fprintf(stderr, "Dude, you are already there.\n");
         exit(-1);
     }
 
-    if (argc >= 4) {
-        if (argv[3][0] == 'A' || argv[3][0] == 'a') {
-            req.arrive_by = true;
-        } else if (argv[3][0] == 'D' || argv[3][0] == 'd') {
-            req.arrive_by = false;
-        } else {
-            fprintf(stderr, "Only Arrive or Depart please.\n");
-            exit(-1);
-        }
-    } else {
-        req.arrive_by = false;
-    }
-    
-    if (argc >= 5) {
-        struct tm ltm;
-        memset(&ltm, 0, sizeof(struct tm));
-        strptime(argv[4], "%Y-%m-%dT%H:%M:%S", &ltm);
-        req.time = mktime(&ltm);
-    }
 
     /* SETUP */
     
     // load transit data from disk
     tdata_t tdata;
-    tdata_load((argc < 6 ? RRRR_INPUT_FILE : argv[5]), &tdata);
+    tdata_load(tdata_file, &tdata);
 
     if (req.from >= tdata.n_stops || req.to >= tdata.n_stops) {   
         fprintf(stderr, "Invalid stopids in from and/or to.\n");
         exit(-1);
+    }
+
+    // load gtfs-rt file from disk
+    if (gtfsrt_file != NULL) {
+        RadixTree *tripid_index = rxt_load_strings ("trips");
+        tdata_clear_gtfsrt (&tdata);
+        tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
     }
 
     // initialize router
@@ -87,5 +123,9 @@ int main(int argc, char **argv) {
     
     tdata_close(&tdata);
     exit(EXIT_SUCCESS);
+    
+    usage:
+    printf("Usage:\n%s << from >> << to >> [ (A)rrive | (D)epart ] [ iso-timestamp ] [ timetable.dat ]\n", argv[0]);
+    exit(-2);
 }
 

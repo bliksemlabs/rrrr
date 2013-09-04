@@ -21,7 +21,6 @@
 #include <signal.h>
 
 #include <libwebsockets.h>
-#include "gtfs-realtime.pb-c.h"
 
 #include "radixtree.h"
 #include "tdata.h"
@@ -75,52 +74,10 @@ static void msg_dump () {
     printf ("\n===============  END OF MESSAGE  ================\n");
 }
  
-/* Protocol: Incremental GTFS-RT */
-
-static void apply_delay (char *trip_id, int32_t delay_sec) {
-    uint32_t trip_index = rxt_find (tripid_index, trip_id);
-    if (trip_index == RADIX_TREE_NONE) {
-        printf ("    trip id was not found in the radix tree.\n");
-    } else {   
-        printf ("    trip_id %s, trip number %d, applying delay of %d sec.\n", trip_id, trip_index, delay_sec);
-        trip_t *trip = tdata.trips + trip_index;
-        trip->realtime_delay = SEC_TO_RTIME(delay_sec);
-    }
-}
-
-static void show_gtfsrt (uint8_t *buf, size_t len) {
-    TransitRealtime__FeedMessage *msg;
-    msg = transit_realtime__feed_message__unpack (NULL, len, buf);
-    if (msg == NULL) {
-        fprintf (stderr, "error unpacking incoming gtfs-rt message\n");
-        return;
-    }
-    printf("Received feed message with %lu entities.\n", msg->n_entity);
-    for (int e = 0; e < msg->n_entity; ++e) {
-        TransitRealtime__FeedEntity *entity = msg->entity[e];
-        if (entity == NULL) goto cleanup;
-        printf("  entity %d has id %s\n", e, entity->id);
-        TransitRealtime__VehiclePosition *vehicle = entity->vehicle;
-        if (vehicle == NULL) goto cleanup;
-        TransitRealtime__TripDescriptor *trip = vehicle->trip;
-        if (trip == NULL) goto cleanup;
-        char *trip_id = trip->trip_id;
-        TransitRealtime__OVapiVehiclePosition *ovapi_vehicle_position = vehicle->ovapi_vehicle_position;
-        int32_t delay = 0;
-        if (ovapi_vehicle_position == NULL) printf ("    entity contains no delay message.\n");
-        else delay = ovapi_vehicle_position->delay;
-        if (abs(delay) > 60 * 120) {
-            printf ("    filtering out extreme delay of %d sec.\n", delay);
-            delay = 0;
-        }
-        apply_delay (trip_id, delay);
-    }
-    cleanup:
-    transit_realtime__feed_message__free_unpacked (msg, NULL);
-}
-
 static bool socket_closed = false;
 static bool force_exit = false;
+
+/* Protocol: Incremental GTFS-RT */
  
 static int callback_gtfs_rt (struct libwebsocket_context *this,
                              struct libwebsocket *wsi,
@@ -142,13 +99,12 @@ static int callback_gtfs_rt (struct libwebsocket_context *this,
             if (msg_len == 0) {
                 /* single frame message, nothing in the buffer */
                 fprintf(stderr, "single-frame message. ");
-                if (len > 0) show_gtfsrt (in, len);
+                if (len > 0) tdata_apply_gtfsrt (&tdata, tripid_index, in, len);
             } else { 
                 /* last frame in a multi-frame message */
                 fprintf(stderr, "had previous fragment frames. ");
                 msg_add_frame (in, len);
-                // msg_dump (); // visualize assembled message
-                show_gtfsrt (msg, msg_len);
+                tdata_apply_gtfsrt (&tdata, tripid_index, msg, msg_len);
                 fprintf(stderr, "emptying message buffer. ");
                 msg_reset();
             }

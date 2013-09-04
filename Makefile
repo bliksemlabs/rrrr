@@ -14,31 +14,31 @@ all: $(BINS)
 %.o: %.c
 	$(CC) $^ -c $(CFLAGS) -o $@
 
-hashgrid: hashgrid.o geometry.o tdata.o util.o
+hashgrid: hashgrid.o geometry.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
-workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o
+workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-testerrrr: tester.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o
+testerrrr: tester.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o
+explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o
+rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
 rrrrealtime-viz: realtime-viz.o gtfs-realtime.pb-c.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -lGL `sdl-config --libs` -lshp -o $@
 
-client: client.o bitset.o qstring.o router.o tdata.o util.o json.o
+client: client.o bitset.o qstring.o router.o tdata.o util.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-lookup-console: tdata.o util.o lookup-console.o trie.o
+lookup-console: tdata.o util.o lookup-console.o trie.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 clean:

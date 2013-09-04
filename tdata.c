@@ -3,14 +3,18 @@
 #define _GNU_SOURCE
 
 #include "tdata.h" // make sure it works alone
-#include "config.h"
-#include "util.h"
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
+
+#include "config.h"
+#include "util.h"
+#include "radixtree.h"
+#include "gtfs-realtime.pb-c.h"
 
 // file-visible struct
 typedef struct tdata_header tdata_header_t;
@@ -246,6 +250,70 @@ void tdata_dump(tdata_t *td) {
 #endif
 }
 
+/* 
+  Decodes the GTFS-RT message of lenth len in buffer buf, extracting vehicle position messages 
+  and using the delay extension (1003) to update RRRR's per-trip delay information.
+*/
+void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, size_t len) {
+    TransitRealtime__FeedMessage *msg;
+    msg = transit_realtime__feed_message__unpack (NULL, len, buf);
+    if (msg == NULL) {
+        fprintf (stderr, "error unpacking incoming gtfs-rt message\n");
+        return;
+    }
+    printf("Received feed message with %lu entities.\n", msg->n_entity);
+    for (int e = 0; e < msg->n_entity; ++e) {
+        TransitRealtime__FeedEntity *entity = msg->entity[e];
+        if (entity == NULL) goto cleanup;
+        // printf("  entity %d has id %s\n", e, entity->id);
+        TransitRealtime__VehiclePosition *vehicle = entity->vehicle;
+        if (vehicle == NULL) goto cleanup;
+        TransitRealtime__TripDescriptor *trip = vehicle->trip;
+        if (trip == NULL) goto cleanup;
+        char *trip_id = trip->trip_id;
+        TransitRealtime__OVapiVehiclePosition *ovapi_vehicle_position = vehicle->ovapi_vehicle_position;
+        int32_t delay_sec = 0;
+        if (ovapi_vehicle_position == NULL) printf ("    entity contains no delay message.\n");
+        else delay_sec = ovapi_vehicle_position->delay;
+        if (abs(delay_sec) > 60 * 120) {
+            printf ("    filtering out extreme delay of %d sec.\n", delay_sec);
+            delay_sec = 0;
+        }
+        /* Apply delay. */
+        uint32_t trip_index = rxt_find (tripid_index, trip_id);
+        if (trip_index == RADIX_TREE_NONE) {
+            printf ("    trip id was not found in the radix tree.\n");
+        } else {   
+            // printf ("    trip_id %s, trip number %d, applying delay of %d sec.\n", trip_id, trip_index, delay_sec);
+            trip_t *trip = tdata->trips + trip_index;
+            trip->realtime_delay = SEC_TO_RTIME(delay_sec);
+        }
+    }
+    cleanup:
+    transit_realtime__feed_message__free_unpacked (msg, NULL);
+}
+
+void tdata_clear_gtfsrt (tdata_t *tdata) {
+    /* If we had the total number of trips nested loops would not be necessary. */
+    for (int r = 0; r < tdata->n_routes; ++r) {
+        route_t route = tdata->routes[r];
+        trip_t *trips = tdata_trips_for_route(tdata, r);
+        for (int t = 0; t < route.n_trips; ++t) {
+            trips[t].realtime_delay = 0;
+        }
+    }
+}
+
+void tdata_apply_gtfsrt_file (tdata_t *tdata, RadixTree *tripid_index, char *filename) {
+    uint32_t fd = open(filename, O_RDONLY);
+    if (fd == -1) die("Could not find GTFS_RT input file.\n");
+    struct stat st;
+    if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    
+    uint8_t *buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (buf == MAP_FAILED) die("Could not map GTFS-RT input file.\n");
+    tdata_apply_gtfsrt (tdata, tripid_index, buf, st.st_size);
+    munmap (buf, st.st_size);
+}
 
 // tdata_get_route_stops
 
