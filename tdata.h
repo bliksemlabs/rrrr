@@ -21,6 +21,7 @@ struct route {
     uint32_t trip_ids_offset;
     uint32_t n_stops;
     uint32_t n_trips;
+    uint32_t attributes;
     rtime_t  min_time;
     rtime_t  max_time;
 };

@@ -248,6 +248,7 @@ route_max_time.append(0) # sentinel
 # We want one descriptive string per route, in the RAPTOR sense, which should amount to one string 
 # per GTFS route per direction.
 route_id_for_idx = []
+route_attributes = []
 modes = { 0: 'tram', 
           1: 'subway',
           2: 'train',
@@ -270,8 +271,8 @@ for route in route_for_idx :
     desc = ';'.join([desc, headsign])
     # print desc
     route_id_for_idx.append(desc)
-
-    
+    route_attributes.append(1 << mode)
+route_attributes.append(0) # sentinel  
 # named tuples?
 # stops = [(-1, -1) for _ in range(nstops)]
 # routes = [(-1, -1) for _ in range(nroutes)]
@@ -434,8 +435,8 @@ for stop in zip (stop_routes_offsets, transfers_offsets) :
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-route_t = Struct('IIIIHH')
-route_t_fields = [route_stops_offsets, trip_ids_offsets, route_n_stops, route_n_trips, route_min_time, route_max_time]
+route_t = Struct('IIIIIHH')
+route_t_fields = [route_stops_offsets, trip_ids_offsets, route_n_stops, route_n_trips,route_attributes,route_min_time, route_max_time]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :
     # the extra last route is a sentinel so we can derive list lengths for the last true route.
