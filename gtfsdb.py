@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 import csv
 import sqlite3
 import sys
