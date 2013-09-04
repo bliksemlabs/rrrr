@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
 
                 token = strtok(NULL, delim);
             }
+	    break;
         case 'T':
             tdata_file = optarg;
             break;
