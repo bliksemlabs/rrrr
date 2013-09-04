@@ -787,7 +787,7 @@ void router_request_randomize(router_request_t *req) {
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = 3600 * 14 + rrrrandom(3600 * 6);
-    req->arrive_by = true;
+    req->arrive_by = rrrrandom(2); // 0 or 1
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
 }
