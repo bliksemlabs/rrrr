@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import sys, struct, time
 from struct import Struct
 import datetime
