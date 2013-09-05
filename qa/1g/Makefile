@@ -6,7 +6,7 @@ unittest1:
 	../../testerrrr --depart -D 2014-01-01T00:02:00 --from 0 --to 1 -T tmp/timetable.dat
 
 unittest2:
-	../../testerrrr --from 0 --to 1 --arrive -D 2014-01-01T00:03:00 tmp/timetable.dat
+	../../testerrrr --from 0 --to 1 --arrive -D 2014-01-01T00:03:00 -T tmp/timetable.dat
 
 unittest3:
 	../../testerrrr --depart -D 2014-01-02T00:03:00 --from 0 --to 1 -T tmp/timetable.dat
