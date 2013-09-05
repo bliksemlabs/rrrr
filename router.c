@@ -269,7 +269,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // or just assume a single router per thread, and move struct fields into this module
     router_t router = *prouter; 
     router_request_t req = *preq;
-    // router_request_dump(prouter, preq);
+    //router_request_dump(prouter, preq);
     uint32_t n_stops = router.tdata.n_stops;
     
     rtime_t origin_rtime = req.time;
@@ -765,7 +765,7 @@ uint32_t rrrrandom(uint32_t limit) {
 
 void router_request_initialize(router_request_t *req) {
     req->from = req->to = NONE;
-    req->time = 3600 * 12;
+    req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
     req->walk_speed = 1.5; // m/sec
     req->arrive_by = true;
@@ -773,6 +773,7 @@ void router_request_initialize(router_request_t *req) {
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
+// if we set the date mask in the router itself we wouldn't need the tdata here.
 void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {
     char etime[32];
     strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
@@ -794,11 +795,12 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
 void router_request_randomize(router_request_t *req) {
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
-    req->time = 3600 * 14 + rrrrandom(3600 * 6);
+    req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
     req->time_cutoff = UNREACHED;
     req->walk_speed = 1.5; // m/sec
     req->arrive_by = rrrrandom(2); // 0 or 1
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
+    req->day_mask = 1 << rrrrandom(32);
 }
 
 void router_state_dump (router_state_t *state) {
