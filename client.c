@@ -25,6 +25,7 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     while (true) {
         router_request_t req;
         router_request_initialize (&req);
+        // unfortunately tdata is not available here or we could initialize from current epoch time
         if (randomize) 
             router_request_randomize (&req);
         else {

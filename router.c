@@ -362,11 +362,10 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     uint32_t n_rounds = req.max_transfers + 1;
     if (n_rounds > RRRR_MAX_ROUNDS)
         n_rounds = RRRR_MAX_ROUNDS;
-    //router.best_time[target] = req.time_cutoff; // time cutoff is already in rtime units
-    
+
     // TODO restrict pointers?
     // Iterate over rounds. In round N, we have made N transfers.
-    for (int round = 0; round < RRRR_MAX_ROUNDS; ++round) {  // < n_rounds to apply upper bound on transfers...
+    for (int round = 0; round < n_rounds; ++round) {  // < n_rounds to apply upper bound on transfers...
         int last_round = (round == 0) ? 1 : round - 1;
         I printf("round %d\n", round);
         // Iterate over all routes which contain a stop that was updated in the last round.
@@ -492,6 +491,11 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                                        : time > router.best_time[target])) { 
                         T printf("    (target pruning)\n");
                         // We cannot break out of this route entirely, because re-boarding may occur at a later stop.
+                        continue;
+                    }
+                    if ((req.time_cutoff != UNREACHED) && 
+                        (req.arrive_by ? time < req.time_cutoff 
+                                       : time > req.time_cutoff)) {
                         continue;
                     }
                     // Do we need best_time at all? yes, because the best time may not have been found in the previous round.
