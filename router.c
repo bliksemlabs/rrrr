@@ -64,6 +64,12 @@ static inline void unflag_banned_routes (router_t *r, router_request_t *req) {
      }
 }
 
+static inline void unflag_banned_stops (router_t r, router_request_t req) {
+     for (uint32_t i = 0; i < req.n_banned_stops; ++i) {
+         bitset_unset (r.updated_stops, req.banned_stops[i]);
+     }
+}
+
 /* Because the first round begins with so few reached stops, the initial state doesn't get its own full array of states. 
    Instead we reuse one of the later rounds (round 1) for the initial state. This means we need to reset the walks in
    round 1 back to UNREACHED before using them in routing. Rather than iterating over all of them, we only initialize
@@ -371,7 +377,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
 
     bitset_reset(router.updated_stops);
     // This is inefficient, as it depends on iterative over a bitset with only one bit true.
-    bitset_set(router.updated_stops, origin); 
+    bitset_set(router.updated_stops, origin);
+    // Remove the banned stops from the bitset
+    unflag_banned_stops(router, req);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
     apply_transfers(router, req, 1, day_mask);
     // dump_results(prouter);
@@ -543,6 +551,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 }
             } // end for (stop)
         } // end for (route)
+        // Remove the banned stops from the bitset
+        unflag_banned_stops(router, req);
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
         apply_transfers(router, req, round, day_mask);
         // dump_results(prouter); // DEBUG
@@ -803,7 +813,9 @@ void router_request_initialize(router_request_t *req) {
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
     req->n_banned_routes = 0;
+    req->n_banned_stops = 0;
     req->banned_routes = NULL;
+    req->banned_stops = NULL;
 }
 
 void router_request_randomize(router_request_t *req) {
@@ -816,7 +828,9 @@ void router_request_randomize(router_request_t *req) {
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
     req->n_banned_routes = 0;
+    req->n_banned_stops = 0;
     req->banned_routes = NULL;
+    req->banned_stops = NULL;
 }
 
 void router_state_dump (router_state_t *state) {

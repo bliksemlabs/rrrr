@@ -27,6 +27,7 @@ static struct option long_options[] = {
     { "to",     required_argument, NULL, 't' },
     { "mode",   required_argument, NULL, 'm' },
     { "banned-routes", required_argument, NULL, 'x' },
+    { "banned-stops", required_argument, NULL, 'y' },
     { "gtfsrt", required_argument, NULL, 'g' },
     { "timetable", required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
@@ -103,9 +104,29 @@ int main(int argc, char **argv) {
                 if (strlen(token) > 0) {
                     long int tmp = strtol(token, NULL, 10);
                     if (tmp > 0) {
-                       printf ("%ld", tmp);
                         req.banned_routes[req.n_banned_routes] = tmp;
                         req.n_banned_routes++;
+                    }
+                }
+
+                token = strtok(NULL, delim);
+            }
+            break;
+        case 'y':
+            req.n_banned_stops = 1;
+            for (int i = 0; i < strlen(optarg); i++) {
+                if (optarg[i] == ',') req.n_banned_stops++;
+            }
+            req.banned_stops = (uint32_t *) calloc(req.n_banned_stops, sizeof(uint32_t));
+
+            req.n_banned_stops = 0;
+            token = strtok(optarg, delim);
+            while ( token  != NULL ) {
+                if (strlen(token) > 0) {
+                    long int tmp = strtol(token, NULL, 10);
+                    if (tmp > 0) {
+                        req.banned_stops[req.n_banned_stops] = tmp;
+                        req.n_banned_stops++;
                     }
                 }
 
