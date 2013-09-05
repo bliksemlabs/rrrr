@@ -35,10 +35,10 @@ int main(int argc, char **argv) {
     router_request_t req;
     router_request_initialize (&req);
 
-    char *tdata_file  = RRRR_INPUT_FILE;
+    char *tdata_file = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
+    char *iso_datetime = NULL;
     
-    struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
         opt = getopt_long(argc, argv, "adrhD:f:t:g:T:", long_options, NULL);
@@ -57,9 +57,7 @@ int main(int argc, char **argv) {
         case 'h':
             goto usage;
         case 'D':
-            memset(&ltm, 0, sizeof(struct tm));
-            strptime(optarg, "%Y-%m-%dT%H:%M:%S", &ltm);
-            req.time = mktime(&ltm);
+            iso_datetime = optarg;
             break;
         case 'f':
             req.from = strtol(optarg, NULL, 10);
@@ -100,6 +98,13 @@ int main(int argc, char **argv) {
         RadixTree *tripid_index = rxt_load_strings ("trips");
         tdata_clear_gtfsrt (&tdata);
         tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
+    }
+
+    if (iso_datetime != NULL) {
+        struct tm ltm;
+        memset (&ltm, 0, sizeof(struct tm));
+        strptime (iso_datetime, "%Y-%m-%dT%H:%M:%S", &ltm);
+        router_request_from_epoch (&req, &tdata, mktime(&ltm)); // from struct_tm instead?
     }
 
     // initialize router

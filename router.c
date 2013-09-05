@@ -272,18 +272,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // router_request_dump(prouter, preq);
     uint32_t n_stops = router.tdata.n_stops;
     
-    struct tm origin_tm;
-    rtime_t origin_rtime = epoch_to_rtime (req.time, &origin_tm);
+    rtime_t origin_rtime = req.time;
+    uint32_t day_mask = req.day_mask;
     
-    int32_t cal_day = (mktime(&origin_tm) - router.tdata.calendar_start_time) / SEC_IN_ONE_DAY;
-    if (cal_day < 0 || cal_day > 31 ) {
-        /* date not within validity period of the timetable file, wrap to validity range */
-        cal_day %= 32;
-        if (cal_day < 0)
-            cal_day += 32;
-        /* should set a flag in response to say that results are estimated */
-    }
-    uint32_t day_mask = 1 << cal_day;
     /* One struct service_day for each of: yesterday, today, tomorrow (for overnight searches) */
     /* Note that yesterday's bit flag will be 0 if today is the first day of the calendar. */
     struct service_day days[3];
@@ -768,27 +759,45 @@ uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, 
     return render_plan (&plan, &(router->tdata), buf, buflen);
 }
 
-
 uint32_t rrrrandom(uint32_t limit) {
     return (uint32_t) (limit * (random() / (RAND_MAX + 1.0)));
 }
 
 void router_request_initialize(router_request_t *req) {
-    req->walk_speed = 1.5; // m/sec
     req->from = req->to = NONE;
-    req->time = 3600 * 18;
-    req->arrive_by = true;
+    req->time = 3600 * 12;
     req->time_cutoff = UNREACHED;
+    req->walk_speed = 1.5; // m/sec
+    req->arrive_by = true;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
 }
 
+/* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
+void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {
+    char etime[32];
+    strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
+    printf ("epoch time: %s [%ld]\n", etime, epochtime);
+    //router_request_initialize (req);
+    struct tm origin_tm;
+    req->time = epoch_to_rtime (epochtime, &origin_tm);
+    // TODO not DST-proof, use noons
+    int32_t cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
+    if (cal_day < 0 || cal_day > 31 ) {
+        /* date not within validity period of the timetable file, wrap to validity range */
+        cal_day %= 32;
+        if (cal_day < 0) cal_day += 32;
+        /* should set a flag in response to say that results are estimated */
+    }
+    req->day_mask = 1 << cal_day;    
+}
+
 void router_request_randomize(router_request_t *req) {
-    req->walk_speed = 1.5; // m/sec
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = 3600 * 14 + rrrrandom(3600 * 6);
-    req->arrive_by = rrrrandom(2); // 0 or 1
     req->time_cutoff = UNREACHED;
+    req->walk_speed = 1.5; // m/sec
+    req->arrive_by = rrrrandom(2); // 0 or 1
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
 }
 
@@ -806,7 +815,7 @@ void router_state_dump (router_state_t *state) {
 /* 
    Reverse the direction of the search leaving most request parameters unchanged but applying time 
    and transfer cutoffs based on an existing result for the same request. 
-   Returns a boolean value indicating whether the request was reversed. 
+   Returns a boolean value indicating whether the request was successfully reversed. 
 */
 bool router_request_reverse(router_t *router, router_request_t *req) {
     router_state_t (*states)[router->tdata.n_stops] = (router_state_t(*)[]) (router->states);
@@ -820,16 +829,11 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             //printf ("State present at round %d \n", round);
             //router_state_dump (&(states[round][stop]));
             req->max_transfers = round;
-            req->time_cutoff = SEC_TO_RTIME(req->time); // fix units situation -- use durations in seconds or rtimes?
-            struct tm origin_tm;
-            rtime_t origin_rtime = epoch_to_rtime (req->time, &origin_tm);
-            origin_tm.tm_min = 0;
-            origin_tm.tm_hour = 0;
-            origin_tm.tm_sec = 0;
-
-            req->time = RTIME_TO_SEC(states[round][stop].walk_time - RTIME_ONE_DAY) + mktime(&origin_tm);
+            req->time_cutoff = req->time;
+            req->time = states[round][stop].walk_time;
             req->arrive_by = !(req->arrive_by);
             // router_request_dump(router, req);
+            // range-check the resulting request here?
             return true;
         }
     }
@@ -881,21 +885,20 @@ bool router_request_from_qstring(router_request_t *req) {
 
 void router_request_dump(router_t *router, router_request_t *req) {
     char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
-    char *to_stop_id = tdata_stop_id_for_index(&(router->tdata), req->to);
-    char time[32], date[11], time_cutoff[32];
-    strftime(date, 11, "%Y-%m-%d\0", localtime(&req->time));
-    btimetext(epoch_to_rtime (req->time, NULL), time);
-    btimetext(req->time_cutoff, time_cutoff);    // oh, different units...
+    char *to_stop_id   = tdata_stop_id_for_index(&(router->tdata), req->to);
+    char time[32], time_cutoff[32];
+    btimetext(req->time, time);
+    btimetext(req->time_cutoff, time_cutoff);
     printf("-- Router Request --\n"
            "from:  %s [%d]\n"
            "to:    %s [%d]\n"
-           "date:  %s\n"
-           "time:  %s [%ld]\n"
+//           "date:  %s\n"
+           "time:  %s [%d]\n"
            "speed: %f m/sec\n"
            "arrive-by: %s\n"
            "max xfers: %d\n"
            "max time:  %s\n",
-           from_stop_id, req->from, to_stop_id, req->to, date, time, req->time, req->walk_speed, 
+           from_stop_id, req->from, to_stop_id, req->to, time, req->time, req->walk_speed, 
            (req->arrive_by ? "true" : "false"), req->max_transfers, time_cutoff);
 }
 
