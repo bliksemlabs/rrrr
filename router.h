@@ -61,6 +61,7 @@ struct router_request {
     uint32_t to;         // destination stop index from the user's perspective, independent of arrive_by
     time_t time;         // the departure or arrival time at which to search (in seconds since midnight, should be changed to epoch time)
     double walk_speed;   // speed at which the user walks, in meters per second
+    uint8_t walk_slack;  // an extra delay per transfer, in seconds 
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) time to reach the destination (in internal rtime_t 4 second intervals)
     uint32_t max_transfers;  // the largest number of transfers to allow in the result

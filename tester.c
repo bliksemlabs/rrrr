@@ -23,6 +23,7 @@ static struct option long_options[] = {
     { "random", no_argument, NULL, 'r' },
     { "help",   no_argument, NULL, 'h' },
     { "date",   required_argument, NULL, 'D' },
+    { "walk-slack", required_argument, NULL, 's' },
     { "from-idx", required_argument, NULL, 'f' },
     { "to-idx",   required_argument, NULL, 't' },
     { "mode",   required_argument, NULL, 'm' },
@@ -72,6 +73,9 @@ int main(int argc, char **argv) {
             break;
         case 't':
             req.to = strtol(optarg, NULL, 10);
+            break;
+        case 's':
+            req.walk_slack = strtol(optarg, NULL, 10);
             break;
         case 'm':
             req.mode = 0;

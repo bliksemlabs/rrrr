@@ -98,7 +98,7 @@ transfer_duration (tdata_t *d, router_request_t *req, uint32_t stop_index_from, 
     for ( ; t < tN ; ++t) {
         if (d->transfer_target_stops[t] == stop_index_to) {
             uint32_t distance_meters = d->transfer_dist_meters[t] << 4; // actually in units of 16 meters
-            return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + RRRR_WALK_SLACK_SEC));
+            return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
         }
     }
     return UNREACHED;
@@ -156,7 +156,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
             uint32_t stop_index_to = d.transfer_target_stops[tr];
             /* Transfer distances are stored in units of 16 meters, rounded not truncated, in a uint8_t */
             uint32_t dist_meters = d.transfer_dist_meters[tr] << 4; 
-            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / req.walk_speed + RRRR_WALK_SLACK_SEC));
+            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / req.walk_speed + req.walk_slack));
             rtime_t time_to = req.arrive_by ? time_from - transfer_duration
                                             : time_from + transfer_duration;
             /* Avoid reserved values including UNREACHED */
@@ -806,6 +806,7 @@ uint32_t rrrrandom(uint32_t limit) {
 
 void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
+    req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = req->to = NONE;
     req->time = 3600 * 18;
     req->arrive_by = true;
@@ -820,6 +821,7 @@ void router_request_initialize(router_request_t *req) {
 
 void router_request_randomize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
+    req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = 3600 * 14 + rrrrandom(3600 * 6);
