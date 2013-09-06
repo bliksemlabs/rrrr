@@ -1,7 +1,5 @@
 /* tester.c : single-theaded test of router for unit tests and debugging */
 
-#define _GNU_SOURCE
-
 #include <syslog.h>
 #include <stdio.h>
 #include <stdlib.h>
