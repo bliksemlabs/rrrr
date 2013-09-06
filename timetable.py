@@ -310,25 +310,26 @@ timedemandgroups_offsets = {} # the offset into the stoptimes for each timedeman
 timedemandgroups_written = {}
 timedemandgroup_t = Struct('HH')
 n_nonincreasing_groups = 0
-for timedemandgroupref, times in db.gettimepatterns():
-    if str(times) in timedemandgroups_written:
-        timedemandgroups_offsets[timedemandgroupref] = timedemandgroups_written[str(times)]
-    else:
-        timedemandgroups_offsets[timedemandgroupref] = offset
-        timedemandgroups_written[str(times)] = offset
-        for totaldrivetime, stopwaittime in times:
-            out.write(timedemandgroup_t.pack(totaldrivetime >> 2, (totaldrivetime + stopwaittime) >> 2))
-            offset += 1
-        prev_time = None
-        # coherency check: stoptimes should be increasing
-        for time in times:
-            if prev_time is not None :
-                arrive = time[0]
-                depart = time[0] + time[1]
-                prev_depart = prev_time[0] + prev_time[1]
-                if depart < arrive or arrive < prev_depart :
-                    n_nonincreasing_groups += 1
-            prev_time = time
+for idx, route in enumerate(route_for_idx) :
+    for timedemandgroupref, times in route.gettimepatterns():
+        if str(times) in timedemandgroups_written:
+            timedemandgroups_offsets[timedemandgroupref] = timedemandgroups_written[str(times)]
+        else:
+            timedemandgroups_offsets[timedemandgroupref] = offset
+            timedemandgroups_written[str(times)] = offset
+            for totaldrivetime, stopwaittime in times:
+                out.write(timedemandgroup_t.pack(totaldrivetime >> 2, (totaldrivetime + stopwaittime) >> 2))
+                offset += 1
+            prev_time = None
+            # coherency check: stoptimes should be increasing
+            for time in times:
+                if prev_time is not None :
+                    arrive = time[0]
+                    depart = time[0] + time[1]
+                    prev_depart = prev_time[0] + prev_time[1]
+                    if depart < arrive or arrive < prev_depart :
+                        n_nonincreasing_groups += 1
+                prev_time = time
 print "%d time demand groups had non-increasing stoptimes" % (n_nonincreasing_groups,)
 del(timedemandgroups_written)
 
