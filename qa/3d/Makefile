@@ -1,7 +1,7 @@
 all: unittest
 
 unittest: tmp/timetable.dat
-	../../testerrrr --depart -D 2014-01-01T00:01:00 --from 0 --to 1 --banned-routes 1 -T tmp/timetable.dat
+	../../testerrrr --depart -D 2014-01-01T00:01:00 --from-idx 0 --to-idx 1 --banned-routes 1 -T tmp/timetable.dat
 
 tmp/gtfsdb: gtfs/*
 	mkdir -p tmp
