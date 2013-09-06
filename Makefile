@@ -1,6 +1,6 @@
 # CC      := gcc -std=gnu99
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 `sdl-config --cflags` # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
