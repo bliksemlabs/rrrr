@@ -16,20 +16,20 @@
 // also look up stop ids
 
 static struct option long_options[] = {
-    { "arrive", no_argument, NULL, 'a' },
-    { "depart", no_argument, NULL, 'd' },
-    { "random", no_argument, NULL, 'r' },
-    { "help",   no_argument, NULL, 'h' },
-    { "date",   required_argument, NULL, 'D' },
-    { "walk-slack", required_argument, NULL, 's' },
-    { "walk-speed", required_argument, NULL, 'S' },
-    { "from-idx", required_argument, NULL, 'f' },
-    { "to-idx",   required_argument, NULL, 't' },
-    { "mode",   required_argument, NULL, 'm' },
+    { "arrive",        no_argument, NULL, 'a' },
+    { "depart",        no_argument, NULL, 'd' },
+    { "random",        no_argument, NULL, 'r' },
+    { "help",          no_argument, NULL, 'h' },
+    { "date",          required_argument, NULL, 'D' },
+    { "walk-slack",    required_argument, NULL, 's' },
+    { "walk-speed",    required_argument, NULL, 'S' },
+    { "from-idx",      required_argument, NULL, 'f' },
+    { "to-idx",        required_argument, NULL, 't' },
+    { "mode",          required_argument, NULL, 'm' },
     { "banned-routes", required_argument, NULL, 'x' },
-    { "banned-stops", required_argument, NULL, 'y' },
-    { "gtfsrt", required_argument, NULL, 'g' },
-    { "timetable", required_argument, NULL, 'T' },
+    { "banned-stops",  required_argument, NULL, 'y' },
+    { "gtfsrt",        required_argument, NULL, 'g' },
+    { "timetable",     required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
 };
 
