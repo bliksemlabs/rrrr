@@ -244,7 +244,7 @@ int drawGLScene( GLvoid )
                         if (psShape->nParts > 1) {
                                 for (int z=0; z<(psShape->nParts - 1);z++)
                                 {
-                                        glBegin(GL_LINE_LOOP);
+                                        glBegin(GL_LINE_STRIP);
                                         for(int j=psShape->panPartStart[z];j<psShape->panPartStart[z+1];j++)
                                         {
                                                 glVertex2f(lon2x_d((GLfloat) psShape->padfX[j]), lat2y_d( (GLfloat) psShape->padfY[j] ));
@@ -254,7 +254,7 @@ int drawGLScene( GLvoid )
 
                                         glEnd();
                         }
-                        glBegin(GL_LINE_LOOP);
+                        glBegin(GL_LINE_STRIP);
                         for(int j=psShape->panPartStart[psShape->nParts - 1];j<psShape->nVertices;j++)
                         {
                                 glVertex2f(lon2x_d((GLfloat) psShape->padfX[j]), lat2y_d( (GLfloat) psShape->padfY[j] ) );
