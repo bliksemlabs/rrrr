@@ -7,7 +7,19 @@
 *.gtfsdb
 *.zip
 
+timetable.dat
+vehiclePositions.pb
+
 rrrr.sh
 brrrroker
 workerrrr
 client
+lookup-console
+hashgrid
+testerrrr
+explorerrrr
+rrrrealtime
+rrrrealtime-viz
+
+stops
+trips
