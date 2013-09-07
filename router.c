@@ -772,8 +772,25 @@ static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, cha
         if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
         leg_mode = "INVALID";
 
-        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
-            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
+        char *alert_msg = NULL;
+        if (tdata->alerts) {
+            for (int e = 0; e < tdata->alerts->n_entity; ++e) {
+                TransitRealtime__FeedEntity *entity = tdata->alerts->entity[e];
+                if (entity == NULL) break;
+                TransitRealtime__Alert *alert = entity->alert;
+                if (alert == NULL) break;
+                TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[0];
+                // TransitRealtime__TripDescriptor *trip = informed_entity->trip;
+                char *route_id = informed_entity->route_id;
+                if (route_id && strcmp(route_id, tdata_route_id_for_index(tdata, leg->route)) == 0) {
+                    alert_msg = alert->header_text->translation[0]->text;
+                }
+            }
+        }
+
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id,
+            (alert_msg ? alert_msg : ""));
         if (b > b_end) {
             printf ("buffer overflow\n");
             exit(2);
