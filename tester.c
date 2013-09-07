@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:g:G:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:x:y:g:G:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
