@@ -5,6 +5,7 @@
 #include "geometry.h"
 #include "util.h"
 #include "radixtree.h"
+#include "gtfs-realtime.pb-c.h"
 
 #include <stddef.h>
 
@@ -67,6 +68,7 @@ struct tdata {
     char *trip_ids;
     uint32_t *trip_active;
     uint32_t *route_active;
+    TransitRealtime__FeedMessage *alerts;
 };
 
 void tdata_load(char* filename, tdata_t*);
@@ -106,6 +108,13 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
 void tdata_apply_gtfsrt_file (tdata_t *tdata, RadixTree *tripid_index, char *filename);
 
 void tdata_clear_gtfsrt (tdata_t *tdata);
+
+void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, size_t len);
+
+void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, RadixTree *tripid_index, char *filename);
+
+void tdata_clear_gtfsrt_alerts (tdata_t *tdata);
+
 
 /* The signed delay of the specified trip in seconds. */
 float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_index);

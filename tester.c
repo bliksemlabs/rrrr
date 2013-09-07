@@ -30,6 +30,7 @@ static struct option long_options[] = {
     { "banned-routes-idx", required_argument, NULL, 'x' },
     { "banned-stops-idx",  required_argument, NULL, 'y' },
     { "gtfsrt",        required_argument, NULL, 'g' },
+    { "gtfsrt-alerts", required_argument, NULL, 'G' },
     { "timetable",     required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
 };
@@ -41,6 +42,7 @@ int main(int argc, char **argv) {
 
     char *tdata_file  = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
+    char *gtfsrt_alerts_file = NULL;
 
     const char delim[2] = ",";
     char *token;
@@ -48,7 +50,7 @@ int main(int argc, char **argv) {
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:g:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:g:G:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -156,6 +158,8 @@ int main(int argc, char **argv) {
             break;
         case 'g':
             gtfsrt_file = optarg;
+        case 'G':
+            gtfsrt_alerts_file = optarg;
             break;
         }
     }
@@ -180,10 +184,16 @@ int main(int argc, char **argv) {
     }
 
     // load gtfs-rt file from disk
-    if (gtfsrt_file != NULL) {
+    if (gtfsrt_file != NULL || gtfsrt_alerts_file != NULL) {
         RadixTree *tripid_index = rxt_load_strings ("trips");
-        tdata_clear_gtfsrt (&tdata);
-        tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
+        if (gtfsrt_file != NULL) {
+            tdata_clear_gtfsrt (&tdata);
+            tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
+        }
+
+        if (gtfsrt_alerts_file != NULL) {
+            tdata_apply_gtfsrt_alerts_file (&tdata, tripid_index, gtfsrt_alerts_file);
+        }
     }
 
     // initialize router

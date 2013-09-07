@@ -146,6 +146,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(uint32_t));
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);
     td->route_active = (uint32_t*) (b + header->loc_route_active);
+    td->alerts = NULL;
 
     tdata_check_coherent(td);
     D tdata_dump(td);
@@ -309,6 +310,61 @@ void tdata_clear_gtfsrt (tdata_t *tdata) {
 }
 
 void tdata_apply_gtfsrt_file (tdata_t *tdata, RadixTree *tripid_index, char *filename) {
+    uint32_t fd = open(filename, O_RDONLY);
+    if (fd == -1) die("Could not find GTFS_RT input file.\n");
+    struct stat st;
+    if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    
+    uint8_t *buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (buf == MAP_FAILED) die("Could not map GTFS-RT input file.\n");
+    tdata_apply_gtfsrt (tdata, tripid_index, buf, st.st_size);
+    munmap (buf, st.st_size);
+}
+
+void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, size_t len) {
+    TransitRealtime__FeedMessage *msg = transit_realtime__feed_message__unpack (NULL, len, buf);
+    if (msg == NULL) {
+        fprintf (stderr, "error unpacking incoming gtfs-rt message\n");
+        return;
+    }
+
+    printf("Received feed message with %lu entities.\n", msg->n_entity);
+    for (int e = 0; e < msg->n_entity; ++e) {
+        TransitRealtime__FeedEntity *entity = msg->entity[e];
+        if (entity == NULL) goto cleanup;
+        // printf("  entity %d has id %s\n", e, entity->id);
+        TransitRealtime__Alert *alert = entity->alert;
+        if (alert == NULL) goto cleanup;
+
+        for (int ie = 0; ie < alert->n_informed_entity; ++ie) {
+            TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[ie];
+            if (informed_entity && informed_entity->trip) {
+                TransitRealtime__TripDescriptor *trip = informed_entity->trip;
+                char *trip_id = trip->trip_id;
+                uint32_t trip_index = rxt_find (tripid_index, trip_id);
+                if (trip_index == RADIX_TREE_NONE) {
+                    printf ("    trip id was not found in the radix tree.\n");
+                }
+                // TODO: don't you love this hack?
+                memcpy (trip->trip_id, trip_index, sizeof(trip_index));
+            }
+        }
+    }
+
+    tdata->alerts = msg;
+    return;
+
+    cleanup:
+    transit_realtime__feed_message__free_unpacked (msg, NULL);
+}
+
+void tdata_clear_gtfsrt_alerts (tdata_t *tdata) {
+    if (tdata->alerts) {
+        transit_realtime__feed_message__free_unpacked (tdata->alerts, NULL);
+        tdata->alerts = NULL;
+    }
+}
+
+void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, RadixTree *tripid_index, char *filename) {
     uint32_t fd = open(filename, O_RDONLY);
     if (fd == -1) die("Could not find GTFS_RT input file.\n");
     struct stat st;
