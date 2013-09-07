@@ -270,7 +270,7 @@ for route in route_for_idx :
         headsign = ''
     desc = ';'.join([desc, headsign])
     # print desc
-    route_id_for_idx.append(desc)
+    route_id_for_idx.append(rid)
     route_attributes.append(1 << mode)
 route_attributes.append(0) # sentinel  
 # named tuples?

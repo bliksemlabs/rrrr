@@ -775,7 +775,7 @@ static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, cha
         leg_mode = "INVALID";
 
         char *alert_msg = NULL;
-        if (tdata->alerts) {
+        if (leg->route != WALK && tdata->alerts) {
             for (int e = 0; e < tdata->alerts->n_entity; ++e) {
                 TransitRealtime__FeedEntity *entity = tdata->alerts->entity[e];
                 if (entity == NULL) break;
