@@ -139,9 +139,9 @@ class TripBundle:
 
     def getattributes(self):
         attributes = []
-        query = "SELECT wheelchair_accessible FROM trips WHERE trip_id = ?"
+        query = "SELECT wheelchair_accessible FROM trips WHERE trip_id = ? LIMIT 1"
         for trip_id in self.sorted_trip_ids():
-            wheelchair_accessible = self.gtfsdb.get_cursor().execute(query,(trip_id,))
+            wheelchair_accessible, = self.gtfsdb.get_cursor().execute(query,(trip_id,)).fetchone()
             attr = {}
             if wheelchair_accessible == 1:
                 attr['wheelchair_accessible'] = True
