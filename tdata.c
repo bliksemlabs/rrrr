@@ -55,6 +55,13 @@ inline char *tdata_route_id_for_index(tdata_t *td, uint32_t route_index) {
     return td->route_ids + (td->route_id_width * route_index);
 }
 
+inline uint32_t tdata_index_for_route_id(tdata_t *td, char *route_id) {
+    for (uint32_t result = 0; result < td->n_routes; result++) {
+        if (strcmp( td->route_ids + (td->route_id_width * result), route_id ) == 0) return result;
+    }
+    return NONE;
+}
+
 inline char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
     route_t route = (td->routes)[route_index];
     uint32_t char_offset = route.trip_ids_offset * td->trip_id_width;

@@ -27,6 +27,7 @@ static struct option long_options[] = {
     { "from-idx",      required_argument, NULL, 'f' },
     { "to-idx",        required_argument, NULL, 't' },
     { "mode",          required_argument, NULL, 'm' },
+    { "banned-routes", required_argument, NULL, 'X' },
     { "banned-routes-idx", required_argument, NULL, 'x' },
     { "banned-stops-idx",  required_argument, NULL, 'y' },
     { "gtfsrt",        required_argument, NULL, 'g' },
@@ -45,12 +46,13 @@ int main(int argc, char **argv) {
     char *gtfsrt_alerts_file = NULL;
 
     const char delim[2] = ",";
-    char *token;
+    char *token = NULL;
+    char *banned_routes = NULL;
     
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:x:y:g:G:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:x:X:y:g:G:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -132,6 +134,9 @@ int main(int argc, char **argv) {
                 token = strtok(NULL, delim);
             }
             break;
+        case 'X':
+            banned_routes = strdup(optarg);
+            break;
         case 'y':
             req.n_banned_stops = 1;
             for (int i = 0; i < strlen(optarg); i++) {
@@ -177,6 +182,30 @@ int main(int argc, char **argv) {
     // load transit data from disk
     tdata_t tdata;
     tdata_load(tdata_file, &tdata);
+
+    if (banned_routes) {
+        req.n_banned_routes = 1;
+        for (int i = 0; i < strlen(banned_routes); i++) {
+            if (banned_routes[i] == ',') req.n_banned_routes++;
+        }
+        req.banned_routes = (uint32_t *) calloc(req.n_banned_routes, sizeof(uint32_t));
+
+        req.n_banned_routes = 0;
+        token = strtok(banned_routes, delim);
+        while ( token  != NULL ) {
+            if (strlen(token) > 0) {
+                uint32_t tmp = tdata_index_for_route_id(&tdata, token);
+                if (tmp != NONE) {
+                    req.banned_routes[req.n_banned_routes] = tmp;
+                    req.n_banned_routes++;
+                }
+            }
+
+            token = strtok(NULL, delim);
+        }
+        free(banned_routes);
+        banned_routes = NULL;
+    }
 
     if (req.from >= tdata.n_stops || req.to >= tdata.n_stops) {   
         fprintf(stderr, "Invalid stopids in from and/or to.\n");
