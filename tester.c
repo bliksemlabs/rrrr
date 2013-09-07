@@ -27,8 +27,8 @@ static struct option long_options[] = {
     { "from-idx",      required_argument, NULL, 'f' },
     { "to-idx",        required_argument, NULL, 't' },
     { "mode",          required_argument, NULL, 'm' },
-    { "banned-routes", required_argument, NULL, 'x' },
-    { "banned-stops",  required_argument, NULL, 'y' },
+    { "banned-routes-idx", required_argument, NULL, 'x' },
+    { "banned-stops-idx",  required_argument, NULL, 'y' },
     { "gtfsrt",        required_argument, NULL, 'g' },
     { "timetable",     required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
