@@ -367,7 +367,7 @@ void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, RadixTree *tripid_index, ch
     if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    
     uint8_t *buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) die("Could not map GTFS-RT input file.\n");
-    tdata_apply_gtfsrt (tdata, tripid_index, buf, st.st_size);
+    tdata_apply_gtfsrt_alerts (tdata, tripid_index, buf, st.st_size);
     munmap (buf, st.st_size);
 }
 
