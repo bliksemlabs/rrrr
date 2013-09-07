@@ -34,12 +34,6 @@ struct trip {
     int16_t  realtime_delay;    // This is signed to indicate early or late. All zeros upon creation (but serves as padding).
 };
 
-typedef enum trip_attributes {
-    ta_accessible = 1,
-    ta_toilet = 2,
-    ta_wifi = 4
-} trip_attributes_t;
-
 typedef struct stoptime stoptime_t;
 struct stoptime {
     rtime_t arrival;
@@ -98,6 +92,8 @@ uint32_t tdata_stop_name_for_index(tdata_t*, char* stop_name, uint32_t start_ind
 char *tdata_route_id_for_index(tdata_t*, uint32_t route_index);
 
 char *tdata_trip_ids_for_route(tdata_t*, uint32_t route_index);
+
+uint8_t *tdata_trip_attributes_for_route(tdata_t*, uint32_t route_index);
 
 uint32_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
 

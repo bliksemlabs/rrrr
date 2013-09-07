@@ -42,6 +42,14 @@ struct router {
 };
 
 
+typedef enum trip_attributes {
+    ta_none = 0,
+    ta_accessible = 1,
+    ta_toilet = 2,
+    ta_wifi = 4
+} trip_attributes_t;
+
+
 typedef enum optimise {
     o_shortest  =   1, // output shortest time
     o_transfers =   2, // output least transfers
@@ -74,6 +82,7 @@ struct router_request {
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     uint32_t day_mask;   // bit for the day on which we are searching, relative to the timetable calendar
     uint8_t mode;        // selects the mode by a bitfield
+    uint8_t trip_attributes; // select required attributes bitfield (from trips)
     uint8_t optimise;    // restrict the output to specific optimisation flags
     uint32_t n_banned_routes; // number of banned routes in the list below
     uint32_t n_banned_stops; // number of banned stops in the list below

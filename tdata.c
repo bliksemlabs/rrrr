@@ -179,6 +179,10 @@ inline trip_t *tdata_trips_for_route (tdata_t *td, uint32_t route_index) {
     return td->trips + td->routes[route_index].trip_ids_offset;
 }
 
+inline uint8_t *tdata_trip_attributes_for_route (tdata_t *td, uint32_t route_index) {
+    return td->trip_attributes + td->routes[route_index].trip_ids_offset;
+}
+
 /* Signed delay of the specified trip, in seconds. */
 inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_index) {
     trip_t *trips = tdata_trips_for_route(td, route_index);
