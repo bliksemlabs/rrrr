@@ -35,6 +35,7 @@ struct tdata_header {
     uint32_t loc_trip_ids; 
     uint32_t loc_trip_active; 
     uint32_t loc_route_active; 
+    uint32_t loc_trip_attributes; 
 };
 
 inline char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
@@ -146,6 +147,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(uint32_t));
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);
     td->route_active = (uint32_t*) (b + header->loc_route_active);
+    td->trip_attributes = (uint8_t*) (b + header->loc_trip_attributes);
 
     tdata_check_coherent(td);
     D tdata_dump(td);
