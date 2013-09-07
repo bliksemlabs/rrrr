@@ -32,6 +32,7 @@ typedef uint16_t rtime_t;
 #define UNREACHED UINT16_MAX
 #define NONE (UINT32_MAX)
 #define WALK (UINT32_MAX - 1)
+#define CANCELED UINT16_MAX
 
 void die(const char* message);
 
