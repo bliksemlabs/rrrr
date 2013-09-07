@@ -793,7 +793,7 @@ static inline uint32_t plan_render(struct plan *plan, tdata_t *tdata, router_req
         for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
             b = plan_render_leg(itin, tdata, b, b_end);
         }
-    } else {
+    } else if (plan->n_itineraries > 0) {
         if ((req->optimise & o_transfers) == o_transfers) { 
             /* only render the first itinerary, which has the least transfers */
             b = plan_render_leg(plan->itineraries, tdata, b, b_end);
