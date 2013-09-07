@@ -23,6 +23,7 @@ static struct option long_options[] = {
     { "date",          required_argument, NULL, 'D' },
     { "walk-slack",    required_argument, NULL, 's' },
     { "walk-speed",    required_argument, NULL, 'S' },
+    { "optimise",      required_argument, NULL, 'o' },
     { "from-idx",      required_argument, NULL, 'f' },
     { "to-idx",        required_argument, NULL, 't' },
     { "mode",          required_argument, NULL, 'm' },
@@ -47,7 +48,7 @@ int main(int argc, char **argv) {
     struct tm ltm;
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:f:t:m:g:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:g:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -78,6 +79,17 @@ int main(int argc, char **argv) {
             break;
         case 'S':
             req.walk_speed = strtod(optarg, NULL);
+            break;
+        case 'o':
+            req.optimise = 0;
+            token = strtok(optarg, delim);
+
+            while ( token != NULL ) {
+                if (strcmp(token, "shortest")  == 0) req.optimise |= o_shortest;
+                if (strcmp(token, "transfers") == 0) req.optimise |= o_transfers;
+                if (strcmp(token, "all")       == 0) req.optimise  = o_all;
+                token = strtok(NULL, delim);
+            }
             break;
         case 'm':
             req.mode = 0;

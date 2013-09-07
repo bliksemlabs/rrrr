@@ -746,42 +746,61 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
     check_plan_invariants (plan);
 }
 
+static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+    b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
+
+    /* Render the legs of this itinerary, which are in chronological order */
+    for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
+        char ct0[16];
+        char ct1[16];
+        btimetext(leg->t0, ct0);
+        btimetext(leg->t1, ct1);
+        char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
+        char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
+        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
+        float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
+        
+        char *leg_mode = NULL;
+        if (leg->route == WALK) leg_mode = "WALK"; else
+        if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
+        if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
+        if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
+        if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
+        if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
+        if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
+        if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
+        if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
+        leg_mode = "INVALID";
+
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
+        if (b > b_end) {
+            printf ("buffer overflow\n");
+            exit(2);
+        }
+    }
+
+    return b;
+}
+
 /* Write a plan structure out to a text buffer in tabular format. */
-static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
+static inline uint32_t plan_render(struct plan *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
-    /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
-    for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
-        b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
-        /* Render the legs of this itinerary, which are in chronological order */
-        for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
-            char ct0[16];
-            char ct1[16];
-            btimetext(leg->t0, ct0);
-            btimetext(leg->t1, ct1);
-            char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
-            char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
-            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
-            float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
-            
-            char *leg_mode = NULL;
-            if (leg->route == WALK) leg_mode = "WALK"; else
-            if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
-            if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
-            if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
-            if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
-            if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
-            if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
-            if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
-            if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
-            leg_mode = "INVALID";
 
-            b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
-                leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
-            if (b > b_end) {
-                printf ("buffer overflow\n");
-                exit(2);
-            }
+    if ((req->optimise & o_all) == o_all) {
+        /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
+        for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
+            b = plan_render_leg(itin, tdata, b, b_end);
+        }
+    } else {
+        if ((req->optimise & o_transfers) == o_transfers) { 
+            /* only render the first itinerary, which has the least transfers */
+            b = plan_render_leg(plan->itineraries, tdata, b, b_end);
+        }
+        if ((req->optimise & o_shortest) == o_shortest) {
+            /* only render the last itinerary, which has the most rides and is the shortest in time */
+            b = plan_render_leg(&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
         }
     }
     *b = '\0';
@@ -795,8 +814,8 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
     struct plan plan;
     router_result_to_plan (&plan, router, req);
-    // render_plan_json (&plan, &(router->tdata));
-    return render_plan (&plan, &(router->tdata), buf, buflen);
+    // plan_render_json (&plan, &(router->tdata), req);
+    return plan_render (&plan, &(router->tdata), req, buf, buflen);
 }
 
 
@@ -813,6 +832,7 @@ void router_request_initialize(router_request_t *req) {
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
     req->banned_routes = NULL;
@@ -829,6 +849,7 @@ void router_request_randomize(router_request_t *req) {
     req->time_cutoff = UNREACHED;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
     req->banned_routes = NULL;

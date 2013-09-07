@@ -42,6 +42,13 @@ struct router {
 };
 
 
+typedef enum optimise {
+    o_shortest  =   1, // output shortest time
+    o_transfers =   2, // output least transfers
+    o_all       = 255  // output all rides
+} optimise_t;
+
+
 typedef enum tmode {
     m_tram      =   1,
     m_subway    =   2,
@@ -66,6 +73,7 @@ struct router_request {
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) time to reach the destination (in internal rtime_t 4 second intervals)
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     uint8_t mode;        // selects the mode by a bitfield
+    uint8_t optimise;    // restrict the output to specific optimisation flags
     uint32_t n_banned_routes; // number of banned routes in the list below
     uint32_t n_banned_stops; // number of banned stops in the list below
     uint32_t *banned_routes; // A dynamically allocated list of routes which are banned 
