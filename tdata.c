@@ -1,7 +1,5 @@
 /* tdata.c : handles memory mapped data file containing transit timetable etc. */
 
-#define _GNU_SOURCE
-
 #include "tdata.h" // make sure it works alone
 
 #include <fcntl.h>

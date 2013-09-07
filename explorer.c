@@ -1,7 +1,5 @@
 /* worker.c : worker processes that handle routing requests */
 
-#define _GNU_SOURCE
-
 #include <syslog.h>
 #include <stdio.h>
 #include <stdlib.h>
