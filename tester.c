@@ -30,6 +30,7 @@ static struct option long_options[] = {
     { "mode",          required_argument, NULL, 'm' },
     { "banned-routes-idx", required_argument, NULL, 'x' },
     { "banned-stops-idx",  required_argument, NULL, 'y' },
+    { "banned-route-trip", required_argument, NULL, 'z' },
     { "gtfsrt",        required_argument, NULL, 'g' },
     { "timetable",     required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
@@ -154,6 +155,12 @@ int main(int argc, char **argv) {
 
                 token = strtok(NULL, delim);
             }
+            break;
+        case 'z':
+            token = strtok(optarg, delim);
+            req.banned_trip_route = strtol(token, NULL, 10);
+            token = strtok(NULL, delim);
+            req.banned_trip_offset = strtol(token, NULL, 10);
             break;
         case 'T':
             tdata_file = optarg;

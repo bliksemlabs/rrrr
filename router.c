@@ -477,6 +477,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                             if ( ! (sday->mask & trip_masks[this_trip])) continue;
                             /* skip this trip if the realtime delay equals CANCELED */
                             if ( route_trips[this_trip].realtime_delay == CANCELED) continue;
+                            /* skip this trip if the request has banned it */
+                            if (req.banned_trip_route == route_idx && req.banned_trip_offset == this_trip) continue;
                             /* consider the arrival or departure time on the current service day */ 
                             rtime_t time = req.arrive_by ? tdata_arrive(&(router.tdata), route_idx, this_trip, route_stop)
                                                          : tdata_depart(&(router.tdata), route_idx, this_trip, route_stop);

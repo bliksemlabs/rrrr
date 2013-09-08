@@ -75,6 +75,8 @@ struct router_request {
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     uint8_t mode;        // selects the mode by a bitfield
     uint8_t optimise;    // restrict the output to specific optimisation flags
+    uint32_t banned_trip_route; // quick implementation of trip banning
+    uint32_t banned_trip_offset; // quick implementation of trip banning
     uint32_t n_banned_routes; // number of banned routes in the list below
     uint32_t n_banned_stops; // number of banned stops in the list below
     uint32_t *banned_routes; // A dynamically allocated list of routes which are banned 
