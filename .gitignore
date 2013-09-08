@@ -3,10 +3,12 @@
 
 # make and build files
 *.o
+*.pyc
 
 *.gtfsdb
 *.zip
 
+stops.db
 timetable.dat
 vehiclePositions.pb
 
