@@ -23,8 +23,8 @@ static struct option long_options[] = {
     { "random", no_argument, NULL, 'r' },
     { "help",   no_argument, NULL, 'h' },
     { "date",   required_argument, NULL, 'D' },
-    { "from",   required_argument, NULL, 'f' },
-    { "to",     required_argument, NULL, 't' },
+    { "from-idx",   required_argument, NULL, 'f' },
+    { "to-idx",     required_argument, NULL, 't' },
     { "gtfsrt", required_argument, NULL, 'g' },
     { "timetable", required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */

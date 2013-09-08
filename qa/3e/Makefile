@@ -1,7 +1,7 @@
 all: unittest
 
 unittest: tmp/timetable.dat
-	../../testerrrr --depart -D 2014-01-01T00:00:00 --from-idx 0 --to-idx 5 -T tmp/timetable.dat
+	cd tmp ; ../../../testerrrr --depart -D 2014-01-01T00:01:00 --from-idx 0 --to-idx 1 -T timetable.dat -g ../gtfs-rt/3e.pb
 
 tmp/gtfsdb: gtfs/*
 	mkdir -p tmp
