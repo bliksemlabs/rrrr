@@ -202,23 +202,82 @@ int main(int argc, char **argv) {
     router_setup(&router, &tdata);
     //tdata_dump(&tdata); // debug timetable file format
 
-    char result_buf[8000];
-    router_request_dump (&router, &req);
-    router_route (&router, &req);
-    router_result_dump(&router, &req, result_buf, 8000);
-    printf("%s", result_buf);
-    // repeat search in reverse to compact transfers
-    uint32_t n_reversals = req.arrive_by ? 1 : 2;
-    // n_reversals = 0; // DEBUG turn off reversals
-    for (uint32_t i = 0; i < n_reversals; ++i) {
-        router_request_reverse (&router, &req); // handle case where route is not reversed
-        printf ("Repeating search with reversed request: \n");
+    if (req.via == NONE) {
+        char result_buf[8000];
         router_request_dump (&router, &req);
         router_route (&router, &req);
         router_result_dump(&router, &req, result_buf, 8000);
         printf("%s", result_buf);
+        // repeat search in reverse to compact transfers
+        uint32_t n_reversals = req.arrive_by ? 1 : 2;
+        // n_reversals = 0; // DEBUG turn off reversals
+        for (uint32_t i = 0; i < n_reversals; ++i) {
+            router_request_reverse (&router, &req); // handle case where route is not reversed
+            printf ("Repeating search with reversed request: \n");
+            router_request_dump (&router, &req);
+            router_route (&router, &req);
+            router_result_dump(&router, &req, result_buf, 8000);
+            printf("%s", result_buf);
+        }
+    } else {
+        // The route via code
+        char result_buf[8000];
+        uint32_t to = req.to;
+        req.optimise = o_shortest;
+        router_request_dump (&router, &req);
+
+        req.to = req.via;
+        router_route (&router, &req);
+        // repeat search in reverse to compact transfers
+        uint32_t n_reversals = req.arrive_by ? 1 : 2;
+        for (uint32_t i = 0; i < n_reversals; ++i) {
+            router_request_reverse (&router, &req); // handle case where route is not reversed
+            router_route (&router, &req);
+        }
+
+        // a hack so we can get the final arrival time, route_idx and trip_idx
+        struct plan plan;
+        router_result_to_plan (&plan, &router, &req);
+
+        if (plan.n_itineraries >= 1) {
+            struct itinerary *itin = plan.itineraries + (plan.n_itineraries - 1);
+            if (itin->n_legs >= 2) {
+                router_result_dump(&router, &req, result_buf, 8000); // there is a partial result, write it out
+                printf("%s", result_buf);
+
+                // set up the next part of the trip
+                struct leg *leg = itin->legs + (itin->n_legs - 2); // the last leg will be a walk leg, so one before that
+                req.banned_trip_route = leg->route; // we want to skip the last route, so we prevent reboarding
+                req.banned_trip_offset = leg->trip; // this indeed implicies the user chooses a transfer at this station
+                req.from = leg->s1; // get the arrival stop from the last leg
+                req.to = to; // use our temporary to target
+
+                struct tm origin_tm;
+                rtime_t origin_rtime = epoch_to_rtime (req.time, &origin_tm);
+                origin_tm.tm_min = 0;
+                origin_tm.tm_hour = 0;
+                origin_tm.tm_sec = 0;
+
+                req.time = RTIME_TO_SEC(leg->t1 - RTIME_ONE_DAY) + req.walk_slack + mktime(&origin_tm); // TODO: must be changed if we change rtime
+
+                // router_request_dump (&router, &req);
+                router_route (&router, &req);
+
+                // compacting transfers doesn't sound as a good idea, when doing a required transfer per se
+                n_reversals = req.arrive_by ? 1 : 2;
+                for (uint32_t i = 0; i < n_reversals; ++i) {
+                    router_request_reverse (&router, &req); // handle case where route is not reversed
+                    router_route (&router, &req);
+                }
+                router_result_dump(&router, &req, result_buf, 8000);
+                char *start_output = strchr(result_buf + 1, '\n'); // skip newline
+                start_output = strchr(start_output, '\n') + 1; // skip INIT...
+                start_output = strchr(start_output, '\n') + 1; // skip first leg
+                printf("%s", start_output);
+            }
+        }
     }
-    
+
     tdata_close(&tdata);
 
     if (req.banned_routes)

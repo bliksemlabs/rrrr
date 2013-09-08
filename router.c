@@ -666,7 +666,7 @@ static bool check_plan_invariants (struct plan *plan) {
     return fail;
 }
 
-static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
+void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
     router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states;
