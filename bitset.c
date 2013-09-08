@@ -48,7 +48,7 @@ void bitset_set(BitSet *self, uint32_t index) {
     self->chunks[index / 64] |= bitmask;
 }
 
-void bitset_clear(BitSet *self, uint32_t index) {
+void bitset_unset(BitSet *self, uint32_t index) {
     index_check(self, index);
     uint64_t bitmask = ~(1ull << (index % 64));
     self->chunks[index / 64] &= bitmask;

@@ -21,6 +21,8 @@ void bitset_reset(BitSet *self); // rename to bitset_clear?
 
 void bitset_set(BitSet *self, uint32_t index);
 
+void bitset_unset(BitSet *self, uint32_t index);
+
 bool bitset_get(BitSet *self, uint32_t index);
 
 void bitset_dump(BitSet *self);

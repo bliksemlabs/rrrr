@@ -1,7 +1,5 @@
 /* tester.c : single-theaded test of router for unit tests and debugging */
 
-#define _GNU_SOURCE
-
 #include <syslog.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,16 +16,21 @@
 // also look up stop ids
 
 static struct option long_options[] = {
-    { "arrive", no_argument, NULL, 'a' },
-    { "depart", no_argument, NULL, 'd' },
-    { "random", no_argument, NULL, 'r' },
-    { "help",   no_argument, NULL, 'h' },
-    { "date",   required_argument, NULL, 'D' },
-    { "from",   required_argument, NULL, 'f' },
-    { "to",     required_argument, NULL, 't' },
-    { "mode",   required_argument, NULL, 'm' },
-    { "gtfsrt", required_argument, NULL, 'g' },
-    { "timetable", required_argument, NULL, 'T' },
+    { "arrive",        no_argument, NULL, 'a' },
+    { "depart",        no_argument, NULL, 'd' },
+    { "random",        no_argument, NULL, 'r' },
+    { "help",          no_argument, NULL, 'h' },
+    { "date",          required_argument, NULL, 'D' },
+    { "walk-slack",    required_argument, NULL, 's' },
+    { "walk-speed",    required_argument, NULL, 'S' },
+    { "optimise",      required_argument, NULL, 'o' },
+    { "from-idx",      required_argument, NULL, 'f' },
+    { "to-idx",        required_argument, NULL, 't' },
+    { "mode",          required_argument, NULL, 'm' },
+    { "banned-routes", required_argument, NULL, 'x' },
+    { "banned-stops",  required_argument, NULL, 'y' },
+    { "gtfsrt",        required_argument, NULL, 'g' },
+    { "timetable",     required_argument, NULL, 'T' },
     { NULL, 0, 0, 0 } /* end */
 };
 
@@ -39,10 +42,13 @@ int main(int argc, char **argv) {
     char *tdata_file = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
     char *iso_datetime = NULL;
+
+    const char delim[2] = ",";
+    char *token;
     
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:f:t:m:g:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:f:t:s:S:o:m:g:T:", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -66,10 +72,26 @@ int main(int argc, char **argv) {
         case 't':
             req.to = strtol(optarg, NULL, 10);
             break;
+        case 's':
+            req.walk_slack = strtol(optarg, NULL, 10);
+            break;
+        case 'S':
+            req.walk_speed = strtod(optarg, NULL);
+            break;
+        case 'o':
+            req.optimise = 0;
+            token = strtok(optarg, delim);
+
+            while ( token != NULL ) {
+                if (strcmp(token, "shortest")  == 0) req.optimise |= o_shortest;
+                if (strcmp(token, "transfers") == 0) req.optimise |= o_transfers;
+                if (strcmp(token, "all")       == 0) req.optimise  = o_all;
+                token = strtok(NULL, delim);
+            }
+            break;
         case 'm':
             req.mode = 0;
-            const char delim[2] = ",";
-            char *token = strtok(optarg, delim);
+            token = strtok(optarg, delim);
 
             while ( token  != NULL ) {
                 if (strcmp(token, "tram") == 0)      req.mode |= m_tram;
@@ -84,7 +106,49 @@ int main(int argc, char **argv) {
 
                 token = strtok(NULL, delim);
             }
-	    break;
+            break;
+        case 'x':
+            req.n_banned_routes = 1;
+            for (int i = 0; i < strlen(optarg); i++) {
+                if (optarg[i] == ',') req.n_banned_routes++;
+            }
+            req.banned_routes = (uint32_t *) calloc(req.n_banned_routes, sizeof(uint32_t));
+
+            req.n_banned_routes = 0;
+            token = strtok(optarg, delim);
+            while ( token  != NULL ) {
+                if (strlen(token) > 0) {
+                    long int tmp = strtol(token, NULL, 10);
+                    if (tmp > 0) {
+                        req.banned_routes[req.n_banned_routes] = tmp;
+                        req.n_banned_routes++;
+                    }
+                }
+
+                token = strtok(NULL, delim);
+            }
+            break;
+        case 'y':
+            req.n_banned_stops = 1;
+            for (int i = 0; i < strlen(optarg); i++) {
+                if (optarg[i] == ',') req.n_banned_stops++;
+            }
+            req.banned_stops = (uint32_t *) calloc(req.n_banned_stops, sizeof(uint32_t));
+
+            req.n_banned_stops = 0;
+            token = strtok(optarg, delim);
+            while ( token  != NULL ) {
+                if (strlen(token) > 0) {
+                    long int tmp = strtol(token, NULL, 10);
+                    if (tmp > 0) {
+                        req.banned_stops[req.n_banned_stops] = tmp;
+                        req.n_banned_stops++;
+                    }
+                }
+
+                token = strtok(NULL, delim);
+            }
+            break;
         case 'T':
             tdata_file = optarg;
             break;
@@ -150,6 +214,10 @@ int main(int argc, char **argv) {
     }
     
     tdata_close(&tdata);
+
+    if (req.banned_routes)
+        free(req.banned_routes);
+
     exit(EXIT_SUCCESS);
     
     usage:

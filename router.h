@@ -42,6 +42,13 @@ struct router {
 };
 
 
+typedef enum optimise {
+    o_shortest  =   1, // output shortest time
+    o_transfers =   2, // output least transfers
+    o_all       = 255  // output all rides
+} optimise_t;
+
+
 typedef enum tmode {
     m_tram      =   1,
     m_subway    =   2,
@@ -62,10 +69,16 @@ struct router_request {
     rtime_t time;        // the departure or arrival time at which to search (in internal rtime)
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) acceptable time to reach the destination 
     double walk_speed;   // speed at which the user walks, in meters per second
+    uint8_t walk_slack;  // an extra delay per transfer, in seconds 
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     uint32_t day_mask;   // bit for the day on which we are searching, relative to the timetable calendar
     uint8_t mode;        // selects the mode by a bitfield
+    uint8_t optimise;    // restrict the output to specific optimisation flags
+    uint32_t n_banned_routes; // number of banned routes in the list below
+    uint32_t n_banned_stops; // number of banned stops in the list below
+    uint32_t *banned_routes; // A dynamically allocated list of routes which are banned 
+    uint32_t *banned_stops; // A dynamically allocated list of stops which are banned 
 };
 
 

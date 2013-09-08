@@ -137,6 +137,20 @@ class TripBundle:
         self.pattern = pattern
         self.trip_ids = []
 
+    def gettimepatterns(self):
+        timepatterns = []
+        timedemandgroup_ids = set([])
+        for trip_id in self.trip_ids:
+            timedemandgroup_id = self.gtfsdb.timedemandgroup_for_trip[trip_id]
+            if timedemandgroup_id in timedemandgroup_ids:
+                continue
+            timedemandgroup_ids.add(timedemandgroup_id)
+            drivetimes,stopwaittimes = self.gtfsdb.timedemandgroups[timedemandgroup_id]
+            assert len(drivetimes) == len(self.pattern.stop_ids)
+            assert len(stopwaittimes) == len(self.pattern.stop_ids)
+            timepatterns.append( (timedemandgroup_id,zip(drivetimes,stopwaittimes) ))
+        return timepatterns
+
     def find_time_range(self):
         min_time = 99999999
         max_time = 0
@@ -457,16 +471,7 @@ FROM transfers WHERE to_stop_id = ?) as x"""
         c.execute( "SELECT count(*) FROM stops" )
         ret = c.next()[0]
         c.close()
-        return ret
-
-
-    def gettimepatterns(self):
-        timepatterns = []
-        for timedemandgroup_id,timedemandgroup in self.timedemandgroups.items():
-            drivetimes,stopwaittimes = timedemandgroup
-            timepatterns.append( (timedemandgroup_id,zip(drivetimes,stopwaittimes) ))
-        return timepatterns
-            
+        return ret          
 
     def service_ids(self):
         query = "SELECT DISTINCT service_id FROM (SELECT service_id FROM calendar UNION SELECT service_id FROM calendar_dates)"

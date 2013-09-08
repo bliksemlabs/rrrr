@@ -58,6 +58,18 @@ static inline void flag_routes_for_stop (router_t *r, router_request_t *req, uin
     }
 }
 
+static inline void unflag_banned_routes (router_t *r, router_request_t *req) {
+     for (uint32_t i = 0; i < req->n_banned_routes; ++i) {
+         bitset_unset (r->updated_routes, req->banned_routes[i]);
+     }
+}
+
+static inline void unflag_banned_stops (router_t r, router_request_t req) {
+     for (uint32_t i = 0; i < req.n_banned_stops; ++i) {
+         bitset_unset (r.updated_stops, req.banned_stops[i]);
+     }
+}
+
 /* Because the first round begins with so few reached stops, the initial state doesn't get its own full array of states. 
    Instead we reuse one of the later rounds (round 1) for the initial state. This means we need to reset the walks in
    round 1 back to UNREACHED before using them in routing. Rather than iterating over all of them, we only initialize
@@ -86,7 +98,7 @@ transfer_duration (tdata_t *d, router_request_t *req, uint32_t stop_index_from, 
     for ( ; t < tN ; ++t) {
         if (d->transfer_target_stops[t] == stop_index_to) {
             uint32_t distance_meters = d->transfer_dist_meters[t] << 4; // actually in units of 16 meters
-            return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + RRRR_WALK_SLACK_SEC));
+            return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
         }
     }
     return UNREACHED;
@@ -135,6 +147,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
             state_from->walk_from = stop_index_from;
             // assert (r.best_time[stop_index_from] == time_from);
             flag_routes_for_stop (&r, &req, stop_index_from, day_mask);
+            unflag_banned_routes (&r, &req);
         }
         /* Then apply transfers from the stop to nearby stops */
         uint32_t tr     = d.stops[stop_index_from    ].transfers_offset;
@@ -143,7 +156,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
             uint32_t stop_index_to = d.transfer_target_stops[tr];
             /* Transfer distances are stored in units of 16 meters, rounded not truncated, in a uint8_t */
             uint32_t dist_meters = d.transfer_dist_meters[tr] << 4; 
-            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / req.walk_speed + RRRR_WALK_SLACK_SEC));
+            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / req.walk_speed + req.walk_slack));
             rtime_t time_to = req.arrive_by ? time_from - transfer_duration
                                             : time_from + transfer_duration;
             /* Avoid reserved values including UNREACHED */
@@ -162,6 +175,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
                 state_to->walk_from = stop_index_from;
                 r.best_time[stop_index_to] = time_to;
                 flag_routes_for_stop (&r, &req, stop_index_to, day_mask);
+                unflag_banned_routes (&r, &req);
             }
         }
     }
@@ -354,7 +368,9 @@ bool router_route(router_t *prouter, router_request_t *preq) {
 
     bitset_reset(router.updated_stops);
     // This is inefficient, as it depends on iterative over a bitset with only one bit true.
-    bitset_set(router.updated_stops, origin); 
+    bitset_set(router.updated_stops, origin);
+    // Remove the banned stops from the bitset
+    unflag_banned_stops(router, req);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
     apply_transfers(router, req, 1, day_mask);
     // dump_results(prouter);
@@ -530,6 +546,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 }
             } // end for (stop)
         } // end for (route)
+        // Remove the banned stops from the bitset
+        unflag_banned_stops(router, req);
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
         apply_transfers(router, req, round, day_mask);
         // dump_results(prouter); // DEBUG
@@ -723,42 +741,61 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
     check_plan_invariants (plan);
 }
 
+static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+    b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
+
+    /* Render the legs of this itinerary, which are in chronological order */
+    for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
+        char ct0[16];
+        char ct1[16];
+        btimetext(leg->t0, ct0);
+        btimetext(leg->t1, ct1);
+        char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
+        char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
+        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
+        float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
+        
+        char *leg_mode = NULL;
+        if (leg->route == WALK) leg_mode = "WALK"; else
+        if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
+        if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
+        if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
+        if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
+        if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
+        if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
+        if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
+        if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
+        leg_mode = "INVALID";
+
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
+        if (b > b_end) {
+            printf ("buffer overflow\n");
+            exit(2);
+        }
+    }
+
+    return b;
+}
+
 /* Write a plan structure out to a text buffer in tabular format. */
-static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
+static inline uint32_t plan_render(struct plan *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
-    /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
-    for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
-        b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
-        /* Render the legs of this itinerary, which are in chronological order */
-        for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
-            char ct0[16];
-            char ct1[16];
-            btimetext(leg->t0, ct0);
-            btimetext(leg->t1, ct1);
-            char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
-            char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
-            char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
-            float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
-            
-            char *leg_mode = NULL;
-            if (leg->route == WALK) leg_mode = "WALK"; else
-            if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
-            if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
-            if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
-            if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
-            if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
-            if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
-            if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
-            if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
-            leg_mode = "INVALID";
 
-            b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s\n",
-                leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id);
-            if (b > b_end) {
-                printf ("buffer overflow\n");
-                exit(2);
-            }
+    if ((req->optimise & o_all) == o_all) {
+        /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
+        for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
+            b = plan_render_leg(itin, tdata, b, b_end);
+        }
+    } else if (plan->n_itineraries > 0) {
+        if ((req->optimise & o_transfers) == o_transfers) { 
+            /* only render the first itinerary, which has the least transfers */
+            b = plan_render_leg(plan->itineraries, tdata, b, b_end);
+        }
+        if ((req->optimise & o_shortest) == o_shortest) {
+            /* only render the last itinerary, which has the most rides and is the shortest in time */
+            b = plan_render_leg(&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
         }
     }
     *b = '\0';
@@ -772,8 +809,8 @@ static inline uint32_t render_plan(struct plan *plan, tdata_t *tdata, char *buf,
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
     struct plan plan;
     router_result_to_plan (&plan, router, req);
-    // render_plan_json (&plan, &(router->tdata));
-    return render_plan (&plan, &(router->tdata), buf, buflen);
+    // plan_render_json (&plan, &(router->tdata), req);
+    return plan_render (&plan, &(router->tdata), req, buf, buflen);
 }
 
 uint32_t rrrrandom(uint32_t limit) {
@@ -781,6 +818,8 @@ uint32_t rrrrandom(uint32_t limit) {
 }
 
 void router_request_initialize(router_request_t *req) {
+    req->walk_speed = 1.5; // m/sec
+    req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = req->to = NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
@@ -788,6 +827,11 @@ void router_request_initialize(router_request_t *req) {
     req->arrive_by = true;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->optimise = o_all;
+    req->n_banned_routes = 0;
+    req->n_banned_stops = 0;
+    req->banned_routes = NULL;
+    req->banned_stops = NULL;
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
@@ -811,6 +855,8 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
 }
 
 void router_request_randomize(router_request_t *req) {
+    req->walk_speed = 1.5; // m/sec
+    req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
@@ -820,6 +866,11 @@ void router_request_randomize(router_request_t *req) {
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->day_mask = 1 << rrrrandom(32);
     req->mode = m_all;
+    req->optimise = o_all;
+    req->n_banned_routes = 0;
+    req->n_banned_stops = 0;
+    req->banned_routes = NULL;
+    req->banned_stops = NULL;
 }
 
 void router_state_dump (router_state_t *state) {
