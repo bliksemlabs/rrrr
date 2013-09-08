@@ -26,6 +26,7 @@ static struct option long_options[] = {
     { "optimise",      required_argument, NULL, 'o' },
     { "from-idx",      required_argument, NULL, 'f' },
     { "to-idx",        required_argument, NULL, 't' },
+    { "via-idx",       required_argument, NULL, 'v' },
     { "mode",          required_argument, NULL, 'm' },
     { "banned-routes-idx", required_argument, NULL, 'x' },
     { "banned-stops-idx",  required_argument, NULL, 'y' },
@@ -73,6 +74,9 @@ int main(int argc, char **argv) {
             break;
         case 't':
             req.to = strtol(optarg, NULL, 10);
+            break;
+        case 'v':
+            req.via = strtol(optarg, NULL, 10);
             break;
         case 's':
             req.walk_slack = strtol(optarg, NULL, 10);

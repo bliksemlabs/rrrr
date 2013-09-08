@@ -66,6 +66,7 @@ typedef struct router_request router_request_t;
 struct router_request {
     uint32_t from;       // start stop index from the user's perspective, independent of arrive_by
     uint32_t to;         // destination stop index from the user's perspective, independent of arrive_by
+    uint32_t via;        // preference transfer stop index from the user's perspective, default: NONE
     time_t time;         // the departure or arrival time at which to search (in seconds since midnight, should be changed to epoch time)
     double walk_speed;   // speed at which the user walks, in meters per second
     uint8_t walk_slack;  // an extra delay per transfer, in seconds 

@@ -828,7 +828,7 @@ uint32_t rrrrandom(uint32_t limit) {
 void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
-    req->from = req->to = NONE;
+    req->from = req->to = req->via = NONE;
     req->time = 3600 * 18;
     req->arrive_by = true;
     req->time_cutoff = UNREACHED;
@@ -846,6 +846,7 @@ void router_request_randomize(router_request_t *req) {
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
+    req->via = NONE;
     req->time = 3600 * 14 + rrrrandom(3600 * 6);
     req->arrive_by = rrrrandom(2); // 0 or 1
     req->time_cutoff = UNREACHED;
