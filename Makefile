@@ -1,4 +1,4 @@
-# "By default, Clang builds C code according to the C99 standard..."
+# CC      := gcc -std=gnu99
 CC      := clang
 CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c

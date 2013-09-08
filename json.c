@@ -153,10 +153,19 @@ static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
 static void json_leg (struct leg *leg, tdata_t *tdata) {
     char *mode = NULL;
     char *route_id = NULL;
-    if (leg->route == WALK) mode = "WALK";
-    else {
-        mode = "BUS";
+
+    if (leg->route == WALK) mode = "WALK"; else {
         route_id = tdata_route_id_for_index(tdata, leg->route);
+
+        if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
+        if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else
+        if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      mode = "RAIL";      else
+        if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       mode = "BUS";       else
+        if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     mode = "FERRY";     else
+        if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  mode = "CABLE_CAR"; else
+        if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   mode = "GONDOLA";   else
+        if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) mode = "FUNICULAR"; else
+        mode = "INVALID";
     }
     json_obj(); /* one leg */
         json_place("from", leg->s0, tdata);
@@ -272,7 +281,25 @@ void render_plan_json(struct plan *plan, tdata_t *tdata) {
             json_kv("fromPlace", tdata_stop_id_for_index(tdata, plan->req.from));
             json_kv("toPlace",   tdata_stop_id_for_index(tdata, plan->req.to));
             json_kv("date", "08-19-2013");
-            json_kv("mode", "TRANSIT,WALK");
+            if (plan->req.mode == m_all) {
+                json_kv("mode", "TRANSIT,WALK");
+            } else {
+                char modes[67]; // max length is 58 + 4 + 8 = 70, minus shortest (3 + 1) + 1
+                char *dst = modes;
+
+                if ((plan->req.mode & m_tram)      == m_tram)      dst = strcpy(dst, "TRAM,");
+                if ((plan->req.mode & m_subway)    == m_subway)    dst = strcpy(dst, "SUBWAY,");
+                if ((plan->req.mode & m_rail)      == m_rail)      dst = strcpy(dst, "RAIL,");
+                if ((plan->req.mode & m_bus)       == m_bus)       dst = strcpy(dst, "BUS,");
+                if ((plan->req.mode & m_ferry)     == m_ferry)     dst = strcpy(dst, "FERRY,");
+                if ((plan->req.mode & m_cablecar)  == m_cablecar)  dst = strcpy(dst, "CABLE_CAR,");
+                if ((plan->req.mode & m_gondola)   == m_gondola)   dst = strcpy(dst, "GONDOLA,");
+                if ((plan->req.mode & m_funicular) == m_funicular) dst = strcpy(dst, "FUNICULAR,");
+
+                dst = strcpy(dst, "WALK");
+
+                json_kv("mode", modes);
+            }
         json_end_obj();
         json_key_obj("plan");
             json_kl("date", 1376896320000);
