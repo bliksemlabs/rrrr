@@ -1,7 +1,5 @@
 /* tdata.c : handles memory mapped data file containing transit timetable etc. */
 
-#define _GNU_SOURCE
-
 #include "tdata.h" // make sure it works alone
 
 #include <fcntl.h>
@@ -271,14 +269,20 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
         TransitRealtime__TripDescriptor *trip = vehicle->trip;
         if (trip == NULL) goto cleanup;
         char *trip_id = trip->trip_id;
-        TransitRealtime__OVapiVehiclePosition *ovapi_vehicle_position = vehicle->ovapi_vehicle_position;
+
         int32_t delay_sec = 0;
-        if (ovapi_vehicle_position == NULL) printf ("    entity contains no delay message.\n");
-        else delay_sec = ovapi_vehicle_position->delay;
-        if (abs(delay_sec) > 60 * 120) {
-            printf ("    filtering out extreme delay of %d sec.\n", delay_sec);
-            delay_sec = 0;
+        if (trip->schedule_relationship == TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__CANCELED) {
+            delay_sec = CANCELED;
+        } else {
+            TransitRealtime__OVapiVehiclePosition *ovapi_vehicle_position = vehicle->ovapi_vehicle_position;
+            if (ovapi_vehicle_position == NULL) printf ("    entity contains no delay message.\n");
+            else delay_sec = ovapi_vehicle_position->delay;
+            if (abs(delay_sec) > 60 * 120) {
+                printf ("    filtering out extreme delay of %d sec.\n", delay_sec);
+                delay_sec = 0;
+            }
         }
+
         /* Apply delay. */
         uint32_t trip_index = rxt_find (tripid_index, trip_id);
         if (trip_index == RADIX_TREE_NONE) {
