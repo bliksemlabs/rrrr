@@ -67,8 +67,8 @@ inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
 }
 
 void tdata_check_coherent (tdata_t *td) {
-    /* Check that all lat/lon look like valid coordinates for this part of Europe (including Paris, Berlin etc. */
-    float min_lat = 42.0;
+    /* Check that all lat/lon look like valid coordinates for this part of Europe or tests */
+    float min_lat = 0.0;
     float max_lat = 54.0;
     float min_lon = -1.0;
     float max_lon = 15.0;
