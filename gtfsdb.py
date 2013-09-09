@@ -446,7 +446,7 @@ FROM transfers WHERE to_stop_id = ?) as x"""
 
     def stops(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops" )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops ORDER BY stop_id" )
         ret = list(c)
         c.close()
         return ret
@@ -500,7 +500,7 @@ FROM transfers WHERE to_stop_id = ?) as x"""
             if reporter and i%(n_trips//50+1)==0: reporter.write( "%d/%d trips grouped by %d patterns\n"%(i,n_trips,len(bundles)))
             
             d = self.get_cursor()
-            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id, route_id, pickup_type, drop_off_type FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY stop_sequence", (trip_id,) )
+            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id, route_id, pickup_type, drop_off_type FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY trip_id,stop_sequence", (trip_id,) )
             trip_ids, arrival_times, departure_times, stop_ids, route_ids, pickup_types, drop_off_types = zip(*d) # builtin for zip(*d)?
             trip_begin_time = arrival_times[0]
             # trip_id is already set ! #= stop_times[trip_id for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times][0]
