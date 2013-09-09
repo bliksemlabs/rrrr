@@ -1,0 +1,65 @@
+stop lat/lon out of range: lat=1.101000, lon=1.100000 
+stop lat/lon out of range: lat=1.102000, lon=1.100000 
+stop lat/lon out of range: lat=1.103000, lon=1.100000 
+stop lat/lon out of range: lat=1.104000, lon=1.100000 
+stop lat/lon out of range: lat=1.105000, lon=1.100000 
+stop lat/lon out of range: lat=1.106000, lon=1.100000 
+-- Router Request --
+from:  Stop 1a1 [0]
+to:    Stop 1a6 [5]
+date:  2014-01-01
+time:  00:00:00 [1388530800]
+speed: 1.500000 m/sec
+arrive-by: false
+max xfers: 5
+max time:     --   
+mode: transit
+
+ITIN 3 rides 
+WALK    -2  -2     0     0 00:00:00 00:00:00 +0.0 ;walk;walk;Stop 1a1;Stop 1a1
+BUS     1   0     0     1 00:01:00 00:02:00 +0.0 ;bus;bus;;Stop 1a1;Stop 1a2
+WALK    -2  -2     1     2 00:02:00 00:02:00 +0.0 ;walk;walk;Stop 1a2;Stop 1a3
+FERRY     0   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
+WALK    -2  -2     3     4 00:04:00 00:04:00 +0.0 ;walk;walk;Stop 1a4;Stop 1a5
+RAIL     2   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
+WALK    -2  -2     5     5 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 1a6;Stop 1a6
+Repeating search with reversed request: 
+-- Router Request --
+from:  Stop 1a1 [0]
+to:    Stop 1a6 [5]
+date:  2014-01-01
+time:  00:06:00 [1388531160]
+speed: 1.500000 m/sec
+arrive-by: true
+max xfers: 2
+max time:  12:02:56 +1D
+mode: transit
+
+ITIN 3 rides 
+WALK    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Stop 1a1;Stop 1a1
+BUS     1   0     0     1 00:01:00 00:02:00 +0.0 ;bus;bus;;Stop 1a1;Stop 1a2
+WALK    -2  -2     1     2 00:03:00 00:03:00 +0.0 ;walk;walk;Stop 1a2;Stop 1a3
+FERRY     0   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
+WALK    -2  -2     3     4 00:05:00 00:05:00 +0.0 ;walk;walk;Stop 1a4;Stop 1a5
+RAIL     2   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
+WALK    -2  -2     5     5 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 1a6;Stop 1a6
+Repeating search with reversed request: 
+-- Router Request --
+from:  Stop 1a1 [0]
+to:    Stop 1a6 [5]
+date:  2014-01-01
+time:  00:01:00 [1388530860]
+speed: 1.500000 m/sec
+arrive-by: false
+max xfers: 2
+max time:  12:08:56 +1D
+mode: transit
+
+ITIN 3 rides 
+WALK    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Stop 1a1;Stop 1a1
+BUS     1   0     0     1 00:01:00 00:02:00 +0.0 ;bus;bus;;Stop 1a1;Stop 1a2
+WALK    -2  -2     1     2 00:02:00 00:02:00 +0.0 ;walk;walk;Stop 1a2;Stop 1a3
+FERRY     0   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
+WALK    -2  -2     3     4 00:04:00 00:04:00 +0.0 ;walk;walk;Stop 1a4;Stop 1a5
+RAIL     2   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
+WALK    -2  -2     5     5 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 1a6;Stop 1a6

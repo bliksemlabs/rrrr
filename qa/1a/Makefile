@@ -1,7 +1,8 @@
 all: unittest
 
 unittest: tmp/timetable.dat
-	../../testerrrr --depart -D 2014-01-01T00:00:00 --from-idx 0 --to-idx 5 -T tmp/timetable.dat
+	../../testerrrr --depart -D 2014-01-01T00:00:00 --from-idx 0 --to-idx 5 -T tmp/timetable.dat \
+	| tee tmp/$@.txt ; echo ; diff --suppress-common-lines -y expected/$@.txt tmp/$@.txt || exit 0
 
 tmp/gtfsdb: gtfs/*
 	mkdir -p tmp
