@@ -464,7 +464,7 @@ ORDER BY stop_id
         for row in c:
             row = list(row)
             if row[6] is not None:
-                row[6] = row[6].split(';')
+                row[6] = [int(x) for x in row[6].split(';')]
             if row[5] == 1:
                 row[5] = True
             elif row[5] == 2:
