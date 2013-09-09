@@ -307,7 +307,7 @@ for idx, route in enumerate(route_for_idx) :
             attr |= 1
         if pickup_type != 1:
             attr |= 2
-        if pickup_type != 1:
+        if drop_off_type != 1:
             attr |= 4
         writebyte(attr)
     offset += 1 
