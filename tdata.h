@@ -52,6 +52,7 @@ struct tdata {
     stop_t *stops;
     route_t *routes;
     uint32_t *route_stops;
+    uint8_t *route_stop_attributes;
     stoptime_t *stop_times;
     trip_t *trips;
     uint32_t *stop_routes;

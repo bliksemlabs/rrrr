@@ -25,6 +25,7 @@ struct tdata_header {
     uint32_t loc_stop_coords;
     uint32_t loc_routes;
     uint32_t loc_route_stops;
+    uint32_t loc_route_stop_attributes;
     uint32_t loc_stop_times;
     uint32_t loc_trips;
     uint32_t loc_stop_routes;
@@ -132,6 +133,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->stop_coords = (latlon_t*) (b + header->loc_stop_coords);
     td->routes = (route_t*) (b + header->loc_routes);
     td->route_stops = (uint32_t *) (b + header->loc_route_stops);
+    td->route_stop_attributes = (uint8_t *) (b + header->loc_route_stop_attributes);
     td->stop_times = (stoptime_t*) (b + header->loc_stop_times);
     td->trips = (trip_t*) (b + header->loc_trips);
     td->stop_routes = (uint32_t *) (b + header->loc_stop_routes);
