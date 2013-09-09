@@ -411,6 +411,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             T tdata_dump_route(&(router.tdata), route_idx, NONE);
             // For each stop in this route, its global stop index.
             uint32_t *route_stops = tdata_stops_for_route(router.tdata, route_idx);
+            uint8_t *route_stop_attributes = tdata_stop_attributes_for_route(router.tdata, route_idx);
             trip_t   *route_trips = tdata_trips_for_route(&(router.tdata), route_idx); // TODO use to avoid calculating at every stop
             uint32_t *trip_masks  = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
             uint32_t trip = NONE; // trip index within the route. NONE means not yet boarded.
@@ -428,6 +429,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 uint32_t stop = route_stops[route_stop];
                 I printf("    stop %2d [%d] %s %s\n", route_stop, stop,
                     timetext(router.best_time[stop]), tdata_stop_id_for_index (&(router.tdata), stop));
+                if ( !((route_stop_attributes[route_stop] & rsa_boarding) == rsa_boarding)) continue;
                 /* 
                   If we are not already on a trip, or if we might be able to board a better trip on 
                   this route at this location, indicate that we want to search for a trip.
@@ -535,7 +537,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     } else if (req.arrive_by ? time > origin_rtime : time < origin_rtime) {
                         /* Wrapping/overflow. This happens due to overnight trips on day 2. Prune them. */
                         // printf("ERROR: setting state to time before start time. route %d trip %d stop %d \n", route_idx, trip, stop);
-                    } else {
+                    } else { // TODO should alighting handled here? if ((route_stop_attributes[route_stop] & rsa_alighting) == rsa_alighting)
                         I printf("    setting stop to %s \n", timetext(time)); 
                         router.best_time[stop] = time;
                         states[round][stop].time = time;

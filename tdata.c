@@ -163,6 +163,11 @@ inline uint32_t *tdata_stops_for_route(tdata_t td, uint32_t route) {
     return td.route_stops + route0.route_stops_offset;
 }
 
+inline uint8_t *tdata_stop_attributes_for_route(tdata_t td, uint32_t route) {
+    route_t route0 = td.routes[route];
+    return td.route_stop_attributes + route0.route_stops_offset;
+}
+
 inline uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret) {
     stop_t stop0 = td->stops[stop];
     stop_t stop1 = td->stops[stop + 1];

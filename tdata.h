@@ -84,6 +84,8 @@ void tdata_dump(tdata_t*);
 
 uint32_t *tdata_stops_for_route(tdata_t, uint32_t route);
 
+uint8_t *tdata_stop_attributes_for_route(tdata_t, uint32_t route);
+
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 uint32_t tdata_routes_for_stop(tdata_t*, uint32_t stop, uint32_t **routes_ret);
 
