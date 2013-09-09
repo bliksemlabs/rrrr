@@ -451,6 +451,30 @@ FROM transfers WHERE to_stop_id = ?) as x"""
         c.close()
         return ret
 
+    def stopattributes(self):
+        c = self.get_cursor()
+        query = """
+SELECT stop_id,stop_name,stop_lat,stop_lon,platform_code,wheelchair_boarding,group_concat(route_type,';')
+FROM stops LEFT JOIN (SELECT DISTINCT stop_id,route_type FROM stop_times JOIN trips USING (trip_id) JOIN routes USING (route_id)) as x USING (stop_id)
+GROUP BY stop_id
+ORDER BY stop_id
+"""
+        c.execute( query )
+        ret = []
+        for row in c:
+            row = list(row)
+            if row[6] is not None:
+                row[6] = row[6].split(';')
+            if row[5] == 1:
+                row[5] = True
+            elif row[5] == 2:
+                row[5] = False
+            else:
+                row[5] = None
+            ret.append(row)
+        c.close()
+        return ret
+
     def tripinfo(self,trip_id):
         query = """ select trips.route_id, trips.trip_headsign, 
                      routes.agency_id, routes.route_short_name, routes.route_long_name, routes.route_type
