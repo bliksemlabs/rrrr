@@ -558,7 +558,7 @@ ORDER BY stop_id
         del(timedemandgroup_id_for_signature)
         c.close()
         
-        return bundles.values()
+        return [y for x, y in sorted(bundles.items())]
 
 from optparse import OptionParser
 

@@ -19,9 +19,9 @@ ITIN 3 rides
 WALK    -2  -2     0     0 00:00:00 00:00:00 +0.0 ;walk;walk;Stop 1a1;Stop 1a1
 BUS     0   0     0     1 00:01:00 00:02:00 +0.0 ;bus;bus;;Stop 1a1;Stop 1a2
 WALK    -2  -2     1     2 00:02:00 00:02:00 +0.0 ;walk;walk;Stop 1a2;Stop 1a3
-FERRY     2   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
+FERRY     1   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
 WALK    -2  -2     3     4 00:04:00 00:04:00 +0.0 ;walk;walk;Stop 1a4;Stop 1a5
-RAIL     1   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
+RAIL     2   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
 WALK    -2  -2     5     5 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 1a6;Stop 1a6
 Repeating search with reversed request: 
 -- Router Request --
@@ -39,9 +39,9 @@ ITIN 3 rides
 WALK    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Stop 1a1;Stop 1a1
 BUS     0   0     0     1 00:01:00 00:02:00 +0.0 ;bus;bus;;Stop 1a1;Stop 1a2
 WALK    -2  -2     1     2 00:03:00 00:03:00 +0.0 ;walk;walk;Stop 1a2;Stop 1a3
-FERRY     2   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
+FERRY     1   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
 WALK    -2  -2     3     4 00:05:00 00:05:00 +0.0 ;walk;walk;Stop 1a4;Stop 1a5
-RAIL     1   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
+RAIL     2   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
 WALK    -2  -2     5     5 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 1a6;Stop 1a6
 Repeating search with reversed request: 
 -- Router Request --
@@ -59,7 +59,7 @@ ITIN 3 rides
 WALK    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Stop 1a1;Stop 1a1
 BUS     0   0     0     1 00:01:00 00:02:00 +0.0 ;bus;bus;;Stop 1a1;Stop 1a2
 WALK    -2  -2     1     2 00:02:00 00:02:00 +0.0 ;walk;walk;Stop 1a2;Stop 1a3
-FERRY     2   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
+FERRY     1   0     2     3 00:03:00 00:04:00 +0.0 ;ferry;ferry;;Stop 1a3;Stop 1a4
 WALK    -2  -2     3     4 00:04:00 00:04:00 +0.0 ;walk;walk;Stop 1a4;Stop 1a5
-RAIL     1   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
+RAIL     2   0     4     5 00:05:00 00:06:00 +0.0 ;train;train;;Stop 1a5;Stop 1a6
 WALK    -2  -2     5     5 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 1a6;Stop 1a6
