@@ -31,6 +31,7 @@ static struct option long_options[] = {
     { "banned-stops-idx",  required_argument, NULL, 'y' },
     { "gtfsrt",        required_argument, NULL, 'g' },
     { "timetable",     required_argument, NULL, 'T' },
+    { "verbose",     no_argument, NULL, 'v' },
     { NULL, 0, 0, 0 } /* end */
 };
 
@@ -42,13 +43,14 @@ int main(int argc, char **argv) {
     char *tdata_file = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
     char *iso_datetime = NULL;
+    bool verbose = false;
 
     const char delim[2] = ",";
     char *token;
     
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:x:y:g:T:", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:x:y:g:T:v", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -155,6 +157,9 @@ int main(int argc, char **argv) {
         case 'g':
             gtfsrt_file = optarg;
             break;
+        case 'v':
+            verbose = true;
+            break;
         }
     }
     
@@ -197,21 +202,31 @@ int main(int argc, char **argv) {
     //tdata_dump(&tdata); // debug timetable file format
 
     char result_buf[8000];
-    router_request_dump (&router, &req);
     router_route (&router, &req);
-    router_result_dump(&router, &req, result_buf, 8000);
-    printf("%s", result_buf);
+    if (verbose) {
+        router_request_dump (&router, &req);
+        router_result_dump(&router, &req, result_buf, 8000);
+        printf("%s", result_buf);
+    }
     // repeat search in reverse to compact transfers
     uint32_t n_reversals = req.arrive_by ? 1 : 2;
     // n_reversals = 0; // DEBUG turn off reversals
     for (uint32_t i = 0; i < n_reversals; ++i) {
         router_request_reverse (&router, &req); // handle case where route is not reversed
-        printf ("Repeating search with reversed request: \n");
-        router_request_dump (&router, &req);
         router_route (&router, &req);
+        if (verbose) {
+            printf ("Repeated search with reversed request: \n");
+            router_request_dump (&router, &req);
+            router_result_dump(&router, &req, result_buf, 8000);
+            printf("%s", result_buf);
+        }
+    }
+
+    /* Output only final result in non-verbose mode */
+    if (!verbose) {
         router_result_dump(&router, &req, result_buf, 8000);
         printf("%s", result_buf);
-    }
+    }    
     
     tdata_close(&tdata);
 
