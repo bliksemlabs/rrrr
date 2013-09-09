@@ -491,9 +491,9 @@ FROM transfers WHERE to_stop_id = ?) as x"""
             n_trips = maxtrips;
 
         if maxtrips is not None:
-            c.execute( "SELECT trip_id FROM trips LIMIT ?", (maxtrips,) )
+            c.execute( "SELECT trip_id FROM trips ORDER BY trip_id LIMIT ?", (maxtrips,) )
         else:
-            c.execute( "SELECT trip_id FROM trips" )
+            c.execute( "SELECT trip_id FROM trips ORDER BY trip_id" )
             
         timedemandgroup_id_for_signature = {} # map from timedemandgroup signatures to IDs
         for i, (trip_id,) in enumerate(c):
