@@ -841,8 +841,8 @@ void router_request_initialize(router_request_t *req) {
 void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {
     char etime[32];
     strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
-    printf ("epoch time: %s [%ld]\n", etime, epochtime);
-    //router_request_initialize (req);
+    // printf ("epoch time: %s [%ld]\n", etime, epochtime);
+    // router_request_initialize (req);
     struct tm origin_tm;
     req->time = epoch_to_rtime (epochtime, &origin_tm);
     // TODO not DST-proof, use noons
