@@ -402,6 +402,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             // For each stop in this route, its global stop index.
             uint32_t *route_stops = tdata_stops_for_route(router.tdata, route_idx);
             trip_t   *route_trips = tdata_trips_for_route(&(router.tdata), route_idx); // TODO use to avoid calculating at every stop
+            uint8_t  *route_trip_attributes = tdata_trip_attributes_for_route(&(router.tdata), route_idx);
             uint32_t *trip_masks  = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
             uint32_t trip = NONE; // trip index within the route. NONE means not yet boarded.
             uint32_t board_stop;  // stop index where that trip was boarded
@@ -465,6 +466,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                             // D printf("\n");
                             /* skip this trip if it is not running on the current service day */
                             if ( ! (sday->mask & trip_masks[this_trip])) continue;
+                            /* skip this trip if it doesn't have our required attributes */
+                            if ( ! (req.trip_attributes & route_trip_attributes[this_trip]) == req.trip_attributes) continue;
                             /* skip this trip if the realtime delay equals CANCELED */
                             if ( route_trips[this_trip].realtime_delay == CANCELED) continue;
                             /* consider the arrival or departure time on the current service day */ 
@@ -829,6 +832,7 @@ void router_request_initialize(router_request_t *req) {
     req->arrive_by = true;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->trip_attributes = ta_none;
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
@@ -868,6 +872,7 @@ void router_request_randomize(router_request_t *req) {
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->day_mask = 1 << rrrrandom(32);
     req->mode = m_all;
+    req->trip_attributes = ta_none;
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;

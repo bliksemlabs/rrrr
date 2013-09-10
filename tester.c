@@ -29,6 +29,7 @@ static struct option long_options[] = {
     { "mode",          required_argument, NULL, 'm' },
     { "banned-routes-idx", required_argument, NULL, 'x' },
     { "banned-stops-idx",  required_argument, NULL, 'y' },
+    { "trip-attributes", required_argument, NULL, 'A' },
     { "gtfsrt",        required_argument, NULL, 'g' },
     { "timetable",     required_argument, NULL, 'T' },
     { "verbose",     no_argument, NULL, 'v' },
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
     
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:x:y:g:T:v", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:x:y:A:g:T:v", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -106,6 +107,17 @@ int main(int argc, char **argv) {
                 if (strcmp(token, "funicular") == 0) req.mode |= m_funicular;
                 if (strcmp(token, "all") == 0)       req.mode = m_all;
 
+                token = strtok(NULL, delim);
+            }
+            break;
+        case 'A':
+            token = strtok(optarg, delim);
+
+            while ( token != NULL ) {
+                if (strcmp(token, "accessible") == 0) req.trip_attributes |= ta_accessible;
+                if (strcmp(token, "toilet")     == 0) req.trip_attributes |= ta_toilet;
+                if (strcmp(token, "wifi")       == 0) req.trip_attributes |= ta_wifi;
+                if (strcmp(token, "none")       == 0) req.trip_attributes =  ta_none;
                 token = strtok(NULL, delim);
             }
             break;

@@ -132,7 +132,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ16I') 
+struct_header = Struct('8sQ17I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -140,7 +140,7 @@ def write_header () :
     htext = "TTABLEV1"
     packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords, loc_routes, loc_route_stops, 
         loc_timedemandgroups, loc_trips, loc_stop_routes, loc_transfer_target_stops, loc_transfer_dist_meters, 
-        loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active)
+        loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active,loc_trip_attributes)
     out.write(packed)
 
 ### Begin writing out file ###
@@ -493,6 +493,17 @@ for bitfield in route_mask_for_idx :
     writeint(bitfield)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 
+print "writing trip attributes" 
+write_text_comment("TRIP ATTRIBUTES")
+struct_tripattr = Struct('B')
+loc_trip_attributes = tell()
+for idx, route in enumerate(route_for_idx):
+    trip_ids = route.sorted_trip_ids()
+    for attributes in route.getattributes():
+        trip_attr = 0
+        if 'wheelchair_accessible' in attributes and attributes['wheelchair_accessible']:
+            trip_attr |= 1
+        out.write(struct_tripattr.pack(trip_attr))
 
 print "reached end of timetable file"
 write_text_comment("END TTABLEV1")
