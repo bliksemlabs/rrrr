@@ -903,21 +903,24 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     if (max_transfers >= RRRR_MAX_ROUNDS) // range-check to keep search within states array
         max_transfers = RRRR_MAX_ROUNDS - 1;
     // find the solution with the most transfers and the earliest arrival
-    for (int round = max_transfers; round >= 0; --round) { 
-        if (states[round][stop].walk_time != UNREACHED) {
-            //printf ("State present at round %d \n", round);
-            //router_state_dump (&(states[round][stop]));
-            req->max_transfers = round;
-            req->time_cutoff = req->time;
-            req->time = states[round][stop].walk_time;
-            req->arrive_by = !(req->arrive_by);
-            // router_request_dump(router, req);
-            // range-check the resulting request here?
-            return true;
+    uint32_t round = NONE;
+    for (uint32_t r = 0; r <= max_transfers; ++r) {
+        if (states[r][stop].walk_time != UNREACHED) {
+            round = r;
+            if (req->optimise == o_transfers) break; // use the lowest rather than highest number of transfers
         }
     }
-    // in the case that no previous solution is found, the request will remain unchanged
-    return false;
+    // In the case that no solution was found, the request will remain unchanged.
+    if (round == NONE) return false;
+    //printf ("State present at round %d \n", round);
+    //router_state_dump (&(states[round][stop]));
+    req->max_transfers = round;
+    req->time_cutoff = req->time;
+    req->time = states[round][stop].walk_time;
+    req->arrive_by = !(req->arrive_by);
+    // router_request_dump(router, req);
+    // range-check the resulting request here?
+    return true;
 }
 
 /*
