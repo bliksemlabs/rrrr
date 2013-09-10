@@ -1,0 +1,7 @@
+
+ITIN 2 rides 
+WALK    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Stop 2d1;Stop 2d1
+RAIL     0   0     0     2 00:01:00 00:03:00 +0.0 ;train 1;;Stop 2d1;Stop 2d3
+WALK    -2  -2     2     2 00:03:00 00:03:00 +0.0 ;walk;walk;Stop 2d3;Stop 2d3
+RAIL     1   0     2     3 00:03:00 00:04:00 +0.0 ;train 2;;Stop 2d3;Stop 2d4
+WALK    -2  -2     3     3 00:04:00 00:04:00 +0.0 ;walk;walk;Stop 2d4;Stop 2d4
