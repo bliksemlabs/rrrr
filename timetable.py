@@ -138,7 +138,7 @@ def write_header () :
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords, loc_routes, loc_route_stops, 
+    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords, loc_routes, loc_route_stops,loc_route_stop_attributes, 
         loc_timedemandgroups, loc_trips, loc_stop_routes, loc_transfer_target_stops, loc_transfer_dist_meters, 
         loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active,loc_trip_attributes)
     out.write(packed)
@@ -293,6 +293,26 @@ for idx, route in enumerate(route_for_idx) :
         offset += 1 
 route_stops_offsets.append(offset) # sentinel
 assert len(route_stops_offsets) == nroutes + 1
+
+print "saving attributes of stops in each route"
+write_text_comment("STOPS ATTRIBUTES BY ROUTE")
+loc_route_stop_attributes = tell()
+offset = 0
+route_stops_attributes_offsets = []
+for idx, route in enumerate(route_for_idx) :
+    route_stops_attributes_offsets.append(offset)
+    for timepoint,pickup_type,drop_off_type in zip(route.pattern.timepoints,route.pattern.pickup_types,route.pattern.drop_off_types):
+        attr = 0
+        if timepoint == 1:
+            attr |= 1
+        if pickup_type != 1:
+            attr |= 2
+        if drop_off_type != 1:
+            attr |= 4
+        writebyte(attr)
+    offset += 1 
+route_stops_attributes_offsets.append(offset) # sentinel
+assert len(route_stops_attributes_offsets) == nroutes + 1
 
 # print db.service_ids()
 

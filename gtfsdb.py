@@ -121,15 +121,15 @@ def load_gtfs_table_to_sqlite(fp, gtfs_basename, cc, header=None, verbose=False)
         cc.execute(insert_template, _line)
 
 class Pattern:
-    def __init__(self,route_id,stop_ids,pickup_types,drop_off_types):
+    def __init__(self,route_id,stop_ids,pickup_types,drop_off_types,timepoints):
         self.stop_ids = stop_ids
         self.pickup_types = pickup_types
         self.drop_off_types = drop_off_types
         self.route_id = route_id
-    
+        self.timepoints = timepoints
     @property
     def signature(self):
-        return (tuple(self.stop_ids),tuple(self.pickup_types),tuple(drop_off_types),route_id)
+        return (tuple(self.stop_ids),tuple(self.pickup_types),tuple(self.drop_off_types),tuple(self.timepoints),route_id)
 
 class TripBundle:
     def __init__(self, gtfsdb, pattern):
@@ -231,6 +231,7 @@ class GTFSDatabase:
                                      ("stop_headsign", None, None),
                                      ("pickup_type", "INTEGER", None),
                                      ("drop_off_type", "INTEGER", None),
+                                     ("timepoint", "INTEGER", None),
                                      ("shape_dist_traveled", "FLOAT", None)))
     STOPS_DEF = ("stops", (("stop_id", None, None),
                            ("stop_code", None, None),
@@ -539,8 +540,9 @@ ORDER BY stop_id
             if reporter and i%(n_trips//50+1)==0: reporter.write( "%d/%d trips grouped by %d patterns\n"%(i,n_trips,len(bundles)))
             
             d = self.get_cursor()
-            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id, route_id, pickup_type, drop_off_type FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY trip_id,stop_sequence", (trip_id,) )
-            trip_ids, arrival_times, departure_times, stop_ids, route_ids, pickup_types, drop_off_types = zip(*d) # builtin for zip(*d)?
+            d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id, route_id, pickup_type, drop_off_type,timepoint FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY trip_id,stop_sequence", (trip_id,) )
+            trip_ids, arrival_times, departure_times, stop_ids, route_ids, pickup_types, drop_off_types,timepoints = (list(x) for x in zip(*d)) # builtin for zip(*d)?
+            timepoints[0] = 1
             trip_begin_time = arrival_times[0]
             # trip_id is already set ! #= stop_times[trip_id for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times][0]
             self.trip_begin_times[trip_id] = trip_begin_time
@@ -556,10 +558,10 @@ ORDER BY stop_id
             self.timedemandgroup_for_trip[trip_id] = timedemandgroup_id
             route_id = route_ids[0]
 
-            pattern_signature = (tuple(stop_ids), tuple(drop_off_types), tuple(pickup_types), route_id)
+            pattern_signature = (tuple(stop_ids), tuple(drop_off_types), tuple(pickup_types), tuple(timepoints), route_id)
 
             if pattern_signature not in patterns:
-                pattern = Pattern(route_id, stop_ids, pickup_types, drop_off_types)
+                pattern = Pattern(route_id, stop_ids, pickup_types, drop_off_types,timepoints)
                 patterns[pattern_signature] = pattern
             else:
                 pattern = patterns[pattern_signature]

@@ -40,6 +40,12 @@ struct stoptime {
     rtime_t departure;
 };
 
+typedef enum routestop_attribute {
+    rsa_waitingpoint =   1, // at this stop the vehicle waits if its early
+    rsa_boarding     =   2, // a passenger can enter the vehicle at this stop
+    rsa_alighting    =   4  // a passenger can leave the vehicle at this stop
+} routestop_attribute_t;
+
 // treat entirely as read-only?
 typedef struct tdata tdata_t;
 struct tdata {
@@ -52,6 +58,7 @@ struct tdata {
     stop_t *stops;
     route_t *routes;
     uint32_t *route_stops;
+    uint8_t  *route_stop_attributes;
     stoptime_t *stop_times;
     trip_t *trips;
     uint32_t *stop_routes;
@@ -77,6 +84,8 @@ void tdata_close(tdata_t*);
 void tdata_dump(tdata_t*);
 
 uint32_t *tdata_stops_for_route(tdata_t, uint32_t route);
+
+uint8_t *tdata_stop_attributes_for_route(tdata_t, uint32_t route);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 uint32_t tdata_routes_for_stop(tdata_t*, uint32_t stop, uint32_t **routes_ret);
