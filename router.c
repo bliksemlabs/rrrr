@@ -419,6 +419,18 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                 uint32_t stop = route_stops[route_stop];
                 I printf("    stop %2d [%d] %s %s\n", route_stop, stop,
                     timetext(router.best_time[stop]), tdata_stop_id_for_index (&(router.tdata), stop));
+                /*
+                   If a stop in in banned_stop_hard, we do not want to transit through this station
+                   we reset the current trip to NONE and skip the currect stop.
+                   This effectively splits the route in two, and forces a re-board afterwards.
+                */
+                for (uint32_t bsh = 0; bsh < req.n_banned_stops_hard; bsh++) {
+                    if (stop == req.banned_stop_hard) {
+                        trip = NONE;
+                        continue;
+                    }
+                }
+
                 /* 
                   If we are not already on a trip, or if we might be able to board a better trip on 
                   this route at this location, indicate that we want to search for a trip.
@@ -836,8 +848,10 @@ void router_request_initialize(router_request_t *req) {
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
+    req->n_banned_stops_hard = 0;
     req->banned_route = NONE;
     req->banned_stop = NONE;
+    req->banned_stop_hard = NONE;
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
@@ -876,8 +890,10 @@ void router_request_randomize(router_request_t *req) {
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
+    req->n_banned_stops_hard = 0;
     req->banned_route = NONE;
     req->banned_stop = NONE;
+    req->banned_stop_hard = NONE;
 }
 
 void router_state_dump (router_state_t *state) {

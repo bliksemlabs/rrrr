@@ -86,8 +86,10 @@ struct router_request {
     uint8_t optimise;    // restrict the output to specific optimisation flags
     uint32_t n_banned_routes; // 1
     uint32_t n_banned_stops; // 1
+    uint32_t n_banned_stops_hard; // 1
     uint32_t banned_route; // One route which is banned 
     uint32_t banned_stop; // One stop which is banned 
+    uint32_t banned_stop_hard; // One stop which is banned 
 };
 
 
