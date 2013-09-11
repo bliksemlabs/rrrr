@@ -84,10 +84,10 @@ struct router_request {
     uint8_t mode;        // selects the mode by a bitfield
     uint8_t trip_attributes; // select required attributes bitfield (from trips)
     uint8_t optimise;    // restrict the output to specific optimisation flags
-    uint32_t n_banned_routes; // number of banned routes in the list below
-    uint32_t n_banned_stops; // number of banned stops in the list below
-    uint32_t *banned_routes; // A dynamically allocated list of routes which are banned 
-    uint32_t *banned_stops; // A dynamically allocated list of stops which are banned 
+    uint32_t n_banned_routes; // 1
+    uint32_t n_banned_stops; // 1
+    uint32_t banned_route; // One route which is banned 
+    uint32_t banned_stop; // One stop which is banned 
 };
 
 

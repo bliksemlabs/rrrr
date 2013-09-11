@@ -122,20 +122,13 @@ int main(int argc, char **argv) {
             }
             break;
         case 'x':
-            req.n_banned_routes = 1;
-            for (int i = 0; i < strlen(optarg); i++) {
-                if (optarg[i] == ',') req.n_banned_routes++;
-            }
-            req.banned_routes = (uint32_t *) calloc(req.n_banned_routes, sizeof(uint32_t));
-
-            req.n_banned_routes = 0;
             token = strtok(optarg, delim);
             while ( token  != NULL ) {
                 if (strlen(token) > 0) {
                     long int tmp = strtol(token, NULL, 10);
                     if (tmp > 0) {
-                        req.banned_routes[req.n_banned_routes] = tmp;
-                        req.n_banned_routes++;
+                        req.banned_route = tmp;
+                        req.n_banned_routes = 1;
                     }
                 }
 
@@ -143,20 +136,13 @@ int main(int argc, char **argv) {
             }
             break;
         case 'y':
-            req.n_banned_stops = 1;
-            for (int i = 0; i < strlen(optarg); i++) {
-                if (optarg[i] == ',') req.n_banned_stops++;
-            }
-            req.banned_stops = (uint32_t *) calloc(req.n_banned_stops, sizeof(uint32_t));
-
-            req.n_banned_stops = 0;
             token = strtok(optarg, delim);
             while ( token  != NULL ) {
                 if (strlen(token) > 0) {
                     long int tmp = strtol(token, NULL, 10);
                     if (tmp > 0) {
-                        req.banned_stops[req.n_banned_stops] = tmp;
-                        req.n_banned_stops++;
+                        req.banned_stop = tmp;
+                        req.n_banned_stops = 1;
                     }
                 }
 
@@ -241,9 +227,6 @@ int main(int argc, char **argv) {
     }    
     
     tdata_close(&tdata);
-
-    if (req.banned_routes)
-        free(req.banned_routes);
 
     exit(EXIT_SUCCESS);
     

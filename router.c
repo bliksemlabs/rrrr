@@ -60,13 +60,13 @@ static inline void flag_routes_for_stop (router_t *r, router_request_t *req, uin
 
 static inline void unflag_banned_routes (router_t *r, router_request_t *req) {
      for (uint32_t i = 0; i < req->n_banned_routes; ++i) {
-         bitset_unset (r->updated_routes, req->banned_routes[i]);
+         bitset_unset (r->updated_routes, req->banned_route);
      }
 }
 
 static inline void unflag_banned_stops (router_t r, router_request_t req) {
      for (uint32_t i = 0; i < req.n_banned_stops; ++i) {
-         bitset_unset (r.updated_stops, req.banned_stops[i]);
+         bitset_unset (r.updated_stops, req.banned_stop);
      }
 }
 
@@ -836,8 +836,8 @@ void router_request_initialize(router_request_t *req) {
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
-    req->banned_routes = NULL;
-    req->banned_stops = NULL;
+    req->banned_route = NONE;
+    req->banned_stop = NONE;
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
@@ -876,8 +876,8 @@ void router_request_randomize(router_request_t *req) {
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
-    req->banned_routes = NULL;
-    req->banned_stops = NULL;
+    req->banned_route = NONE;
+    req->banned_stop = NONE;
 }
 
 void router_state_dump (router_state_t *state) {
