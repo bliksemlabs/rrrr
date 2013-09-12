@@ -480,6 +480,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                             // D printBits(4, & (trip_masks[this_trip]));
                             // D printBits(4, & (sday->mask));
                             // D printf("\n");
+                            /* skip this trip if it is banned */
+                            for (uint32_t bt = 0; bt < req.n_banned_trips; bt++) if (route_idx == req.banned_trip_route && this_trip == req.banned_trip_offset) continue;
                             /* skip this trip if it is not running on the current service day */
                             if ( ! (sday->mask & trip_masks[this_trip])) continue;
                             /* skip this trip if it doesn't have our required attributes */
@@ -852,9 +854,12 @@ void router_request_initialize(router_request_t *req) {
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
+    req->n_banned_trips = 0;
     req->n_banned_stops_hard = 0;
     req->banned_route = NONE;
     req->banned_stop = NONE;
+    req->banned_trip_route = NONE;
+    req->banned_trip_offset = NONE;
     req->banned_stop_hard = NONE;
 }
 
@@ -894,9 +899,12 @@ void router_request_randomize(router_request_t *req) {
     req->optimise = o_all;
     req->n_banned_routes = 0;
     req->n_banned_stops = 0;
+    req->n_banned_trips = 0;
     req->n_banned_stops_hard = 0;
     req->banned_route = NONE;
     req->banned_stop = NONE;
+    req->banned_trip_route = NONE;
+    req->banned_trip_offset = NONE;
     req->banned_stop_hard = NONE;
 }
 
