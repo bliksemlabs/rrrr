@@ -397,7 +397,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             printf ("  actual first time: %d \n", tdata_depart(&(router.tdata), route_idx, 0, 0));
             printf ("  actual last time:  %d \n", tdata_arrive(&(router.tdata), route_idx, route.n_trips - 1, route.n_stops - 1));
             */
-            I printf("  route %d: %s\n", route_idx, tdata_route_id_for_index(&(router.tdata), route_idx));
+            I printf("  route %d: %s\n", route_idx, tdata_route_desc_for_index(&(router.tdata), route_idx));
             T tdata_dump_route(&(router.tdata), route_idx, NONE);
             // For each stop in this route, its global stop index.
             uint32_t *route_stops = tdata_stops_for_route(router.tdata, route_idx);
@@ -775,7 +775,7 @@ static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, cha
         btimetext(leg->t1, ct1);
         char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
         char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
-        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_id_for_index (tdata, leg->route);
+        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_desc_for_index (tdata, leg->route);
         float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
         
         char *leg_mode = NULL;

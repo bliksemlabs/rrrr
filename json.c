@@ -155,7 +155,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata) {
     char *route_id = NULL;
 
     if (leg->route == WALK) mode = "WALK"; else {
-        route_id = tdata_route_id_for_index(tdata, leg->route);
+        route_id = tdata_route_desc_for_index(tdata, leg->route);
 
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else

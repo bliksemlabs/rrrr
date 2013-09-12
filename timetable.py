@@ -140,7 +140,7 @@ def write_header () :
     htext = "TTABLEV1"
     packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords, loc_routes, loc_route_stops,loc_route_stop_attributes, 
         loc_timedemandgroups, loc_trips, loc_stop_routes, loc_transfer_target_stops, loc_transfer_dist_meters, 
-        loc_stop_ids, loc_route_ids, loc_trip_ids, loc_trip_active, loc_route_active, loc_trip_attributes)
+        loc_stop_ids, loc_route_desc, loc_trip_ids, loc_trip_active, loc_route_active, loc_trip_attributes)
     out.write(packed)
 
 ### Begin writing out file ###
@@ -247,7 +247,7 @@ route_max_time.append(0) # sentinel
 # calls JOURNEYPATTERNs: an ordered sequence of stops.
 # We want one descriptive string per route, in the RAPTOR sense, which should amount to one string 
 # per GTFS route per direction.
-route_id_for_idx = []
+route_desc_for_idx = []
 route_attributes = []
 modes = { 0: 'tram', 
           1: 'subway',
@@ -270,7 +270,7 @@ for route in route_for_idx :
         headsign = ''
     desc = ';'.join([desc, headsign])
     # print desc
-    route_id_for_idx.append(desc)
+    route_desc_for_idx.append(desc)
     route_attributes.append(1 << mode)
 route_attributes.append(0) # sentinel  
 # named tuples?
@@ -475,7 +475,7 @@ loc_stop_ids = write_string_table(stop_name_for_idx)
 # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
 print "writing route ids to string table"
 write_text_comment("ROUTE IDS")
-loc_route_ids = write_string_table(route_id_for_idx)
+loc_route_desc = write_string_table(route_desc_for_idx)
 
 
 print "writing trip ids to string table" 

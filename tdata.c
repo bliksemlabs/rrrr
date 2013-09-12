@@ -53,8 +53,8 @@ inline uint32_t tdata_stop_name_for_index(tdata_t *td, char* stop_name, uint32_t
     return NONE;
 }
 
-inline char *tdata_route_id_for_index(tdata_t *td, uint32_t route_index) {
-    return td->route_ids + (td->route_id_width * route_index);
+inline char *tdata_route_desc_for_index(tdata_t *td, uint32_t route_index) {
+    return td->route_desc + (td->route_desc_width * route_index);
 }
 
 inline char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
@@ -143,8 +143,8 @@ void tdata_load(char *filename, tdata_t *td) {
     //maybe replace with pointers because there's a lot of wasted space?
     td->stop_id_width = *((uint32_t *) (b + header->loc_stop_ids));
     td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(uint32_t));
-    td->route_id_width = *((uint32_t *) (b + header->loc_route_ids));
-    td->route_ids = (char*) (b + header->loc_route_ids + sizeof(uint32_t));
+    td->route_desc_width = *((uint32_t *) (b + header->loc_route_ids));
+    td->route_desc = (char*) (b + header->loc_route_ids + sizeof(uint32_t));
     td->trip_id_width = *((uint32_t *) (b + header->loc_trip_ids));
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(uint32_t));
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);
@@ -200,7 +200,7 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
     printf("\nRoute details for '%s' [%d] (n_stops %d, n_trips %d)\n", 
-        tdata_route_id_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
+        tdata_route_desc_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
     printf("stop sequence, stop name (index), departures  \n");
     for (uint32_t ti = 0; ti < route.n_trips; ++ti) {
         // TODO should this really be a 2D array ?
@@ -255,7 +255,7 @@ void tdata_dump(tdata_t *td) {
     printf("\nROUTEIDS, TRIPIDS\n");
     for (uint32_t i = 0; i < td->n_routes; i++) {
         printf("route %03d has id %s and first trip id %s \n", i, 
-            tdata_route_id_for_index(td, i),
+            tdata_route_desc_for_index(td, i),
             tdata_trip_ids_for_route(td, i));
     }
 #endif
