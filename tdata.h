@@ -40,6 +40,15 @@ struct stoptime {
     rtime_t departure;
 };
 
+typedef enum stop_attribute {
+    sa_wheelchair_boarding  =   1, // wheelchair accessible
+    sa_visual_accessible    =   2, // accessible for blind people
+    sa_shelter              =   4, // roof against rain
+    sa_bikeshed             =   8, // you can put your bike somewhere
+    sa_bicyclerent          =  16, // you can rent a bicycle
+    sa_parking		    =  32  // carparking is available
+} stop_attribute_t;
+
 typedef enum routestop_attribute {
     rsa_waitingpoint =   1, // at this stop the vehicle waits if its early
     rsa_boarding     =   2, // a passenger can enter the vehicle at this stop
@@ -56,6 +65,7 @@ struct tdata {
     uint32_t n_stops;
     uint32_t n_routes;
     stop_t *stops;
+    uint8_t *stop_attributes;
     route_t *routes;
     uint32_t *route_stops;
     uint8_t  *route_stop_attributes;
