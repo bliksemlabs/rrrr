@@ -186,7 +186,7 @@ class TripBundle:
     select trip_id,min(departure_time) as departure_time from stop_times
     where trip_id in (%s)
     group by trip_id
-    order by departure_time
+    order by departure_time,trip_id
         """ % (",".join( ["'%s'"%x for x in self.trip_ids] ))
         # get all trip ids in this pattern ordered by first departure time
         sorted_trips = [trip_id for (trip_id, departure_time) in self.gtfsdb.get_cursor().execute(query)]
