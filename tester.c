@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
     exit(EXIT_SUCCESS);
     
     usage:
-    printf("Usage:\n%stesterrrr [-r(andomize)] [-f from_stop] [-t to_stop] [-a(rrive)] [-d(epart)] [-D YYYY-MM-DDThh:mm:ss] [-g gtfsrt.pb] [-T timetable.dat]\n", argv[0]);
+    printf("Usage:\n%stesterrrr [-r(andomize)] [-from-idx from_stop] [-to-idx to_stop] [-a(rrive)] [-d(epart)] [-D YYYY-MM-DDThh:mm:ss] [-g gtfsrt.pb] [-T timetable.dat]\n", argv[0]);
     exit(-2);
 }
 
