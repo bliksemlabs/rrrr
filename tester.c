@@ -27,6 +27,7 @@ static struct option long_options[] = {
     { "from-idx",      required_argument, NULL, 'f' },
     { "to-idx",        required_argument, NULL, 't' },
     { "mode",          required_argument, NULL, 'm' },
+    { "start-trip-idx",    required_argument, NULL, 'Q' },
     { "banned-routes-idx", required_argument, NULL, 'x' },
     { "banned-stops-idx",  required_argument, NULL, 'y' },
     { "banned-trips-idx",  required_argument, NULL, 'z' },
@@ -53,7 +54,7 @@ int main(int argc, char **argv) {
     
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:x:y:z:w:A:g:T:v", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:Q:x:y:z:w:A:g:T:v", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -169,6 +170,23 @@ int main(int argc, char **argv) {
                 }
 
                 token = strtok(NULL, delim);
+            }
+            break;
+        case 'Q':
+            uint32_t tmp_route = NONE;
+            uint32_t tmp_trip  = NONE;
+            for (token = strtok(optarg, delim); token != NULL; token = strtok(optarg, delim)) {
+                if (strlen(token) > 0) {
+                    if (tmp_route != NONE) {
+                        tmp_trip  = strtol(token, NULL, 10);
+                    } else {
+                        tmp_route = strtol(token, NULL, 10);
+                    }
+                }
+            }
+            if (tmp_trip != NONE) {
+                req.start_trip_route = tmp_route;
+                req.start_trip_trip  = tmp_trip;
             }
             break;
         case 'w':

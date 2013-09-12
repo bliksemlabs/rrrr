@@ -93,6 +93,8 @@ struct router_request {
     uint32_t banned_trip_route; // One trip which is banned, this is its route
     uint32_t banned_trip_offset; // One trip which is banned, this is its tripoffset
     uint32_t banned_stop_hard; // One stop which is banned 
+    uint32_t start_trip_route; // for onboard departure: route index on which to begin
+    uint32_t start_trip_trip;  // for onboard departure: trip index within that route
 };
 
 

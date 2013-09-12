@@ -861,6 +861,8 @@ void router_request_initialize(router_request_t *req) {
     req->banned_trip_route = NONE;
     req->banned_trip_offset = NONE;
     req->banned_stop_hard = NONE;
+    uint32_t start_trip_route = NONE;
+    uint32_t start_trip_trip  = NONE;
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
