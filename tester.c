@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
                 token = strtok(NULL, delim);
             }
             break;
-        case 'Q':
+        case 'Q': {
             uint32_t tmp_route = NONE;
             uint32_t tmp_trip  = NONE;
             for (token = strtok(optarg, delim); token != NULL; token = strtok(optarg, delim)) {
@@ -188,6 +188,7 @@ int main(int argc, char **argv) {
                 req.start_trip_trip  = tmp_trip;
             }
             break;
+        }
         case 'w':
             token = strtok(optarg, delim);
             while ( token  != NULL ) {
