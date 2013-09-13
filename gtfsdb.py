@@ -479,15 +479,18 @@ ORDER BY stop_id
         ret = []
         for row in c:
             row = list(row)
+            attr = {}
             if row[6] is not None:
-                row[6] = [int(x) for x in row[6].split(';')]
+                attr['route_types'] = [int(x) for x in row[6].split(';')]
             if row[5] == 1:
-                row[5] = True
+                attr['wheelchair_boarding'] = True
             elif row[5] == 2:
-                row[5] = False
+                attr['wheelchair_boarding'] = False
             else:
-                row[5] = None
-            ret.append(row)
+                attr['wheelchair_boarding'] = None
+            attr['platform_code'] = row[4]
+            row[4] = attr
+            ret.append(row[:5])
         c.close()
         return ret
 

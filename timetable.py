@@ -132,13 +132,13 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ18I') 
+struct_header = Struct('8sQ19I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_coords, loc_routes, loc_route_stops,loc_route_stop_attributes, 
+    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_attributes, loc_stop_coords, loc_routes, loc_route_stops,loc_route_stop_attributes, 
         loc_timedemandgroups, loc_trips, loc_stop_routes, loc_transfer_target_stops, loc_transfer_dist_meters, 
         loc_stop_ids, loc_route_desc, loc_trip_ids, loc_trip_active, loc_route_active, loc_trip_attributes)
     out.write(packed)
@@ -452,6 +452,17 @@ loc_stops = tell()
 struct_2i = Struct('II')
 for stop in zip (stop_routes_offsets, transfers_offsets) :
     out.write(struct_2i.pack(*stop));
+
+print "saving stop attributes"
+write_text_comment("STOP Attributes")
+loc_stop_attributes = tell()
+for stop_id,stop_name,stop_lat,stop_lon,attributes in db.stopattributes() :
+    attr = 0
+    if 'wheelchair_boarding' in attributes and attributes['wheelchair_boarding']:
+        attr |= 1
+    if 'visual_accessible' in attributes and attributes['visual_accessible']:
+        attr |= 2
+    writebyte(attr)
 
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
