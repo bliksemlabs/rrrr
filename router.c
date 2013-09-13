@@ -354,27 +354,60 @@ bool router_route(router_t *prouter, router_request_t *preq) {
         origin = req.from;
         target = req.to;
     }
-    
+
+    if (req.start_trip_route != NONE && req.start_trip_trip != NONE) {
+        /* We are starting on board a trip, not at a station. */
+        /* 
+          We cannot expand the start trip into the temporary round (1) during initialization because we may be able to 
+          reach the destination on that start trip. Instead, simply discover the next stop based on time and trip number.
+          It is tempting to discover the previous stop and flag only the selected route for exploration in round 0, 
+          but this interferes with search reversal. 
+          It might be more elegant to somehow start round 0 with the proper trip number already selected. 
+        */
+        route_t  route = router.tdata.routes[req.start_trip_route];
+        uint32_t *route_stops   = tdata_stops_for_route(router.tdata, req.start_trip_route);
+        uint32_t next_stop      = NONE;
+        rtime_t  next_stop_time = UNREACHED;
+        // add tdata function to return next stop and stoptime given route, trip, and time
+        for (int route_stop = 0; route_stop < route.n_stops; ++route_stop) {
+            uint32_t stop = route_stops[route_stop];
+            rtime_t time = req.arrive_by ? tdata_arrive(&(router.tdata), req.start_trip_route, req.start_trip_trip, route_stop)
+                                         : tdata_depart(&(router.tdata), req.start_trip_route, req.start_trip_trip, route_stop);
+            /* Find stop immediately after the given time on the given trip. */
+            if (req.arrive_by ? time < req.time : time > req.time) {
+                if (next_stop_time == UNREACHED || (req.arrive_by ? time > next_stop_time : time < next_stop_time)) {
+                    next_stop = stop;
+                    next_stop_time = time;
+                }
+            }
+        }
+        if (next_stop != NONE) {
+            req.from = next_stop;
+            req.time = next_stop_time;
+        }
+    } 
     /* Initialize origin state */
     /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
     router.best_time[origin] = origin_rtime;
     states[1][origin].time   = origin_rtime;
+    // the rest of these should be unnecessary
     states[1][origin].back_stop  = NONE;
     states[1][origin].back_route = NONE;
     states[1][origin].back_trip  = NONE;
     states[1][origin].board_time = UNREACHED;
     /* Hack to communicate the origin time to itinerary renderer. It would be better to just include rtime_t in request structs. */
+    // TODO eliminate this now that we have rtimes in requests
     states[0][origin].time = origin_rtime;
 
     bitset_reset(router.updated_stops);
-    // This is inefficient, as it depends on iterative over a bitset with only one bit true.
+    // This is inefficient, as it depends on iterating over a bitset with only one bit true.
     bitset_set(router.updated_stops, origin);
     // Remove the banned stops from the bitset
     unflag_banned_stops(router, req);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
     apply_transfers(router, req, 1, day_mask);
     // dump_results(prouter);
-
+    
     /* apply upper bounds (speeds up second and third reversed searches) */
     uint32_t n_rounds = req.max_transfers + 1;
     if (n_rounds > RRRR_MAX_ROUNDS)
