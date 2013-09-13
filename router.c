@@ -484,8 +484,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                             for (uint32_t bt = 0; bt < req.n_banned_trips; bt++) if (route_idx == req.banned_trip_route && this_trip == req.banned_trip_offset) continue;
                             /* skip this trip if it is not running on the current service day */
                             if ( ! (sday->mask & trip_masks[this_trip])) continue;
-                            /* skip this trip if it doesn't have our required attributes */
-                            if ( ! (req.trip_attributes & route_trip_attributes[this_trip])) continue;
+                            /* skip this trip if it doesn't have all our required attributes */
+                            if ( ! ((req.trip_attributes & route_trip_attributes[this_trip]) == req.trip_attributes)) continue;
                             /* skip this trip if the realtime delay equals CANCELED */
                             if ( route_trips[this_trip].realtime_delay == CANCELED) continue;
                             /* consider the arrival or departure time on the current service day */ 
