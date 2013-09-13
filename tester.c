@@ -163,6 +163,7 @@ int main(int argc, char **argv) {
                         if (tmp_trip > 0) {
                             req.banned_trip_route = tmp_route;
                             req.banned_trip_offset = tmp_trip;
+                            req.n_banned_trips = 1;
                         }
                     }
                 }
