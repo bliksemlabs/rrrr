@@ -343,16 +343,6 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     }
     for (uint32_t s = 0; s < n_stops; ++s) router.best_time[s] = UNREACHED;
     
-    /* Stop indexes where the search process begins and ends, independent of arrive_by */
-    uint32_t origin, target; 
-    if (req.arrive_by) {
-        origin = req.to;
-        target = req.from;
-    } else {
-        origin = req.from;
-        target = req.to;
-    }
-
     if (req.start_trip_route != NONE && req.start_trip_trip != NONE) {
         /* We are starting on board a trip, not at a station. */
         /* 
@@ -388,6 +378,17 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             req.time = next_stop_time;
         }
     }
+    
+    /* Stop indexes where the search process begins and ends, independent of arrive_by */
+    uint32_t origin, target; 
+    if (req.arrive_by) {
+        origin = req.to;
+        target = req.from;
+    } else {
+        origin = req.from;
+        target = req.to;
+    }
+
     router_request_dump(prouter, preq);
     /* Initialize origin state */
     /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
