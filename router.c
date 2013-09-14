@@ -373,7 +373,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
         if (next_stop != NONE) {
             /* rewrite the request to begin at the next reachable stop */
             char *next_stop_id = tdata_stop_id_for_index(&(router.tdata), next_stop);
-            printf ("Based on start trip and time, chose stop %s [%d] at %s\n", next_stop_id, next_stop, timetext(next_stop_time));
+            // printf ("Based on start trip and time, chose stop %s [%d] at %s\n", next_stop_id, next_stop, timetext(next_stop_time));
             req->from = next_stop;
             //req->time = next_stop_time; // actually we don't need to change the time, it can always recatch the same trip
         }
