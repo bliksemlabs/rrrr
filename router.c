@@ -389,8 +389,6 @@ bool router_route(router_t *prouter, router_request_t *req) {
         target = req->to;
     }
 
-    router_request_dump(prouter, req);
-    
     /* Initialize origin state */
     /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
     router.best_time[origin] = req->time;
