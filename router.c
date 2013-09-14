@@ -284,10 +284,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     // or just assume a single router per thread, and move struct fields into this module
     router_t router = *prouter; 
     router_request_t req = *preq;
-    //router_request_dump(prouter, preq);
+    router_request_dump(prouter, preq);
     uint32_t n_stops = router.tdata.n_stops;
-    
-    rtime_t origin_rtime = req.time;
     uint32_t day_mask = req.day_mask;
     
     /* One struct service_day for each of: yesterday, today, tomorrow (for overnight searches) */
@@ -322,7 +320,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     
 
     I router_request_dump(prouter, preq);
-    T printf("\norigin_time %s \n", timetext(origin_rtime));
+    T printf("\norigin_time %s \n", timetext(req.time));
     T tdata_dump(&(router.tdata));
     
     I printf("Initializing router state \n");
@@ -383,16 +381,18 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             }
         }
         if (next_stop != NONE) {
+            /* rewrite the request to begin at the next reachable stop */
             char *next_stop_id = tdata_stop_id_for_index(&(router.tdata), next_stop);
             printf ("Based on start trip and time, chose stop %s [%d] at %s\n", next_stop_id, next_stop, timetext(next_stop_time));
             req.from = next_stop;
             req.time = next_stop_time;
         }
-    } 
+    }
+    router_request_dump(prouter, preq);
     /* Initialize origin state */
     /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
-    router.best_time[origin] = origin_rtime;
-    states[1][origin].time   = origin_rtime;
+    router.best_time[origin] = req.time;
+    states[1][origin].time   = req.time;
     // the rest of these should be unnecessary
     states[1][origin].back_stop  = NONE;
     states[1][origin].back_route = NONE;
@@ -400,7 +400,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
     states[1][origin].board_time = UNREACHED;
     /* Hack to communicate the origin time to itinerary renderer. It would be better to just include rtime_t in request structs. */
     // TODO eliminate this now that we have rtimes in requests
-    states[0][origin].time = origin_rtime;
+    states[0][origin].time = req.time;
 
     bitset_reset(router.updated_stops);
     // This is inefficient, as it depends on iterating over a bitset with only one bit true.
@@ -543,7 +543,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     } // end for (service days: yesterday, today, tomorrow)
                     if (best_trip != NONE) {
                         I printf("    boarding trip %d at %s \n", best_trip, timetext(best_time));
-                        if (req.arrive_by ? best_time > origin_rtime : best_time < origin_rtime) {
+                        if (req.arrive_by ? best_time > req.time : best_time < req.time) {
                             printf("ERROR: boarded before start time, trip %d stop %d \n", best_trip, stop);
                         } else {
                             // use a router_state struct for all this?
@@ -584,7 +584,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
                     }
                     if (time > RTIME_THREE_DAYS) {
                         /* Reserve all time past three days for special values like UNREACHED. */
-                    } else if (req.arrive_by ? time > origin_rtime : time < origin_rtime) {
+                    } else if (req.arrive_by ? time > req.time : time < req.time) {
                         /* Wrapping/overflow. This happens due to overnight trips on day 2. Prune them. */
                         // printf("ERROR: setting state to time before start time. route %d trip %d stop %d \n", route_idx, trip, stop);
                     } else { // TODO should alighting handled here? if ((route_stop_attributes[route_stop] & rsa_alighting) == rsa_alighting)
