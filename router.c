@@ -64,9 +64,9 @@ static inline void unflag_banned_routes (router_t *r, router_request_t *req) {
      }
 }
 
-static inline void unflag_banned_stops (router_t r, router_request_t req) {
-     for (uint32_t i = 0; i < req.n_banned_stops; ++i) {
-         bitset_unset (r.updated_stops, req.banned_stop);
+static inline void unflag_banned_stops (router_t *router, router_request_t *req) {
+     for (uint32_t i = 0; i < req->n_banned_stops; ++i) {
+         bitset_unset (router->updated_stops, req->banned_stop);
      }
 }
 
@@ -406,7 +406,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
     // This is inefficient, as it depends on iterating over a bitset with only one bit true.
     bitset_set(router.updated_stops, origin);
     // Remove the banned stops from the bitset
-    unflag_banned_stops(router, *req);
+    unflag_banned_stops(&router, req);
     // Apply transfers to initial state, which also initializes the updated routes bitset.
     apply_transfers(router, *req, 1, day_mask);
     // dump_results(prouter);
@@ -606,7 +606,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
             } // end for (stop)
         } // end for (route)
         // Remove the banned stops from the bitset
-        unflag_banned_stops(router, *req);
+        unflag_banned_stops(&router, req);
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
         apply_transfers(router, *req, round, day_mask);
         // dump_results(prouter); // DEBUG
