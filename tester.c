@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
         case 'Q': {
             uint32_t tmp_route = NONE;
             uint32_t tmp_trip  = NONE;
-            for (token = strtok(optarg, delim); token != NULL; token = strtok(optarg, delim)) {
+            for (token = strtok(optarg, delim); token != NULL; token = strtok(NULL, delim)) {
                 if (strlen(token) > 0) {
                     if (tmp_route != NONE) {
                         tmp_trip  = strtol(token, NULL, 10);
