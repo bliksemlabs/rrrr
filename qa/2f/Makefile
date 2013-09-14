@@ -1,7 +1,7 @@
 all: unittest
 
 unittest: tmp/timetable.dat
-	../../testerrrr --depart --from-idx-trip 0 --from-idx 0 --to-idx 1 -T tmp/timetable.dat
+	../../testerrrr --depart --start-trip-idx 0,0 --from-idx 0 --to-idx 2 -D 2014-01-01T00:02:00 -T tmp/timetable.dat
 
 tmp/gtfsdb: gtfs/*
 	mkdir -p tmp
