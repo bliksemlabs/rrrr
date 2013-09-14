@@ -373,6 +373,7 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             uint32_t stop = route_stops[route_stop];
             rtime_t time = req.arrive_by ? tdata_arrive(&(router.tdata), req.start_trip_route, req.start_trip_trip, route_stop)
                                          : tdata_depart(&(router.tdata), req.start_trip_route, req.start_trip_trip, route_stop);
+            time += RTIME_ONE_DAY; // not really very general
             /* Find stop immediately after the given time on the given trip. */
             if (req.arrive_by ? time < req.time : time > req.time) {
                 if (next_stop_time == UNREACHED || (req.arrive_by ? time > next_stop_time : time < next_stop_time)) {
@@ -382,6 +383,8 @@ bool router_route(router_t *prouter, router_request_t *preq) {
             }
         }
         if (next_stop != NONE) {
+            char *next_stop_id = tdata_stop_id_for_index(&(router.tdata), next_stop);
+            printf ("Based on start trip and time, chose stop %s [%d] at %s\n", next_stop_id, next_stop, timetext(next_stop_time));
             req.from = next_stop;
             req.time = next_stop_time;
         }
