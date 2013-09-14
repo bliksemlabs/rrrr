@@ -994,7 +994,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
   Indexes larger than array lengths for the given router, signed values less than zero, etc. 
   can and will cause segfaults and present security risks.
   
-  We could also infer deaparture stop etc. from start trip here, "missing start point" and reversal problems.
+  We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
 */
 inline static bool range_check(struct router_request *req, struct router *router) {
     uint32_t n_stops = router->tdata.n_stops;
