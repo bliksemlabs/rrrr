@@ -30,7 +30,7 @@ struct route {
 typedef struct trip trip_t;
 struct trip {
     uint32_t stop_times_offset; // The offset of the first stoptime of the time demand type used by this trip
-    rtime_t  begin_time;        // This could be rtime_t but struct will be 64 bits anyway due to padding.
+    rtime_t  begin_time;        // The absolute start time since at the departure of the first stop
     int16_t  realtime_delay;    // This is signed to indicate early or late. All zeros upon creation (but serves as padding).
 };
 
@@ -46,7 +46,7 @@ typedef enum stop_attribute {
     sa_shelter              =   4, // roof against rain
     sa_bikeshed             =   8, // you can put your bike somewhere
     sa_bicyclerent          =  16, // you can rent a bicycle
-    sa_parking		    =  32  // carparking is available
+    sa_parking              =  32  // carparking is available
 } stop_attribute_t;
 
 typedef enum routestop_attribute {
