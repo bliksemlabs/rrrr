@@ -271,14 +271,6 @@ route_max_time.append(0) # sentinel
 route_desc_for_idx = []
 route_ids_for_idx = []
 route_attributes = []
-modes = { 0: 'tram', 
-          1: 'subway',
-          2: 'train',
-          3: 'bus',
-          4: 'ferry',
-          5: 'cable car',
-          6: 'gondola',
-          7: 'funicular' }
 for route in route_for_idx :
     exemplar_trip = route.trip_ids[0]
     #  executemany
