@@ -32,22 +32,22 @@ struct tdata_header {
     uint32_t loc_stop_routes;
     uint32_t loc_transfer_target_stops; 
     uint32_t loc_transfer_dist_meters; 
-    uint32_t loc_stop_ids; 
-    uint32_t loc_route_ids; 
-    uint32_t loc_trip_ids; 
     uint32_t loc_trip_active; 
     uint32_t loc_route_active; 
+    uint32_t loc_stop_desc; 
+    uint32_t loc_route_desc; 
+    uint32_t loc_trip_ids; 
     uint32_t loc_trip_attributes; 
 };
 
-inline char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
-    return td->stop_ids + (td->stop_id_width * stop_index);
+inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
+    return td->stop_desc + (td->stop_desc_width * stop_index);
 }
 
 // TODO rename this, confusing.
 inline uint32_t tdata_stop_name_for_index(tdata_t *td, char* stop_name, uint32_t start_index) {
     for (uint32_t stop_index = start_index; stop_index < td->n_stops; stop_index++) {
-        if (strcasestr(td->stop_ids + (td->stop_id_width * stop_index), stop_name)) {
+        if (strcasestr(td->stop_desc + (td->stop_desc_width * stop_index), stop_name)) {
             return stop_index;
         }
     }
@@ -143,10 +143,10 @@ void tdata_load(char *filename, tdata_t *td) {
     td->transfer_target_stops = (uint32_t *) (b + header->loc_transfer_target_stops);
     td->transfer_dist_meters = (uint8_t *) (b + header->loc_transfer_dist_meters);
     //maybe replace with pointers because there's a lot of wasted space?
-    td->stop_id_width = *((uint32_t *) (b + header->loc_stop_ids));
-    td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(uint32_t));
-    td->route_desc_width = *((uint32_t *) (b + header->loc_route_ids));
-    td->route_desc = (char*) (b + header->loc_route_ids + sizeof(uint32_t));
+    td->stop_desc_width = *((uint32_t *) (b + header->loc_stop_desc));
+    td->stop_desc = (char*) (b + header->loc_stop_desc + sizeof(uint32_t));
+    td->route_desc_width = *((uint32_t *) (b + header->loc_route_desc));
+    td->route_desc = (char*) (b + header->loc_route_desc + sizeof(uint32_t));
     td->trip_id_width = *((uint32_t *) (b + header->loc_trip_ids));
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(uint32_t));
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);
@@ -208,7 +208,7 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
         // TODO should this really be a 2D array ?
         stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_idx, ti);
         for (uint32_t si = 0; si < route.n_stops; ++si) {
-            char *stop_id = tdata_stop_id_for_index (td, stops[si]);
+            char *stop_id = tdata_stop_desc_for_index (td, stops[si]);
             printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[ti][si].departure + td->trips[ti].begin_time));
          }
          printf("\n");
@@ -251,7 +251,7 @@ void tdata_dump(tdata_t *td) {
     }
     printf("\nSTOPIDS\n");
     for (uint32_t i = 0; i < td->n_stops; i++) {
-        printf("stop %03d has id %s \n", i, tdata_stop_id_for_index(td, i));
+        printf("stop %03d has id %s \n", i, tdata_stop_desc_for_index(td, i));
     }
 #if 0
     printf("\nROUTEIDS, TRIPIDS\n");

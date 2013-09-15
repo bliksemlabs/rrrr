@@ -76,8 +76,8 @@ struct tdata {
     uint8_t  *transfer_dist_meters;
     // optional data -- NULL pointer means it is not available
     latlon_t *stop_coords;
-    uint32_t stop_id_width;
-    char *stop_ids;
+    uint32_t stop_desc_width;
+    char *stop_desc;
     uint32_t route_desc_width;
     char *route_desc;
     uint32_t trip_id_width;
@@ -104,7 +104,7 @@ stoptime_t *tdata_stoptimes_for_route(tdata_t*, uint32_t route_index);
 
 void tdata_dump_route(tdata_t*, uint32_t route_index, uint32_t trip_index);
 
-char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
+char *tdata_stop_desc_for_index(tdata_t*, uint32_t stop_index);
 
 uint32_t tdata_stop_name_for_index(tdata_t*, char* stop_name, uint32_t start_index);
 

@@ -138,9 +138,28 @@ def write_header () :
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
     htext = "TTABLEV1"
-    packed = struct_header.pack(htext, calendar_start_time, nstops, nroutes, loc_stops, loc_stop_attributes, loc_stop_coords, loc_routes, loc_route_stops,loc_route_stop_attributes, 
-        loc_timedemandgroups, loc_trips, loc_stop_routes, loc_transfer_target_stops, loc_transfer_dist_meters, 
-        loc_stop_ids, loc_route_desc, loc_trip_ids, loc_trip_active, loc_route_active, loc_trip_attributes)
+    packed = struct_header.pack(htext,
+        calendar_start_time,
+        nstops,
+        nroutes,
+        loc_stops,
+        loc_stop_attributes,
+        loc_stop_coords,
+        loc_routes,
+        loc_route_stops,
+        loc_route_stop_attributes, 
+        loc_timedemandgroups,
+        loc_trips,
+        loc_stop_routes,
+        loc_transfer_target_stops,
+        loc_transfer_dist_meters,
+        loc_trip_active,
+        loc_route_active,
+        loc_stop_desc,
+        loc_route_desc,
+        loc_trip_ids,
+        loc_trip_attributes,
+    )
     out.write(packed)
 
 ### Begin writing out file ###
@@ -481,7 +500,7 @@ print "writing out sorted stop ids to string table"
 # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
 write_text_comment("STOP IDS (SORTED)")
 # loc_stop_ids = write_string_table(stop_id_for_idx) <-- write IDs instead of names
-loc_stop_ids = write_string_table(stop_name_for_idx)
+loc_stop_desc = write_string_table(stop_name_for_idx)
 
 # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
 print "writing route ids to string table"

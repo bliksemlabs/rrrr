@@ -133,7 +133,7 @@ static void json_end_arr() {
 static long rtime_to_msec(rtime_t rtime) { return (rtime << 4) * 1000L; }
 
 static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
-    char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
+    char *stop_id = tdata_stop_desc_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
         json_kv("name", stop_id);
@@ -278,8 +278,8 @@ void render_plan_json(struct plan *plan, tdata_t *tdata) {
             json_kv("time", timetext(SEC_TO_RTIME(plan->req.time)));
             json_kb("arriveBy", plan->req.arrive_by);
             json_kf("maxWalkDistance", 1500.0);
-            json_kv("fromPlace", tdata_stop_id_for_index(tdata, plan->req.from));
-            json_kv("toPlace",   tdata_stop_id_for_index(tdata, plan->req.to));
+            json_kv("fromPlace", tdata_stop_desc_for_index(tdata, plan->req.from));
+            json_kv("toPlace",   tdata_stop_desc_for_index(tdata, plan->req.to));
             json_kv("date", "08-19-2013");
             if (plan->req.mode == m_all) {
                 json_kv("mode", "TRANSIT,WALK");

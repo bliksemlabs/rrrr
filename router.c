@@ -139,7 +139,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
             continue;
         }
         */
-        I printf ("  applying transfer at %d (%s) \n", stop_index_from, tdata_stop_id_for_index(&d, stop_index_from));
+        I printf ("  applying transfer at %d (%s) \n", stop_index_from, tdata_stop_desc_for_index(&d, stop_index_from));
         /* First apply a transfer from the stop to itself, if case that's the best way */
         if (state_from->time == r.best_time[stop_index_from]) { 
             /* This state's best time is still its own. No improvements from other transfers. */
@@ -163,7 +163,7 @@ apply_transfers (router_t r, router_request_t req, uint32_t round, uint32_t day_
             if (time_to > RTIME_THREE_DAYS) continue; 
             /* Catch wrapping/overflow due to limited range of rtime_t (happens normally on overnight routing but should be avoided rather than caught) */
             if (req.arrive_by ? time_to > time_from : time_to < time_from) continue;
-            I printf ("    target %d %s (%s) \n", stop_index_to, timetext(r.best_time[stop_index_to]), tdata_stop_id_for_index(&d, stop_index_to));
+            I printf ("    target %d %s (%s) \n", stop_index_to, timetext(r.best_time[stop_index_to]), tdata_stop_desc_for_index(&d, stop_index_to));
             I printf ("    transfer time   %s\n", timetext(transfer_duration));
             I printf ("    transfer result %s\n", timetext(time_to));
             router_state_t *state_to = states + stop_index_to;
@@ -210,7 +210,7 @@ static void dump_results(router_t *prouter) {
             } 
         }
         if ( ! set) continue;
-        char *stop_id = tdata_stop_id_for_index (&(router.tdata), stop);
+        char *stop_id = tdata_stop_desc_for_index (&(router.tdata), stop);
         printf(id_fmt, stop_id);
         printf(" [%6d]", stop);
         for (uint32_t round = 0; round < RRRR_MAX_ROUNDS; ++round) {
@@ -372,7 +372,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
         }
         if (next_stop != NONE) {
             /* rewrite the request to begin at the next reachable stop */
-            char *next_stop_id = tdata_stop_id_for_index(&(router.tdata), next_stop);
+            char *next_stop_id = tdata_stop_desc_for_index(&(router.tdata), next_stop);
             // printf ("Based on start trip and time, chose stop %s [%d] at %s\n", next_stop_id, next_stop, timetext(next_stop_time));
             req->from = next_stop;
             //req->time = next_stop_time; // actually we don't need to change the time, it can always recatch the same trip
@@ -455,7 +455,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
                                   req->arrive_by ? --route_stop : ++route_stop ) {
                 uint32_t stop = route_stops[route_stop];
                 I printf("    stop %2d [%d] %s %s\n", route_stop, stop,
-                    timetext(router.best_time[stop]), tdata_stop_id_for_index (&(router.tdata), stop));
+                    timetext(router.best_time[stop]), tdata_stop_desc_for_index (&(router.tdata), stop));
 
                 /*
                   If a stop in in banned_stop_hard, we do not want to transit through this station
@@ -809,8 +809,8 @@ static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, cha
         char ct1[16];
         btimetext(leg->t0, ct0);
         btimetext(leg->t1, ct1);
-        char *s0_id = tdata_stop_id_for_index(tdata, leg->s0);
-        char *s1_id = tdata_stop_id_for_index(tdata, leg->s1);
+        char *s0_id = tdata_stop_desc_for_index(tdata, leg->s0);
+        char *s1_id = tdata_stop_desc_for_index(tdata, leg->s1);
         char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_desc_for_index (tdata, leg->route);
         float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
         
@@ -1034,8 +1034,8 @@ bool router_request_from_qstring(router_request_t *req) {
 }
 
 void router_request_dump(router_t *router, router_request_t *req) {
-    char *from_stop_id = tdata_stop_id_for_index(&(router->tdata), req->from);
-    char *to_stop_id   = tdata_stop_id_for_index(&(router->tdata), req->to);
+    char *from_stop_id = tdata_stop_desc_for_index(&(router->tdata), req->from);
+    char *to_stop_id   = tdata_stop_desc_for_index(&(router->tdata), req->to);
     char time[32], time_cutoff[32];
     btimetext(req->time, time);
     btimetext(req->time_cutoff, time_cutoff);
