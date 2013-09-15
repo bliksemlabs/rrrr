@@ -29,6 +29,7 @@ struct tdata_header {
     uint32_t loc_route_stop_attributes;
     uint32_t loc_stop_times;
     uint32_t loc_trips;
+    uint32_t loc_trip_attributes;
     uint32_t loc_stop_routes;
     uint32_t loc_transfer_target_stops; 
     uint32_t loc_transfer_dist_meters; 
@@ -36,8 +37,9 @@ struct tdata_header {
     uint32_t loc_route_active; 
     uint32_t loc_stop_desc; 
     uint32_t loc_route_desc; 
-    uint32_t loc_trip_ids; 
-    uint32_t loc_trip_attributes; 
+    uint32_t loc_route_ids;
+    uint32_t loc_stop_ids;
+    uint32_t loc_trip_ids;
 };
 
 inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
@@ -147,6 +149,10 @@ void tdata_load(char *filename, tdata_t *td) {
     td->stop_desc = (char*) (b + header->loc_stop_desc + sizeof(uint32_t));
     td->route_desc_width = *((uint32_t *) (b + header->loc_route_desc));
     td->route_desc = (char*) (b + header->loc_route_desc + sizeof(uint32_t));
+    td->route_id_width = *((uint32_t *) (b + header->loc_route_ids));
+    td->route_ids = (char*) (b + header->loc_route_ids + sizeof(uint32_t));
+    td->stop_id_width = *((uint32_t *) (b + header->loc_stop_ids));
+    td->stop_ids = (char*) (b + header->loc_stop_ids + sizeof(uint32_t));
     td->trip_id_width = *((uint32_t *) (b + header->loc_trip_ids));
     td->trip_ids = (char*) (b + header->loc_trip_ids + sizeof(uint32_t));
     td->trip_active = (uint32_t*) (b + header->loc_trip_active);

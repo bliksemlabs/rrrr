@@ -80,11 +80,15 @@ struct tdata {
     char *stop_desc;
     uint32_t route_desc_width;
     char *route_desc;
-    uint32_t trip_id_width;
-    char *trip_ids;
     uint32_t *trip_active;
     uint32_t *route_active;
     uint8_t *trip_attributes;
+    uint32_t route_id_width;
+    char *route_ids;
+    uint32_t stop_id_width;
+    char *stop_ids;
+    uint32_t trip_id_width;
+    char *trip_ids;
 };
 
 void tdata_load(char* filename, tdata_t*);

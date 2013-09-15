@@ -132,7 +132,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ19I') 
+struct_header = Struct('8sQ21I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -150,6 +150,7 @@ def write_header () :
         loc_route_stop_attributes, 
         loc_timedemandgroups,
         loc_trips,
+        loc_trip_attributes,
         loc_stop_routes,
         loc_transfer_target_stops,
         loc_transfer_dist_meters,
@@ -157,8 +158,9 @@ def write_header () :
         loc_route_active,
         loc_stop_desc,
         loc_route_desc,
+        loc_route_ids,
+        loc_stop_ids,
         loc_trip_ids,
-        loc_trip_attributes,
     )
     out.write(packed)
 
@@ -267,6 +269,7 @@ route_max_time.append(0) # sentinel
 # We want one descriptive string per route, in the RAPTOR sense, which should amount to one string 
 # per GTFS route per direction.
 route_desc_for_idx = []
+route_ids_for_idx = []
 route_attributes = []
 modes = { 0: 'tram', 
           1: 'subway',
@@ -290,6 +293,7 @@ for route in route_for_idx :
     desc = ';'.join([desc, headsign])
     # print desc
     route_desc_for_idx.append(desc)
+    route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
 route_attributes.append(0) # sentinel  
 # named tuples?
@@ -410,6 +414,18 @@ for trip_id in all_trip_ids:
     trips_out.write('\0')
 trips_out.close()
 
+print "writing trip attributes" 
+write_text_comment("TRIP ATTRIBUTES")
+struct_tripattr = Struct('B')
+loc_trip_attributes = tell()
+for idx, route in enumerate(route_for_idx):
+    trip_ids = route.sorted_trip_ids()
+    for attributes in route.getattributes():
+        trip_attr = 0
+        if 'wheelchair_accessible' in attributes and attributes['wheelchair_accessible']:
+            trip_attr |= 1
+        out.write(struct_tripattr.pack(trip_attr))
+
 print "saving a list of routes serving each stop"
 write_text_comment("ROUTES BY STOP")
 loc_stop_routes = tell()
@@ -496,24 +512,6 @@ for route in zip (*route_t_fields) :
     # print route
     out.write(route_t.pack(*route));
 
-print "writing out sorted stop ids to string table"
-# stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
-write_text_comment("STOP IDS (SORTED)")
-# loc_stop_ids = write_string_table(stop_id_for_idx) <-- write IDs instead of names
-loc_stop_desc = write_string_table(stop_name_for_idx)
-
-# maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
-print "writing route ids to string table"
-write_text_comment("ROUTE IDS")
-loc_route_desc = write_string_table(route_desc_for_idx)
-
-
-print "writing trip ids to string table" 
-# note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order. 
-write_text_comment("TRIP IDS")
-#loc_trip_ids = write_string_table(all_trip_ids)
-loc_trip_ids = 0
-
 print "writing bitfields indicating which days each trip is active" 
 # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
 write_text_comment("TRIP ACTIVE BITFIELDS")
@@ -543,17 +541,28 @@ for bitfield in route_mask_for_idx :
     writeint(bitfield)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 
-print "writing trip attributes" 
-write_text_comment("TRIP ATTRIBUTES")
-struct_tripattr = Struct('B')
-loc_trip_attributes = tell()
-for idx, route in enumerate(route_for_idx):
-    trip_ids = route.sorted_trip_ids()
-    for attributes in route.getattributes():
-        trip_attr = 0
-        if 'wheelchair_accessible' in attributes and attributes['wheelchair_accessible']:
-            trip_attr |= 1
-        out.write(struct_tripattr.pack(trip_attr))
+print "writing out sorted route descriptions to string table"
+write_text_comment("ROUTE DESC")
+loc_route_desc = write_string_table(route_desc_for_idx)
+
+print "writing out sorted stop descriptions to string table"
+write_text_comment("STOP DESC")
+loc_stop_desc = write_string_table(stop_name_for_idx)
+
+# maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
+print "writing route ids to string table"
+write_text_comment("ROUTE IDS")
+loc_route_ids = write_string_table(route_ids_for_idx)
+
+print "writing out sorted stop ids to string table"
+# stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
+write_text_comment("STOP IDS")
+loc_stop_ids = write_string_table(stop_id_for_idx)
+
+print "writing trip ids to string table" 
+# note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order. 
+write_text_comment("TRIP IDS")
+loc_trip_ids = write_string_table(all_trip_ids)
 
 print "reached end of timetable file"
 write_text_comment("END TTABLEV1")
