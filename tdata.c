@@ -390,7 +390,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *routeid_index, RadixT
                 memcpy (informed_entity->stop_id, &stop_index, sizeof(stop_index));
             }
 
-            if (informed_entity->trip) {
+            if (informed_entity->trip && informed_entity->trip->trip_id) {
                 uint32_t trip_index = rxt_find (tripid_index, informed_entity->trip->trip_id);
                 if (trip_index == RADIX_TREE_NONE) {
                     printf ("    trip id was not found in the radix tree.\n");
