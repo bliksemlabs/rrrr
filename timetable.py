@@ -288,9 +288,6 @@ for route in route_for_idx :
         desc = long_name
     else : 
         desc = '%s;%s' % (modes[mode], short_name)
-    if (headsign is None) :
-        headsign = ''
-    desc = ';'.join([desc, headsign])
     # print desc
     route_desc_for_idx.append(desc)
     route_ids_for_idx.append(rid)
