@@ -287,8 +287,11 @@ for route in route_for_idx :
         # mostly trains with the service type (Sprinter, IC) in the long name field
         desc = long_name
     else : 
-        desc = '%s;%s' % (modes[mode], short_name)
+        desc = short_name
     # print desc
+    if (headsign is None) :
+        headsign = ''
+    desc = ';'.join([desc, headsign])
     route_desc_for_idx.append(desc)
     route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
