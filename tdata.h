@@ -5,6 +5,7 @@
 #include "geometry.h"
 #include "util.h"
 #include "radixtree.h"
+#include "gtfs-realtime.pb-c.h"
 
 #include <stddef.h>
 
@@ -90,6 +91,7 @@ struct tdata {
     char *stop_ids;
     uint32_t trip_id_width;
     char *trip_ids;
+    TransitRealtime__FeedMessage *alerts;
 };
 
 void tdata_load(char* filename, tdata_t*);
@@ -108,6 +110,12 @@ uint32_t tdata_routes_for_stop(tdata_t*, uint32_t stop, uint32_t **routes_ret);
 stoptime_t *tdata_stoptimes_for_route(tdata_t*, uint32_t route_index);
 
 void tdata_dump_route(tdata_t*, uint32_t route_index, uint32_t trip_index);
+
+char *tdata_route_id_for_index(tdata_t*, uint32_t route_index);
+
+char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
+
+char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
 char *tdata_stop_desc_for_index(tdata_t*, uint32_t stop_index);
 
@@ -133,6 +141,12 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
 void tdata_apply_gtfsrt_file (tdata_t *tdata, RadixTree *tripid_index, char *filename);
 
 void tdata_clear_gtfsrt (tdata_t *tdata);
+
+void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *routeid_index, RadixTree *stopid_index, RadixTree *tripid_index, uint8_t *buf, size_t len);
+
+void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, RadixTree *routeid_index, RadixTree *stopid_index, RadixTree *tripid_index, char *filename);
+
+void tdata_clear_gtfsrt_alerts (tdata_t *tdata);
 
 /* The signed delay of the specified trip in seconds. */
 float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_index);

@@ -34,6 +34,7 @@ static struct option long_options[] = {
     { "banned-stops-hard-idx",  required_argument, NULL, 'w' },
     { "trip-attributes", required_argument, NULL, 'A' },
     { "gtfsrt",        required_argument, NULL, 'g' },
+    { "gtfsrt-alerts", required_argument, NULL, 'G' },
     { "timetable",     required_argument, NULL, 'T' },
     { "verbose",     no_argument, NULL, 'v' },
     { NULL, 0, 0, 0 } /* end */
@@ -46,6 +47,7 @@ int main(int argc, char **argv) {
 
     char *tdata_file = RRRR_INPUT_FILE;
     char *gtfsrt_file = NULL;
+    char *gtfsrt_alerts_file = NULL;
     char *iso_datetime = NULL;
     bool verbose = false;
 
@@ -54,7 +56,7 @@ int main(int argc, char **argv) {
     
     int opt = 0;
     while (opt >= 0) {
-        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:Q:x:y:z:w:A:g:T:v", long_options, NULL);
+        opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:m:Q:x:y:z:w:A:g:G:T:v", long_options, NULL);
         if (opt < 0) continue;
         switch (opt) {
         case 'a':
@@ -210,6 +212,9 @@ int main(int argc, char **argv) {
         case 'g':
             gtfsrt_file = optarg;
             break;
+        case 'G':
+            gtfsrt_alerts_file = optarg;
+            break;
         case 'v':
             verbose = true;
             break;
@@ -236,12 +241,19 @@ int main(int argc, char **argv) {
     }
 
     // load gtfs-rt file from disk
-    if (gtfsrt_file != NULL) {
-        RadixTree *routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_id_width, tdata.n_routes);
-        RadixTree *stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids,  tdata.stop_id_width,  tdata.n_stops);
-        RadixTree *tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids,  tdata.trip_id_width,  tdata.n_trips);
-        tdata_clear_gtfsrt (&tdata);
-        tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
+    if (gtfsrt_file != NULL || gtfsrt_alerts_file != NULL) {
+        RadixTree *tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_id_width, tdata.n_trips);
+        if (gtfsrt_file != NULL) {
+            tdata_clear_gtfsrt (&tdata);
+            tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
+        }
+
+        if (gtfsrt_alerts_file != NULL) {
+            RadixTree *routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_id_width, tdata.n_routes);
+            RadixTree *stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_id_width, tdata.n_stops);
+            tdata_clear_gtfsrt_alerts(&tdata);
+            tdata_apply_gtfsrt_alerts_file (&tdata, routeid_index, stopid_index, tripid_index, gtfsrt_alerts_file);
+        }
     }
 
     if (iso_datetime != NULL) {
