@@ -194,7 +194,7 @@ void rxt_compress (struct edge *root) {
     rxt_compress (e->next);
 }
 
-RadixTree *rxt_load_strings (char *filename) {
+RadixTree *rxt_load_strings_from_file (char *filename) {
     RadixTree *root = rxt_new (0); // files should contain number of strings as header
     int fd = open(filename, O_RDONLY);
     if (fd == -1) die("could not find input file.");
@@ -211,6 +211,26 @@ RadixTree *rxt_load_strings (char *filename) {
         idx += 1;
     }
     close(fd);
+    /*
+    rxt_compress (root);
+    printf ("total number of edges: %d\n", edge_count(root));
+    printf ("size of one edge: %ld\n", sizeof(struct edge));
+    printf ("total size of all edges: %ld\n", edge_count(root) * sizeof(struct edge));
+    */
+    return root;
+}
+
+RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t length) {
+    RadixTree *root = rxt_new (length);
+    char *strings_end = strings + (width * length);
+    char *s = strings;
+    uint32_t idx = 0;
+    printf ("Indexing strings...\n");
+    while (s < strings_end) {
+        insert (root, s, idx);
+        while(*(s++) != '\0') { }
+        idx += 1;
+    }
     /*
     rxt_compress (root);
     printf ("total number of edges: %d\n", edge_count(root));

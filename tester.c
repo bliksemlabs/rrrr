@@ -237,7 +237,9 @@ int main(int argc, char **argv) {
 
     // load gtfs-rt file from disk
     if (gtfsrt_file != NULL) {
-        RadixTree *tripid_index = rxt_load_strings ("trips");
+        RadixTree *routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_id_width, tdata.n_routes);
+        RadixTree *stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids,  tdata.stop_id_width,  tdata.n_stops);
+        RadixTree *tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids,  tdata.trip_id_width,  tdata.n_trips);
         tdata_clear_gtfsrt (&tdata);
         tdata_apply_gtfsrt_file (&tdata, tripid_index, gtfsrt_file);
     }

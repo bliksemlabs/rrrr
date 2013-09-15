@@ -191,8 +191,8 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, sighandler);
 
-    tripid_index = rxt_load_strings ("trips");
     tdata_load (RRRR_INPUT_FILE, &tdata);
+    tripid_index = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_id_width, tdata.n_trips);
 
     /*
      * create the websockets context.  This tracks open connections and

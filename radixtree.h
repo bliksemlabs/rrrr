@@ -24,7 +24,9 @@ struct edge {
 
 typedef struct edge RadixTree;
 
-RadixTree *rxt_load_strings (char *filename);
+RadixTree *rxt_load_strings_from_file (char *filename);
+
+RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t length);
 
 RadixTree *rxt_new (uint32_t max_size);
 

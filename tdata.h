@@ -64,6 +64,7 @@ struct tdata {
     uint64_t calendar_start_time; // midnight of the first day in the 32-day calendar in seconds since the epoch
     uint32_t n_stops;
     uint32_t n_routes;
+    uint32_t n_trips;
     stop_t *stops;
     uint8_t *stop_attributes;
     route_t *routes;

@@ -19,8 +19,6 @@ if len(sys.argv) < 2 :
 db = GTFSDatabase(sys.argv[1])    
 
 out = open("./timetable.dat", "wb")
-stops_out = open("./stops", "wb") # internal index <-> StopName map for the geocoder
-trips_out = open("./trips", "wb") # internal index <-> TripId map for realtime
 
 feed_start_date, feed_end_date = db.date_range()
 print 'feed covers %s -- %s' % (feed_start_date, feed_end_date)
@@ -132,7 +130,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ21I') 
+struct_header = Struct('8sQ22I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -142,6 +140,7 @@ def write_header () :
         calendar_start_time,
         nstops,
         nroutes,
+        len(all_trip_ids),
         loc_stops,
         loc_stop_attributes,
         loc_stop_coords,
@@ -201,7 +200,6 @@ for sid, name, lat, lon in db.stops() :
     stop_id_for_idx.append(sid)
     stop_name_for_idx.append(name)
     write2floats(lat, lon)
-    stops_out.write(name+'\n')
     if name not in stopnames:
         stopnames.add(name)
         cur.execute('INSERT INTO stops_fts VALUES (?,?)',(idx,name))
@@ -210,7 +208,6 @@ nstops = idx
 conn.commit()
 conn.close()
 del stopnames
-stops_out.close()
     
 print "building trip bundles"
 all_routes = db.compile_trip_bundles(reporter=sys.stdout) # slow call
@@ -399,12 +396,6 @@ trips_offsets.append(toffset) # sentinel
 trip_ids_offsets.append(tioffset) # sentinel
 assert len(trips_offsets) == nroutes + 1
 assert len(trip_ids_offsets) == nroutes + 1
-
-print "saving a list of tripids (outside timetable.dat)"
-for trip_id in all_trip_ids:
-    trips_out.write(trip_id)
-    trips_out.write('\0')
-trips_out.close()
 
 print "writing trip attributes" 
 write_text_comment("TRIP ATTRIBUTES")
