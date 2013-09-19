@@ -983,13 +983,9 @@ void router_request_randomize(router_request_t *req) {
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
-<<<<<<< HEAD
     req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
-=======
     req->via = NONE;
-    req->time = 3600 * 14 + rrrrandom(3600 * 6);
     req->arrive_by = rrrrandom(2); // 0 or 1
->>>>>>> 9eccbd3... Implement the parsing and storage of via-idx.
     req->time_cutoff = UNREACHED;
     req->walk_speed = 1.5; // m/sec
     req->arrive_by = rrrrandom(2); // 0 or 1
