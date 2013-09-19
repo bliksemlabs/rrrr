@@ -822,7 +822,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
     check_plan_invariants (plan);
 }
 
-static inline char *plan_render_leg (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
 
     /* Render the legs of this itinerary, which are in chronological order */
@@ -896,16 +896,16 @@ static inline uint32_t plan_render(struct plan *plan, tdata_t *tdata, router_req
     if ((req->optimise & o_all) == o_all) {
         /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
         for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
-            b = plan_render_leg(itin, tdata, b, b_end);
+            b = plan_render_itinerary (itin, tdata, b, b_end);
         }
     } else if (plan->n_itineraries > 0) {
         if ((req->optimise & o_transfers) == o_transfers) { 
             /* only render the first itinerary, which has the least transfers */
-            b = plan_render_leg(plan->itineraries, tdata, b, b_end);
+            b = plan_render_itinerary (plan->itineraries, tdata, b, b_end);
         }
         if ((req->optimise & o_shortest) == o_shortest) {
             /* only render the last itinerary, which has the most rides and is the shortest in time */
-            b = plan_render_leg(&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
+            b = plan_render_itinerary (&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
         }
     }
     *b = '\0';
