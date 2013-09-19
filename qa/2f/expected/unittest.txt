@@ -1,5 +1,6 @@
 
-ITIN 1 rides 
-WALK    -2  -2     2     2 00:06:00 00:06:00 +0.0 ;walk;walk;Stop 2f3;Stop 2f3
-RAIL     2   0     2     1 00:06:00 00:09:00 +0.0 ;Local train 2;;Stop 2f3;Stop 2f2
-WALK    -2  -2     1     1 00:09:00 00:09:00 +0.0 ;walk;walk;Stop 2f2;Stop 2f2
+ITIN 2 rides 
+RAIL     0   0    -3     2 00:02:00 00:04:00 +0.0 ;Intercity;;ONBOARD;Stop 2f3;
+WALK    -2  -2     2     2 00:04:00 00:04:00 +0.0 ;walk;Stop 2f3;Stop 2f3;
+RAIL     2   0     2     1 00:06:00 00:09:00 +0.0 ;Local train 2;;Stop 2f3;Stop 2f2;
+WALK    -2  -2     1     1 00:09:00 00:09:00 +0.0 ;walk;Stop 2f2;Stop 2f2;
