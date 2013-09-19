@@ -833,7 +833,7 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         btimetext(leg->t1, ct1);
         char *s0_id = tdata_stop_desc_for_index(tdata, leg->s0);
         char *s1_id = tdata_stop_desc_for_index(tdata, leg->s1);
-        char *route_desc = (leg->route == WALK) ? "walk" : tdata_route_desc_for_index (tdata, leg->route);
+        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_desc_for_index (tdata, leg->route);
         float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
         
         char *leg_mode = NULL;
