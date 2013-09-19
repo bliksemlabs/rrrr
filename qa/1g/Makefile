@@ -1,6 +1,6 @@
 all: unittest
 
-unittest: tmp/timetable.dat unittest1 unittest2 unittest3 unittest4 unittest5
+unittest: tmp/timetable.dat unittest1 unittest2 unittest3 unittest4 unittest5 unittest6
 
 unittest1:
 	../../testerrrr --depart -D 2014-01-01T00:02:00 --from-idx 0 --to-idx 1 -T tmp/timetable.dat \
