@@ -81,6 +81,7 @@ static inline void unflag_banned_stops (router_t *router, router_request_t *req)
 static inline void initialize_transfers (router_t *r, uint32_t round, uint32_t stop_index_from) {
     tdata_t *d = &(r->tdata);
     router_state_t *states = r->states + (round * d->n_stops);
+    states[stop_index_from].walk_time = UNREACHED;
     uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
     uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
     for ( ; t < tN ; ++t) {
