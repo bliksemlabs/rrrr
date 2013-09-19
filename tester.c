@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
             while ( token  != NULL ) {
                 if (strlen(token) > 0) {
                     long int tmp = strtol(token, NULL, 10);
-                    if (tmp > 0) {
+                    if (tmp >= 0) {
                         req.banned_route = tmp;
                         req.n_banned_routes = 1;
                     }
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
             while ( token  != NULL ) {
                 if (strlen(token) > 0) {
                     long int tmp = strtol(token, NULL, 10);
-                    if (tmp > 0) {
+                    if (tmp >= 0) {
                         req.banned_stop = tmp;
                         req.n_banned_stops = 1;
                     }
@@ -159,11 +159,11 @@ int main(int argc, char **argv) {
             while ( token  != NULL ) {
                 if (strlen(token) > 0) {
                     long int tmp_route = strtol(token, NULL, 10);
-                    if (tmp_route > 0) {
+                    if (tmp_route >= 0) {
                         token = strtok(NULL, delim);
                         long int tmp_trip = strtol(token, NULL, 10);
 
-                        if (tmp_trip > 0) {
+                        if (tmp_trip >= 0) {
                             req.banned_trip_route = tmp_route;
                             req.banned_trip_offset = tmp_trip;
                             req.n_banned_trips = 1;
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
             while ( token  != NULL ) {
                 if (strlen(token) > 0) {
                     long int tmp = strtol(token, NULL, 10);
-                    if (tmp > 0) {
+                    if (tmp >= 0) {
                         req.banned_stop_hard = tmp;
                         req.n_banned_stops_hard = 1;
                     }
