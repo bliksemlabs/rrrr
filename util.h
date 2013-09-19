@@ -30,9 +30,10 @@ typedef uint16_t rtime_t;
 // We should avoid relying on the relative value of these preprocessor constants (inequalities)
 // since they will be used in both departAfter and arriveBy searches.
 #define UNREACHED UINT16_MAX
-#define NONE (UINT32_MAX)
-#define WALK (UINT32_MAX - 1)
-#define CANCELED INT16_MAX
+#define NONE      (UINT32_MAX)
+#define WALK      (UINT32_MAX - 1)
+#define ONBOARD   (UINT32_MAX - 2)
+#define CANCELED  INT16_MAX
 
 void die(const char* message);
 
