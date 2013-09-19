@@ -388,7 +388,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
         if (prev_stop != NONE) {
             /* rewrite the request to begin at the previous stop on the starting trip */
             char *prev_stop_id = tdata_stop_desc_for_index(&(router.tdata), prev_stop);
-            printf ("Based on start trip and time, chose previous stop %s [%d] at %s\n", prev_stop_id, prev_stop, timetext(prev_stop_time));
+            // printf ("Based on start trip and time, chose previous stop %s [%d] at %s\n", prev_stop_id, prev_stop, timetext(prev_stop_time));
             req->from = ONBOARD;
             /* Initialize origin state */
             origin = prev_stop; // only origin is used from here on in routing
