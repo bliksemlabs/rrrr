@@ -626,7 +626,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
         // exit(0);
         /* Initialize the stops in round 1 that were used as starting points for round 0. */
         if (round == 0) initialize_transfers (&router, 1, origin);
-        dump_results(prouter); // DEBUG
+        // dump_results(prouter); // DEBUG
     } // end for (round)
     return true;
 }
