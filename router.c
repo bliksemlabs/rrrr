@@ -840,7 +840,7 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         if (leg->route == WALK) {
             /* Skip uninformative legs that just tell you to stay in the same place. if (leg->s0 == leg->s1) continue; */
             if (leg->s0 == ONBOARD) continue;
-            // if (leg->s0 == leg->s1) leg_mode = "WAIT";
+            if (leg->s0 == leg->s1) leg_mode = "WAIT";
             else leg_mode = "WALK";
         } else
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
