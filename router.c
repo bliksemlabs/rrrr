@@ -837,7 +837,11 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
         
         char *leg_mode = NULL;
-        if (leg->route == WALK) leg_mode = "WALK"; else
+        if (leg->route == WALK) {
+            /* Skip uninformative legs that just tell you to stay in the same place. */
+            if (leg->s0 == leg->s1) continue;
+            else leg_mode = "WALK";
+        } else
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
         if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
