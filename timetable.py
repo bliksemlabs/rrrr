@@ -399,14 +399,13 @@ assert len(trip_ids_offsets) == nroutes + 1
 
 print "writing trip attributes" 
 write_text_comment("TRIP ATTRIBUTES")
-struct_tripattr = Struct('B')
 loc_trip_attributes = tell()
 for idx, route in enumerate(route_for_idx):
     for attributes in route.getattributes():
         trip_attr = 0
         if 'wheelchair_accessible' in attributes and attributes['wheelchair_accessible']:
             trip_attr |= 1
-        out.write(struct_tripattr.pack(trip_attr))
+        writebyte(trip_attr)
 
 print "saving a list of routes serving each stop"
 write_text_comment("ROUTES BY STOP")
