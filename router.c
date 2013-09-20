@@ -492,8 +492,11 @@ bool router_route(router_t *prouter, router_request_t *req) {
                 bool attempt_board = false;
                 rtime_t prev_time = states[last_round][stop].walk_time;
                 if (prev_time != UNREACHED) { // Only board at placed that have been reached.
-                    if (trip == NONE) attempt_board = true;
-                    else {
+                    if (trip == NONE || req->via == stop) {
+                        attempt_board = true;
+                    } else if (trip != NONE && req->via != NONE && req->via == board_stop) {
+                        attempt_board = false;
+                    } else {
                         // removed xfer slack for simplicity
                         // is this repetitively triggering re-boarding searches along a single route?
                         rtime_t trip_time = req->arrive_by ? tdata_arrive(&(router.tdata), route_idx, trip, route_stop)
