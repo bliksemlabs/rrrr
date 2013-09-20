@@ -81,6 +81,7 @@ static inline void unflag_banned_stops (router_t *router, router_request_t *req)
 static inline void initialize_transfers (router_t *r, uint32_t round, uint32_t stop_index_from) {
     tdata_t *d = &(r->tdata);
     router_state_t *states = r->states + (round * d->n_stops);
+    states[stop_index_from].walk_time = UNREACHED;
     uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
     uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
     for ( ; t < tN ; ++t) {
@@ -342,43 +343,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
         }
     }
     for (uint32_t s = 0; s < n_stops; ++s) router.best_time[s] = UNREACHED;
-    
-    if (req->start_trip_route != NONE && req->start_trip_trip != NONE) {
-        /* We are starting on board a trip, not at a station. */
-        /* 
-          We cannot expand the start trip into the temporary round (1) during initialization because we may be able to 
-          reach the destination on that start trip. Instead, simply discover the next stop based on time and trip number.
-          It is tempting to discover the previous stop and flag only the selected route for exploration in round 0, 
-          but this interferes with search reversal. 
-          It might be more elegant to somehow start round 0 with the proper trip number already selected. 
-        */
-        route_t  route = router.tdata.routes[req->start_trip_route];
-        uint32_t *route_stops   = tdata_stops_for_route(router.tdata, req->start_trip_route);
-        uint32_t next_stop      = NONE;
-        rtime_t  next_stop_time = UNREACHED;
-        // add tdata function to return next stop and stoptime given route, trip, and time
-        for (int route_stop = 0; route_stop < route.n_stops; ++route_stop) {
-            uint32_t stop = route_stops[route_stop];
-            rtime_t time = req->arrive_by ? tdata_arrive(&(router.tdata), req->start_trip_route, req->start_trip_trip, route_stop)
-                                          : tdata_depart(&(router.tdata), req->start_trip_route, req->start_trip_trip, route_stop);
-            time += RTIME_ONE_DAY; // not really very general
-            /* Find stop immediately after the given time on the given trip. */
-            if (req->arrive_by ? time < req->time : time > req->time) {
-                if (next_stop_time == UNREACHED || (req->arrive_by ? time > next_stop_time : time < next_stop_time)) {
-                    next_stop = stop;
-                    next_stop_time = time;
-                }
-            }
-        }
-        if (next_stop != NONE) {
-            /* rewrite the request to begin at the next reachable stop */
-            char *next_stop_id = tdata_stop_desc_for_index(&(router.tdata), next_stop);
-            // printf ("Based on start trip and time, chose stop %s [%d] at %s\n", next_stop_id, next_stop, timetext(next_stop_time));
-            req->from = next_stop;
-            //req->time = next_stop_time; // actually we don't need to change the time, it can always recatch the same trip
-        }
-    }
-    
+
     /* Stop indexes where the search process begins and ends, independent of arrive_by */
     uint32_t origin, target; 
     if (req->arrive_by) {
@@ -388,28 +353,77 @@ bool router_route(router_t *prouter, router_request_t *req) {
         origin = req->from;
         target = req->to;
     }
-
-    /* Initialize origin state */
-    /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
-    router.best_time[origin] = req->time;
-    states[1][origin].time   = req->time;
-    // the rest of these should be unnecessary
-    states[1][origin].back_stop  = NONE;
-    states[1][origin].back_route = NONE;
-    states[1][origin].back_trip  = NONE;
-    states[1][origin].board_time = UNREACHED;
-    /* Hack to communicate the origin time to itinerary renderer. It would be better to just include rtime_t in request structs. */
-    // TODO eliminate this now that we have rtimes in requests
-    states[0][origin].time = req->time;
-
-    bitset_reset(router.updated_stops);
-    // This is inefficient, as it depends on iterating over a bitset with only one bit true.
-    bitset_set(router.updated_stops, origin);
-    // Remove the banned stops from the bitset
-    unflag_banned_stops(&router, req);
-    // Apply transfers to initial state, which also initializes the updated routes bitset.
-    apply_transfers(router, *req, 1, day_mask);
-    // dump_results(prouter);
+    
+    if (req->start_trip_route != NONE && req->start_trip_trip != NONE) {
+        /* We are starting on board a trip, not at a station. */
+        /* On-board departure only makes sense for depart-after requests. */
+        if (req->arrive_by) {
+            fprintf (stderr, "An arrive-by search does not make any sense if you are starting on-board.");
+            return false;
+        }
+        /* 
+          We cannot expand the start trip into the temporary round (1) during initialization because we may be able to 
+          reach the destination on that starting trip.
+          We discover the previous stop and flag only the selected route for exploration in round 0. This would 
+          interfere with search reversal, but reversal is meaningless/useless in on-board depart trips anyway.
+        */
+        route_t  route = router.tdata.routes[req->start_trip_route];
+        uint32_t *route_stops   = tdata_stops_for_route(router.tdata, req->start_trip_route);
+        uint32_t prev_stop      = NONE;
+        rtime_t  prev_stop_time = UNREACHED;
+        // add tdata function to return next stop and stoptime given route, trip, and time
+        for (int route_stop = 0; route_stop < route.n_stops; ++route_stop) {
+            uint32_t stop = route_stops[route_stop];
+            rtime_t time = req->arrive_by ? tdata_arrive(&(router.tdata), req->start_trip_route, req->start_trip_trip, route_stop)
+                                          : tdata_depart(&(router.tdata), req->start_trip_route, req->start_trip_trip, route_stop);
+            time += RTIME_ONE_DAY; // not really very general
+            /* Find stop immediately after the given time on the given trip. */
+            if (req->arrive_by ? time > req->time : time < req->time) {
+                if (prev_stop_time == UNREACHED || (req->arrive_by ? time < prev_stop_time : time > prev_stop_time)) {
+                    prev_stop = stop;
+                    prev_stop_time = time;
+                }
+            }
+        }
+        if (prev_stop != NONE) {
+            /* rewrite the request to begin at the previous stop on the starting trip */
+            char *prev_stop_id = tdata_stop_desc_for_index(&(router.tdata), prev_stop);
+            // printf ("Based on start trip and time, chose previous stop %s [%d] at %s\n", prev_stop_id, prev_stop, timetext(prev_stop_time));
+            req->from = ONBOARD;
+            /* Initialize origin state */
+            origin = prev_stop; // only origin is used from here on in routing
+            router.best_time[origin]    = prev_stop_time;
+            states[1][origin].time      = prev_stop_time;
+            states[1][origin].walk_time = prev_stop_time; 
+            /* When starting on board, only flag one route and do not apply transfers, only a single walk. */
+            bitset_reset (router.updated_stops);
+            bitset_reset (router.updated_routes);
+            bitset_set (router.updated_routes, req->start_trip_route);
+        }
+    }
+    
+    /* Initialize origin state if not beginning the search on board. */
+    if (req->from != ONBOARD) {
+        /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
+        router.best_time[origin] = req->time;
+        states[1][origin].time   = req->time;
+        // the rest of these should be unnecessary
+        states[1][origin].back_stop  = NONE;
+        states[1][origin].back_route = NONE;
+        states[1][origin].back_trip  = NONE;
+        states[1][origin].board_time = UNREACHED;
+        /* Hack to communicate the origin time to itinerary renderer. It would be better to just include rtime_t in request structs. */
+        // TODO eliminate this now that we have rtimes in requests
+        states[0][origin].time = req->time;
+        bitset_reset(router.updated_stops);
+        // This is inefficient, as it depends on iterating over a bitset with only one bit true.
+        bitset_set(router.updated_stops, origin);
+        // Remove the banned stops from the bitset (do we really want to do this here? this could only remove the origin stop.)
+        unflag_banned_stops(&router, req);
+        // Apply transfers to initial state, which also initializes the updated routes bitset.
+        apply_transfers(router, *req, 1, day_mask);
+        // dump_results(prouter);
+    }    
     
     /* apply upper bounds (speeds up second and third reversed searches) */
     uint32_t n_rounds = req->max_transfers + 1;
@@ -478,8 +492,11 @@ bool router_route(router_t *prouter, router_request_t *req) {
                 bool attempt_board = false;
                 rtime_t prev_time = states[last_round][stop].walk_time;
                 if (prev_time != UNREACHED) { // Only board at placed that have been reached.
-                    if (trip == NONE) attempt_board = true;
-                    else {
+                    if (trip == NONE || req->via == stop) {
+                        attempt_board = true;
+                    } else if (trip != NONE && req->via != NONE && req->via == board_stop) {
+                        attempt_board = false;
+                    } else {
                         // removed xfer slack for simplicity
                         // is this repetitively triggering re-boarding searches along a single route?
                         rtime_t trip_time = req->arrive_by ? tdata_arrive(&(router.tdata), route_idx, trip, route_stop)
@@ -543,7 +560,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     } // end for (service days: yesterday, today, tomorrow)
                     if (best_trip != NONE) {
                         I printf("    boarding trip %d at %s \n", best_trip, timetext(best_time));
-                        if (req->arrive_by ? best_time > req->time : best_time < req->time) {
+                        if ((req->arrive_by ? best_time > req->time : best_time < req->time) && req->from != ONBOARD) {
                             printf("ERROR: boarded before start time, trip %d stop %d \n", best_trip, stop);
                         } else {
                             // use a router_state struct for all this?
@@ -605,14 +622,14 @@ bool router_route(router_t *prouter, router_request_t *req) {
                 }
             } // end for (stop)
         } // end for (route)
-        // Remove the banned stops from the bitset
+        // Remove the banned stops from the bitset, so no transfers will happen there.
         unflag_banned_stops(&router, req);
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
         apply_transfers(router, *req, round, day_mask);
-        // dump_results(prouter); // DEBUG
         // exit(0);
         /* Initialize the stops in round 1 that were used as starting points for round 0. */
         if (round == 0) initialize_transfers (&router, 1, origin);
+        // dump_results(prouter); // DEBUG
     } // end for (round)
     return true;
 }
@@ -732,7 +749,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
         itin->n_rides = n_xfers + 1;
         itin->n_legs = itin->n_rides * 2 + 1; // always same number of legs for same number of transfers
         struct leg *l = itin->legs; // the slot in which record a leg, reversing them for forward trips
-        if ( ! req->arrive_by) l += itin->n_legs - 1; 
+        if ( ! req->arrive_by) l += itin->n_legs - 1;
         /* Follow the chain of states backward */
         for (int round = n_xfers; round >= 0; --round) {
             if (stop > router->tdata.n_stops) { 
@@ -778,21 +795,29 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
             if (req->arrive_by) leg_swap (l);
             l += (req->arrive_by ? 1 : -1);   /* next leg */
             
+        }        
+        if (req->start_trip_trip != NONE) {
+            /* Results starting on board do not have an initial walk leg. */        
+            l->s0 = l->s1 = ONBOARD;
+            l->t0 = l->t1 = req->time;
+            l->route = l->trip = WALK;
+            l += 1; // move back to first transit leg
+            l->s0 = ONBOARD;
+            l->t0 = req->time;
+        } else {
+            /* The initial walk leg leading out of the search origin. This is inferred, not stored explicitly. */ 
+            router_state_t *final_walk = &(states[0][stop]);
+            uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
+            l->s0 = origin_stop;
+            l->s1 = stop;
+            /* It would also be possible to work from s1 to s0 and compress out the wait time. */
+            l->t0 = states[0][origin_stop].time;
+            rtime_t duration = transfer_duration (&(router->tdata), req, l->s0, l->s1);
+            l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
+            l->route = WALK;
+            l->trip  = WALK;
+            if (req->arrive_by) leg_swap (l);
         }
-        
-        /* The initial walk leg leading out of the search origin. This is inferred, not stored explicitly. */ 
-        router_state_t *final_walk = &(states[0][stop]);
-        uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
-        l->s0 = origin_stop;
-        l->s1 = stop;
-        /* It would also be possible to work from s1 to s0 and compress out the wait time. */
-        l->t0 = states[0][origin_stop].time;
-        rtime_t duration = transfer_duration (&(router->tdata), req, l->s0, l->s1);
-        l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
-        l->route = WALK;
-        l->trip  = WALK;
-        if (req->arrive_by) leg_swap (l);
-
         /* Move to the next itinerary in the plan. */
         plan->n_itineraries += 1;
         itin += 1;
@@ -800,7 +825,7 @@ static void router_result_to_plan (struct plan *plan, router_t *router, router_r
     check_plan_invariants (plan);
 }
 
-static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
 
     /* Render the legs of this itinerary, which are in chronological order */
@@ -811,11 +836,16 @@ static inline char * plan_render_leg(struct itinerary *itin, tdata_t *tdata, cha
         btimetext(leg->t1, ct1);
         char *s0_id = tdata_stop_desc_for_index(tdata, leg->s0);
         char *s1_id = tdata_stop_desc_for_index(tdata, leg->s1);
-        char *route_desc = (leg->route == WALK) ? "walk" : tdata_route_desc_for_index (tdata, leg->route);
+        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_desc_for_index (tdata, leg->route);
         float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
         
         char *leg_mode = NULL;
-        if (leg->route == WALK) leg_mode = "WALK"; else
+        if (leg->route == WALK) {
+            /* Skip uninformative legs that just tell you to stay in the same place. if (leg->s0 == leg->s1) continue; */
+            if (leg->s0 == ONBOARD) continue;
+            if (leg->s0 == leg->s1) leg_mode = "WAIT";
+            else leg_mode = "WALK";
+        } else
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
         if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
@@ -874,16 +904,16 @@ static inline uint32_t plan_render(struct plan *plan, tdata_t *tdata, router_req
     if ((req->optimise & o_all) == o_all) {
         /* Iterate over itineraries in this plan, which are in increasing order of number of rides */
         for (struct itinerary *itin = plan->itineraries; itin < plan->itineraries + plan->n_itineraries; ++itin) {
-            b = plan_render_leg(itin, tdata, b, b_end);
+            b = plan_render_itinerary (itin, tdata, b, b_end);
         }
     } else if (plan->n_itineraries > 0) {
         if ((req->optimise & o_transfers) == o_transfers) { 
             /* only render the first itinerary, which has the least transfers */
-            b = plan_render_leg(plan->itineraries, tdata, b, b_end);
+            b = plan_render_itinerary (plan->itineraries, tdata, b, b_end);
         }
         if ((req->optimise & o_shortest) == o_shortest) {
             /* only render the last itinerary, which has the most rides and is the shortest in time */
-            b = plan_render_leg(&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
+            b = plan_render_itinerary (&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
         }
     }
     *b = '\0';
@@ -909,6 +939,7 @@ void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
     req->from = req->to = NONE;
+    req->from = req->to = req->via = NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
     req->walk_speed = 1.5; // m/sec
@@ -956,6 +987,8 @@ void router_request_randomize(router_request_t *req) {
     req->from = rrrrandom(6600);
     req->to = rrrrandom(6600);
     req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
+    req->via = NONE;
+    req->arrive_by = rrrrandom(2); // 0 or 1
     req->time_cutoff = UNREACHED;
     req->walk_speed = 1.5; // m/sec
     req->arrive_by = rrrrandom(2); // 0 or 1

@@ -56,7 +56,14 @@ inline char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
 }
 
 inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
-    return td->stop_desc + (td->stop_desc_width * stop_index);
+    switch (stop_index) {
+    case NONE :
+        return "NONE";
+    case ONBOARD :
+        return "ONBOARD";
+    default :
+        return td->stop_desc + (td->stop_desc_width * stop_index);
+    }
 }
 
 // TODO rename this, confusing.
