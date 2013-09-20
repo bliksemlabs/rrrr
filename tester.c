@@ -26,7 +26,7 @@ static struct option long_options[] = {
     { "optimise",      required_argument, NULL, 'o' },
     { "from-idx",      required_argument, NULL, 'f' },
     { "to-idx",        required_argument, NULL, 't' },
-    { "via-idx",       required_argument, NULL, 'v' },
+    { "via-idx",       required_argument, NULL, 'V' },
     { "mode",          required_argument, NULL, 'm' },
     { "start-trip-idx",    required_argument, NULL, 'Q' },
     { "banned-routes-idx", required_argument, NULL, 'x' },
