@@ -402,7 +402,6 @@ write_text_comment("TRIP ATTRIBUTES")
 struct_tripattr = Struct('B')
 loc_trip_attributes = tell()
 for idx, route in enumerate(route_for_idx):
-    trip_ids = route.sorted_trip_ids()
     for attributes in route.getattributes():
         trip_attr = 0
         if 'wheelchair_accessible' in attributes and attributes['wheelchair_accessible']:
