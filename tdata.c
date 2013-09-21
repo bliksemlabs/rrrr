@@ -239,10 +239,11 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     route_t route = td->routes[route_idx];
     printf("\nRoute details for '%s' [%d] (n_stops %d, n_trips %d)\n", 
         tdata_route_desc_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
-    printf("stop sequence, stop name (index), departures  \n");
+    printf("tripid, stop sequence, stop name (index), departures  \n");
     for (uint32_t ti = (trip_idx == NONE ? 0 : trip_idx); ti < (trip_idx == NONE ? route.n_trips : trip_idx + 1); ++ti) {
         // TODO should this really be a 2D array ?
         stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_idx, ti);
+        printf("%s ", tdata_trip_id_for_index(td, route.trip_ids_offset + ti));
         for (uint32_t si = 0; si < route.n_stops; ++si) {
             char *stop_id = tdata_stop_desc_for_index (td, stops[si]);
             printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[ti][si].departure + td->trips[ti].begin_time));
