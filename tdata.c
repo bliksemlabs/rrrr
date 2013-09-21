@@ -246,7 +246,7 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
         printf("%s ", tdata_trip_id_for_index(td, route.trip_ids_offset + ti));
         for (uint32_t si = 0; si < route.n_stops; ++si) {
             char *stop_id = tdata_stop_desc_for_index (td, stops[si]);
-            printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[ti][si].departure + td->trips[ti].begin_time));
+            printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[0][si].departure + td->trips[route.trip_ids_offset + ti].begin_time + RTIME_ONE_DAY));
          }
          printf("\n");
     }
