@@ -344,6 +344,7 @@ timedemandgroup_t = Struct('HH')
 n_nonincreasing_groups = 0
 for idx, route in enumerate(route_for_idx) :
     for timedemandgroupref, times in route.gettimepatterns():
+        assert len(times) == len(route.pattern.stop_ids)
         if str(times) in timedemandgroups_written:
             timedemandgroups_offsets[timedemandgroupref] = timedemandgroups_written[str(times)]
         else:
