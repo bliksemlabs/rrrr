@@ -13,6 +13,7 @@
 int main(int argc, char **argv) {
     if (argc < 4) {
         printf("Usage:\n%stimetable.dat ROUTE route_idx [trip_idx]\n"
+               "                           ROUTEID route_id\n"
                "                           STOP stop_id\n"
                "                           NAME stopname\n", argv[0]);
         exit(EXIT_SUCCESS);
@@ -25,11 +26,16 @@ int main(int argc, char **argv) {
     tdata_load(argv[1], &tdata);
     // tdata_dump(&tdata);
 
-    if (argv[2][0] == 'R') {
+    if (strcmp(argv[2], "ROUTE") == 0) {
         if (argc > 4) {
             tdata_dump_route(&tdata, strtol(argv[3], NULL, 10), strtol(argv[4], NULL, 10));
         } else {
             tdata_dump_route(&tdata, strtol(argv[3], NULL, 10), NONE);
+        }
+    } else if (strcmp(argv[2], "ROUTEID") == 0) {
+        uint32_t route_index = tdata_routeidx_by_route_id(&tdata, argv[3]);
+        if (route_index != NONE) {
+            tdata_dump_route(&tdata, route_index, NONE);
         }
     } else if (argv[2][0] == 'S') {
         uint32_t stop_index = strtol(argv[3], NULL, 10);
