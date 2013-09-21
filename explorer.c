@@ -33,9 +33,10 @@ int main(int argc, char **argv) {
             tdata_dump_route(&tdata, strtol(argv[3], NULL, 10), NONE);
         }
     } else if (strcmp(argv[2], "ROUTEID") == 0) {
-        uint32_t route_index = tdata_routeidx_by_route_id(&tdata, argv[3]);
-        if (route_index != NONE) {
+        uint32_t route_index = tdata_routeidx_by_route_id(&tdata, argv[3], 0);
+        while (route_index != NONE || route_index < tdata.n_stops) {
             tdata_dump_route(&tdata, route_index, NONE);
+            route_index = tdata_routeidx_by_route_id(&tdata, argv[3], route_index + 1);
         }
     } else if (argv[2][0] == 'S') {
         uint32_t stop_index = strtol(argv[3], NULL, 10);

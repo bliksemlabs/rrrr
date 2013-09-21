@@ -75,8 +75,8 @@ inline uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_
     return NONE;
 }
 
-inline uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id) {
-    for (uint32_t route_index = 0; route_index < td->n_routes; route_index++) {
+inline uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t start_index) {
+    for (uint32_t route_index = start_index; route_index < td->n_routes; route_index++) {
         if (strcasestr(td->route_ids + (td->route_id_width * route_index), route_id)) {
             return route_index;
         }
