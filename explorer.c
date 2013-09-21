@@ -12,10 +12,10 @@
 
 int main(int argc, char **argv) {
     if (argc < 4) {
-        printf("Usage:\n%stimetable.dat ROUTE route_idx [trip_idx]\n"
-               "                           ROUTEID route_id\n"
-               "                           STOP stop_id\n"
-               "                           NAME stopname\n", argv[0]);
+        printf("Usage:\n%s timetable.dat ROUTE route_idx [trip_idx]\n"
+               "                            ROUTEID route_id\n"
+               "                            STOP stop_id\n"
+               "                            NAME stopname\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
 
