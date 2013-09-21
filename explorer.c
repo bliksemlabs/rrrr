@@ -39,10 +39,10 @@ int main(int argc, char **argv) {
             printf ("%d %s\n", stop_index, tdata_stop_desc_for_index(&tdata, stop_index));
         }
     } else if (argv[2][0] == 'N') {
-        uint32_t stop_index = tdata_stop_name_for_index(&tdata, argv[3], 0);
+        uint32_t stop_index = tdata_stopidx_by_stop_name(&tdata, argv[3], 0);
         while (stop_index != NONE || stop_index < tdata.n_stops) {
             printf ("%d %s\n", stop_index, tdata_stop_desc_for_index(&tdata, stop_index));
-            stop_index = tdata_stop_name_for_index(&tdata, argv[3], stop_index + 1);
+            stop_index = tdata_stopidx_by_stop_name(&tdata, argv[3], stop_index + 1);
         }
     }
 
