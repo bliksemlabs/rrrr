@@ -2,7 +2,7 @@ import uwsgi
 import zmq
 import struct
 
-COMMON_HEADERS = [('Content-Type', 'text/plain'), ('Access-Control-Allow-Origin', '*'), ('Access-Control-Allow-Headers', 'Requested-With,Content-Type')]
+COMMON_HEADERS = [('Content-Type', 'application/json'), ('Access-Control-Allow-Origin', '*'), ('Access-Control-Allow-Headers', 'Requested-With,Content-Type')]
 
 context = zmq.Context()
 
@@ -23,7 +23,7 @@ def light(environ, start_response):
 
     request_bliksem.send(qstring)
 
-    socks = dict(poller.poll(5000))
+    socks = dict(poller.poll(1000))
     if socks.get(request_bliksem) == zmq.POLLIN:
         reply = request_bliksem.recv()
         start_response('500 NOK', COMMON_HEADERS + [('Content-length', str(len(reply)))])

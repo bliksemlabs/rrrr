@@ -10,6 +10,7 @@
 #include "tdata.h"
 #include "router.h"
 #include "parse.h"
+#include "json.h"
 
 int main(int argc, char **argv) {
 
@@ -53,8 +54,10 @@ int main(int argc, char **argv) {
         zframe_t *frame = zmsg_last (msg);
         char *qstring = (char *) zframe_data (frame);
         printf("%s\n", qstring);
+        router_request_t preq;
+        parse_request_from_qstring(&preq, &tdata, qstring);
         router_request_t req;
-        parse_request_from_qstring(&req, &tdata, qstring);
+        memcpy(&req, &preq, sizeof(preq));
         D printf ("Searching with request: \n");
         // I router_request_dump (&router, &req);
         router_request_dump (&router, &req);
@@ -68,7 +71,8 @@ int main(int argc, char **argv) {
             D router_request_dump (&router, &req);
             router_route (&router, &req);
         }
-        uint32_t result_length = router_result_dump(&router, &req, result_buf, 8000);
+        uint32_t result_length = json_result_dump(&router, &preq, result_buf, 8000);
+        
         zframe_reset (frame, result_buf, result_length);
         // send response to broker, thereby requesting more work
         zmsg_send (&msg, zsock);

@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-
 /*
   2^16 / 60 / 60 is 18.2 hours at one-second resolution.
   By right-shifting times one bit, we get 36.4 hours (over 1.5 days) at 2 second resolution.

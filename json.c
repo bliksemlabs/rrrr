@@ -6,12 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BUFLEN (1024 * 32)
-
 static bool in_list = false;
-static char buf[BUFLEN];
-static char *buf_end = buf + BUFLEN - 1; // -1 to allow for final terminator char
-static char *b = buf;
+static char *buf_start;
+static char *buf_end;
+static char *b;
 static bool overflowed = false;
 
 /* private functions */
@@ -57,8 +55,9 @@ static void ekey (const char *k) {
 
 /* public functions (eventually) */
 
-static void json_begin() { 
-    b = buf; 
+static void json_begin(char *buf, size_t buflen) { 
+    buf_start = b = buf; 
+    buf_end = b + buflen - 1;
     in_list = false;
     overflowed = false; 
 }
@@ -66,10 +65,10 @@ static void json_begin() {
 static void json_dump() { 
     *b = '\0'; 
     if (overflowed) printf ("[JSON OVERFLOW]\n");
-    printf("%s\n", buf); 
+    printf("%s\n", buf_start); 
 }
 
-static size_t json_length() { return b - buf; }
+static size_t json_length() { return b - buf_start; }
 
 static void json_kv(char *key, char *value) {
     ekey(key);
@@ -132,8 +131,9 @@ static void json_end_arr() {
 
 static long rtime_to_msec(rtime_t rtime) { return (rtime << 4) * 1000L; }
 
-static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
-    char *stop_id = tdata_stop_desc_for_index(tdata, stop_index);
+static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata) {
+    char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
+    char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
         json_kv("name", stop_id);
@@ -145,8 +145,8 @@ static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
-        json_kd("arrival", 0);
-        json_kd("departure", 10);
+        json_kd("arrival", arrival); // TODO to epoch?
+        json_kd("departure", departure); // TODO
     json_end_obj();
 }
 
@@ -168,8 +168,8 @@ static void json_leg (struct leg *leg, tdata_t *tdata) {
         mode = "INVALID";
     }
     json_obj(); /* one leg */
-        json_place("from", leg->s0, tdata);
-        json_place("to",   leg->s1, tdata);
+        json_place("from", leg->t0, leg->t0, leg->s0, tdata); // TODO We should have stop arrival/departure here
+        json_place("to",   leg->t1, leg->t1, leg->s1, tdata); // TODO
         json_kv("legGeometry", NULL);
         json_kv("mode", mode);
         json_kl("startTime", rtime_to_msec(leg->t0));
@@ -270,17 +270,22 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata) {
     json_end_obj();
 }
 
-void render_plan_json(struct plan *plan, tdata_t *tdata) {
-    json_begin();
+uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
+    struct tm ltm;
+    time_t seconds = req_to_epoch(& plan->req, tdata, &ltm);
+    char date[11];
+    strftime(date, 30, "%Y-%m-%d\0", &ltm);
+
+    json_begin(buf, buflen);
     json_obj();
         json_kv("error", "null");
         json_key_obj("requestParameters");
-            json_kv("time", timetext(SEC_TO_RTIME(plan->req.time)));
+            json_kv("time", timetext(req->time));
             json_kb("arriveBy", plan->req.arrive_by);
-            json_kf("maxWalkDistance", 1500.0);
+            json_kf("maxWalkDistance", 2000.0);
             json_kv("fromPlace", tdata_stop_desc_for_index(tdata, plan->req.from));
             json_kv("toPlace",   tdata_stop_desc_for_index(tdata, plan->req.to));
-            json_kv("date", "08-19-2013");
+            json_kv("date", date);
             if (plan->req.mode == m_all) {
                 json_kv("mode", "TRANSIT,WALK");
             } else {
@@ -302,19 +307,27 @@ void render_plan_json(struct plan *plan, tdata_t *tdata) {
             }
         json_end_obj();
         json_key_obj("plan");
-            json_kl("date", 1376896320000);
-            json_place("from", plan->req.from, tdata);
-            json_place("to", plan->req.to, tdata);
+            json_kl("date", seconds);
+            json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata);
+            json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata);
             json_key_arr("itineraries");
                 for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata);
             json_end_arr();    
         json_end_obj();
+        #if 0
         json_key_obj("debug");
             json_kd("precalculationTime", 12);
             json_kd("pathCalculationTime", 808);
             json_kb("timedOut", false);
         json_end_obj();
+        #endif
     json_end_obj();
-    json_dump();
+    // json_dump();
+    return json_length();
 }
 
+uint32_t json_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
+    struct plan plan;
+    router_result_to_plan (&plan, router, req);
+    return render_plan_json (&plan, &(router->tdata), req, buf, buflen);
+}

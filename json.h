@@ -3,5 +3,4 @@
 #include "router.h"
 #include "tdata.h"
 
-void render_plan_json(struct plan *plan, tdata_t *tdata);
-
+uint32_t json_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen);

@@ -733,7 +733,7 @@ static bool check_plan_invariants (struct plan *plan) {
     return fail;
 }
 
-static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
+void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
     router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states;
@@ -964,8 +964,8 @@ void router_request_initialize(router_request_t *req) {
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
 // if we set the date mask in the router itself we wouldn't need the tdata here.
 void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {
-    char etime[32];
-    strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
+    // char etime[32];
+    // strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
     // printf ("epoch time: %s [%ld]\n", etime, epochtime);
     // router_request_initialize (req);
     struct tm origin_tm;
@@ -1101,3 +1101,13 @@ void router_request_dump(router_t *router, router_request_t *req) {
     }
 }
 
+time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+    while (day_mask >>= 1) cal_day++;
+
+    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY); // + RTIME_TO_SEC_SIGNED(req->time - RTIME_ONE_DAY);
+    localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
