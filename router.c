@@ -507,12 +507,18 @@ bool router_route(router_t *prouter, router_request_t *req) {
                         }
                     }
                 }
+
+                if (rsa_boarding != (route_stop_attributes[route_stop] & rsa_boarding)) //Boarding not allowed
+                   if (req->arrive_by ? trip != NONE : attempt_board) //and we're attempting to board
+                      continue; //Boarding not allowed and attemping to board
+                if (rsa_alighting != (route_stop_attributes[route_stop] & rsa_alighting)) //Alighting not allowed
+                   if (req->arrive_by ? attempt_board : trip != NONE) //and we're seeking to alight
+                      continue; //Boarding not allowed and attemping to board
+
                 /* If we have not yet boarded a trip on this route, see if we can board one.
                    Also handle the case where we hit a stop with an existing better arrival time. */
                 // TODO: check if this is the last stop -- no point boarding there or marking routes
                 if (attempt_board) {
-                    if ( (!req->arrive_by && (route_stop_attributes[route_stop] & rsa_boarding) != rsa_boarding) ||
-                         (req->arrive_by && (route_stop_attributes[route_stop] & rsa_alighting) != rsa_alighting)) continue;
                     I printf ("    attempting boarding at stop %d\n", stop);
                     T tdata_dump_route(&(router.tdata), route_idx, NONE);
                     /* Scan all trips to find the soonest trip that can be boarded, if any.
@@ -574,8 +580,6 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     }
                     continue; // to the next stop in the route
                 } else if (trip != NONE) { // We have already boarded a trip along this route.
-                    if ( (req->arrive_by && (route_stop_attributes[route_stop] & rsa_boarding) != rsa_boarding) ||
-                         (!req->arrive_by && (route_stop_attributes[route_stop] & rsa_alighting) != rsa_alighting)) continue;
                     rtime_t time = req->arrive_by ? tdata_depart(&(router.tdata), route_idx, trip, route_stop)  
                                                   : tdata_arrive(&(router.tdata), route_idx, trip, route_stop);
                     time += midnight;
