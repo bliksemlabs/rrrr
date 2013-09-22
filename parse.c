@@ -1,4 +1,5 @@
 #include "parse.h"
+#include "qstring.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -165,3 +166,55 @@ void parse_request(router_request_t *req, tdata_t *tdata, int opt, char *optarg)
         break;
     }
 }
+
+#define BUFLEN 255
+bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata) {
+    char *qstring = getenv("QUERY_STRING");
+    if (qstring == NULL)
+        qstring = "";
+    router_request_initialize(req);
+    char key[BUFLEN];
+    char *val;
+    while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
+        int opt = 0;
+        if (strcmp(key, "arrive") == 0) {
+            opt = 'a';
+        } else if (strcmp(key, "depart") == 0) {
+            opt = 'd';
+        } else if (strcmp(key, "date") == 0) {
+            opt = 'D';
+        } else if (strcmp(key, "walk-slack") == 0) {
+            opt = 's';
+        } else if (strcmp(key, "walk-speed") == 0) {
+            opt = 'S';
+        } else if (strcmp(key, "optimise") == 0) {
+            opt = 'o';
+        } else if (strcmp(key, "from-idx") == 0) {
+            opt = 'f';
+        } else if (strcmp(key, "to-idx") == 0) {
+            opt = 't';
+        } else if (strcmp(key, "via-idx") == 0) {
+            opt = 'V';
+        } else if (strcmp(key, "mode") == 0) {
+            opt = 'm';
+        } else if (strcmp(key, "start-trip-idx") == 0) {
+            opt = 'Q';
+        } else if (strcmp(key, "bannend-routes-idx") == 0) {
+            opt = 'x';
+        } else if (strcmp(key, "bannend-stops-idx") == 0) {
+            opt = 'y';
+        } else if (strcmp(key, "bannend-stops-hard-idx") == 0) {
+            opt = 'w';
+        } else if (strcmp(key, "bannend-trips-idx") == 0) {
+            opt = 'z';
+        } else if (strcmp(key, "trip-attributes") == 0) {
+            opt = 'A';
+        } else {
+            printf("unrecognized parameter: key=%s val=%s\n", key, val);
+            continue;
+        }
+        parse_request(req, tdata, opt, val);
+    }
+    return true;
+}
+

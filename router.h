@@ -131,7 +131,7 @@ struct plan {
 
 void router_setup(router_t*, tdata_t*);
 
-bool router_request_from_qstring(router_request_t*);
+bool router_request_from_qstring(router_request_t*, tdata_t *tdata);
 
 void router_request_dump(router_t*, router_request_t*);
 

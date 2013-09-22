@@ -3,10 +3,10 @@
 
 #include "util.h"
 #include "config.h"
-#include "qstring.h"
 #include "tdata.h"
 #include "bitset.h"
 #include "json.h"
+#include "parse.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -1064,34 +1064,6 @@ inline static bool range_check(struct router_request *req, struct router *router
     if (req->walk_speed < 0.1) return false;
     if (req->from >= n_stops)  return false;
     if (req->to >= n_stops)    return false;
-    return true;
-}
-
-#define BUFLEN 255
-bool router_request_from_qstring(router_request_t *req) {
-    char *qstring = getenv("QUERY_STRING");
-    if (qstring == NULL) 
-        qstring = "";
-    router_request_initialize(req);
-    char key[BUFLEN];
-    char *val;
-    while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
-        if (strcmp(key, "time") == 0) {
-            req->time = atoi(val);
-        } else if (strcmp(key, "fromPlace") == 0) {
-            req->from = atoi(val);
-        } else if (strcmp(key, "toPlace") == 0) {
-            req->to = atoi(val);
-        } else if (strcmp(key, "walkSpeed") == 0) {
-            req->walk_speed = atof(val);
-        } else if (strcmp(key, "randomize") == 0) {
-            printf("RANDOMIZING\n");
-            router_request_randomize(req);
-            return true;
-        } else {
-            printf("unrecognized parameter: key=%s val=%s\n", key, val);
-        }
-    }
     return true;
 }
 
