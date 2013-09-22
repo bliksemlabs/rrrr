@@ -1,0 +1,7 @@
+stop_id,stop_name,stop_lat,stop_lon
+2e11,Beginhalte,2.511,2.510
+2e12,Tussenhalte 1,2.511,2.513
+2e13,Uitstaphalte,2.512,2.512
+2e14,Instaphalte,2.513,2.512
+2e15,Tussenhalte 1,2.513,2.510
+2e16,Eindhalte,2.513,2.513
