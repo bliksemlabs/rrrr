@@ -23,7 +23,7 @@ brrrroker: broker.o
 workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-testerrrr: tester.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
+testerrrr: tester.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
