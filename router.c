@@ -1101,6 +1101,17 @@ void router_request_dump(router_t *router, router_request_t *req) {
     }
 }
 
+time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+    while (day_mask >>= 1) cal_day++;
+
+    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
+    localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
+
 time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
     uint32_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
