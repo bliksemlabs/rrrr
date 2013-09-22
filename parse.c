@@ -168,8 +168,7 @@ void parse_request(router_request_t *req, tdata_t *tdata, int opt, char *optarg)
 }
 
 #define BUFLEN 255
-bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata) {
-    char *qstring = getenv("QUERY_STRING");
+bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, char *qstring) {
     if (qstring == NULL)
         qstring = "";
     router_request_initialize(req);
