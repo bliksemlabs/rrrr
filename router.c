@@ -483,8 +483,6 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     }
                 }
 
-                if ( !((route_stop_attributes[route_stop] & rsa_boarding) == rsa_boarding)) continue;
-
                 /* 
                   If we are not already on a trip, or if we might be able to board a better trip on 
                   this route at this location, indicate that we want to search for a trip.
@@ -513,6 +511,8 @@ bool router_route(router_t *prouter, router_request_t *req) {
                    Also handle the case where we hit a stop with an existing better arrival time. */
                 // TODO: check if this is the last stop -- no point boarding there or marking routes
                 if (attempt_board) {
+                    if ( (!req->arrive_by && (route_stop_attributes[route_stop] & rsa_boarding) != rsa_boarding) ||
+                         (req->arrive_by && (route_stop_attributes[route_stop] & rsa_alighting) != rsa_alighting)) continue;
                     I printf ("    attempting boarding at stop %d\n", stop);
                     T tdata_dump_route(&(router.tdata), route_idx, NONE);
                     /* Scan all trips to find the soonest trip that can be boarded, if any.
