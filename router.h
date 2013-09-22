@@ -74,9 +74,11 @@ typedef struct router_request router_request_t;
 struct router_request {
     uint32_t from;       // start stop index from the user's perspective, independent of arrive_by
     uint32_t to;         // destination stop index from the user's perspective, independent of arrive_by
+    uint32_t via;        // preferred transfer stop index from the user's perspective, default: NONE
+    uint32_t start_trip_route; // for onboard departure: route index on which to begin
+    uint32_t start_trip_trip;  // for onboard departure: trip index within that route
     rtime_t time;        // the departure or arrival time at which to search (in internal rtime)
     rtime_t time_cutoff; // the latest (or earliest in arrive_by) acceptable time to reach the destination 
-    uint32_t via;        // preferred transfer stop index from the user's perspective, default: NONE
     double walk_speed;   // speed at which the user walks, in meters per second
     uint8_t walk_slack;  // an extra delay per transfer, in seconds 
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
@@ -94,8 +96,6 @@ struct router_request {
     uint32_t banned_trip_route; // One trip which is banned, this is its route
     uint32_t banned_trip_offset; // One trip which is banned, this is its tripoffset
     uint32_t banned_stop_hard; // One stop which is banned 
-    uint32_t start_trip_route; // for onboard departure: route index on which to begin
-    uint32_t start_trip_trip;  // for onboard departure: trip index within that route
 };
 
 
