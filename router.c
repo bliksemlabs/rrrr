@@ -574,6 +574,8 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     }
                     continue; // to the next stop in the route
                 } else if (trip != NONE) { // We have already boarded a trip along this route.
+                    if ( (req->arrive_by && (route_stop_attributes[route_stop] & rsa_boarding) != rsa_boarding) ||
+                         (!req->arrive_by && (route_stop_attributes[route_stop] & rsa_alighting) != rsa_alighting)) continue;
                     rtime_t time = req->arrive_by ? tdata_depart(&(router.tdata), route_idx, trip, route_stop)  
                                                   : tdata_arrive(&(router.tdata), route_idx, trip, route_stop);
                     time += midnight;
