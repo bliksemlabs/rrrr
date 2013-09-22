@@ -214,6 +214,15 @@ bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, char *qst
         }
         parse_request(req, tdata, opt, val);
     }
+
+    if (req->time == UNREACHED) {
+        struct tm ltm;
+        memset (&ltm, 0, sizeof(struct tm));
+        time_t now = time(0);
+        ltm = *localtime(&now);
+        router_request_from_epoch (req, tdata, mktime(&ltm));
+    }
+
     return true;
 }
 

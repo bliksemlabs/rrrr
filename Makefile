@@ -4,7 +4,7 @@ CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime
+BINS    := webworkerrrr workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime
 
 #CC=gcc
 #CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
@@ -21,6 +21,9 @@ brrrroker: broker.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 		
 workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+
+webworkerrrr: worker-web.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 testerrrr: tester.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
