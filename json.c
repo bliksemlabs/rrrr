@@ -136,12 +136,12 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
-        json_kv("name", stop_id);
+        json_kv("name", stop_desc);
         json_key_obj("stopId");
             json_kv("agencyId", "NL");
             json_kd("id", stop_index);
         json_end_obj();
-        json_kd("stopCode", stop_index);
+        json_kv("stopCode", stop_id);
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
@@ -272,9 +272,9 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata) {
 
 uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
     struct tm ltm;
-    time_t seconds = req_to_epoch(& plan->req, tdata, &ltm);
+    time_t date_seconds = req_to_date(& plan->req, tdata, &ltm);
     char date[11];
-    strftime(date, 30, "%Y-%m-%d\0", &ltm);
+    strftime(date, 11, "%Y-%m-%d\0", &ltm);
 
     json_begin(buf, buflen);
     json_obj();
@@ -307,7 +307,7 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, router_request_t *r
             }
         json_end_obj();
         json_key_obj("plan");
-            json_kl("date", seconds);
+            json_kl("date", date_seconds * 1000L);
             json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata);
             json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata);
             json_key_arr("itineraries");
