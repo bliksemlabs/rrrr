@@ -38,6 +38,7 @@ struct tdata_header {
     uint32_t loc_route_active; 
     uint32_t loc_stop_desc; 
     uint32_t loc_route_desc; 
+    uint32_t loc_operator; 
     uint32_t loc_route_ids;
     uint32_t loc_stop_ids;
     uint32_t loc_trip_ids;
@@ -53,6 +54,10 @@ inline char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
 
 inline char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
     return td->trip_ids + (td->trip_id_width * trip_index);
+}
+
+inline char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index) {
+    return td->operator + (td->operator_width * operator_index);
 }
 
 inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
