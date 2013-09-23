@@ -495,7 +495,7 @@ for stop_id,stop_name,stop_lat,stop_lon,attributes in db.stopattributes() :
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-route_t = Struct('=IIIIIIHH')
+route_t = Struct('2I6H')
 route_t_fields = [route_stops_offsets, trip_ids_offsets, route_n_stops, route_n_trips,route_attributes,operator_offsets,route_min_time, route_max_time]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :
