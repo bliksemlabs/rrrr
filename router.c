@@ -508,10 +508,10 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     }
                 }
 
-                if (rsa_boarding != (route_stop_attributes[route_stop] & rsa_boarding)) //Boarding not allowed
+                if (!(route_stop_attributes[route_stop] & rsa_boarding)) //Boarding not allowed
                    if (req->arrive_by ? trip != NONE : attempt_board) //and we're attempting to board
                       continue; //Boarding not allowed and attemping to board
-                if (rsa_alighting != (route_stop_attributes[route_stop] & rsa_alighting)) //Alighting not allowed
+                if (!(route_stop_attributes[route_stop] & rsa_alighting)) //Alighting not allowed
                    if (req->arrive_by ? attempt_board : trip != NONE) //and we're seeking to alight
                       continue; //Alighting not allowed and attemping to alight
 
