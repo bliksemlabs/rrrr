@@ -129,28 +129,35 @@ static void json_end_arr() {
     in_list = true;
 }
 
-static long rtime_to_msec(rtime_t rtime) { return (rtime << 4) * 1000L; }
+static long rtime_to_msec(rtime_t rtime, time_t date) { return ((rtime << 4) + date) * 1000L; }
 
-static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata) {
+static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
     char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
-        json_kv("name", stop_id);
+        json_kv("name", stop_desc);
         json_key_obj("stopId");
             json_kv("agencyId", "NL");
-            json_kd("id", stop_index);
+            json_kv("id", stop_id);
         json_end_obj();
         json_kd("stopCode", stop_index);
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
-        json_kd("arrival", arrival); // TODO to epoch?
-        json_kd("departure", departure); // TODO
+	if (arrival == UNREACHED)
+        	json_kv("arrival", NULL);
+	else
+        	json_kl("arrival", rtime_to_msec(arrival, date));
+	
+	if (departure == UNREACHED)
+		json_kv("departure", NULL);
+	else
+		json_kl("departure", rtime_to_msec(departure, date));
     json_end_obj();
 }
 
-static void json_leg (struct leg *leg, tdata_t *tdata) {
+static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
     char *mode = NULL;
     char *route_id = NULL;
 
@@ -168,12 +175,12 @@ static void json_leg (struct leg *leg, tdata_t *tdata) {
         mode = "INVALID";
     }
     json_obj(); /* one leg */
-        json_place("from", leg->t0, leg->t0, leg->s0, tdata); // TODO We should have stop arrival/departure here
-        json_place("to",   leg->t1, leg->t1, leg->s1, tdata); // TODO
+        json_place("from", leg->t0, leg->t0, leg->s0, tdata, date); // TODO We should have stop arrival/departure here
+        json_place("to",   leg->t1, leg->t1, leg->s1, tdata, date); // TODO
         json_kv("legGeometry", NULL);
         json_kv("mode", mode);
-        json_kl("startTime", rtime_to_msec(leg->t0));
-        json_kl("endTime",   rtime_to_msec(leg->t1));
+        json_kl("startTime", rtime_to_msec(leg->t0, date));
+        json_kl("endTime",   rtime_to_msec(leg->t1, date));
         json_kl("departureDelay", 0);
         json_kl("arrivalDelay", 0);
         json_kl("departureDelay", 0);
@@ -251,11 +258,13 @@ static void json_leg (struct leg *leg, tdata_t *tdata) {
     json_end_obj();
 }
 
-static void json_itinerary (struct itinerary *itin, tdata_t *tdata) {
+static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_request_t *req, time_t date) {
+    int64_t starttime = rtime_to_msec(itin->legs[(req->arrive_by ? itin->n_legs : 0 )].t0, date);
+    int64_t endtime = rtime_to_msec(itin->legs[(req->arrive_by ? 0 : itin->n_legs )].t1, date);
     json_obj(); /* one itinerary */
-        json_kd("duration", 5190000);
-        json_kl("startTime", 1376896831000);
-        json_kl("endTime", 1376902021000);
+        json_kd("duration", endtime - starttime);
+        json_kl("startTime", starttime);
+        json_kl("endTime", endtime);
         json_kd("walkTime", 1491);
         json_kd("transitTime", 3267);
         json_kd("waitingTime", 432);
@@ -265,14 +274,14 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata) {
         json_kd("elevationGained",0);
         json_kd("transfers", itin->n_legs / 2 - 1);
         json_key_arr("legs");
-            for (int l = 0; l < itin->n_legs; ++l) json_leg (itin->legs + l, tdata);
+            for (int l = 0; l < itin->n_legs; ++l) json_leg (itin->legs + l, tdata, date);
         json_end_arr();    
     json_end_obj();
 }
 
 uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
     struct tm ltm;
-    time_t seconds = req_to_epoch(& plan->req, tdata, &ltm);
+    time_t seconds = req_to_date(& plan->req, tdata, &ltm);
     char date[11];
     strftime(date, 30, "%Y-%m-%d\0", &ltm);
 
@@ -307,11 +316,11 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, router_request_t *r
             }
         json_end_obj();
         json_key_obj("plan");
-            json_kl("date", seconds);
-            json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata);
-            json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata);
+            json_kl("date", seconds * 1000);
+            json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata, seconds);
+            json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata, seconds);
             json_key_arr("itineraries");
-                for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata);
+                for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata, req, seconds);
             json_end_arr();    
         json_end_obj();
         #if 0
