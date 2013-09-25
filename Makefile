@@ -1,15 +1,18 @@
 # CC      := gcc -std=gnu99
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 `sdl-config --cflags` # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := webworkerrrr workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime
+BINS    := webworkerrrr workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime rrrrealtime-viz
 
 #CC=gcc
 #CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
 
 all: $(BINS)
+
+realtime-viz.o:
+	$(CC) realtime-viz.c -c $(CFLAGS) `sdl-config --cflags` -o $@
 
 %.o: %.c
 	$(CC) $^ -c $(CFLAGS) -o $@
@@ -34,6 +37,9 @@ explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json
 
 rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
+
+rrrrealtime-viz: realtime-viz.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
+	$(CC) $(CFLAGS) $^ $(LIBS) `sdl-config --libs` -lshp -lGL -o $@
 
 client: client.o bitset.o qstring.o router.o tdata.o util.o json.o gtfs-realtime.pb-c.o radixtree.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
