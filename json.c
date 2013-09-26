@@ -141,7 +141,7 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
             json_kv("agencyId", "NL");
             json_kv("id", stop_id);
         json_end_obj();
-        json_kd("stopCode", stop_index);
+        json_kv("stopCode", NULL); /* eventually fill it with UserStopCode */
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
