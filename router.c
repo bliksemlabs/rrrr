@@ -483,8 +483,6 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     }
                 }
 
-                if ( !((route_stop_attributes[route_stop] & rsa_boarding) == rsa_boarding)) continue;
-
                 /* 
                   If we are not already on a trip, or if we might be able to board a better trip on 
                   this route at this location, indicate that we want to search for a trip.
@@ -509,6 +507,14 @@ bool router_route(router_t *prouter, router_request_t *req) {
                         }
                     }
                 }
+
+                if (!(route_stop_attributes[route_stop] & rsa_boarding)) //Boarding not allowed
+                   if (req->arrive_by ? trip != NONE : attempt_board) //and we're attempting to board
+                      continue; //Boarding not allowed and attemping to board
+                if (!(route_stop_attributes[route_stop] & rsa_alighting)) //Alighting not allowed
+                   if (req->arrive_by ? attempt_board : trip != NONE) //and we're seeking to alight
+                      continue; //Alighting not allowed and attemping to alight
+
                 /* If we have not yet boarded a trip on this route, see if we can board one.
                    Also handle the case where we hit a stop with an existing better arrival time. */
                 // TODO: check if this is the last stop -- no point boarding there or marking routes
