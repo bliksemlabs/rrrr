@@ -20,9 +20,10 @@ typedef struct route route_t;
 struct route {
     uint32_t route_stops_offset;
     uint32_t trip_ids_offset;
-    uint32_t n_stops;
-    uint32_t n_trips;
-    uint32_t attributes;
+    uint16_t n_stops;
+    uint16_t n_trips;
+    uint16_t attributes;
+    uint16_t operator_offset;
     rtime_t  min_time;
     rtime_t  max_time;
 };
@@ -82,6 +83,8 @@ struct tdata {
     char *stop_desc;
     uint32_t route_desc_width;
     char *route_desc;
+    uint32_t operator_width;
+    char *operator;
     uint32_t *trip_active;
     uint32_t *route_active;
     uint8_t *trip_attributes;

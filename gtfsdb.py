@@ -197,13 +197,6 @@ class TripBundle:
         self.trip_ids.append( trip_id )
 
 class GTFSDatabase:
-    AGENCIES_DEF = ("agencies", (("agency_id",   None, None),
-                                 ("agency_name",    None, None),
-                                 ("agency_url", None, None),
-                                 ("agency_timezone", None, None),
-                                 ("agency_lang", None, None),
-                                 ("agency_phone", None, None),
-                                 ("agency_fare_url", None, None)))
     TRIPS_DEF = ("trips", (("route_id",   None, None),
                            ("trip_id",    None, None),
                            ("service_id", None, None),
@@ -262,8 +255,8 @@ class GTFSDatabase:
     AGENCY_DEF = ("agency", (("agency_id", None, None),
                              ("agency_name", None, None),
                              ("agency_url", None, None),
+                             ("agency_phone", None, None),
                              ("agency_timezone", None, None)) )
-                             
     FREQUENCIES_DEF = ("frequencies", (("trip_id", None, None),
                                        ("start_time", "INTEGER", parse_gtfs_time),
                                        ("end_time", "INTEGER", parse_gtfs_time),
@@ -519,6 +512,13 @@ ORDER BY stop_id
     def service_ids(self):
         query = "SELECT DISTINCT service_id FROM (SELECT service_id FROM calendar UNION SELECT service_id FROM calendar_dates)"
         return [x[0] for x in self.get_cursor().execute( query )]
+
+    def agency(self,agency_id):
+        query = "SELECT agency_id,agency_name,agency_url,agency_phone,agency_timezone FROM agency WHERE agency_id = ?"
+        res = list(self.get_cursor().execute( query,(agency_id,) ))
+        if len(res) != 1:
+            return None
+        return res[0]
 
     def compile_trip_bundles(self, maxtrips=None, reporter=None):
         

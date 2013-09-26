@@ -6,6 +6,7 @@ from datetime import timedelta, date
 from gtfsdb import GTFSDatabase
 import os
 import sqlite3
+import operator
 
 MAX_DISTANCE = 801
 
@@ -130,7 +131,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ22I') 
+struct_header = Struct('8sQ23I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -157,6 +158,7 @@ def write_header () :
         loc_route_active,
         loc_stop_desc,
         loc_route_desc,
+        loc_operator,
         loc_route_ids,
         loc_stop_ids,
         loc_trip_ids,
@@ -268,6 +270,8 @@ route_max_time.append(0) # sentinel
 route_desc_for_idx = []
 route_ids_for_idx = []
 route_attributes = []
+operator_offsets = []
+operator_for_idx = {}
 for route in route_for_idx :
     exemplar_trip = route.trip_ids[0]
     #  executemany
@@ -284,7 +288,14 @@ for route in route_for_idx :
     route_desc_for_idx.append(desc)
     route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
-route_attributes.append(0) # sentinel  
+    if agency in operator_for_idx:
+        operator_offset = operator_for_idx[agency]
+    else:
+        operator_offset = len(operator_for_idx)
+        operator_for_idx[agency] = operator_offset
+    operator_offsets.append(operator_offset)
+route_attributes.append(0) # sentinel
+operator_offsets.append(0) # sentinel  
 # named tuples?
 # stops = [(-1, -1) for _ in range(nstops)]
 # routes = [(-1, -1) for _ in range(nroutes)]
@@ -484,8 +495,8 @@ for stop_id,stop_name,stop_lat,stop_lon,attributes in db.stopattributes() :
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-route_t = Struct('IIIIIHH')
-route_t_fields = [route_stops_offsets, trip_ids_offsets, route_n_stops, route_n_trips,route_attributes,route_min_time, route_max_time]
+route_t = Struct('2I6H')
+route_t_fields = [route_stops_offsets, trip_ids_offsets, route_n_stops, route_n_trips,route_attributes,operator_offsets,route_min_time, route_max_time]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :
     # the extra last route is a sentinel so we can derive list lengths for the last true route.
@@ -526,6 +537,11 @@ print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 print "writing out sorted route descriptions to string table"
 write_text_comment("ROUTE DESC")
 loc_route_desc = write_string_table(route_desc_for_idx)
+
+print "writing out operators to string table"
+write_text_comment("OPERATORS")
+sorted_agencyIds = sorted(operator_for_idx.iteritems(), key=operator.itemgetter(1))
+loc_operator = write_string_table([';'.join(v or '' for v in db.agency(agencyId)) for agencyId,idx in sorted_agencyIds])
 
 print "writing out sorted stop descriptions to string table"
 write_text_comment("STOP DESC")
