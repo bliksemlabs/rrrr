@@ -3,6 +3,7 @@
 /*
   An allocator that services many small incremental allocations by slicing up a few huge allocations.
   All the small allocations can then be freed in an O(1) blanket deallocation; this is basically a stack.
+  This is a major enabler for fast MOA* routing where many states must be dynamically allocated.
   
   We could either reset to a marked intermediate point or always reset completely.
   We could either leave the slabs allocated at the high water mark or not (wait to call shrink).  
@@ -116,18 +117,12 @@ typedef struct {
 
 /* TESTING */
 
-#define PASSES 4
-#define ALLOCS (1000 * 1000 * 4)
-#define SLAB_SIZE (1024 * 1024 * 10)
+#define PASSES 10
+#define ALLOCS (1000 * 1000 * 12)
+#define SLAB_SIZE (1024 * 1024 * 2)
 // do not allocate this huge array on the stack, it will blow up (thanks valgrind)
 static test_s *tsps[ALLOCS]; 
 
-/*
-  10 passes of 1000000 structs, 1MB slabs: 0.049 sec total time at -O3
-  10 passes of 1000000 structs, 2MB slabs: 0.056 sec total time at -O3
-  10 passes of 1000000 structs, 4MB slabs: 0.053 sec total time at -O3
-  10 passes of 1000000 structs, 8MB slabs: 0.059 sec total time at -O3
-*/
 int main (int argc, char **argv) {
     // track runtime
     struct timeval t0, t1; 
