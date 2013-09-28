@@ -175,15 +175,14 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
         mode = "INVALID";
     }
     json_obj(); /* one leg */
-        json_place("from", leg->t0, leg->t0, leg->s0, tdata, date); // TODO We should have stop arrival/departure here
-        json_place("to",   leg->t1, leg->t1, leg->s1, tdata, date); // TODO
+        json_place("from", UNREACHED, leg->t0, leg->s0, tdata, date); // TODO We should have stop arrival/departure here
+        json_place("to",   leg->t1, UNREACHED, leg->s1, tdata, date); // TODO
         json_kv("legGeometry", NULL);
         json_kv("mode", mode);
         json_kl("startTime", rtime_to_msec(leg->t0, date));
         json_kl("endTime",   rtime_to_msec(leg->t1, date));
         json_kl("departureDelay", 0);
         json_kl("arrivalDelay", 0);
-        json_kl("departureDelay", 0);
         json_kv("headsign", route_id);
 /* 
     "realTime": false,
