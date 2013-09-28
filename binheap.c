@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include "util.h"
 
 #define BINHEAP_GROW_FACTOR 2.0
 #define BINHEAP_DEFAULT_CAPACITY 1000000
@@ -16,11 +17,6 @@ static void  **elem;
 static int   size; 
 static int   capacity;
 
-void die (const char *msg) {
-    fprintf (stderr, "%s\n", msg);
-    exit(EXIT_FAILURE);
-}
-    
 void binheap_new (int cap) {
     if (cap == 0) cap = BINHEAP_DEFAULT_CAPACITY;
     capacity = cap < BINHEAP_MIN_CAPACITY ? BINHEAP_MIN_CAPACITY : cap;

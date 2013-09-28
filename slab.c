@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include "util.h"
 
 #define DEFAULT_SLAB_SIZE (1024 * 1024 * 1)
 
@@ -29,11 +30,6 @@ struct slab {
     void *begin; // the beginning of this slab of memory
     struct slab *next; // the next slab in the chain
 };
-
-void die (const char *msg) {
-    fprintf (stderr, "%s\n", msg);
-    exit(EXIT_FAILURE);
-}
 
 /* Allocate a new slab, adding it to the end of the chain and updating current and end position pointers accordingly. */
 struct slab *slab_new () {
@@ -123,7 +119,7 @@ typedef struct {
 // do not allocate this huge array on the stack, it will blow up (thanks valgrind)
 static test_s *tsps[ALLOCS]; 
 
-int main (int argc, char **argv) {
+int test_slab (int argc, char **argv) {
     // track runtime
     struct timeval t0, t1; 
     
@@ -169,6 +165,6 @@ int main (int argc, char **argv) {
     }
     
     fprintf (stderr, "%f sec malloc, %f sec slab, speedup %f\n", mdt, sdt, mdt/sdt);
-
+    return 0;
 }
 

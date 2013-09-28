@@ -144,7 +144,7 @@ Adding inline keyword and -O2 reduces to 0.064 seconds (0.641 sec for 1M enumera
 
 */
 
-int test_main (void) {
+int test_bitset (void) {
     uint32_t max = 50000;
     BitSet *bs = bitset_new(max);
     for (uint32_t i = 0; i < 50000; i += 2)
