@@ -4,9 +4,10 @@
 # make and build files
 *.o
 *.pyc
-
+*.d
 *.gtfsdb
 *.zip
+qa/*/tmp
 
 stops.db
 timetable.dat
