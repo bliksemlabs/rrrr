@@ -315,11 +315,11 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, router_request_t *r
             }
         json_end_obj();
         json_key_obj("plan");
-            json_kl("date", seconds * 1000L);
-            json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata, seconds);
-            json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata, seconds);
+            json_kl("date", date_seconds * 1000L);
+            json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata, date_seconds);
+            json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata, date_seconds);
             json_key_arr("itineraries");
-                for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata, req, seconds);
+                for (int i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata, req, date_seconds);
             json_end_arr();    
         json_end_obj();
         #if 0
