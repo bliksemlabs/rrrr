@@ -25,16 +25,13 @@ For decoding incoming realtime messages. https://code.google.com/p/protobuf-c/do
 For receiving incremental realtime messages. https://github.com/warmcat/libwebsockets.
 
 1. **shapelib**:
-For visualizing realtime messages in OpenGL on a map of choice. http://download.osgeo.org/shapelib/.
+For visualizing realtime messages in OpenGL using a map of choice. http://download.osgeo.org/shapelib/.
 
 1. **libsdl**:
 For visualizing realtime messages in OpenGL via een SDL surface. http://libsdl.org/download-1.2.php.
 
 1. **gcc** or **clang**:
 clang provides very good error messages and warnings. RRRR benefits greatly from -O2 and link-time optimization.
-
-1. **shapelib**:
-only needed for the realtime visualizer. http://download.osgeo.org/shapelib/.
 
 Building transit data
 ---------------------
