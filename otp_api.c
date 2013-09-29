@@ -59,6 +59,7 @@ uint32_t conn_remove_n = 0;
   Note that scheduling the same connection for removal more than once will have unpredictable effects.
 */
 static uint32_t remove_conn_later (uint32_t nc) {
+    printf ("connection %02d [fd=%02d] enqueued for removal.\n", nc, conn_items[nc].fd);
     conn_remove_queue[conn_remove_n] = nc;
     conn_remove_n += 1;
     return conn_remove_n;
@@ -66,20 +67,20 @@ static uint32_t remove_conn_later (uint32_t nc) {
 
 /* Debug function: print out all open connections. */
 static void conn_dump_all () {
-    printf ("number of active connections: %d\n", n_conn);
+    printf ("number of active connections is %d\n", n_conn);
     for (int i = 0; i < n_conn; ++i) {
         zmq_pollitem_t *pi = poll_items + 2 + i;
-        printf ("connection %02d: fd=%d buf='%s'\n", i, pi->fd, buffers[i].buf);
+        printf ("[%02d] fd=%02d buf='%s'\n", i, pi->fd, buffers[i].buf);
     }
 }
 
 /* Add a connection with socket descriptor sd to the end of the list of open connections. */
 static void add_conn (uint32_t sd) {
     if (n_conn < MAX_CONN) {
-        printf ("adding a connection for socket descriptor %d\n", sd);
         conn_items[n_conn].socket = NULL; // indicate that this is a standard socket, not a ZMQ socket
         conn_items[n_conn].fd = sd;
         conn_items[n_conn].events = POLLIN;
+        printf ("connection %02d [fd=%02d] has been added.\n", n_conn, sd);
         n_conn++;
         conn_dump_all ();
     } else {
@@ -98,7 +99,7 @@ static bool remove_conn (uint32_t nc) {
     uint32_t last_index = n_conn - 1;
     zmq_pollitem_t *item = conn_items + nc;
     zmq_pollitem_t *last = conn_items + last_index;
-    printf ("removing connection %d with socket descriptor %d\n", nc, item->fd);
+    printf ("connection %02d [fd=%02d] being removed.\n", nc, item->fd);
     memcpy (item, last, sizeof(*item));
     /* Swap in the buffer struct for the last active connection (retain char *buf). */
     struct buffer temp;
@@ -114,7 +115,6 @@ static bool remove_conn (uint32_t nc) {
 /* Remove all connections that have been enqueued for removal in a single operation. */
 static void remove_conn_enqueued () {
     for (int i = 0; i < conn_remove_n; ++i) {
-        printf ("removing enqueued connection %d: %d\n", i, conn_remove_queue[i]);
         remove_conn (conn_remove_queue[i]);
     }
     conn_remove_n = 0;
@@ -132,20 +132,22 @@ static bool read_input (uint32_t nc) {
     char *c = b->buf + b->size; // pointer to the first available character in the buffer
     int remaining = BUFLEN - b->size;
     size_t received = recv (conn_sd, c, remaining, 0);
+    printf ("connection %02d [fd=%02d] recevied %ld bytes.\n", nc, conn_sd, received);
     // If recv returns zero, that means the connection has been closed.
     // Don't remove it immediately, since we are in the middle of a poll loop.
     if (received == 0) {
-        printf ("socket %d was closed\n", nc);
+        printf ("connection %02d [fd=%02d] closed. closing socket descriptor locally.\n", nc, conn_sd);
         remove_conn_later (nc);
+        close (conn_sd); // necessary! but maybe do this when removing connection from pollitems?
         return false;
     }
     b->size += received;
     if (b->size >= BUFLEN) {
-        printf ("HTTP request too long for buffer.\n");
+        printf ("HTTP request does not fit in buffer.\n");
         return false;
     }
-    printf ("received: %s \n", c);
-    printf ("buffer is now: %s \n", b->buf);
+    //printf ("received: %s \n", c);
+    //printf ("buffer is now: %s \n", b->buf);
     bool eol = false;
     for (char *end = c + received; c <= end; ++c) {
         if (*c == '\n' || *c == '\r') {
@@ -184,16 +186,15 @@ static void send_request (int nc, void *broker_socket) {
     router_request_randomize (&req);
     zmsg_t *msg = zmsg_new ();
     zmsg_pushmem (msg, &req, sizeof(req));
-    // prefix the request with the socket descriptor for use upon reply
+    // Prefix the request with the socket descriptor for use upon reply. Worker ignores all frames but the last one.
     zmsg_pushmem (msg, &conn_sd, sizeof(conn_sd)); 
     zmsg_send (&msg, broker_socket);
-    // at this point, once we have made the request, we can remove the poll item while keeping the file descriptor open.
-    remove_conn_later (nc);
+    printf ("connection %02d [fd=%02d] sent request to broker.\n", nc, conn_sd);
+    // Do not remove_conn_later yet. Continue polling so we detect client closing, avoiding TIME_WAIT on server.
     return;
 
     cleanup:
     send (conn_sd, ERROR_404, strlen(ERROR_404), 0);
-    close (conn_sd);
     remove_conn_later (nc); // could this lead to double-remove?
     return;
 }
@@ -210,7 +211,8 @@ int main (void) {
     /* Listening socket is nonblocking: connections or bytes may not be waiting. */
     uint32_t server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     socklen_t in_addr_length = sizeof (server_in_addr);
-    bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr));
+    if (bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr)))
+        die ("Failed to bind socket.\n");
     listen(server_socket, QUEUE_CONN);
 
     /* Set up ØMQ socket to communicate with the RRRR broker. */
@@ -246,20 +248,20 @@ int main (void) {
         /* Blocking poll for queued incoming TCP connections, traffic on open TCP connections, and ZMQ broker events. */
         int n_waiting = zmq_poll (poll_items, 2 + n_conn, -1); 
         if (n_waiting < 1) {
-            printf ("ZMQ poll call interrupted.\n");
-            break;
+            printf ("ZMQ poll call interrupted.\n"); 
+            break; // Really, we should stop accepting incoming connections and break only when all connections closed.
         }
-        /* Check if the ØMQ broker socket has a message for us. If so, write it out to the client socket and close. */
+        /* Check if the ØMQ broker socket has a message for us. If so, write it out to the client socket. */
         if (broker_item->revents & ZMQ_POLLIN) {
-            printf ("Activity on ZMQ broker socket. Reply is:\n");
             zmsg_t *msg = zmsg_recv (broker_socket);
             zframe_t *sd_frame = zmsg_pop (msg);
             uint32_t sd = *(zframe_data (sd_frame));
             char *response = zmsg_popstr (msg);
-            printf ("(for socket %d) %s\n", sd, response);
+            // printf ("ZMQ broker socket received message for socket %02d:\n%s", sd, response);
             send (sd, OK_TEXT_PLAIN, strlen(OK_TEXT_PLAIN), 0);     
             send (sd, response, strlen(response), 0);
-            close (sd);
+            printf ("              [fd=%02d] sent response to client.\n", sd);
+            // do not close(sd) yet. wait for client to close to avoid going into TIME_WAIT state.
             zmsg_destroy (&msg);
             n_waiting--;
         }
