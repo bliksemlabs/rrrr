@@ -49,13 +49,13 @@ def distance (lat1, lon1, lat2, lon2, xscale) :
 # can also compare squared distances in scaled meters
 transfers = []
 n_processed = 0
-for sid, sname, lat, lon in db.execute(all_query) :
+for sid, sname, lat, lon in list(db.conn.execute(all_query)) :
     if verbose :
         print sid, sname
     xscale = math.cos(math.radians(lat)) 
     range_lon = range_lat * xscale
     # print xscale, range_lat, range_lon
-    for sid2, sname2, lat2, lon2 in db.execute(near_query, locals()):
+    for sid2, sname2, lat2, lon2 in db.conn.execute(near_query, locals()):
         if sid2 == sid :
             continue
         d = distance (lat, lon, lat2, lon2, xscale)
