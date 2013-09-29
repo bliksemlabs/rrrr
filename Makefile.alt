@@ -1,11 +1,10 @@
 # CC      := gcc -std=gnu99
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O0 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
-#SOURCES := $(filter-out  realtime-viz.c,$(wildcard *.c))
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := workerrrr-web workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime otp_client struct_test rrrrealtime-viz
+BINS    := workerrrr-web workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test rrrrealtime-viz
 
 BIN_BASES     := $(subst rrrr,r,$(BINS))
 BIN_OBJECTS   := $(BIN_BASES:=.o)
