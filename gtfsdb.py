@@ -592,7 +592,7 @@ def main_compile_gtfsdb():
         options.tables=None
 
     if len(args) < 2:
-        print("Converts GTFS file to GTFS-DB, which is super handy\nusage: python process_gtfs.py gtfs_filename gtfsdb_filename")
+        print("Loads a GTFS file into an SQLite database, enabling more sophisticated queries.\nusage: gtfsdb.py <input.gtfs.zip> <output.gtfsdb>")
         exit()
     
     gtfsdb_filename = args[1]
@@ -600,7 +600,8 @@ def main_compile_gtfsdb():
  
     gtfsdb = GTFSDatabase( gtfsdb_filename, overwrite=True )
     gtfsdb.load_gtfs( gtfs_filename, options.tables, reporter=sys.stdout, verbose=options.verbose )
-
+    print "Done loading GTFS into database. Don't forget to add transfers to the database if needed!"
 
 if __name__=='__main__': 
     main_compile_gtfsdb()
+
