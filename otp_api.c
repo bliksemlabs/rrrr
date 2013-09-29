@@ -55,6 +55,7 @@ uint32_t conn_remove_n = 0;
 /* 
   Schedule a connection for removal from the poll_items / open connections. It will be removed at the end of the 
   current polling iteration to avoid reordering other poll_items in the middle of an iteration.
+  Note that scheduling the same connection for removal more than once will have unpredictable effects.
 */
 static uint32_t remove_conn_later (uint32_t nc) {
     conn_remove_queue[conn_remove_n] = nc;
@@ -247,7 +248,7 @@ int main (void) {
         }
         /* Check if the listening TCP/IP socket has a queued connection. */
         if (http_item->revents & ZMQ_POLLIN) {
-            struct sockaddr_in	client_in_addr;
+            struct sockaddr_in client_in_addr;
             socklen_t in_addr_length;
             // Adding a connection will increase the total connection count, but in the loop over open connections 
             // n_waiting should hit zero before the new one is encountered.
