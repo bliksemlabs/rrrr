@@ -33,6 +33,18 @@ zmq_pollitem_t *conn;
 char conn_buffers[MAX_CONN][BUFLEN];
 uint32_t buf_sizes[MAX_CONN];
 
+// Poll items, including zmq and listening/client network sockets
+zmq_pollitem_t items [2 + MAX_CONN]; 
+
+uint32_t conn_remove_queue[MAX_CONN];
+uint32_t conn_remove_n = 0;
+
+static uint32_t remove_conn_later (uint32_t nc) {
+    conn_remove_queue[conn_remove_n] = nc;
+    conn_remove_n += 1;
+    return conn_remove_n;
+}
+
 /* Debug function: print out all the connections. */
 static void dump_conns () {
     printf ("number of active connections: %d\n", n_conn);
@@ -73,12 +85,21 @@ static bool remove_conn (uint32_t nc) {
     zmq_pollitem_t *item = conn + nc;
     zmq_pollitem_t *last = conn + last_index;
     printf ("removing connection %d with socket descriptor %d\n", nc, item->fd);
-    // TODO we should also be swapping in the receive buffer
     item->fd = last->fd;
     item->events = last->events; // not strictly necessary unless events are different
+    // TODO we should also be swapping in the receive buffer
+    buf_sizes[last_index] = 0;
     n_conn--;
     dump_conns();
     return true;
+}
+
+static void remove_conn_queued () {
+    for (int i = 0; i < conn_remove_n; ++i) {
+        printf ("removing enqueued connection %d: %d\n", i, conn_remove_queue[i]);
+        remove_conn (conn_remove_queue[i]);
+    }
+    conn_remove_n = 0;
 }
 
 /* 
@@ -94,7 +115,7 @@ static void read_input (uint32_t nc) {
     if (received == 0) {
         // if recv returns zero, that means the connection has been closed
         printf ("socket %d closed\n", nc);
-        //remove_conn (nc);
+        remove_conn_later (nc); // don't remove immediately, since we are in the middle of a poll loop.
         return;
     }
     buf_sizes[nc] += received;
@@ -139,6 +160,8 @@ static void read_input (uint32_t nc) {
         send (conn[nc].fd, out, strlen(out), 0);     
         strcpy (out, qstring);
         send (conn[nc].fd, out, strlen(out), 0);
+        close (conn[nc].fd);
+        remove_conn_later (nc);
     }
     return;
     /*
@@ -150,6 +173,7 @@ static void read_input (uint32_t nc) {
     */
     cleanup:
     send(conn[nc].fd, ERROR_404, strlen(ERROR_404), 0);
+    remove_conn_later (nc);
 }
 
 int main (void) {
@@ -174,19 +198,17 @@ int main (void) {
         die ("RRRR OTP REST API server could not connect to broker.");
     }
     
-    // the poll items, including zmq and listening/client network sockets
-    zmq_pollitem_t items [2 + MAX_CONN]; 
     zmq_pollitem_t *broker_item = &(items[0]);
     zmq_pollitem_t *http_item   = &(items[1]);
-    // First item is ØMQ socket to/from the RRRR broker
+    // First poll item is ØMQ socket to/from the RRRR broker
     broker_item->socket = broker_socket;
     broker_item->fd = 0;
     broker_item->events = ZMQ_POLLIN;
-    // Second item is a standard socket for incoming HTTP requests
+    // Second poll item is a standard socket for incoming HTTP requests
     http_item->socket = NULL; 
     http_item->fd = server_socket;
     http_item->events = ZMQ_POLLIN;
-    // The rest are incoming HTTP connections
+    // The remaining poll items are incoming HTTP connections
     conn = &(items[2]);
     n_conn = 0;
     
@@ -196,8 +218,8 @@ int main (void) {
         // TODO we should change the number of items if MAX_CONN reached, to stop checking for incoming
         int n_waiting = zmq_poll (items, 2 + n_conn, -1); 
         if (n_waiting < 1) {
-            printf ("zmq socket poll error %d\n", n_waiting);
-            continue;
+            printf ("interrupted.\n");
+            break;
         }
         if (broker_item->revents & ZMQ_POLLIN) {
             // ØMQ broker socket has a message for us
@@ -230,6 +252,7 @@ int main (void) {
             add_conn (client_socket);
             n_waiting--;
         }
+        remove_conn_queued (); // remove all connections found to be closed during this iteration.
     } // end main loop
     close (server_socket);
     return (0);
