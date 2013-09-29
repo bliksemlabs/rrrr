@@ -155,5 +155,7 @@ time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 
 time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 
+uint32_t transfer_distance (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to);
+
 #endif // _ROUTER_H
 

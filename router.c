@@ -105,6 +105,19 @@ transfer_duration (tdata_t *d, router_request_t *req, uint32_t stop_index_from, 
     return UNREACHED;
 }
 
+uint32_t
+transfer_distance (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from == stop_index_to) return 0;
+    uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
+    uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
+    for ( ; t < tN ; ++t) {
+        if (d->transfer_target_stops[t] == stop_index_to) {
+            return d->transfer_dist_meters[t] << 4; // actually in units of 16 meters
+        }
+    }
+    return UNREACHED;
+}
+
 
 /* 
  For each updated stop and each destination of a transfer from an updated stop, 

@@ -273,21 +273,42 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
 static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_request_t *req, time_t date) {
     int64_t starttime = rtime_to_msec(itin->legs[0].t0, date);
     int64_t endtime = rtime_to_msec(itin->legs[(itin->n_legs - 1)].t1, date);
+    int32_t walktime = 0;
+    int32_t walkdistance = 0;
+    int32_t waitingtime = 0;
+    int32_t transittime = 0;
     json_obj(); /* one itinerary */
         json_kd("duration", endtime - starttime);
         json_kl("startTime", starttime);
         json_kl("endTime", endtime);
-        json_kd("walkTime", 1491);
-        json_kd("transitTime", 3267);
-        json_kd("waitingTime", 432);
-        json_kd("walkDistance", 1887);
-        json_kb("walkLimitExceeded",true);
+       json_kd("transfers", itin->n_legs / 2 - 1);
+        json_key_arr("legs");
+            for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
+                json_leg (leg, tdata, date);
+                int32_t time_add = RTIME_TO_SEC(leg->t1 - leg->t0);
+                if (leg->route == WALK) {
+                    if (leg->s0 == leg->s1) {
+                        waitingtime += time_add;
+                    } else {
+                        uint32_t distance_add = transfer_distance (tdata, leg->s0, leg->s1);
+                        assert(distance_add != UNREACHED);
+                        walktime += time_add;
+                        walkdistance += distance_add;
+                    }
+                } else {
+                    transittime += time_add;
+                }
+            }
+
+        json_end_arr();
+        json_kd("walkTime", walktime);
+        json_kd("transitTime", transittime);
+        json_kd("waitingTime", waitingtime);
+        json_kd("walkDistance", walkdistance);
+        json_kb("walkLimitExceeded", false);
         json_kd("elevationLost",0);
         json_kd("elevationGained",0);
-        json_kd("transfers", itin->n_legs / 2 - 1);
-        json_key_arr("legs");
-            for (int l = 0; l < itin->n_legs; ++l) json_leg (itin->legs + l, tdata, date);
-        json_end_arr();    
+ 
     json_end_obj();
 }
 
