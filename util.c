@@ -9,8 +9,9 @@
 #include <time.h>
 
 void die(const char *msg) {
-    syslog(LOG_ERR, "%s", msg);
-    exit(EXIT_FAILURE);
+    fprintf (stderr, "%s\n", msg);
+    syslog (LOG_ERR, "%s\n", msg);
+    exit (EXIT_FAILURE);
 }
 
 static char buf[32];
