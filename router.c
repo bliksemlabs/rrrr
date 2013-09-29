@@ -358,7 +358,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
         /* We are starting on board a trip, not at a station. */
         /* On-board departure only makes sense for depart-after requests. */
         if (req->arrive_by) {
-            fprintf (stderr, "An arrive-by search does not make any sense if you are starting on-board.");
+            fprintf (stderr, "An arrive-by search does not make any sense if you are starting on-board.\n");
             return false;
         }
         /* 
