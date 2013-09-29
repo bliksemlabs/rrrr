@@ -25,6 +25,7 @@
 #include <czmq.h>
 #include "util.h"
 #include "config.h"
+#include "router.h"
 
 #define OK_TEXT_PLAIN "HTTP/1.0 200 OK\nContent-Type:text/plain\n\n"
 #define ERROR_404     "HTTP/1.0 404 Not Found\nContent-Type:text/plain\n\nFOUR ZERO FOUR\n"
@@ -125,7 +126,7 @@ static void remove_conn_enqueued () {
   POLLIN tells us that "data is available", which actually means "you can call read on this socket without blocking".
   If read/recv then returns 0 bytes, that indicates that the socket has been closed.
 */
-static void read_input (uint32_t nc) {
+static bool read_input (uint32_t nc) {
     struct buffer *b = &(buffers[nc]);
     int conn_sd = conn_items[nc].fd;
     char *c = b->buf + b->size; // pointer to the first available character in the buffer
@@ -136,12 +137,12 @@ static void read_input (uint32_t nc) {
     if (received == 0) {
         printf ("socket %d was closed\n", nc);
         remove_conn_later (nc);
-        return;
+        return false;
     }
     b->size += received;
     if (b->size >= BUFLEN) {
         printf ("HTTP request too long for buffer.\n");
-        return;
+        return false;
     }
     printf ("received: %s \n", c);
     printf ("buffer is now: %s \n", b->buf);
@@ -153,7 +154,12 @@ static void read_input (uint32_t nc) {
             break;
         }
     }
-    if ( ! eol) return;
+    return eol;
+}
+
+static void send_request (int nc, void *broker_socket) {
+    struct buffer *b = &(buffers[nc]);
+    uint32_t conn_sd = conn_items[nc].fd;
     char *token = strtok (b->buf, " ");
     if (token == NULL) {
         printf ("request contained no verb \n");
@@ -173,17 +179,18 @@ static void read_input (uint32_t nc) {
         printf ("request contained no query string \n");
         goto cleanup;
     }
-    // at this point, once we have the request, we could remove the poll item while keeping the file descriptor open.
-    qstring++;
-    char out[BUFLEN];
-    strcpy (out, OK_TEXT_PLAIN);
-    send (conn_sd, out, strlen(out), 0);     
-    strcpy (out, qstring);
-    send (conn_sd, out, strlen(out), 0);
-    close (conn_sd);
+    router_request_t req;
+    router_request_initialize (&req);
+    router_request_randomize (&req);
+    zmsg_t *msg = zmsg_new ();
+    zmsg_pushmem (msg, &req, sizeof(req));
+    // prefix the request with the socket descriptor for use upon reply
+    zmsg_pushmem (msg, &conn_sd, sizeof(conn_sd)); 
+    zmsg_send (&msg, broker_socket);
+    // at this point, once we have made the request, we can remove the poll item while keeping the file descriptor open.
     remove_conn_later (nc);
     return;
-    
+
     cleanup:
     send (conn_sd, ERROR_404, strlen(ERROR_404), 0);
     close (conn_sd);
@@ -208,7 +215,7 @@ int main (void) {
 
     /* Set up ØMQ socket to communicate with the RRRR broker. */
     zctx_t *ctx = zctx_new ();
-    void *broker_socket = zsocket_new (ctx, ZMQ_DEALER); // full async
+    void *broker_socket = zsocket_new (ctx, ZMQ_DEALER); // full async: dealer (api side) to router (broker side)
     if (zsocket_connect (broker_socket, CLIENT_ENDPOINT)) die ("RRRR OTP REST API server could not connect to broker.");
     
     /* Set up the poll_items for the main polling loop. */
@@ -244,6 +251,16 @@ int main (void) {
         }
         /* Check if the ØMQ broker socket has a message for us. If so, write it out to the client socket and close. */
         if (broker_item->revents & ZMQ_POLLIN) {
+            printf ("Activity on ZMQ broker socket. Reply is:\n");
+            zmsg_t *msg = zmsg_recv (broker_socket);
+            zframe_t *sd_frame = zmsg_pop (msg);
+            uint32_t sd = *(zframe_data (sd_frame));
+            char *response = zmsg_popstr (msg);
+            printf ("(for socket %d) %s\n", sd, response);
+            send (sd, OK_TEXT_PLAIN, strlen(OK_TEXT_PLAIN), 0);     
+            send (sd, response, strlen(response), 0);
+            close (sd);
+            zmsg_destroy (&msg);
             n_waiting--;
         }
         /* Check if the listening TCP/IP socket has a queued connection. */
@@ -263,13 +280,15 @@ int main (void) {
         /* Read from any open HTTP connections that have available input. */
         for (uint32_t c = 0; c < n_conn && n_waiting > 0; ++c) {
             if (conn_items[c].revents & ZMQ_POLLIN) {
-                read_input (c);
+                bool eol = read_input (c);
                 n_waiting--;
+                if (eol) send_request (c, broker_socket);
             }
         }
         /* Remove all connections found to be closed during this poll iteration. */
         remove_conn_enqueued (); 
     }
+    zctx_destroy (&ctx);
     close (server_socket);
     return (0);
 }
