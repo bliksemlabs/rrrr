@@ -34,10 +34,10 @@ int main (int argc, char **argv) {
         char out[BUFLEN];
         strcpy (out, "GET http://localhost:9393/plan?12345 HTTP/1.1\n");
         send (server_socket, out, strlen(out), 0);     
-        // printf ("sent: %s \n", out);
+        printf ("sent: %s \n", out);
         recv (server_socket, in, BUFLEN, 0);
-        // printf ("received: %s \n", in);
-        cleanup:
+        printf ("received: %s \n", in);
+        // cleanup:
         close (server_socket);
     }   
     return (0);
