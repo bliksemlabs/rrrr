@@ -69,7 +69,9 @@ for sid, sname, lat, lon in list(db.conn.execute(all_query)) :
         print 'processed %d stops' % n_processed
 
 cur = db.get_cursor()
+print 'removing existing transfers...'
 cur.execute('delete from transfers;') # where transfer_type = 9;')
+print 'adding new transfers...'
 cur.executemany('insert into transfers values (?,?,NULL,NULL,NULL,NULL,9,?);', transfers)
 cur.execute('create index if not exists transfers_from_stop_id ON transfers (from_stop_id)')
 print 'committing...'
