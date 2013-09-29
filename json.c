@@ -162,11 +162,17 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
     char *route_desc = NULL;
     char *route_id = NULL;
     char *trip_id = NULL;
+    char servicedate[9] = "\0";
 
     if (leg->route == WALK) mode = "WALK"; else {
         route_desc = tdata_route_desc_for_index(tdata, leg->route);
         route_id = tdata_route_id_for_index(tdata, leg->route);
         trip_id = tdata_trip_id_for_index(tdata, leg->trip);
+
+        struct tm ltm;
+        time_t servicedate_time = date + RTIME_TO_SEC(leg->s0);
+        localtime_r(&servicedate_time, &ltm);
+        strftime(servicedate, 9, "%Y%m%d\0", &ltm);
 
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else
@@ -190,6 +196,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
         json_kv("headsign", route_desc);
         json_kv("routeId", route_id);
         json_kv("tripId", trip_id);
+        json_kv("serviceDate", servicedate);
 /* 
     "realTime": false,
     "distance": 2656.2383456335,
