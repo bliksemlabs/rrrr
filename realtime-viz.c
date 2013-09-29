@@ -26,7 +26,7 @@
 #include <GL/gl.h>
 #include "SDL.h"
 #include "wgs84.h"
-#include <libshp/shapefil.h>
+#include <shapefil.h>
 
 /* screen width, height, and bit depth */
 #define SCREEN_WIDTH  1040
