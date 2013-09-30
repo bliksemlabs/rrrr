@@ -4,6 +4,7 @@ LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(filter-out rrrrealtime-viz.c,$(wildcard *.c))
 OBJECTS := $(SOURCES:.c=.o)
 BINS    := workerrrr-web workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test
+HEADERS := $(wildcard *.h)
 
 BIN_BASES   := $(subst rrrr,r,$(BINS))
 BIN_SOURCES := $(BIN_BASES:=.c)
@@ -19,13 +20,9 @@ all: $(BINS)
 librrrr.a: $(LIB_OBJECTS)
 	ar crs librrrr.a $(LIB_OBJECTS)
 
-# -MM means create dependencies files to catch header modifications
-%.o: %.c
+# recompile everything if any headers change
+%.o: %.c $(HEADERS)
 	$(CC) -c     $(CFLAGS) $*.c -o $*.o
-	$(CC) -c -MM $(CFLAGS) $*.c  > $*.d 
-
-# include dependency rules for already-existing .o files
--include $(OBJECTS:.o=.d)
 
 # re-expand variables in subsequent rules
 .SECONDEXPANSION:
