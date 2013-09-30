@@ -35,11 +35,18 @@
 #define QUEUE_CONN  500
 #define MAX_CONN    100 // maximum number of simultaneous incoming HTTP connections
 
+enum conn_state {
+    state_receiving = 0,
+    state_requested = 1,
+    state_responded = 2
+};
+
 /* Buffers used to assemble and parse incoming HTTP requests. */
 struct buffer {
     char *buf;  // A pointer to the actual buffer, to allow efficient swapping
     int   size; // Number of bytes used in the buffer
 };
+// add state field and state transition timestamp
 
 /* Poll items, including zmq broker, http listening, and http client communication sockets */
 zmq_pollitem_t  poll_items [2 + MAX_CONN];
