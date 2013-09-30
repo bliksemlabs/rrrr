@@ -1,53 +1,57 @@
-# CC      := gcc -std=gnu99
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O0 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
-SOURCES := $(wildcard *.c)
+SOURCES := $(filter-out rrrrealtime-viz.c,$(wildcard *.c))
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := webworkerrrr workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime rrrrealtime-viz
+BINS    := workerrrr-web workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test
 
-#CC=gcc
-#CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
+BIN_BASES   := $(subst rrrr,r,$(BINS))
+BIN_SOURCES := $(BIN_BASES:=.c)
+BIN_OBJECTS := $(BIN_BASES:=.o)
+LIB_SOURCES := $(filter-out $(BIN_SOURCES),$(SOURCES))
+LIB_OBJECTS := $(filter-out $(BIN_OBJECTS),$(OBJECTS))
+
+.PHONY: clean show check all 
 
 all: $(BINS)
 
-realtime-viz.o:
-	$(CC) realtime-viz.c -c $(CFLAGS) `sdl-config --cflags` -o $@
+# make an archived static library to link into all executables
+librrrr.a: $(LIB_OBJECTS)
+	ar crs librrrr.a $(LIB_OBJECTS)
 
+# -MM means create dependencies files to catch header modifications
 %.o: %.c
-	$(CC) $^ -c $(CFLAGS) -o $@
+	$(CC) -c     $(CFLAGS) $*.c -o $*.o
+	$(CC) -c -MM $(CFLAGS) $*.c  > $*.d 
 
-hashgrid: hashgrid.o geometry.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# include dependency rules for already-existing .o files
+-include $(OBJECTS:.o=.d)
 
-brrrroker: broker.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
-		
-workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# re-expand variables in subsequent rules
+.SECONDEXPANSION:
 
-webworkerrrr: worker-web.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# each binary depends on its own .o file and the library
+$(BINS): $$(subst rrrr,r,$$@).o librrrr.a
+	$(CC) $(CFLAGS) $(subst rrrr,r,$@).o librrrr.a $(LIBS) -o $@
 
-testerrrr: tester.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# rrrrealtime-viz is exceptional and compiled separately because it uses libSDL, libGL, and libshp
 
-explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+realtime-viz.o: realtime-viz.c
+	$(CC) -c $(CFLAGS) $(shell sdl-config --cflags) realtime-viz.c -o $@
 
-rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
-
-rrrrealtime-viz: realtime-viz.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) `sdl-config --libs` -lshp -lGL -o $@
-
-client: client.o bitset.o qstring.o router.o tdata.o util.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
-
-lookup-console: tdata.o util.o lookup-console.o trie.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+rrrrealtime-viz: realtime-viz.o $(OTHER_OBJECTS)
+	$(CC) $(CFLAGS) $(shell sdl-config --cflags) realtime-viz.o $(OTHER_OBJECTS) $(LIBS) -lSDL -lGL -lshp -o $@
 
 clean:
-	rm -f *.o *~ core $(BINS)
+	rm -f *.o *.d *.a *~ core $(BINS)
 
+show:
+	# $(SOURCES)
+	# $(OBJECTS)
+	# $(BIN_BASES)
+	# $(BIN_OBJECTS)
+	# $(OTHER_OBJECTS)
+
+check:
+	check
 
