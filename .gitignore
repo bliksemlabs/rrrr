@@ -14,19 +14,21 @@ timetable.dat
 vehiclePositions.pb
 
 rrrr.sh
+
+librrrr.a
 brrrroker
-workerrrr
 client
-lookup-console
-hashgrid
-testerrrr
 explorerrrr
-rrrrealtime
-rrrrealtime-viz
+hashgrid
+lookup-console
 otp_api
 otp_client
+rrrrealtime
+rrrrealtime-viz
 struct_test
-webworkerrrr
+testerrrr
+workerrrr
+workerrrr-web
 
 stops
 trips
