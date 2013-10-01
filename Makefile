@@ -41,7 +41,7 @@ rrrrealtime-viz: realtime-viz.o $(OTHER_OBJECTS)
 
 clean:
 	rm -f *.o *.d *.a *~ core $(BINS)
-	rm -f tests/*.o run_tests
+	rm -f tests/*.o tests/*~ run_tests
 
 show:
 	# $(SOURCES)

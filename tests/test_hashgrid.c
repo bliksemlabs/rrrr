@@ -41,7 +41,7 @@ START_TEST (test_hashgrid) {
     while ((item = HashGridResult_next_filtered(&result, &distance)) != HASHGRID_NONE) {
         latlon_t *ll = tdata.stop_coords + item;
         // latlon_dump (tdata.stop_coords + item);
-        printf ("%d,%f,%f,%f\n", item, ll->lat, ll->lon, distance);
+        // printf ("%d,%f,%f,%f\n", item, ll->lat, ll->lon, distance);
     }
     HashGrid_teardown (&hg);
 } END_TEST
