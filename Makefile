@@ -41,6 +41,7 @@ rrrrealtime-viz: realtime-viz.o $(OTHER_OBJECTS)
 
 clean:
 	rm -f *.o *.d *.a *~ core $(BINS)
+	rm -f tests/*.o run_tests
 
 show:
 	# $(SOURCES)
@@ -49,6 +50,16 @@ show:
 	# $(BIN_OBJECTS)
 	# $(OTHER_OBJECTS)
 
-check:
-	check
+# TESTS using http://check.sourceforge.net/
+
+TEST_SOURCES := $(wildcard tests/*.c)
+TEST_OBJECTS := $(TEST_SOURCES:.c=.o)
+TEST_LIBS    := -lcheck 
+
+check: run_tests
+	./run_tests
+
+run_tests: $(TEST_OBJECTS) librrrr.a
+	$(CC) $(CFLAGS) $^ $(TEST_LIBS) -o run_tests
+
 
