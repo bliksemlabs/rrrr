@@ -11,29 +11,6 @@
 #include <stdbool.h>
 #include <math.h> // be sure to link with math library (-lm) 
 
-// Opaque struct, typedef in header
-struct HashGrid {
-    uint32_t     grid_dim;
-    double  bin_size_meters;
-    coord_t bin_size;
-    uint32_t     n_items;
-    uint32_t     (*counts)[]; // 2D array of counts
-    uint32_t     *(*bins)[];  // 2D array of uint32_t pointers
-    uint32_t     *items;      // array containing all the binned items, aliased by the bins array
-    coord_t *coords;     // the array of coords that were indexed (note: may have been deallocated by caller)
-};
-
-// Opaque struct, typedef in header
-struct HashGridResult {
-    HashGrid *hg;
-    coord_t coord;              // the query coordinate
-    double radius_meters;       // query radius in meters
-    coord_t min, max;           // defines a bounding box around the result in projected brads
-    uint32_t xmin, xmax, ymin, ymax; // bins that correspond to the bounding box
-    uint32_t x, y, i;                // current position within the hashgrid for iterating over results
-    bool has_next;
-}; 
-
 // http://stackoverflow.com/a/859694/778449
 // cdecl> declare items as pointer to array 10 of pointer to void
 // void *(*items)[10]
@@ -211,51 +188,5 @@ void HashGrid_teardown(HashGrid *hg) {
     free (hg->counts);
     free (hg->bins);
     free (hg->items);
-}
-
-static void geometry_test (latlon_t *lls, uint32_t n) {
-    for (uint32_t i = 0; i < n; ++i) {
-        latlon_dump (lls + i);
-        coord_t coord;
-        coord_from_latlon(&coord, lls + i);
-        coord.x = -coord.x;
-        latlon_t ll;
-        latlon_from_coord (&ll, &coord);
-        latlon_dump (&ll);        
-        coord_dump (&coord);
-        coord_from_latlon(&coord, &ll);
-        coord_dump (&coord);
-    }
-}
-
-// Test HashGrid
-int main(int argc, char** argv) {
-    setlogmask(LOG_UPTO(LOG_DEBUG));
-    openlog("hashgrid", LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
-    tdata_t tdata;
-    tdata_load (RRRR_INPUT_FILE, &tdata);
-    // geometry_test (tdata.stop_coords, tdata.n_stops);
-    HashGrid hg;
-    coord_t coords[tdata.n_stops];
-    for (uint32_t c = 0; c < tdata.n_stops; ++c) {
-        coord_from_latlon(coords + c, tdata.stop_coords + c);
-    }
-    HashGrid_init (&hg, 100, 500.0, coords, tdata.n_stops);
-    HashGrid_dump (&hg);
-    coord_t qc;
-    coord_from_lat_lon (&qc, 52.37790, 4.89787);
-    coord_dump (&qc);
-    double radius_meters = 150;
-    HashGridResult result;
-    HashGrid_query (&hg, &result, qc, radius_meters);
-    uint32_t item;
-    double distance;
-    while ((item = HashGridResult_next_filtered(&result, &distance)) != HASHGRID_NONE) {
-        latlon_t *ll = tdata.stop_coords + item;
-        // latlon_dump (tdata.stop_coords + item);
-        printf ("%d,%f,%f,%f\n", item, ll->lat, ll->lon, distance);
-    }
-    HashGrid_teardown (&hg);
-    return 0;
 }
 
