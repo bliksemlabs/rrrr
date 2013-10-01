@@ -40,4 +40,6 @@ void HashGrid_teardown (HashGrid*);
 
 uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance);
 
+uint32_t HashGridResult_closest (HashGridResult *r);
+
 #endif // _HASHGRID_H

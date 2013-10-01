@@ -31,7 +31,7 @@ START_TEST (test_hashgrid) {
     HashGrid_init (&hg, 100, 500.0, coords, tdata.n_stops);
     // HashGrid_dump (&hg);
     coord_t qc;
-    coord_from_lat_lon (&qc, 52.37790, 4.89787);
+    coord_from_lat_lon (&qc, 52.37790, 4.89787); // Amsterdam CS
     coord_dump (&qc);
     double radius_meters = 150;
     HashGridResult result;
@@ -43,6 +43,12 @@ START_TEST (test_hashgrid) {
         // latlon_dump (tdata.stop_coords + item);
         // printf ("%d,%f,%f,%f\n", item, ll->lat, ll->lon, distance);
     }
+    // find the closest stop to the given coordinate
+    coord_from_lat_lon (&qc, 51.92520, 4.46867); // Rotterdam CS
+    HashGrid_query (&hg, &result, qc, radius_meters);    
+    item = HashGridResult_closest (&result);
+    char *stop_desc = tdata_stop_desc_for_index (&tdata, item);
+    printf ("The closest stop is %s [ID %d].\n", stop_desc, item);
     HashGrid_teardown (&hg);
 } END_TEST
 
