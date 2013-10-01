@@ -1,5 +1,5 @@
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O0 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(filter-out rrrrealtime-viz.c,$(wildcard *.c))
 OBJECTS := $(SOURCES:.c=.o)
@@ -18,26 +18,26 @@ all: $(BINS)
 
 # make an archived static library to link into all executables
 librrrr.a: $(LIB_OBJECTS)
-	ar crs librrrr.a $(LIB_OBJECTS)
+	ar crsT librrrr.a $(LIB_OBJECTS)
 
 # recompile everything if any headers change
 %.o: %.c $(HEADERS)
-	$(CC) -c     $(CFLAGS) $*.c -o $*.o
+	$(CC) -c $(CFLAGS) $*.c -o $*.o
 
 # re-expand variables in subsequent rules
 .SECONDEXPANSION:
 
 # each binary depends on its own .o file and the library
 $(BINS): $$(subst rrrr,r,$$@).o librrrr.a
-	$(CC) $(CFLAGS) $(subst rrrr,r,$@).o librrrr.a $(LIBS) -o $@
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
 # rrrrealtime-viz is exceptional and compiled separately because it uses libSDL, libGL, and libshp
 
 realtime-viz.o: realtime-viz.c
-	$(CC) -c $(CFLAGS) $(shell sdl-config --cflags) realtime-viz.c -o $@
+	$(CC) -c $(CFLAGS) $(shell sdl-config --cflags) $^ -o $@
 
 rrrrealtime-viz: realtime-viz.o $(OTHER_OBJECTS)
-	$(CC) $(CFLAGS) $(shell sdl-config --cflags) realtime-viz.o $(OTHER_OBJECTS) $(LIBS) -lSDL -lGL -lshp -o $@
+	$(CC) $(CFLAGS) $(shell sdl-config --cflags) $^ $(OTHER_OBJECTS) $(LIBS) -lSDL -lGL -lshp -o $@
 
 clean:
 	rm -f *.o *.d *.a *~ core $(BINS)
