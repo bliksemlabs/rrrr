@@ -107,6 +107,28 @@ uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
     return HASHGRID_NONE;
 }
 
+uint32_t HashGridResult_closest (HashGridResult *r) {
+    uint32_t item;
+    uint32_t best_item = HASHGRID_NONE;
+    double   best_distance = INFINITY;
+    while ((item = HashGridResult_next(r)) != HASHGRID_NONE) {
+        coord_t *coord = r->hg->coords + item;
+        latlon_t latlon;
+        latlon_from_coord (&latlon, coord);
+        // printf ("%f,%f\n", latlon.lat, latlon.lon);
+        if (coord->x > r->min.x && coord->x < r->max.x && 
+            coord->y > r->min.y && coord->y < r->max.y) {
+            // false positives filtered, item's coordinate is within bounding box
+            double distance = coord_distance_meters (&(r->coord), coord);
+            if (distance < best_distance) {
+                best_item = item;
+                best_distance = distance;
+            }
+        }
+    }
+    return best_item;
+}
+
 void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items) {
     // Initialize all struct members.
     hg->grid_dim = grid_dim;

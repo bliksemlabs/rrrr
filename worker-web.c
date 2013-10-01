@@ -8,6 +8,7 @@
 #include "config.h"
 #include "rrrr.h"
 #include "tdata.h"
+#include "hashgrid.h"
 #include "router.h"
 #include "parse.h"
 #include "json.h"
@@ -24,6 +25,14 @@ int main(int argc, char **argv) {
     // load transit data from disk
     tdata_t tdata;
     tdata_load(RRRR_INPUT_FILE, &tdata);
+
+    // initialise the hashgrid to map lat/lng to stop indices
+    HashGrid hg;
+    coord_t coords[tdata.n_stops];
+    for (uint32_t c = 0; c < tdata.n_stops; ++c) {
+        coord_from_latlon(coords + c, tdata.stop_coords + c);
+    }
+    HashGrid_init (&hg, 100, 500.0, coords, tdata.n_stops);
     
     // initialize router
     router_t router;
@@ -55,7 +64,7 @@ int main(int argc, char **argv) {
         char *qstring = (char *) zframe_data (frame);
         printf("%s\n", qstring);
         router_request_t preq;
-        parse_request_from_qstring(&preq, &tdata, qstring);
+        parse_request_from_qstring(&preq, &tdata, &hg, qstring);
         router_request_t req;
         req = preq;
 
