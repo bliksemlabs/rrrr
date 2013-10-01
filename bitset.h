@@ -27,6 +27,8 @@ bool bitset_get(BitSet *self, uint32_t index);
 
 void bitset_dump(BitSet *self);
 
+uint32_t bitset_enumerate(BitSet *self);
+
 void bitset_destroy(BitSet *self);
 
 uint32_t bitset_next_set_bit(BitSet*, uint32_t index);
