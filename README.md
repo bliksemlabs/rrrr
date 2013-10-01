@@ -33,6 +33,10 @@ For visualizing realtime messages in OpenGL via een SDL surface. http://libsdl.o
 1. **gcc** or **clang**:
 clang provides very good error messages and warnings. RRRR benefits greatly from -O2 and link-time optimization.
 
+1. **check**:
+a unit testing framework for c. http://check.sourceforge.net/
+
+
 Building transit data
 ---------------------
 
