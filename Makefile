@@ -3,7 +3,7 @@ CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(filter-out rrrrealtime-viz.c,$(wildcard *.c))
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := workerrrr-web workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test
+BINS    := workerrrr-web workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test
 HEADERS := $(wildcard *.h)
 
 BIN_BASES   := $(subst rrrr,r,$(BINS))
@@ -54,7 +54,7 @@ show:
 
 TEST_SOURCES := $(wildcard tests/*.c)
 TEST_OBJECTS := $(TEST_SOURCES:.c=.o)
-TEST_LIBS    := -lcheck 
+TEST_LIBS    := -lcheck -lprotobuf-c -lm
 
 check: run_tests
 	./run_tests
