@@ -4,6 +4,7 @@
 // could be in a header, but simpler here
 Suite *make_bitset_suite (void);
 Suite *make_hashgrid_suite (void);
+Suite *make_radixtree_suite (void);
 Suite *make_speed_suite (void);
 Suite *make_master_suite (void) {
     Suite *s = suite_create ("Master");
@@ -16,6 +17,7 @@ int main (void) {
     sr = srunner_create (make_master_suite ());
     srunner_add_suite (sr, make_bitset_suite ());
     srunner_add_suite (sr, make_hashgrid_suite ());
+    srunner_add_suite (sr, make_radixtree_suite ());
     srunner_add_suite (sr, make_speed_suite ());
     srunner_run_all (sr, CK_NORMAL);
     number_failed = srunner_ntests_failed (sr);
