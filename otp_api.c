@@ -33,28 +33,20 @@
 #define HEADERS       CRLF
 #define END_HEADERS   CRLF CRLF
 #define TEXT_PLAIN    "Content-Type:text/plain"
-#define OK_TEXT_PLAIN "HTTP/1.1 200 OK" HEADERS TEXT_PLAIN CRLF
-#define ERROR_404     "HTTP/1.1 404 Not Found" HEADERS TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
+#define OK_TEXT_PLAIN "HTTP/1.0 200 OK" HEADERS TEXT_PLAIN CRLF
+#define ERROR_404     "HTTP/1.0 404 Not Found" HEADERS TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
 
 #define BUFLEN     1024
 #define PORT       9393 
 #define QUEUE_CONN  500
 #define MAX_CONN    100 // maximum number of simultaneous incoming HTTP connections
 
-enum connection_state {
-    STATE_UNUSED    = 0,
-    STATE_RECEIVING = 1,
-    STATE_REQUESTED = 2,
-    STATE_RESPONDED = 3
-};
-
 /* Buffers used to assemble and parse incoming HTTP requests. */
 struct buffer {
     char  *buf;  // A pointer to the buffer, to allow efficient swapping
     int    size; // Number of bytes used in the buffer
     int    sd;   // Socket descriptor for this connection
-//    time_t time; // Time at which last state transition occurred
-//    enum connection_state state;
+//    time_t time; // Time at which last activity occurred, for timeouts
 };
 
 /* Poll items, including zmq broker, http listening, and http client communication sockets */
@@ -131,6 +123,8 @@ static bool remove_conn (uint32_t nc) {
     return true;
 }
 
+// Removing a connection from pollitems and closing its SD are separate, because we have no connection number in the ZMQ response. Connection numbers are always changing.
+
 /* Remove all connections that have been enqueued for removal in a single operation. */
 static void remove_conn_enqueued () {
     for (int i = 0; i < conn_remove_n; ++i) {
@@ -157,7 +151,7 @@ static bool read_input (uint32_t nc) {
     if (received == 0) {
         printf ("connection %02d [fd=%02d] closed. closing socket descriptor locally.\n", nc, conn_sd);
         remove_conn_later (nc);
-        close (conn_sd); // necessary! but maybe do this when removing connection from pollitems?
+        close (conn_sd); // client actively closed. necessary to close SD on server side as well.
         return false;
     }
     b->size += received;
@@ -213,11 +207,11 @@ static void send_request (int nc, void *broker_socket) {
     printf ("connection %02d [fd=%02d] sent request to broker.\n", nc, conn_sd);
     // TODO: Do not remove_conn_later yet. Continue polling so we detect client closing, 
     // avoiding TIME_WAIT on server side and supporting persistent connections.
-    remove_conn_later (nc); // stop accepting input to avoid overflows
+    remove_conn_later (nc); // remove from poll list. stops accepting input from this connection.
     return;
 
     cleanup:
-    send (conn_sd, ERROR_404, strlen(ERROR_404), 0);
+    send (conn_sd, ERROR_404, strlen(ERROR_404), MSG_NOSIGNAL);
     remove_conn_later (nc); // could this lead to double-remove?
     return;
 }
@@ -225,8 +219,10 @@ static void send_request (int nc, void *broker_socket) {
 void respond (int sd, char *response) {
     char buf[512];
     sprintf (buf, OK_TEXT_PLAIN "Content-Length: %lu" CRLF "Connection: close" END_HEADERS, strlen (response));
-    send (sd, buf, strlen(buf), 0);
-    send (sd, response, strlen(response), 0);
+    // MSG_NOSIGNAL: Do not generate SIGPIPE if client has closed connection.
+    // Send will return EPIPE if client already closed connection.
+    send (sd, buf, strlen(buf), MSG_NOSIGNAL); 
+    send (sd, response, strlen(response), MSG_NOSIGNAL); 
     printf ("              [fd=%02d] sent response to client.\n", sd);
 }
 
@@ -292,9 +288,10 @@ int main (void) {
             char *response = zmsg_popstr (msg);
             // printf ("ZMQ broker socket received message for socket %02d:\n%s", sd, response);
             respond (sd, response);
-            // TODO: do not close(sd) yet. wait for client to close to avoid going into TIME_WAIT state.
-            // However we do not yet handle persistent connections with repeated requests.
-            close (sd);
+            // We do not handle persistent connections. 
+            // Connection has already been removed from polling list when ZMQ message was sent to broker.
+            // Unfortunately if the ZMQ response never arrives, the SD will remain open indefinitely.
+            close (sd); // server actively closes
             zmsg_destroy (&msg);
             n_waiting--;
         }
