@@ -85,7 +85,7 @@ static void json_kf(char *key, double value) {
     if (remaining(12)) b += sprintf(b, "%5.5f", value);
 }
 
-static void json_kl(char *key, long value) {
+static void json_kl(char *key, int64_t value) {
     ekey(key);
     if (remaining(21)) b += sprintf(b, "%ld", value);
 }
@@ -129,7 +129,7 @@ static void json_end_arr() {
     in_list = true;
 }
 
-static long rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC(rtime) + date) * 1000L; }
+static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC(rtime) + date) * 1000L; }
 
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
     char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
@@ -163,7 +163,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
     char *route_id = NULL;
     char *trip_id = NULL;
     char servicedate[9] = "\0";
-    uint64_t departuredelay = 0;
+    int64_t departuredelay = 0;
 
     if (leg->route == WALK) mode = "WALK"; else {
         route_desc = tdata_route_desc_for_index(tdata, leg->route);
