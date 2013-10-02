@@ -228,7 +228,7 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     printf ("Indexing strings...\n");
     while (s < strings_end) {
         rxt_insert (root, s, idx);
-        while(*(s++) != '\0') { }
+	s += width;
         idx += 1;
     }
     /*
