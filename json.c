@@ -87,7 +87,7 @@ static void json_kf(char *key, double value) {
 
 static void json_kl(char *key, int64_t value) {
     ekey(key);
-    if (remaining(21)) b += sprintf(b, "%ld", value);
+    if (remaining(21)) b += sprintf(b, "%" PRId64 , value);
 }
 
 static void json_kb(char *key, bool value) {
