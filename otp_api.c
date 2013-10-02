@@ -222,8 +222,10 @@ void respond (int sd, char *response) {
     // MSG_NOSIGNAL: Do not generate SIGPIPE if client has closed connection.
     // Send will return EPIPE if client already closed connection.
     send (sd, buf, strlen(buf), MSG_NOSIGNAL); 
-    send (sd, response, strlen(response), MSG_NOSIGNAL); 
-    printf ("              [fd=%02d] sent response to client.\n", sd);
+    if (send (sd, response, strlen(response), MSG_NOSIGNAL) == -1 && errno == EPIPE) 
+        printf ("              [fd=%02d] socket is closed, response dropped.\n", sd);
+    else 
+        printf ("              [fd=%02d] sent response to client.\n", sd);
 }
 
 int main (void) {
