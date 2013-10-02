@@ -26,9 +26,15 @@
 #include "util.h"
 #include "config.h"
 #include "router.h"
+#include "parse.h"
 
-#define OK_TEXT_PLAIN "HTTP/1.0 200 OK\nContent-Type:text/plain\n\n"
-#define ERROR_404     "HTTP/1.0 404 Not Found\nContent-Type:text/plain\n\nFOUR ZERO FOUR\n"
+// HTTP requires CR-LF style newlines. Headers are followed by two newlines.
+#define CRLF          "\r\n"
+#define HEADERS       CRLF
+#define END_HEADERS   CRLF CRLF
+#define TEXT_PLAIN    "Content-Type:text/plain"
+#define OK_TEXT_PLAIN "HTTP/1.1 200 OK" HEADERS TEXT_PLAIN CRLF
+#define ERROR_404     "HTTP/1.1 404 Not Found" HEADERS TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
 
 #define BUFLEN     1024
 #define PORT       9393 
@@ -62,6 +68,9 @@ struct buffer   buffers[MAX_CONN]; // We can swap these structs directly, includ
 // A queue of connections to be removed at the end of the current polling iteration.
 uint32_t conn_remove_queue[MAX_CONN];
 uint32_t conn_remove_n = 0;
+
+// Needed for parsing the query string.
+tdata_t tdata;
 
 /* 
   Schedule a connection for removal from the poll_items / open connections. It will be removed at the end of the 
@@ -191,16 +200,20 @@ static void send_request (int nc, void *broker_socket) {
         printf ("request contained no query string \n");
         goto cleanup;
     }
+    qstring += 1; // skip question mark
     router_request_t req;
     router_request_initialize (&req);
     router_request_randomize (&req);
+    parse_request_from_qstring(&req, &tdata, qstring);
     zmsg_t *msg = zmsg_new ();
     zmsg_pushmem (msg, &req, sizeof(req));
     // Prefix the request with the socket descriptor for use upon reply. Worker ignores all frames but the last one.
     zmsg_pushmem (msg, &conn_sd, sizeof(conn_sd)); 
     zmsg_send (&msg, broker_socket);
     printf ("connection %02d [fd=%02d] sent request to broker.\n", nc, conn_sd);
-    // Do not remove_conn_later yet. Continue polling so we detect client closing, avoiding TIME_WAIT on server.
+    // TODO: Do not remove_conn_later yet. Continue polling so we detect client closing, 
+    // avoiding TIME_WAIT on server side and supporting persistent connections.
+    remove_conn_later (nc); // stop accepting input to avoid overflows
     return;
 
     cleanup:
@@ -209,7 +222,17 @@ static void send_request (int nc, void *broker_socket) {
     return;
 }
 
+void respond (int sd, char *response) {
+    char buf[512];
+    sprintf (buf, OK_TEXT_PLAIN "Content-Length: %lu" CRLF "Connection: close" END_HEADERS, strlen (response));
+    send (sd, buf, strlen(buf), 0);
+    send (sd, response, strlen(response), 0);
+    printf ("              [fd=%02d] sent response to client.\n", sd);
+}
+
 int main (void) {
+    
+    tdata_load(RRRR_INPUT_FILE, &tdata);
     
     /* Set up TCP/IP stream socket to listed for incoming HTTP requests. */
     struct sockaddr_in server_in_addr = {
@@ -268,10 +291,10 @@ int main (void) {
             uint32_t sd = *(zframe_data (sd_frame));
             char *response = zmsg_popstr (msg);
             // printf ("ZMQ broker socket received message for socket %02d:\n%s", sd, response);
-            send (sd, OK_TEXT_PLAIN, strlen(OK_TEXT_PLAIN), 0);     
-            send (sd, response, strlen(response), 0);
-            printf ("              [fd=%02d] sent response to client.\n", sd);
-            // do not close(sd) yet. wait for client to close to avoid going into TIME_WAIT state.
+            respond (sd, response);
+            // TODO: do not close(sd) yet. wait for client to close to avoid going into TIME_WAIT state.
+            // However we do not yet handle persistent connections with repeated requests.
+            close (sd);
             zmsg_destroy (&msg);
             n_waiting--;
         }
