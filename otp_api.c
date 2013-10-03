@@ -64,6 +64,9 @@ uint32_t conn_remove_n = 0;
 // Needed for parsing the query string.
 tdata_t tdata;
 
+// For looking up stops by location
+HashGrid hash_grid;
+
 /* 
   Schedule a connection for removal from the poll_items / open connections. It will be removed at the end of the 
   current polling iteration to avoid reordering other poll_items in the middle of an iteration.
@@ -198,7 +201,7 @@ static void send_request (int nc, void *broker_socket) {
     router_request_t req;
     router_request_initialize (&req);
     router_request_randomize (&req);
-    parse_request_from_qstring(&req, &tdata, qstring);
+    parse_request_from_qstring(&req, &tdata, &hash_grid, qstring);
     zmsg_t *msg = zmsg_new ();
     zmsg_pushmem (msg, &req, sizeof(req));
     // Prefix the request with the socket descriptor for use upon reply. Worker ignores all frames but the last one.
@@ -230,7 +233,12 @@ void respond (int sd, char *response) {
 
 int main (void) {
     
-    tdata_load(RRRR_INPUT_FILE, &tdata);
+    tdata_load (RRRR_INPUT_FILE, &tdata);    
+    coord_t coords[tdata.n_stops];
+    for (uint32_t c = 0; c < tdata.n_stops; ++c) {
+        coord_from_latlon(coords + c, tdata.stop_coords + c);
+    }
+    HashGrid_init (&hash_grid, 100, 500.0, coords, tdata.n_stops);
     
     /* Set up TCP/IP stream socket to listed for incoming HTTP requests. */
     struct sockaddr_in server_in_addr = {

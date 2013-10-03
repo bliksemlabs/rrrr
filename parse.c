@@ -78,6 +78,7 @@ void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt,
                 }
             }
         }
+    break;
     case 'm':
         req->mode = 0;
         token = strtok(optarg, delim);
