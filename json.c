@@ -129,7 +129,7 @@ static void json_end_arr() {
     in_list = true;
 }
 
-static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC(rtime) + date) * 1000L; }
+static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date) * 1000L; }
 
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
     char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
@@ -171,7 +171,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
         trip_id = tdata_trip_id_for_index(tdata, leg->trip);
 
         struct tm ltm;
-        time_t servicedate_time = date + RTIME_TO_SEC(leg->s0);
+        time_t servicedate_time = date + RTIME_TO_SEC(leg->t0 - RTIME_ONE_DAY);
         localtime_r(&servicedate_time, &ltm);
         strftime(servicedate, 9, "%Y%m%d\0", &ltm);
 
