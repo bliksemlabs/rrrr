@@ -4,7 +4,7 @@ CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O0 
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := webworkerrrr workerrrr brrrroker client lookup-console hashgrid testerrrr explorerrrr rrrrealtime
+BINS    := webworkerrrr workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime
 
 #CC=gcc
 #CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
@@ -26,7 +26,7 @@ workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o g
 webworkerrrr: worker-web.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o hashgrid.o geometry.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
-testerrrr: tester.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
+testerrrr: tester.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o hashgrid.o geometry.o
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
 
 explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o

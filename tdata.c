@@ -55,6 +55,10 @@ inline char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
     return td->trip_ids + (td->trip_id_width * trip_index);
 }
 
+inline char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
+    return td->trip_ids + (td->trip_id_width * (td->routes[route_index].trip_ids_offset + trip_index));
+}
+
 inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :

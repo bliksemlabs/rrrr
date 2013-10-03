@@ -117,6 +117,8 @@ char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
 
 char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
+char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index);
+
 char *tdata_stop_desc_for_index(tdata_t*, uint32_t stop_index);
 
 uint32_t tdata_stopidx_by_stop_name(tdata_t*, char* stop_name, uint32_t start_index);

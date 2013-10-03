@@ -57,22 +57,24 @@ void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt,
         break;
     case 'l':
     case 'L':
-        token = strtok(optarg, delim);
-        if (token != NULL) {
-            double lat = strtod(token, NULL);
-            token = strtok(NULL, delim);
+        if (hg) {
+            token = strtok(optarg, delim);
             if (token != NULL) {
-                double lon = strtod(token, NULL);
-                HashGridResult result;
-                coord_t qc;
-                double radius_meters = 150;
-                coord_from_lat_lon (&qc, lat, lon);
-                HashGrid_query (hg, &result, qc, radius_meters); 
-                uint32_t item = HashGridResult_closest (&result);
-                if (opt == 'l') {
-                    req->from = item;
-                } else {
-                    req->to = item;
+                double lat = strtod(token, NULL);
+                token = strtok(NULL, delim);
+                if (token != NULL) {
+                    double lon = strtod(token, NULL);
+                    HashGridResult result;
+                    coord_t qc;
+                    double radius_meters = 150;
+                    coord_from_lat_lon (&qc, lat, lon);
+                    HashGrid_query (hg, &result, qc, radius_meters); 
+                    uint32_t item = HashGridResult_closest (&result);
+                    if (opt == 'l') {
+                        req->from = item;
+                    } else {
+                        req->to = item;
+                    }
                 }
             }
         }
