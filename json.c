@@ -168,10 +168,12 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
     if (leg->route == WALK) mode = "WALK"; else {
         route_desc = tdata_route_desc_for_index(tdata, leg->route);
         route_id = tdata_route_id_for_index(tdata, leg->route);
-        trip_id = tdata_trip_id_for_index(tdata, leg->trip);
+        trip_id = tdata_trip_id_for_route_trip_index(tdata, leg->route, leg->trip);
+
+        rtime_t begin_time = tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].begin_time;
 
         struct tm ltm;
-        time_t servicedate_time = date + RTIME_TO_SEC(leg->t0 - RTIME_ONE_DAY);
+        time_t servicedate_time = date + RTIME_TO_SEC(begin_time);
         localtime_r(&servicedate_time, &ltm);
         strftime(servicedate, 9, "%Y%m%d\0", &ltm);
 
@@ -297,6 +299,19 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
                         assert(distance_add != UNREACHED);
                         walktime += time_add;
                         walkdistance += distance_add;
+			bool visible = false;
+
+			for (uint32_t i = 0; tdata->routes[leg->route].n_stops; i++) {
+			    if ((tdata->routes[leg->route].route_stops_offset + i) == leg->s0) {
+			    	visible = true;
+			    } else if ((tdata->routes[leg->route].route_stops_offset + i) == leg->s1) {
+			    	visible = false;
+			    }
+
+			    if (visible) {
+			    	stoptime_t inter_stop_time = tdata->stop_times[tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].stop_times_offset + i];
+			    }
+			}
                     }
                 } else {
                     transittime += time_add;
