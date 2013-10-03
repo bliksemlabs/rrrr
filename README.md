@@ -24,8 +24,18 @@ For decoding incoming realtime messages. https://code.google.com/p/protobuf-c/do
 1. **libwebsockets**:
 For receiving incremental realtime messages. https://github.com/warmcat/libwebsockets.
 
+1. **shapelib**:
+For visualizing realtime messages in OpenGL using a map of choice. http://download.osgeo.org/shapelib/.
+
+1. **libsdl**:
+For visualizing realtime messages in OpenGL via een SDL surface. http://libsdl.org/download-1.2.php.
+
 1. **gcc** or **clang**:
-clang provides very good error messages and warnings. RRRR benefits greatly from -O2 and link-time optimization.
+clang provides very good error messages and warnings. RRRR benefits greatly from -O2 and link-time optimization. http://clang.llvm.org/.
+
+1. **check**:
+a unit testing framework for c. http://check.sourceforge.net/.
+
 
 Building transit data
 ---------------------
@@ -86,7 +96,7 @@ rrrr[31114]: 1 threads, 1 total requests, 0.036565 sec total time (27.348557 req
 Then you should be able to run the test client:
 
 ```
-~/git/rrrr$ ./client 1000 4
+~/git/rrrr$ ./client rand 1000 4
 
 rrrr[31144]: test client starting
 rrrr[31144]: test client number of requests: 1000
@@ -111,12 +121,12 @@ rrrr[31144]: test client thread terminating
 rrrr[31144]: 4 threads, 1000 total requests, 3.893521 sec total time (256.836935 req/sec)
 ```
 
-Testing Bliksem using testerrrr
--------------------------------
+Testing Bliksem
+-------------------
 
-Unit tests are important for validating the expected results of a planner. The testerrrr tool is
-a single-binary planner which allows planning simple queries without starting up a broker or worker processes.
-The process of using the tool in colaboration with a planner validation set such as MMRI is simple.
+This project distinguishes between several types of tests. The **unit tests** check individual C units related to the RRRR router repository, such as the BitSet or RadixTree implementations. They make use of the `check` framework [http://check.sourceforge.net/]. The **functional tests** demonstrate that the Bliksem system meets the functional requirements of the MMRI project through which it was created. The **performance tests** demonstrate response time and throughput on journey planning operations connecting 50 points throughout the Netherlands. The performance tests and functional tests are types of **integration tests**, in that they test the process of issuing requests to a fully-assembled trip planner system rather than its individual components.
+
+The `testerrrr` tool is a single-binary planner which allows planning simple queries without starting up separate broker or worker processes. It is simple to use this tool on a planner validation set such as the one used by MMRI.
 
 Given a test, zip the test to a GTFS-file and compile the GTFS-file to a GTFSdb. Use the resulting GTFSdb as input for our timetable builder.
 

@@ -1,47 +1,66 @@
-# CC      := gcc -std=gnu99
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused-function -Wno-unused-variable -O0  `sdl-config --cflags` # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := webworkerrrr workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime
+BINS    := workerrrr-web workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime rrrrealtime-viz otp_api otp_client struct_test
+HEADERS := $(wildcard *.h)
 
-#CC=gcc
-#CFLAGS=-g -march=native -Wall -std=gnu99 #-O2
+BIN_BASES   := $(subst rrrr,r,$(BINS))
+BIN_SOURCES := $(BIN_BASES:=.c)
+BIN_OBJECTS := $(BIN_BASES:=.o)
+LIB_SOURCES := $(filter-out $(BIN_SOURCES),$(SOURCES))
+LIB_OBJECTS := $(filter-out $(BIN_OBJECTS),$(OBJECTS))
+LIB_NAME    := librrrr.a
+
+.PHONY: clean show check all 
 
 all: $(BINS)
 
-%.o: %.c
-	$(CC) $^ -c $(CFLAGS) -o $@
+# make an archived static library to link into all executables
+librrrr.a: $(LIB_OBJECTS)
+	ar crsT $(LIB_NAME) $(LIB_OBJECTS)
 
-hashgrid: hashgrid.o geometry.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# recompile everything if any headers change
+%.o: %.c $(HEADERS)
+	$(CC) -c $(CFLAGS) $*.c -o $*.o
 
-brrrroker: broker.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
-		
-workerrrr: worker.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# re-expand variables in subsequent rules
+.SECONDEXPANSION:
 
-webworkerrrr: worker-web.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o hashgrid.o geometry.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
-
-testerrrr: tester.o parse.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o hashgrid.o geometry.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
-
-explorerrrr: explorer.o bitset.o qstring.o router.o tdata.o util.o bitset.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
-
-rrrrealtime: realtime.o gtfs-realtime.pb-c.o radixtree.o tdata.o util.o gtfs-realtime.pb-c.o radixtree.o
+# each binary depends on its own .o file and the library
+$(filter-out rrrrealtime-viz,$(BINS)): $$(subst rrrr,r,$$@).o $(LIB_NAME)
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
-client: client.o bitset.o qstring.o router.o tdata.o util.o json.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+# rrrrealtime-viz is exceptional and compiled separately because it uses libSDL, libGL, and libshp
 
-lookup-console: tdata.o util.o lookup-console.o trie.o gtfs-realtime.pb-c.o radixtree.o
-	$(CC) $(CFLAGS) $^ $(LIBS) -o $@ 
+realtime-viz.o: realtime-viz.c
+	$(CC) -c $(CFLAGS) $(shell sdl-config --cflags) $^ -o $@
+
+rrrrealtime-viz: realtime-viz.o $(LIB_NAME)
+	$(CC) $(CFLAGS) $(shell sdl-config --cflags) $^ $(LIBS) -lSDL -lGL -lshp -o $@
 
 clean:
-	rm -f *.o *~ core $(BINS)
+	rm -f *.o *.d *.a *~ core $(BINS)
+	rm -f tests/*.o tests/*~ run_tests
+
+show:
+	# $(SOURCES)
+	# $(OBJECTS)
+	# $(BIN_BASES)
+	# $(BIN_OBJECTS)
+	# $(OTHER_OBJECTS)
+
+# TESTS using http://check.sourceforge.net/
+
+TEST_SOURCES := $(wildcard tests/*.c)
+TEST_OBJECTS := $(TEST_SOURCES:.c=.o)
+TEST_LIBS    := -lcheck -lprotobuf-c -lm
+
+check: run_tests
+	./run_tests
+
+run_tests: $(TEST_OBJECTS) $(LIB_NAME)
+	$(CC) $(CFLAGS) $^ $(TEST_LIBS) -o run_tests
 
 

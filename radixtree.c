@@ -21,7 +21,7 @@ static void die (const char *msg) {
     exit(1);
 }
 
-static struct edge *edge_new() {
+static struct edge *edge_new () {
     struct edge *e = malloc(sizeof(struct edge));
     e->next = NULL;
     e->child = NULL;
@@ -30,7 +30,7 @@ static struct edge *edge_new() {
     return e;
 }
 
-RadixTree *rxt_new(uint32_t max_size) {
+RadixTree *rxt_new () {
     return edge_new();
 }
 
@@ -44,17 +44,17 @@ static int edge_prefix_length (struct edge *e) {
     return n;
 }
 
-static int edge_count (struct edge *e) {
+int rxt_edge_count (struct edge *e) {
     int n = 0;
     if (e != NULL) {
         n += 1;
-        n += edge_count(e->child);
-        n += edge_count(e->next);
+        n += rxt_edge_count(e->child);
+        n += rxt_edge_count(e->next);
     }
     return n;
 }
 
-static void edge_print (struct edge *e) {
+void rxt_edge_print (struct edge *e) {
     if (e == NULL) return;
     printf ("\nedge [%p]\n", e);
     printf ("prefix '%.*s'\n", RADIX_TREE_PREFIX_SIZE, e->prefix); // variable width string format character
@@ -62,12 +62,12 @@ static void edge_print (struct edge *e) {
     printf ("value  %d\n", e->value);
     printf ("next   %p\n", e->next);
     printf ("child  %p\n", e->child);
-    edge_print(e->next);
-    edge_print(e->child);
+    rxt_edge_print(e->next);
+    rxt_edge_print(e->child);
 }
 
 /* Insert a string-to-int mapping into the prefix tree. Uses tail recursion, not actual recursive function calls. */
-void insert (struct edge *root, const char *key, uint32_t value) {
+void rxt_insert (struct edge *root, const char *key, uint32_t value) {
     const char *k = key;
     struct edge *e = root;
     /* Loop over edges labeled to continuation from within nested loops. */
@@ -195,7 +195,7 @@ void rxt_compress (struct edge *root) {
 }
 
 RadixTree *rxt_load_strings_from_file (char *filename) {
-    RadixTree *root = rxt_new (0); // files should contain number of strings as header
+    RadixTree *root = rxt_new ();
     int fd = open(filename, O_RDONLY);
     if (fd == -1) die("could not find input file.");
     struct stat st;
@@ -206,7 +206,7 @@ RadixTree *rxt_load_strings_from_file (char *filename) {
     uint32_t idx = 0;
     printf ("Indexing strings...\n");
     while (s < strings_end) {
-        insert (root, s, idx);
+        rxt_insert (root, s, idx);
         while(*(s++) != '\0') { }
         idx += 1;
     }
@@ -221,14 +221,14 @@ RadixTree *rxt_load_strings_from_file (char *filename) {
 }
 
 RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t length) {
-    RadixTree *root = rxt_new (length);
+    RadixTree *root = rxt_new ();
     char *strings_end = strings + (width * length);
     char *s = strings;
     uint32_t idx = 0;
     printf ("Indexing strings...\n");
     while (s < strings_end) {
-        insert (root, s, idx);
-        while(*(s++) != '\0') { }
+        rxt_insert (root, s, idx);
+        s += width;
         idx += 1;
     }
     /*
@@ -239,90 +239,4 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     */
     return root;
 }
-
-static void check (uint32_t a, uint32_t b) {
-    if (a != b) printf ("mismatch: %d != %d \n", a, b);
-}
-
-int test () {
-    struct edge *root = edge_new();
-    insert(root, "", 3);
-    insert(root, "eight thousand", 8000);
-    insert(root, "nine thousand", 9000);
-    insert(root, "eight thousand five hundred", 8500);
-    edge_print(root);
-    char *strings[] = {"eight thousand", 
-                       "nine thousand", 
-                       "nine tho", 
-                       "eight thousand five hundred",
-                       "six thousand",
-                       "nine thousand five",
-                       "nine thousand five hundred",
-                       "nine nine nine nine",
-                       NULL};
-    
-    for (char **string = strings; *string != NULL; string += 1) {
-        printf("%32s, %d\n", *string, rxt_find(root, *string));
-    }
-    insert(root, "nine thousand five hundred", 9500);
-    insert(root, "eight thousand five hundred", 8888);
-    printf("\n");
-    for (char **string = strings; *string != NULL; string += 1) {
-        printf("%32s, %d\n", *string, rxt_find(root, *string));
-    }
-    insert(root, "nine thousand five", 9005);
-    printf("\n");
-    edge_print(root);
-    for (char **string = strings; *string != NULL; string += 1) {
-        printf("%32s, %d\n", *string, rxt_find(root, *string));
-    }
-    insert(root, "nine nine nine nine", 9999);
-    printf("\n");
-    edge_print(root);
-    for (char **string = strings; *string != NULL; string += 1) {
-        printf("%32s, %d\n", *string, rxt_find(root, *string));
-    }
-    insert(root, "six", 6);
-    insert(root, "six thousand", 6000);
-    printf("\n");
-    edge_print(root);
-    for (char **string = strings; *string != NULL; string += 1) {
-        printf("%32s, %d\n", *string, rxt_find(root, *string));
-    }
-    printf("total number of edges: %d\n", edge_count(root));
-    
-    char *filename = "trips";
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) die("could not find input file");
-    struct stat st;
-    if (stat(filename, &st) == -1) die("could not stat input file");
-    char *trip_ids = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    char *trip_ids_end = trip_ids + st.st_size;
-    char *tid = trip_ids;
-    uint32_t trip_idx = 0;
-    printf ("Indexing trip ids...\n");
-    while (tid < trip_ids_end) {
-        //printf ("inserting %s, %d\n", tid, trip_idx);
-        insert(root, tid, trip_idx);
-        tid += strlen(tid) + 1;
-        trip_idx += 1;
-    }
-    printf("total number of edges: %d\n", edge_count(root));
-    printf("size of one edge: %ld\n", sizeof(struct edge));
-    printf("total size of all edges: %ld\n", edge_count(root) * sizeof(struct edge));
-    
-    tid = trip_ids;
-    trip_idx = 0;
-    printf ("Checking trip ids...\n");
-    check (rxt_find (root, "abc"), RADIX_TREE_NONE);
-    while (tid < trip_ids_end) {
-        uint32_t idx = rxt_find (root, tid);
-        check (idx, trip_idx);
-        tid += strlen(tid) + 1;
-        trip_idx += 1;
-    }
-    check (rxt_find (root, "xyz"), RADIX_TREE_NONE);
-    return 0;
-}
-
 

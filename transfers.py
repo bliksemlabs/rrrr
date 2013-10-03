@@ -49,13 +49,13 @@ def distance (lat1, lon1, lat2, lon2, xscale) :
 # can also compare squared distances in scaled meters
 transfers = []
 n_processed = 0
-for sid, sname, lat, lon in db.execute(all_query) :
+for sid, sname, lat, lon in list(db.conn.execute(all_query)) :
     if verbose :
         print sid, sname
     xscale = math.cos(math.radians(lat)) 
     range_lon = range_lat * xscale
     # print xscale, range_lat, range_lon
-    for sid2, sname2, lat2, lon2 in db.execute(near_query, locals()):
+    for sid2, sname2, lat2, lon2 in db.conn.execute(near_query, locals()):
         if sid2 == sid :
             continue
         d = distance (lat, lon, lat2, lon2, xscale)
@@ -69,7 +69,9 @@ for sid, sname, lat, lon in db.execute(all_query) :
         print 'processed %d stops' % n_processed
 
 cur = db.get_cursor()
+print 'removing existing transfers...'
 cur.execute('delete from transfers;') # where transfer_type = 9;')
+print 'adding new transfers...'
 cur.executemany('insert into transfers values (?,?,NULL,NULL,NULL,NULL,9,?);', transfers)
 cur.execute('create index if not exists transfers_from_stop_id ON transfers (from_stop_id)')
 print 'committing...'

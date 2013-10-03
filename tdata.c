@@ -38,6 +38,7 @@ struct tdata_header {
     uint32_t loc_route_active; 
     uint32_t loc_stop_desc; 
     uint32_t loc_route_desc; 
+    uint32_t loc_operator; 
     uint32_t loc_route_ids;
     uint32_t loc_stop_ids;
     uint32_t loc_trip_ids;
@@ -59,6 +60,10 @@ inline char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_inde
     return td->trip_ids + (td->trip_id_width * (td->routes[route_index].trip_ids_offset + trip_index));
 }
 
+inline char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index) {
+    return td->operator + (td->operator_width * operator_index);
+}
+
 inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :
@@ -70,9 +75,18 @@ inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
     }
 }
 
-inline uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t start_index) {
+inline uint32_t tdata_stopidx_by_stop_desc(tdata_t *td, char* stop_desc, uint32_t start_index) {
     for (uint32_t stop_index = start_index; stop_index < td->n_stops; stop_index++) {
-        if (strcasestr(td->stop_desc + (td->stop_desc_width * stop_index), stop_name)) {
+        if (strcasestr(td->stop_desc + (td->stop_desc_width * stop_index), stop_desc)) {
+            return stop_index;
+        }
+    }
+    return NONE;
+}
+
+inline uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t start_index) {
+    for (uint32_t stop_index = start_index; stop_index < td->n_stops; stop_index++) {
+        if (strcasestr(td->stop_ids + (td->stop_id_width * stop_index), stop_id)) {
             return stop_index;
         }
     }

@@ -4,24 +4,33 @@
 # make and build files
 *.o
 *.pyc
-
+*.d
 *.gtfsdb
 *.zip
+qa/*/tmp
 
 stops.db
 timetable.dat
 vehiclePositions.pb
 
 rrrr.sh
+
+librrrr.a
 brrrroker
-workerrrr
 client
-lookup-console
-hashgrid
-testerrrr
 explorerrrr
+hashgrid
+lookup-console
+otp_api
+otp_client
 rrrrealtime
 rrrrealtime-viz
+struct_test
+testerrrr
+workerrrr
+workerrrr-web
+
+run_tests
 
 stops
 trips

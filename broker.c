@@ -15,9 +15,9 @@ int main (void) {
 
     zctx_t *ctx = zctx_new ();
     void *frontend = zsocket_new (ctx, ZMQ_ROUTER);
-    void *backend = zsocket_new (ctx, ZMQ_ROUTER);
+    void *backend  = zsocket_new (ctx, ZMQ_ROUTER);
     zsocket_bind (frontend, CLIENT_ENDPOINT);
-    zsocket_bind (backend, WORKER_ENDPOINT);
+    zsocket_bind (backend,  WORKER_ENDPOINT);
     uint32_t frx = 0, ftx = 0, brx = 0, btx = 0, nworkers = 0, npoll = 0;
     
     //  Queue of available workers
@@ -25,25 +25,21 @@ int main (void) {
 
     while (true) {
         if (++npoll % 1000 == 0)
-            syslog(LOG_INFO, "broker: frx %04d ftx %04d brx %04d btx %04d / %d workers\n", 
-                frx, ftx, brx, btx, nworkers);
+            syslog(LOG_INFO, "broker: frx %04d ftx %04d brx %04d btx %04d / %d workers\n", frx, ftx, brx, btx, nworkers);
         zmq_pollitem_t items [] = {
             { backend,  0, ZMQ_POLLIN, 0 },
             { frontend, 0, ZMQ_POLLIN, 0 }
         };
         //  Poll frontend only if we have available workers
         uint32_t rc = zmq_poll (items, zlist_size (workers)? 2: 1, -1);
-        if (rc == -1)
-            break;              //  Interrupted
+        if (rc == -1) break; //  Interrupted
         //  Handle worker activity on backend
         if (items [0].revents & ZMQ_POLLIN) {
             //  Use worker identity for load-balancing
             zmsg_t *msg = zmsg_recv (backend);
-            if (!msg)
-                break;          //  Interrupted
+            if (!msg) break; //  Interrupted
             zframe_t *identity = zmsg_unwrap (msg);
             zlist_append (workers, identity);
-
             //  Forward message to client if it's not a READY
             zframe_t *frame = zmsg_first (msg);
             if (memcmp (zframe_data (frame), WORKER_READY, 1) == 0) {
