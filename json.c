@@ -96,7 +96,10 @@ static void json_kb(char *key, bool value) {
 }
 
 static void json_key_obj(char *key) {
-    ekey(key);
+    if (key)
+        ekey(key);
+    else
+        comma();
     check('{');
     in_list = false;
 }
@@ -189,13 +192,16 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
         if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) mode = "FUNICULAR"; else
         mode = "INVALID";
     }
+
+    int64_t starttime = rtime_to_msec(leg->t0, date);
+    int64_t endtime = rtime_to_msec(leg->t1, date);
     json_obj(); /* one leg */
         json_place("from", UNREACHED, leg->t0, leg->s0, tdata, date); // TODO We should have stop arrival/departure here
         json_place("to",   leg->t1, UNREACHED, leg->s1, tdata, date); // TODO
         json_kv("legGeometry", NULL);
         json_kv("mode", mode);
-        json_kl("startTime", rtime_to_msec(leg->t0, date));
-        json_kl("endTime",   rtime_to_msec(leg->t1, date));
+        json_kl("startTime", starttime);
+        json_kl("endTime",   endtime);
         json_kl("departureDelay", departuredelay);
         json_kl("arrivalDelay", 0);
         json_kv("headsign", route_desc);
@@ -271,7 +277,30 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
     "steps": [
       
     ]
-*/                        
+*/
+        json_key_arr("intermediateStops");
+        if (leg->route != WALK) { 
+            bool visible = false;
+            for (uint32_t i = 0; i < tdata->routes[leg->route].n_stops; i++) {
+                uint32_t stop_idx = tdata->route_stops[tdata->routes[leg->route].route_stops_offset + i];
+                if (stop_idx == leg->s0) {
+                    visible = true;
+                } else if (stop_idx == leg->s1) {
+                    visible = false;
+                }
+
+                if (visible) {
+                    // TODO: use tdata_depart and tdata_arrive to prevent realtime leakage outside the current date
+                    trip_t trip = tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip];
+                    rtime_t arrival = trip.begin_time + tdata->stop_times[trip.stop_times_offset + i].arrival + trip.realtime_delay;
+                    rtime_t departure = trip.begin_time + tdata->stop_times[trip.stop_times_offset + i].departure + trip.realtime_delay;
+
+                    json_place(NULL, arrival, departure, stop_idx, tdata, date);
+                }
+            }
+        }
+        json_end_arr();
+        json_kd("duration", endtime - starttime);
     json_end_obj();
 }
 
@@ -291,7 +320,6 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
             for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
                 json_leg (leg, tdata, date);
                 int32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
-                json_kd("duration", leg_duration);
                 if (leg->route == WALK) {
                     if (leg->s0 == leg->s1) {
                         waitingtime += leg_duration;
@@ -305,7 +333,6 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
                     transittime += leg_duration;
                 }
             }
-
         json_end_arr();
         json_kd("walkTime", walktime);
         json_kd("transitTime", transittime);
