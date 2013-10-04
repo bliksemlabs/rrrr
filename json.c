@@ -301,6 +301,7 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
                         walkdistance += distance_add;
 			bool visible = false;
 
+            #if 0
 			for (uint32_t i = 0; tdata->routes[leg->route].n_stops; i++) {
 			    if ((tdata->routes[leg->route].route_stops_offset + i) == leg->s0) {
 			    	visible = true;
@@ -312,6 +313,7 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
 			    	stoptime_t inter_stop_time = tdata->stop_times[tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].stop_times_offset + i];
 			    }
 			}
+            #endif
                     }
                 } else {
                     transittime += time_add;
