@@ -257,8 +257,7 @@ inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_i
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
-    char *operator = tdata_operator_for_index(td, route.operator_index);
-    printf("\nRoute details for %s '%s' [%d] (n_stops %d, n_trips %d)\n", operator,
+    printf("\nRoute details for %s '%s' [%d] (n_stops %d, n_trips %d)\n", tdata_operator_for_index(td, route.operator_index),
         tdata_route_desc_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
     printf("tripid, stop sequence, stop name (index), departures  \n");
     for (uint32_t ti = (trip_idx == NONE ? 0 : trip_idx); ti < (trip_idx == NONE ? route.n_trips : trip_idx + 1); ++ti) {
