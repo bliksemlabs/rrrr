@@ -33,7 +33,10 @@
 #define HEADERS       CRLF
 #define END_HEADERS   CRLF CRLF
 #define TEXT_PLAIN    "Content-Type:text/plain"
-#define OK_TEXT_PLAIN "HTTP/1.0 200 OK" HEADERS TEXT_PLAIN CRLF
+#define APPLICATION_JSON    "Content-Type:application/json"
+#define ALLOW_ORIGIN    "Access-Control-Allow-Origin:*"
+#define ALLOW_HEADERS    "Access-Control-Allow-Headers:Requested-With,Content-Type"
+#define OK_TEXT_PLAIN "HTTP/1.0 200 OK" HEADERS APPLICATION_JSON CRLF ALLOW_ORIGIN CRLF ALLOW_HEADERS CRLF
 #define ERROR_404     "HTTP/1.0 404 Not Found" HEADERS TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
 
 #define BUFLEN     1024
