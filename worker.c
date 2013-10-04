@@ -11,7 +11,7 @@
 #include "router.h"
 #include "json.h"
 
-#define OUTPUT_LEN 16000
+#define OUTPUT_LEN 64000
 
 int main(int argc, char **argv) {
 
