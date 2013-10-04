@@ -285,8 +285,10 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
                 uint32_t stop_idx = tdata->route_stops[tdata->routes[leg->route].route_stops_offset + i];
                 if (stop_idx == leg->s0) {
                     visible = true;
+                    continue;
                 } else if (stop_idx == leg->s1) {
                     visible = false;
+                    break;
                 }
 
                 if (visible) {
