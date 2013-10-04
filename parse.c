@@ -235,6 +235,9 @@ bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, HashGrid 
             opt = 'z';
         } else if (strcmp(key, "trip-attributes") == 0) {
             opt = 'A';
+        } else if (strcasecmp(key, "showIntermediateStops") == 0 && strcasecmp(val, "true") == 0) {
+            req->intermediatestops = true;
+            continue;
         } else {
             printf("unrecognized parameter: key=%s val=%s\n", key, val);
             continue;

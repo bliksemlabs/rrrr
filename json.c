@@ -160,7 +160,7 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
     json_end_obj();
 }
 
-static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
+static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, time_t date) {
     char *mode = NULL;
     char *route_desc = NULL;
     char *route_id = NULL;
@@ -279,7 +279,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, time_t date) {
     ]
 */
         json_key_arr("intermediateStops");
-        if (leg->route != WALK) { 
+        if (req->intermediatestops && leg->route != WALK) { 
             bool visible = false;
             for (uint32_t i = 0; i < tdata->routes[leg->route].n_stops; i++) {
                 uint32_t stop_idx = tdata->route_stops[tdata->routes[leg->route].route_stops_offset + i];
@@ -320,7 +320,7 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
         json_kd("transfers", itin->n_legs / 2 - 1);
         json_key_arr("legs");
             for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
-                json_leg (leg, tdata, date);
+                json_leg (leg, tdata, req, date);
                 int32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
                 if (leg->route == WALK) {
                     if (leg->s0 == leg->s1) {

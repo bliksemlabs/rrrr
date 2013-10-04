@@ -978,6 +978,7 @@ void router_request_initialize(router_request_t *req) {
     req->banned_stop_hard = NONE;
     req->start_trip_route = NONE;
     req->start_trip_trip  = NONE;
+    req->intermediatestops = false;
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
@@ -1025,6 +1026,7 @@ void router_request_randomize(router_request_t *req) {
     req->banned_trip_route = NONE;
     req->banned_trip_offset = NONE;
     req->banned_stop_hard = NONE;
+    req->intermediatestops = false;
 }
 
 void router_state_dump (router_state_t *state) {

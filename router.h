@@ -96,6 +96,7 @@ struct router_request {
     uint32_t banned_trip_route; // One trip which is banned, this is its route
     uint32_t banned_trip_offset; // One trip which is banned, this is its tripoffset
     uint32_t banned_stop_hard; // One stop which is banned 
+    bool intermediatestops; // Show intermetiastops in the output
 };
 
 
