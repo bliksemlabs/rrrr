@@ -23,7 +23,7 @@ struct route {
     uint16_t n_stops;
     uint16_t n_trips;
     uint16_t attributes;
-    uint16_t operator_offset;
+    uint16_t operator_index;
     rtime_t  min_time;
     rtime_t  max_time;
 };
@@ -119,6 +119,8 @@ char *tdata_route_id_for_index(tdata_t*, uint32_t route_index);
 char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
 
 char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
+
+char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index);
 
 char *tdata_stop_desc_for_index(tdata_t*, uint32_t stop_index);
 

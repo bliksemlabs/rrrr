@@ -192,6 +192,8 @@ void tdata_load(char *filename, tdata_t *td) {
     td->stop_desc = (char*) (b + header->loc_stop_desc + sizeof(uint32_t));
     td->route_desc_width = *((uint32_t *) (b + header->loc_route_desc));
     td->route_desc = (char*) (b + header->loc_route_desc + sizeof(uint32_t));
+    td->operator_width = *((uint32_t *) (b + header->loc_operator));
+    td->operator = (char*) (b + header->loc_operator + sizeof(uint32_t));
     td->route_id_width = *((uint32_t *) (b + header->loc_route_ids));
     td->route_ids = (char*) (b + header->loc_route_ids + sizeof(uint32_t));
     td->stop_id_width = *((uint32_t *) (b + header->loc_stop_ids));
@@ -251,7 +253,8 @@ inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_i
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
-    printf("\nRoute details for '%s' [%d] (n_stops %d, n_trips %d)\n", 
+    char *operator = tdata_operator_for_index(td, route.operator_index);
+    printf("\nRoute details for %s '%s' [%d] (n_stops %d, n_trips %d)\n", operator,
         tdata_route_desc_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
     printf("tripid, stop sequence, stop name (index), departures  \n");
     for (uint32_t ti = (trip_idx == NONE ? 0 : trip_idx); ti < (trip_idx == NONE ? route.n_trips : trip_idx + 1); ++ti) {
