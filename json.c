@@ -286,37 +286,23 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
         json_kd("duration", endtime - starttime);
         json_kl("startTime", starttime);
         json_kl("endTime", endtime);
-       json_kd("transfers", itin->n_legs / 2 - 1);
+        json_kd("transfers", itin->n_legs / 2 - 1);
         json_key_arr("legs");
             for (struct leg *leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
                 json_leg (leg, tdata, date);
-                int32_t time_add = RTIME_TO_SEC(leg->t1 - leg->t0);
+                int32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
+                json_kd("duration", leg_duration);
                 if (leg->route == WALK) {
                     if (leg->s0 == leg->s1) {
-                        waitingtime += time_add;
+                        waitingtime += leg_duration;
                     } else {
                         uint32_t distance_add = transfer_distance (tdata, leg->s0, leg->s1);
                         assert(distance_add != UNREACHED);
-                        walktime += time_add;
+                        walktime += leg_duration;
                         walkdistance += distance_add;
-			bool visible = false;
-
-            #if 0
-			for (uint32_t i = 0; tdata->routes[leg->route].n_stops; i++) {
-			    if ((tdata->routes[leg->route].route_stops_offset + i) == leg->s0) {
-			    	visible = true;
-			    } else if ((tdata->routes[leg->route].route_stops_offset + i) == leg->s1) {
-			    	visible = false;
-			    }
-
-			    if (visible) {
-			    	stoptime_t inter_stop_time = tdata->stop_times[tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].stop_times_offset + i];
-			    }
-			}
-            #endif
                     }
                 } else {
-                    transittime += time_add;
+                    transittime += leg_duration;
                 }
             }
 
