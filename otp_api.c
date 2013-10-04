@@ -244,6 +244,26 @@ int main (void) {
     socklen_t in_addr_length = sizeof (server_in_addr);
     if (bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr)))
         die ("Failed to bind socket.\n");
+
+    /* Check if we are root */
+    if (getuid() == 0  || geteuid() == 0) {
+        struct passwd *pw;
+        uid_t puid = 65534; /* just use the traditional value */
+        gid_t pgid = 65534;
+
+        if ((pw = getpwnam("nobody"))) {
+            puid = pw->pw_uid;
+            pgid = pw->pw_gid;
+        }
+
+        /* Now we chroot to this directory, preventing any write access outside it */
+        chroot("/var/empty");
+
+        /* After we bind to the socket and chrooted, we drop priviledges to nobody */
+        setuid(puid);
+        setgid(pgid);
+    }
+
     listen(server_socket, QUEUE_CONN);
 
     /* Set up ØMQ socket to communicate with the RRRR broker. */
