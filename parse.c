@@ -195,7 +195,6 @@ void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt,
 bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, HashGrid *hg, char *qstring) {
     if (qstring == NULL)
         qstring = "";
-    router_request_initialize(req);
     char key[BUFLEN];
     char *val;
     while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
