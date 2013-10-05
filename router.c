@@ -856,6 +856,7 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         btimetext(leg->t1, ct1);
         char *s0_id = tdata_stop_desc_for_index(tdata, leg->s0);
         char *s1_id = tdata_stop_desc_for_index(tdata, leg->s1);
+        char *agency_name = (leg->route == WALK) ? "" : tdata_agency_name_for_route (tdata, leg->route);
         char *short_name = (leg->route == WALK) ? "walk" : tdata_shortname_for_route (tdata, leg->route);
         char *headsign = (leg->route == WALK) ? "walk" : tdata_headsign_for_route (tdata, leg->route);
         char *productcategory = (leg->route == WALK) ? "" : tdata_productcategory_for_route (tdata, leg->route);
@@ -905,8 +906,8 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
             }
         }
 
-        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s;%s;%s\n",
-            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, short_name, headsign, productcategory, s0_id, s1_id,
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min,agency_name, short_name, headsign, productcategory, s0_id, s1_id,
             (alert_msg ? alert_msg : ""));
 /* output polylines
         if (leg->route != WALK) {
