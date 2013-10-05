@@ -221,6 +221,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kl("departureDelay", departuredelay);
         json_kl("arrivalDelay", 0);
         json_kv("routeShortName", route_shortname);
+        json_kv("route", route_shortname);
         json_kv("headsign", headsign);
         json_kv("routeId", route_id);
         json_kv("tripId", trip_id);
