@@ -577,7 +577,7 @@ loc_route_shortnames = write_string_table([shortname for shortname,idx in sorted
 
 print "writing out productcategories to string table"
 write_text_comment("PRODUCT CATEGORIES")
-sorted_productcategories = sorted(idx_for_shortname.iteritems(), key=operator.itemgetter(1))
+sorted_productcategories = sorted(idx_for_productcategory.iteritems(), key=operator.itemgetter(1))
 loc_productcategories = write_string_table([productcategory for productcategory,idx in sorted_productcategories])
 
 print "writing out sorted stop descriptions to string table"
