@@ -165,6 +165,12 @@ char *tdata_shortname_for_route(tdata_t*, uint32_t route_index);
 
 char *tdata_productcategory_for_route(tdata_t*, uint32_t route_index);
 
+char *tdata_agency_id_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_agency_name_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_agency_url_for_route(tdata_t*, uint32_t route_index);
+
 /* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must 
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t*, uint32_t route_index, uint32_t trip_index);

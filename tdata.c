@@ -152,6 +152,21 @@ inline char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) 
     return td->productcategories + (td->productcategory_width * route.productcategory_index);
 }
 
+inline char *tdata_agency_id_for_route(tdata_t *td, uint32_t route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->agency_ids + (td->agency_id_width * route.agency_index);
+}
+
+inline char *tdata_agency_name_for_route(tdata_t *td, uint32_t route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->agency_names + (td->agency_name_width * route.agency_index);
+}
+
+inline char *tdata_agency_url_for_route(tdata_t *td, uint32_t route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->agency_urls + (td->agency_url_width * route.agency_index);
+}
+
 void tdata_check_coherent (tdata_t *td) {
     /* Check that all lat/lon look like valid coordinates for this part of Europe or tests */
     float min_lat = 0.0;
