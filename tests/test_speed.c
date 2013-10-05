@@ -83,7 +83,7 @@ Suite *make_speed_suite (void) {
     Suite *s = suite_create ("Speed");
     TCase *tc_rand = tcase_create ("Random");
     tcase_add_test (tc_rand, test_speed_random);
-    tcase_set_timeout (tc_rand, 10);
+    tcase_set_timeout (tc_rand, 15);
     suite_add_tcase (s, tc_rand);
 //    TCase *tc_mmri = tcase_create ("MMRI");
 //    tcase_add_test  (tc_mmri, test_speed_mmri);
