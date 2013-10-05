@@ -1,11 +1,7 @@
 /* polyline.h */
 /* https://developers.google.com/maps/documentation/utilities/polylinealgorithm */
 
-//#include "geometry.h"
-typedef struct {
-    double lat;
-    double lon;
-} latlon_t;
+#include "geometry.h"
 
 int encode_double (double c, char *buf);
 
