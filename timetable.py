@@ -572,7 +572,7 @@ for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(
     agencyIds.append(agency_id)
     agencyNames.append(agency_name)
     agencyUrls.append(agency_url)
-loc_agency_ids = write_string_table(agencyNames)
+loc_agency_ids = write_string_table(agencyIds)
 loc_agency_names = write_string_table(agencyNames)
 loc_agency_urls = write_string_table(agencyUrls)
 
