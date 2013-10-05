@@ -131,7 +131,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ25I') 
+struct_header = Struct('8sQ27I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -157,7 +157,9 @@ def write_header () :
         loc_trip_active,
         loc_route_active,
         loc_stop_desc,
-        loc_operator,
+        loc_agency_names,
+        loc_agency_ids,
+        loc_agency_urls,
         loc_headsign,
         loc_route_shortnames,
         loc_productcategories,
@@ -271,11 +273,11 @@ route_max_time.append(0) # sentinel
 # per GTFS route per direction.
 route_ids_for_idx = []
 route_attributes = []
-operator_offsets = []
+agency_offsets = []
 shortname_offsets = []
 headsign_offsets = []
 productcategory_offsets = []
-idx_for_operator = {}
+idx_for_agency = {}
 idx_for_headsign = {}
 idx_for_shortname = {}
 idx_for_productcategory = {}
@@ -289,12 +291,12 @@ for route in route_for_idx :
     route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
 
-    if agency in idx_for_operator:
-        operator_offset = idx_for_operator[agency]
+    if agency in idx_for_agency:
+        agency_offset = idx_for_agency[agency]
     else:
-        operator_offset = len(idx_for_operator)
-        idx_for_operator[agency] = operator_offset
-    operator_offsets.append(operator_offset)
+        agency_offset = len(idx_for_agency)
+        idx_for_agency[agency] = agency_offset
+    agency_offsets.append(agency_offset)
 
     if headsign in idx_for_headsign:
         headsign_offset = idx_for_headsign[headsign]
@@ -317,7 +319,7 @@ for route in route_for_idx :
         idx_for_productcategory[productcategory] = productcategory_offset
     productcategory_offsets.append(productcategory_offset)
 route_attributes.append(0) # sentinel
-operator_offsets.append(0) # sentinel  
+agency_offsets.append(0) # sentinel  
 headsign_offsets.append(0) # sentinel
 shortname_offsets.append(0) # sentinel
 productcategory_offsets.append(0) # sentinel
@@ -521,7 +523,7 @@ print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
 route_t = Struct('3I8H')
-route_t_fields = [route_stops_offsets, trip_ids_offsets,headsign_offsets, route_n_stops, route_n_trips,route_attributes,operator_offsets,shortname_offsets,productcategory_offsets,route_min_time, route_max_time]
+route_t_fields = [route_stops_offsets, trip_ids_offsets,headsign_offsets, route_n_stops, route_n_trips,route_attributes,agency_offsets,shortname_offsets,productcategory_offsets,route_min_time, route_max_time]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :
     # the extra last route is a sentinel so we can derive list lengths for the last true route.
@@ -559,11 +561,20 @@ for bitfield in route_mask_for_idx :
     writeint(bitfield)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 
-print "writing out operators to string table"
-write_text_comment("OPERATORS")
+print "writing out agencies to string table"
+agencyIds = []
+agencyNames = []
+agencyUrls = []
+write_text_comment("AGENCIES")
 print operator
-sorted_agencyIds = sorted(idx_for_operator.iteritems(), key=operator.itemgetter(1))
-loc_operator = write_string_table([';'.join(v or '' for v in db.agency(agencyId)) for agencyId,idx in sorted_agencyIds])
+sorted_agencyIds = sorted(idx_for_agency.iteritems(), key=operator.itemgetter(1))
+for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]:
+    agencyIds.append(agency_id)
+    agencyNames.append(agency_name)
+    agencyUrls.append(agency_url)
+loc_agency_ids = write_string_table(agencyNames)
+loc_agency_names = write_string_table(agencyNames)
+loc_agency_urls = write_string_table(agencyUrls)
 
 print "writing out headsigns to string table"
 write_text_comment("HEADSIGNS")

@@ -37,7 +37,9 @@ struct tdata_header {
     uint32_t loc_trip_active; 
     uint32_t loc_route_active; 
     uint32_t loc_stop_desc; 
-    uint32_t loc_operators;
+    uint32_t loc_agency_ids;
+    uint32_t loc_agency_names;
+    uint32_t loc_agency_urls;
     uint32_t loc_headsigns;
     uint32_t loc_route_shortnames;
     uint32_t loc_productcategories;
@@ -62,8 +64,16 @@ inline char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_inde
     return td->trip_ids + (td->trip_id_width * (td->routes[route_index].trip_ids_offset + trip_index));
 }
 
-inline char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index) {
-    return td->operators + (td->operator_width * operator_index);
+inline char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index) {
+    return td->agency_ids + (td->agency_id_width * agency_index);
+}
+
+inline char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index) {
+    return td->agency_names + (td->agency_name_width * agency_index);
+}
+
+inline char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
+    return td->agency_urls + (td->agency_url_width * agency_index);
 }
 
 inline char *tdata_headsign_for_index(tdata_t *td, uint32_t headsign_index) {
@@ -219,8 +229,12 @@ void tdata_load(char *filename, tdata_t *td) {
     //maybe replace with pointers because there's a lot of wasted space?
     td->stop_desc_width = *((uint32_t *) (b + header->loc_stop_desc));
     td->stop_desc = (char*) (b + header->loc_stop_desc + sizeof(uint32_t));
-    td->operator_width = *((uint32_t *) (b + header->loc_operators));
-    td->operators = (char*) (b + header->loc_operators + sizeof(uint32_t));
+    td->agency_id_width = *((uint32_t *) (b + header->loc_agency_ids));
+    td->agency_ids = (char*) (b + header->loc_agency_ids + sizeof(uint32_t));
+    td->agency_name_width = *((uint32_t *) (b + header->loc_agency_ids));
+    td->agency_names = (char*) (b + header->loc_agency_ids + sizeof(uint32_t));
+    td->agency_url_width = *((uint32_t *) (b + header->loc_agency_urls));
+    td->agency_urls = (char*) (b + header->loc_agency_urls + sizeof(uint32_t));
     td->headsign_width = *((uint32_t *) (b + header->loc_headsigns));
     td->headsigns = (char*) (b + header->loc_headsigns + sizeof(uint32_t));
     td->route_shortname_width = *((uint32_t *) (b + header->loc_route_shortnames));
@@ -286,7 +300,7 @@ inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_i
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
-    printf("\nRoute details for %s '%s %s' [%d] (n_stops %d, n_trips %d)\n", tdata_operator_for_index(td, route.operator_index),
+    printf("\nRoute details for %s '%s %s' [%d] (n_stops %d, n_trips %d)\n", tdata_agency_name_for_index(td, route.agency_index),
         tdata_shortname_for_route(td, route_idx), tdata_headsign_for_route(td, route_idx), route_idx, route.n_stops, route.n_trips);
     printf("tripid, stop sequence, stop name (index), departures  \n");
     for (uint32_t ti = (trip_idx == NONE ? 0 : trip_idx); ti < (trip_idx == NONE ? route.n_trips : trip_idx + 1); ++ti) {

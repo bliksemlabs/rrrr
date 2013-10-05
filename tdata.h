@@ -24,7 +24,7 @@ struct route {
     uint16_t n_stops;
     uint16_t n_trips;
     uint16_t attributes;
-    uint16_t operator_index;
+    uint16_t agency_index;
     uint16_t shortname_index;
     uint16_t productcategory_index;
     rtime_t  min_time;
@@ -84,8 +84,12 @@ struct tdata {
     latlon_t *stop_coords;
     uint32_t stop_desc_width;
     char *stop_desc;
-    uint32_t operator_width;
-    char *operators;
+    uint32_t agency_id_width;
+    char *agency_ids;
+    uint32_t agency_name_width;
+    char *agency_names;
+    uint32_t agency_url_width;
+    char *agency_urls;
     uint32_t headsign_width;
     char *headsigns;
     uint32_t route_shortname_width;
@@ -129,7 +133,11 @@ char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
 char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index);
 
-char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index);
+char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index);
+
+char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
+
+char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
 
 char *tdata_headsign_for_index(tdata_t *td, uint32_t headsign_index);
 
