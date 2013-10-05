@@ -39,8 +39,20 @@ static void string (const char *s) {
     }
     check('"');
     for (const char *c = s; *c != '\0'; ++c) {
-        if (*c == '"' || *c == '/') check('/');
-        check(*c);
+        switch (*c){
+        case '\\' :
+        case '\b' :
+        case '\f' :
+        case '\n' :
+        case '\r' :
+        case '\t' :
+        case '\v' :
+        case '\'' :
+        case '"' :
+            check('\\');
+        default:
+            check(*c);
+        }
     }
     check('"');
 }
