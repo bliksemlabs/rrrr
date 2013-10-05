@@ -2,6 +2,7 @@
 
 #include "json.h"
 #include "geometry.h"
+#include "polyline.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -198,7 +199,6 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     json_obj(); /* one leg */
         json_place("from", UNREACHED, leg->t0, leg->s0, tdata, date); // TODO We should have stop arrival/departure here
         json_place("to",   leg->t1, UNREACHED, leg->s1, tdata, date); // TODO
-        json_kv("legGeometry", NULL);
         json_kv("mode", mode);
         json_kl("startTime", starttime);
         json_kl("endTime",   endtime);
@@ -278,6 +278,14 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
       
     ]
 */
+        json_key_obj("legGeometry");
+        if (leg->route != WALK) {
+            polyline_for_ride (tdata, leg->route, leg->s0, leg->s1);
+            json_kv("points", polyline_result());
+            json_kv("levels", NULL);
+            json_kd("length", polyline_length());
+        }
+        json_end_obj();
         json_key_arr("intermediateStops");
         if (req->intermediatestops && leg->route != WALK) { 
             bool visible = false;
