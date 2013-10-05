@@ -180,6 +180,9 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     char *productcategory = NULL;
     char *route_id = NULL;
     char *trip_id = NULL;
+    char *agency_id = NULL;
+    char *agency_name = NULL;
+    char *agency_url = NULL;
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
 
@@ -188,6 +191,9 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         route_shortname = tdata_shortname_for_route(tdata, leg->route);
         productcategory = tdata_productcategory_for_route(tdata, leg->route);
         route_id = tdata_route_id_for_index(tdata, leg->route);
+        agency_id = tdata_agency_id_for_route(tdata, leg->route);
+        agency_name = tdata_agency_name_for_route(tdata, leg->route);
+        agency_url = tdata_agency_url_for_route(tdata, leg->route);
         trip_id = tdata_trip_id_for_route_trip_index(tdata, leg->route, leg->trip);
 
         rtime_t begin_time = tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].begin_time;
@@ -226,6 +232,9 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kv("routeId", route_id);
         json_kv("tripId", trip_id);
         json_kv("serviceDate", servicedate);
+        json_kv("agencyId", agency_id);
+        json_kv("agencyName", agency_name);
+        json_kv("agencyUrl", agency_url);
 /* 
     "realTime": false,
     "distance": 2656.2383456335,
