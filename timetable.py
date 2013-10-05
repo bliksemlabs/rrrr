@@ -157,8 +157,8 @@ def write_header () :
         loc_trip_active,
         loc_route_active,
         loc_stop_desc,
-        loc_agency_names,
         loc_agency_ids,
+        loc_agency_names,
         loc_agency_urls,
         loc_headsign,
         loc_route_shortnames,
@@ -565,15 +565,18 @@ print "writing out agencies to string table"
 agencyIds = []
 agencyNames = []
 agencyUrls = []
-write_text_comment("AGENCIES")
-print operator
 sorted_agencyIds = sorted(idx_for_agency.iteritems(), key=operator.itemgetter(1))
 for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]:
     agencyIds.append(agency_id)
     agencyNames.append(agency_name)
     agencyUrls.append(agency_url)
+write_text_comment("AGENCY IDS")
+print "writing out agencyIds to string table"
 loc_agency_ids = write_string_table(agencyIds)
+write_text_comment("AGENCY NAMES")
+print "writing out agencyIds to string table"
 loc_agency_names = write_string_table(agencyNames)
+write_text_comment("AGENCY URLS")
 loc_agency_urls = write_string_table(agencyUrls)
 
 print "writing out headsigns to string table"
