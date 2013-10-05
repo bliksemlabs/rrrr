@@ -53,12 +53,14 @@ static latlon_t last_point;
 static char  buf[BUFLEN];
 static char *buf_cur;
 static char *buf_max = buf + BUFLEN - 13; // each latlon could take up to 12 chars
+static uint32_t length;
 
 void polyline_begin () {
     last_point.lat = 0.0;
     last_point.lon = 0.0;
     buf_cur = buf;
     *buf_cur = '\0';
+    length = 0;
 }
 
 void polyline_point (latlon_t point) {
@@ -71,10 +73,15 @@ void polyline_point (latlon_t point) {
     buf_cur += encode_double (dlat, buf_cur);
     buf_cur += encode_double (dlon, buf_cur);
     last_point = point;
+    length += 1;
 }
 
 char *polyline_result () {
     return buf;
+}
+
+uint32_t polyline_length () {
+    return length;
 }
 
 /*
@@ -92,6 +99,6 @@ void polyline_for_ride (tdata_t *tdata, uint32_t route_idx, uint32_t sidx0, uint
         if (output) polyline_point (tdata->stop_coords[sidx]);
         if (sidx == sidx1) break;
     }
-    printf ("%s\n", polyline_result ());
+    //printf ("%s\n", polyline_result ());
 }
 
