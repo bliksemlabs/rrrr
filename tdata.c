@@ -37,8 +37,10 @@ struct tdata_header {
     uint32_t loc_trip_active; 
     uint32_t loc_route_active; 
     uint32_t loc_stop_desc; 
-    uint32_t loc_route_desc; 
-    uint32_t loc_operator; 
+    uint32_t loc_operators;
+    uint32_t loc_headsigns;
+    uint32_t loc_route_shortnames;
+    uint32_t loc_productcategories;
     uint32_t loc_route_ids;
     uint32_t loc_stop_ids;
     uint32_t loc_trip_ids;
@@ -57,7 +59,19 @@ inline char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
 }
 
 inline char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index) {
-    return td->operator + (td->operator_width * operator_index);
+    return td->operators + (td->operator_width * operator_index);
+}
+
+inline char *tdata_headsign_for_index(tdata_t *td, uint32_t headsign_index) {
+    return td->headsigns + (td->headsign_width * headsign_index);
+}
+
+inline char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index) {
+    return td->route_shortnames + (td->route_shortname_width * route_shortname_index);
+}
+
+inline char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index) {
+    return td->productcategories + (td->productcategory_width * productcategory_index);
 }
 
 inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
@@ -98,10 +112,6 @@ inline uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t
     return NONE;
 }
 
-inline char *tdata_route_desc_for_index(tdata_t *td, uint32_t route_index) {
-    return td->route_desc + (td->route_desc_width * route_index);
-}
-
 inline char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
     route_t route = (td->routes)[route_index];
     uint32_t char_offset = route.trip_ids_offset * td->trip_id_width;
@@ -111,6 +121,21 @@ inline char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
 inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
     route_t route = (td->routes)[route_index];
     return td->trip_active + route.trip_ids_offset;
+}
+
+inline char *tdata_headsign_for_route(tdata_t *td, uint32_t route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->headsigns + (td->headsign_width * route.headsign_index);
+}
+
+inline char *tdata_shortname_for_route(tdata_t *td, uint32_t route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->route_shortnames + (td->route_shortname_width * route.shortname_index);
+}
+
+inline char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) {
+    route_t route = (td->routes)[route_index];
+    return td->productcategories + (td->productcategory_width * route.productcategory_index);
 }
 
 void tdata_check_coherent (tdata_t *td) {
@@ -190,10 +215,14 @@ void tdata_load(char *filename, tdata_t *td) {
     //maybe replace with pointers because there's a lot of wasted space?
     td->stop_desc_width = *((uint32_t *) (b + header->loc_stop_desc));
     td->stop_desc = (char*) (b + header->loc_stop_desc + sizeof(uint32_t));
-    td->route_desc_width = *((uint32_t *) (b + header->loc_route_desc));
-    td->route_desc = (char*) (b + header->loc_route_desc + sizeof(uint32_t));
-    td->operator_width = *((uint32_t *) (b + header->loc_operator));
-    td->operator = (char*) (b + header->loc_operator + sizeof(uint32_t));
+    td->operator_width = *((uint32_t *) (b + header->loc_operators));
+    td->operators = (char*) (b + header->loc_operators + sizeof(uint32_t));
+    td->headsign_width = *((uint32_t *) (b + header->loc_headsigns));
+    td->headsigns = (char*) (b + header->loc_headsigns + sizeof(uint32_t));
+    td->route_shortname_width = *((uint32_t *) (b + header->loc_route_shortnames));
+    td->route_shortnames = (char*) (b + header->loc_route_shortnames + sizeof(uint32_t));
+    td->productcategory_width = *((uint32_t *) (b + header->loc_productcategories));
+    td->productcategories = (char*) (b + header->loc_productcategories + sizeof(uint32_t));
     td->route_id_width = *((uint32_t *) (b + header->loc_route_ids));
     td->route_ids = (char*) (b + header->loc_route_ids + sizeof(uint32_t));
     td->stop_id_width = *((uint32_t *) (b + header->loc_stop_ids));
@@ -253,8 +282,8 @@ inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_i
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(*td, route_idx);
     route_t route = td->routes[route_idx];
-    printf("\nRoute details for %s '%s' [%d] (n_stops %d, n_trips %d)\n", tdata_operator_for_index(td, route.operator_index),
-        tdata_route_desc_for_index(td, route_idx), route_idx, route.n_stops, route.n_trips);
+    printf("\nRoute details for %s '%s %s' [%d] (n_stops %d, n_trips %d)\n", tdata_operator_for_index(td, route.operator_index),
+        tdata_shortname_for_route(td, route_idx), tdata_headsign_for_route(td, route_idx), route_idx, route.n_stops, route.n_trips);
     printf("tripid, stop sequence, stop name (index), departures  \n");
     for (uint32_t ti = (trip_idx == NONE ? 0 : trip_idx); ti < (trip_idx == NONE ? route.n_trips : trip_idx + 1); ++ti) {
         // TODO should this really be a 2D array ?

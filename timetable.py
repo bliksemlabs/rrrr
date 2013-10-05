@@ -131,7 +131,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ23I') 
+struct_header = Struct('8sQ25I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -157,8 +157,10 @@ def write_header () :
         loc_trip_active,
         loc_route_active,
         loc_stop_desc,
-        loc_route_desc,
         loc_operator,
+        loc_headsign,
+        loc_route_shortnames,
+        loc_productcategories,
         loc_route_ids,
         loc_stop_ids,
         loc_trip_ids,
@@ -267,35 +269,58 @@ route_max_time.append(0) # sentinel
 # calls JOURNEYPATTERNs: an ordered sequence of stops.
 # We want one descriptive string per route, in the RAPTOR sense, which should amount to one string 
 # per GTFS route per direction.
-route_desc_for_idx = []
 route_ids_for_idx = []
 route_attributes = []
 operator_offsets = []
-operator_for_idx = {}
+shortname_offsets = []
+headsign_offsets = []
+productcategory_offsets = []
+idx_for_operator = {}
+idx_for_headsign = {}
+idx_for_shortname = {}
+idx_for_productcategory = {}
 for route in route_for_idx :
     exemplar_trip = route.trip_ids[0]
     #  executemany
     rid, headsign, agency, short_name, long_name, mode = db.tripinfo(exemplar_trip)
-    if short_name is None : 
-        # mostly trains with the service type (Sprinter, IC) in the long name field
-        desc = long_name
-    else : 
-        desc = short_name
-    # print desc
     if (headsign is None) :
         headsign = ''
-    desc = ';'.join([desc, headsign])
-    route_desc_for_idx.append(desc)
+    productcategory = ''
     route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
-    if agency in operator_for_idx:
-        operator_offset = operator_for_idx[agency]
+
+    if agency in idx_for_operator:
+        operator_offset = idx_for_operator[agency]
     else:
-        operator_offset = len(operator_for_idx)
-        operator_for_idx[agency] = operator_offset
+        operator_offset = len(idx_for_operator)
+        idx_for_operator[agency] = operator_offset
     operator_offsets.append(operator_offset)
+
+    if headsign in idx_for_headsign:
+        headsign_offset = idx_for_headsign[headsign]
+    else:
+        headsign_offset = len(idx_for_headsign)
+        idx_for_headsign[headsign] = headsign_offset
+    headsign_offsets.append(headsign_offset)
+
+    if short_name in idx_for_shortname:
+        shortname_offset = idx_for_shortname[short_name]
+    else:
+        shortname_offset = len(idx_for_shortname)
+        idx_for_shortname[short_name] = shortname_offset
+    shortname_offsets.append(shortname_offset)
+
+    if productcategory in idx_for_productcategory:
+        productcategory_offset = idx_for_productcategory[productcategory]
+    else:
+        productcategory_offset = len(idx_for_productcategory)
+        idx_for_productcategory[productcategory] = productcategory_offset
+    productcategory_offsets.append(productcategory_offset)
 route_attributes.append(0) # sentinel
 operator_offsets.append(0) # sentinel  
+headsign_offsets.append(0) # sentinel
+shortname_offsets.append(0) # sentinel
+productcategory_offsets.append(0) # sentinel
 # named tuples?
 # stops = [(-1, -1) for _ in range(nstops)]
 # routes = [(-1, -1) for _ in range(nroutes)]
@@ -495,8 +520,8 @@ for stop_id,stop_name,stop_lat,stop_lon,attributes in db.stopattributes() :
 print "saving route indexes"
 write_text_comment("ROUTE STRUCTS")
 loc_routes = tell()
-route_t = Struct('2I6H')
-route_t_fields = [route_stops_offsets, trip_ids_offsets, route_n_stops, route_n_trips,route_attributes,operator_offsets,route_min_time, route_max_time]
+route_t = Struct('3I8H')
+route_t_fields = [route_stops_offsets, trip_ids_offsets,headsign_offsets, route_n_stops, route_n_trips,route_attributes,operator_offsets,shortname_offsets,productcategory_offsets,route_min_time, route_max_time]
 # check that all list lengths match the total number of routes. 
 for l in route_t_fields :
     # the extra last route is a sentinel so we can derive list lengths for the last true route.
@@ -534,14 +559,26 @@ for bitfield in route_mask_for_idx :
     writeint(bitfield)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 
-print "writing out sorted route descriptions to string table"
-write_text_comment("ROUTE DESC")
-loc_route_desc = write_string_table(route_desc_for_idx)
-
 print "writing out operators to string table"
 write_text_comment("OPERATORS")
-sorted_agencyIds = sorted(operator_for_idx.iteritems(), key=operator.itemgetter(1))
+print operator
+sorted_agencyIds = sorted(idx_for_operator.iteritems(), key=operator.itemgetter(1))
 loc_operator = write_string_table([';'.join(v or '' for v in db.agency(agencyId)) for agencyId,idx in sorted_agencyIds])
+
+print "writing out headsigns to string table"
+write_text_comment("HEADSIGNS")
+sorted_headsigns = sorted(idx_for_headsign.iteritems(), key=operator.itemgetter(1))
+loc_headsign = write_string_table([headsign for headsign,idx in sorted_headsigns])
+
+print "writing out route_shortname's to string table"
+write_text_comment("ROUTE SHORT NAMES")
+sorted_routeshortnames = sorted(idx_for_shortname.iteritems(), key=operator.itemgetter(1))
+loc_route_shortnames = write_string_table([shortname for shortname,idx in sorted_routeshortnames])
+
+print "writing out productcategories to string table"
+write_text_comment("PRODUCT CATEGORIES")
+sorted_productcategories = sorted(idx_for_shortname.iteritems(), key=operator.itemgetter(1))
+loc_productcategories = write_string_table([productcategory for productcategory,idx in sorted_productcategories])
 
 print "writing out sorted stop descriptions to string table"
 write_text_comment("STOP DESC")

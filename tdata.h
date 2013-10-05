@@ -20,10 +20,13 @@ typedef struct route route_t;
 struct route {
     uint32_t route_stops_offset;
     uint32_t trip_ids_offset;
+    uint32_t headsign_index;
     uint16_t n_stops;
     uint16_t n_trips;
     uint16_t attributes;
     uint16_t operator_index;
+    uint16_t shortname_index;
+    uint16_t productcategory_index;
     rtime_t  min_time;
     rtime_t  max_time;
 };
@@ -81,10 +84,14 @@ struct tdata {
     latlon_t *stop_coords;
     uint32_t stop_desc_width;
     char *stop_desc;
-    uint32_t route_desc_width;
-    char *route_desc;
     uint32_t operator_width;
-    char *operator;
+    char *operators;
+    uint32_t headsign_width;
+    char *headsigns;
+    uint32_t route_shortname_width;
+    char *route_shortnames;
+    uint32_t productcategory_width;
+    char *productcategories;
     uint32_t *trip_active;
     uint32_t *route_active;
     uint8_t *trip_attributes;
@@ -122,6 +129,12 @@ char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
 char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index);
 
+char *tdata_headsign_for_index(tdata_t *td, uint32_t headsign_index);
+
+char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index);
+
+char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
+
 char *tdata_stop_desc_for_index(tdata_t*, uint32_t stop_index);
 
 uint32_t tdata_stopidx_by_stop_desc(tdata_t*, char* stop_desc, uint32_t start_index);
@@ -130,13 +143,17 @@ uint32_t tdata_stopidx_by_stop_id(tdata_t*, char* stop_id, uint32_t start_index)
 
 uint32_t tdata_routeidx_by_route_id(tdata_t*, char* route_id, uint32_t start_index);
 
-char *tdata_route_desc_for_index(tdata_t*, uint32_t route_index);
-
 char *tdata_trip_ids_for_route(tdata_t*, uint32_t route_index);
 
 uint8_t *tdata_trip_attributes_for_route(tdata_t*, uint32_t route_index);
 
 uint32_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_headsign_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_shortname_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_productcategory_for_route(tdata_t*, uint32_t route_index);
 
 /* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must 
    be shifted in time to get the true scheduled arrival and departure times. */

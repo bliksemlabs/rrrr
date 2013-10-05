@@ -447,7 +447,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
             printf ("  actual first time: %d \n", tdata_depart(&(router.tdata), route_idx, 0, 0));
             printf ("  actual last time:  %d \n", tdata_arrive(&(router.tdata), route_idx, route.n_trips - 1, route.n_stops - 1));
             */
-            I printf("  route %d: %s\n", route_idx, tdata_route_desc_for_index(&(router.tdata), route_idx));
+            I printf("  route %d: %s;%s\n", route_idx, tdata_shortname_for_route(&(router.tdata), route_idx),tdata_headsign_for_route(&(router.tdata), route_idx));
             T tdata_dump_route(&(router.tdata), route_idx, NONE);
             // For each stop in this route, its global stop index.
             uint32_t *route_stops = tdata_stops_for_route(router.tdata, route_idx);
@@ -842,7 +842,9 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         btimetext(leg->t1, ct1);
         char *s0_id = tdata_stop_desc_for_index(tdata, leg->s0);
         char *s1_id = tdata_stop_desc_for_index(tdata, leg->s1);
-        char *route_desc = (leg->route == WALK) ? "walk;walk" : tdata_route_desc_for_index (tdata, leg->route);
+        char *short_name = (leg->route == WALK) ? "walk" : tdata_shortname_for_route (tdata, leg->route);
+        char *headsign = (leg->route == WALK) ? "walk" : tdata_headsign_for_route (tdata, leg->route);
+        char *productcategory = (leg->route == WALK) ? "" : tdata_productcategory_for_route (tdata, leg->route);
         float delay_min = (leg->route == WALK) ? 0 : tdata_delay_min (tdata, leg->route, leg->trip);
         
         char *leg_mode = NULL;
@@ -889,8 +891,8 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
             }
         }
 
-        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s\n",
-            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id,
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, short_name, headsign, productcategory, s0_id, s1_id,
             (alert_msg ? alert_msg : ""));
 
         if (b > b_end) {

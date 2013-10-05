@@ -152,10 +152,12 @@ static void json_place (char *key, uint32_t stop_index, tdata_t *tdata) {
 
 static void json_leg (struct leg *leg, tdata_t *tdata) {
     char *mode = NULL;
-    char *route_id = NULL;
+    char *shortname = NULL;
+    char *headsign = NULL;
 
     if (leg->route == WALK) mode = "WALK"; else {
-        route_id = tdata_route_desc_for_index(tdata, leg->route);
+        shortname = tdata_shortname_for_route(tdata, leg->route);
+        headsign = tdata_headsign_for_route(tdata, leg->route);
 
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else
@@ -177,7 +179,8 @@ static void json_leg (struct leg *leg, tdata_t *tdata) {
         json_kl("departureDelay", 0);
         json_kl("arrivalDelay", 0);
         json_kl("departureDelay", 0);
-        json_kv("headsign", route_id);
+        json_kv("routeShortName", shortname);
+        json_kv("headsign", headsign);
 /* 
     "realTime": false,
     "distance": 2656.2383456335,
