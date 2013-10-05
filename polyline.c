@@ -1,13 +1,23 @@
 /* polyline.c */
-/* https://developers.google.com/maps/documentation/utilities/polylinealgorithm */
+
+/* 
+  https://developers.google.com/maps/documentation/utilities/polylinealgorithm 
+  https://developers.google.com/maps/documentation/utilities/polylineutility 
+*/
 
 #include "polyline.h"
 #include "geometry.h"
+#include "tdata.h"
 #include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+
+// TODO width of 'binary' and precision of dlon, dlat
 
 int encode_double (double c, char *buf) {
     char *b = buf;
-    int32_t binary = (int32_t) (1e5 * c);
+    int64_t binary = (1e5 * c);
     //printf ("%d \n", binary);
     binary <<= 1;
     if (c < 0) binary = ~binary;
@@ -39,14 +49,14 @@ int encode_latlon (latlon_t ll, char *buf) {
 /* Internal buffer for building up polylines point by point. */
 
 #define BUFLEN 1024
-static latlon_t last_latlon;
+static latlon_t last_point;
 static char  buf[BUFLEN];
 static char *buf_cur;
 static char *buf_max = buf + BUFLEN - 13; // each latlon could take up to 12 chars
 
 void polyline_begin () {
-    last_latlon.lat = 0.0;
-    last_latlon.lon = 0.0;
+    last_point.lat = 0.0;
+    last_point.lon = 0.0;
     buf_cur = buf;
     *buf_cur = '\0';
 }
@@ -54,15 +64,34 @@ void polyline_begin () {
 void polyline_point (latlon_t point) {
     // avoid buffer overflow
     if (buf_cur >= buf_max) return; 
-    latlon_t ll = point;
     // encoded polylines are variable-width. use coordinate differences to save space.
-    ll.lat  -= last_latlon.lat;
-    ll.lon  -= last_latlon.lon;
-    buf_cur += encode_latlon (ll, buf_cur);
-    last_latlon = point;
+    double dlat = (double) (point.lat) - (double) (last_point.lat);
+    double dlon = (double) (point.lon) - (double) (last_point.lon);
+//    buf_cur += encode_latlon (ll, buf_cur);
+    buf_cur += encode_double (dlat, buf_cur);
+    buf_cur += encode_double (dlon, buf_cur);
+    last_point = point;
 }
 
 char *polyline_result () {
     return buf;
+}
+
+/*
+  Produces a polyline connecting a subset of the stops in a route.
+  s0 and s1 are global stop indexes, not stop indexes within the route.
+*/
+void polyline_for_ride (tdata_t *tdata, uint32_t route_idx, uint32_t sidx0, uint32_t sidx1) {
+    route_t route = tdata->routes[route_idx];
+    uint32_t *stops = tdata_stops_for_route (*tdata, route_idx);
+    bool output = false;
+    polyline_begin();
+    for (int s = 0; s < route.n_stops; ++s) {
+        uint32_t sidx = stops[s];
+        if (!output && (sidx == sidx0)) output = true;
+        if (output) polyline_point (tdata->stop_coords[sidx]);
+        if (sidx == sidx1) break;
+    }
+    printf ("%s\n", polyline_result ());
 }
 
