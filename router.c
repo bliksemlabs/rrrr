@@ -7,6 +7,7 @@
 #include "bitset.h"
 #include "json.h"
 #include "parse.h"
+#include "polyline.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -892,7 +893,12 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s\n",
             leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, route_desc, s0_id, s1_id,
             (alert_msg ? alert_msg : ""));
-
+/* output polylines
+        if (leg->route != WALK) {
+            polyline_for_ride (tdata, leg->route, leg->s0, leg->s1);
+            b += sprintf (b, "%s\n", polyline_result());
+        }
+*/
         if (b > b_end) {
             printf ("buffer overflow\n");
             exit(2);
