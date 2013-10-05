@@ -1,5 +1,5 @@
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused -O0 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
