@@ -9,6 +9,9 @@
 #include "rrrr.h"
 #include "tdata.h"
 #include "router.h"
+#include "json.h"
+
+#define OUTPUT_LEN 64000
 
 int main(int argc, char **argv) {
 
@@ -41,7 +44,7 @@ int main(int argc, char **argv) {
 
     /* MAIN LOOP */
     uint32_t request_count = 0;
-    char result_buf[8000];
+    char result_buf[OUTPUT_LEN];
     while (true) {
         zmsg_t *msg = zmsg_recv (zsock);
         if (!msg) // interrupted (signal)
@@ -66,7 +69,12 @@ int main(int argc, char **argv) {
                 D router_request_dump (&router, &req);
                 router_route (&router, &req);
             }
-            uint32_t result_length = router_result_dump(&router, &req, result_buf, 8000);
+            // uint32_t result_length = router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
+            struct plan plan;
+            router_result_to_plan (&plan, &router, &req);
+            plan.req.time = preq->time; // restore the original request time
+            uint32_t result_length = render_plan_json (&plan, &(router.tdata), result_buf, OUTPUT_LEN);
+
             zframe_reset (frame, result_buf, result_length);
         } else {
             syslog (LOG_WARNING, "worker received reqeust with wrong length");

@@ -110,7 +110,7 @@ void tdata_close(tdata_t*);
 
 void tdata_dump(tdata_t*);
 
-uint32_t *tdata_stops_for_route(tdata_t, uint32_t route);
+uint32_t *tdata_stops_for_route(tdata_t, uint32_t route); // TODO TDATA PARAMETER IS NOT A POINTER!
 
 uint8_t *tdata_stop_attributes_for_route(tdata_t, uint32_t route);
 
@@ -126,6 +126,8 @@ char *tdata_route_id_for_index(tdata_t*, uint32_t route_index);
 char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
 
 char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
+
+char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index);
 
 char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index);
 

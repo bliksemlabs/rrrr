@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     opt = 0;
     while (opt >= 0) {
         opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:V:m:Q:x:y:z:w:A:g:G:T:v", long_options, NULL);
-        parse_request(&req, &tdata, opt, optarg);
+        parse_request(&req, &tdata, NULL, opt, optarg);
     }
     
     if (req.from == NONE || req.to == NONE) goto usage;

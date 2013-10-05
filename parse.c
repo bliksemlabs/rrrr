@@ -6,7 +6,7 @@
 #include <string.h>
 #include <time.h>
 
-void parse_request(router_request_t *req, tdata_t *tdata, int opt, char *optarg) {
+void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt, char *optarg) {
     const char delim[2] = ",";
     char *token;
 
@@ -55,6 +55,30 @@ void parse_request(router_request_t *req, tdata_t *tdata, int opt, char *optarg)
             token = strtok(NULL, delim);
         }
         break;
+    case 'l':
+    case 'L':
+        if (hg) {
+            token = strtok(optarg, delim);
+            if (token != NULL) {
+                double lat = strtod(token, NULL);
+                token = strtok(NULL, delim);
+                if (token != NULL) {
+                    double lon = strtod(token, NULL);
+                    HashGridResult result;
+                    coord_t qc;
+                    double radius_meters = 150;
+                    coord_from_lat_lon (&qc, lat, lon);
+                    HashGrid_query (hg, &result, qc, radius_meters); 
+                    uint32_t item = HashGridResult_closest (&result);
+                    if (opt == 'l') {
+                        req->from = item;
+                    } else {
+                        req->to = item;
+                    }
+                }
+            }
+        }
+    break;
     case 'm':
         req->mode = 0;
         token = strtok(optarg, delim);
@@ -168,15 +192,18 @@ void parse_request(router_request_t *req, tdata_t *tdata, int opt, char *optarg)
 }
 
 #define BUFLEN 255
-bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, char *qstring) {
+bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, HashGrid *hg, char *qstring) {
     if (qstring == NULL)
         qstring = "";
-    router_request_initialize(req);
     char key[BUFLEN];
     char *val;
     while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
         int opt = 0;
-        if (strcmp(key, "arrive") == 0) {
+        if (strcmp(key, "from-latlng") == 0) {
+            opt = 'l';    
+        } else if (strcmp(key, "to-latlng") == 0) {
+            opt = 'L';    
+        } else if (strcmp(key, "arrive") == 0) {
             opt = 'a';
         } else if (strcmp(key, "depart") == 0) {
             opt = 'd';
@@ -208,11 +235,14 @@ bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, char *qst
             opt = 'z';
         } else if (strcmp(key, "trip-attributes") == 0) {
             opt = 'A';
+        } else if (strcasecmp(key, "showIntermediateStops") == 0 && strcasecmp(val, "true") == 0) {
+            req->intermediatestops = true;
+            continue;
         } else {
             printf("unrecognized parameter: key=%s val=%s\n", key, val);
             continue;
         }
-        parse_request(req, tdata, opt, val);
+        parse_request(req, tdata, hg, opt, val);
     }
 
     if (req->time == UNREACHED) {

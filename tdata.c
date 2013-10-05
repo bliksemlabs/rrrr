@@ -58,6 +58,10 @@ inline char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
     return td->trip_ids + (td->trip_id_width * trip_index);
 }
 
+inline char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
+    return td->trip_ids + (td->trip_id_width * (td->routes[route_index].trip_ids_offset + trip_index));
+}
+
 inline char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index) {
     return td->operators + (td->operator_width * operator_index);
 }

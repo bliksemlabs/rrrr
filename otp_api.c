@@ -33,7 +33,10 @@
 #define HEADERS       CRLF
 #define END_HEADERS   CRLF CRLF
 #define TEXT_PLAIN    "Content-Type:text/plain"
-#define OK_TEXT_PLAIN "HTTP/1.0 200 OK" HEADERS TEXT_PLAIN CRLF
+#define APPLICATION_JSON    "Content-Type:application/json"
+#define ALLOW_ORIGIN    "Access-Control-Allow-Origin:*"
+#define ALLOW_HEADERS    "Access-Control-Allow-Headers:Requested-With,Content-Type"
+#define OK_TEXT_PLAIN "HTTP/1.0 200 OK" HEADERS APPLICATION_JSON CRLF ALLOW_ORIGIN CRLF ALLOW_HEADERS CRLF
 #define ERROR_404     "HTTP/1.0 404 Not Found" HEADERS TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
 
 #define BUFLEN     1024
@@ -63,6 +66,9 @@ uint32_t conn_remove_n = 0;
 
 // Needed for parsing the query string.
 tdata_t tdata;
+
+// For looking up stops by location
+HashGrid hash_grid;
 
 /* 
   Schedule a connection for removal from the poll_items / open connections. It will be removed at the end of the 
@@ -197,8 +203,8 @@ static void send_request (int nc, void *broker_socket) {
     qstring += 1; // skip question mark
     router_request_t req;
     router_request_initialize (&req);
-    router_request_randomize (&req);
-    parse_request_from_qstring(&req, &tdata, qstring);
+    router_request_randomize (&req); // This prevents segfaults because data is not initialised
+    parse_request_from_qstring(&req, &tdata, &hash_grid, qstring);
     zmsg_t *msg = zmsg_new ();
     zmsg_pushmem (msg, &req, sizeof(req));
     // Prefix the request with the socket descriptor for use upon reply. Worker ignores all frames but the last one.
@@ -230,7 +236,12 @@ void respond (int sd, char *response) {
 
 int main (void) {
     
-    tdata_load(RRRR_INPUT_FILE, &tdata);
+    tdata_load (RRRR_INPUT_FILE, &tdata);    
+    coord_t coords[tdata.n_stops];
+    for (uint32_t c = 0; c < tdata.n_stops; ++c) {
+        coord_from_latlon(coords + c, tdata.stop_coords + c);
+    }
+    HashGrid_init (&hash_grid, 100, 500.0, coords, tdata.n_stops);
     
     /* Set up TCP/IP stream socket to listed for incoming HTTP requests. */
     struct sockaddr_in server_in_addr = {
@@ -241,9 +252,32 @@ int main (void) {
     
     /* Listening socket is nonblocking: connections or bytes may not be waiting. */
     uint32_t server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    int one = 1; // Bind even when in TIME_WAIT due to a recently closed socket.
+    setsockopt (server_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+
     socklen_t in_addr_length = sizeof (server_in_addr);
     if (bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr)))
         die ("Failed to bind socket.\n");
+
+    /* Check if we are root */
+    if (getuid() == 0  || geteuid() == 0) {
+        struct passwd *pw;
+        uid_t puid = 65534; /* just use the traditional value */
+        gid_t pgid = 65534;
+
+        if ((pw = getpwnam("nobody"))) {
+            puid = pw->pw_uid;
+            pgid = pw->pw_gid;
+        }
+
+        /* Now we chroot to this directory, preventing any write access outside it */
+        chroot("/var/empty");
+
+        /* After we bind to the socket and chrooted, we drop priviledges to nobody */
+        setuid(puid);
+        setgid(pgid);
+    }
+
     listen(server_socket, QUEUE_CONN);
 
     /* Set up ØMQ socket to communicate with the RRRR broker. */

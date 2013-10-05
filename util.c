@@ -105,4 +105,3 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     */
     return rtime;
 }
-

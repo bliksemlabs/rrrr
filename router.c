@@ -7,6 +7,7 @@
 #include "bitset.h"
 #include "json.h"
 #include "parse.h"
+#include "polyline.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -100,6 +101,19 @@ transfer_duration (tdata_t *d, router_request_t *req, uint32_t stop_index_from, 
         if (d->transfer_target_stops[t] == stop_index_to) {
             uint32_t distance_meters = d->transfer_dist_meters[t] << 4; // actually in units of 16 meters
             return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
+        }
+    }
+    return UNREACHED;
+}
+
+uint32_t
+transfer_distance (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from == stop_index_to) return 0;
+    uint32_t t  = d->stops[stop_index_from    ].transfers_offset;
+    uint32_t tN = d->stops[stop_index_from + 1].transfers_offset;        
+    for ( ; t < tN ; ++t) {
+        if (d->transfer_target_stops[t] == stop_index_to) {
+            return d->transfer_dist_meters[t] << 4; // actually in units of 16 meters
         }
     }
     return UNREACHED;
@@ -739,7 +753,7 @@ static bool check_plan_invariants (struct plan *plan) {
     return fail;
 }
 
-static void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
+void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata.n_stops;
     /* Router states are a 2D array of stride n_stops */
     router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states;
@@ -894,7 +908,12 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
         b += sprintf (b, "%s %5d %3d %5d %5d %s %s %+3.1f ;%s;%s;%s;%s;%s;%s\n",
             leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, delay_min, short_name, headsign, productcategory, s0_id, s1_id,
             (alert_msg ? alert_msg : ""));
-
+/* output polylines
+        if (leg->route != WALK) {
+            polyline_for_ride (tdata, leg->route, leg->s0, leg->s1);
+            b += sprintf (b, "%s\n", polyline_result());
+        }
+*/
         if (b > b_end) {
             printf ("buffer overflow\n");
             exit(2);
@@ -967,13 +986,14 @@ void router_request_initialize(router_request_t *req) {
     req->banned_stop_hard = NONE;
     req->start_trip_route = NONE;
     req->start_trip_trip  = NONE;
+    req->intermediatestops = false;
 }
 
 /* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
 // if we set the date mask in the router itself we wouldn't need the tdata here.
 void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {
-    char etime[32];
-    strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
+    // char etime[32];
+    // strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
     // printf ("epoch time: %s [%ld]\n", etime, epochtime);
     // router_request_initialize (req);
     struct tm origin_tm;
@@ -1014,6 +1034,7 @@ void router_request_randomize(router_request_t *req) {
     req->banned_trip_route = NONE;
     req->banned_trip_offset = NONE;
     req->banned_stop_hard = NONE;
+    req->intermediatestops = false;
 }
 
 void router_state_dump (router_state_t *state) {
@@ -1109,3 +1130,24 @@ void router_request_dump(router_t *router, router_request_t *req) {
     }
 }
 
+time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+    while (day_mask >>= 1) cal_day++;
+
+    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
+    localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
+
+time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+    while (day_mask >>= 1) cal_day++;
+
+    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) + RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
+    localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
