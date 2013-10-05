@@ -1,5 +1,9 @@
 /* polyline.c */
-/* https://developers.google.com/maps/documentation/utilities/polylinealgorithm */
+
+/* 
+  https://developers.google.com/maps/documentation/utilities/polylinealgorithm 
+  https://developers.google.com/maps/documentation/utilities/polylineutility 
+*/
 
 #include "polyline.h"
 #include "geometry.h"
