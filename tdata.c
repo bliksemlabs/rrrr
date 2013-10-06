@@ -243,7 +243,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->transfer_target_stops = (uint32_t *) (b + header->loc_transfer_target_stops);
     td->transfer_dist_meters = (uint8_t *) (b + header->loc_transfer_dist_meters);
     //maybe replace with pointers because there's a lot of wasted space?
-    td->stop_nameidx = ((uint32_t *) (b + header->loc_stop_nameidx));
+    td->stop_nameidx = (uint32_t *) (b + header->loc_stop_nameidx);
     td->stop_name_width = *((uint32_t *) (b + header->loc_stop_names));
     td->stop_names = (char*) (b + header->loc_stop_names + sizeof(uint32_t));
     td->agency_id_width = *((uint32_t *) (b + header->loc_agency_ids));
