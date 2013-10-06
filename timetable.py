@@ -202,8 +202,9 @@ stopnames = set([])
 # Write timetable segment 0 : stop coordinates
 # (loop over all stop IDs in alphabetical order)
 loc_stop_coords = out.tell()
-nameidx_for_name = {}
-nameidx_for_idx = []
+nameloc_for_name = {}
+nameloc_for_idx = []
+namesize = 0
 platformcode_for_idx = []
 for sid, name, lat, lon, platform_code in db.stops() :
     platform_code = platform_code or ''
@@ -211,18 +212,19 @@ for sid, name, lat, lon, platform_code in db.stops() :
     stop_id_for_idx.append(sid)
     write2floats(lat, lon)
     platformcode_for_idx.append(platform_code)
-    if name in nameidx_for_name:
-        nameidx = nameidx_for_name[name]
+    if name in nameloc_for_name:
+        nameloc = nameloc_for_name[name]
     else:
-        nameidx = len(nameidx_for_name)
-        nameidx_for_name[name] = nameidx
-    nameidx_for_idx.append(nameidx)
+        nameloc = namesize
+        nameloc_for_name[name] = nameloc
+        namesize += 1 + len(name)
+    nameloc_for_idx.append(nameloc)
     if name not in stopnames:
         stopnames.add(name)
         cur.execute('INSERT INTO stops_fts VALUES (?,?)',(idx,name))
     idx += 1
 nstops = idx
-assert len(nameidx_for_idx) == idx
+assert len(nameloc_for_idx) == idx
 conn.commit()
 conn.close()
 del stopnames
@@ -583,19 +585,18 @@ loc_platformcodes = write_string_table(platformcode_for_idx)
 
 print "writing out stop names to string table"
 write_text_comment("STOP NAME")
-stop_names = sorted(nameidx_for_name.iteritems(), key=operator.itemgetter(1))
-location_for_nameidx = {}
+stop_names = sorted(nameloc_for_name.iteritems(), key=operator.itemgetter(1))
 loc_stop_names = tell()
-for stop_name,nameidx in stop_names:
-    location_for_nameidx[nameidx] = out.tell() - loc_stop_names
+for stop_name,nameloc in stop_names:
+    assert nameloc == out.tell() - loc_stop_names
     out.write(stop_name+'\0')    
 out.write('\0')    
 
 print "writing out locations for stopnames"
 write_text_comment("STOP NAME LOCATIONS")
 loc_stop_nameidx = tell()
-for nameidx in nameidx_for_idx:
-    writeint(location_for_nameidx[nameidx])
+for stop_name,nameloc in stop_names:
+    writeint(nameloc)
 
 print "writing out agencies to string table"
 agencyIds = []
