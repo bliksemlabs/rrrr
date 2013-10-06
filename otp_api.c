@@ -151,7 +151,7 @@ static bool read_input (uint32_t nc) {
     char *c = b->buf + b->size; // pointer to the first available character in the buffer
     int remaining = BUFLEN - b->size;
     size_t received = recv (conn_sd, c, remaining, 0);
-    printf ("connection %02d [fd=%02d] recevied %ld bytes.\n", nc, conn_sd, received);
+    printf ("connection %02d [fd=%02d] recevied %zd bytes.\n", nc, conn_sd, received);
     // If recv returns zero, that means the connection has been closed.
     // Don't remove it immediately, since we are in the middle of a poll loop.
     if (received == 0) {
@@ -224,7 +224,7 @@ static void send_request (int nc, void *broker_socket) {
 
 void respond (int sd, char *response) {
     char buf[512];
-    sprintf (buf, OK_TEXT_PLAIN "Content-Length: %lu" CRLF "Connection: close" END_HEADERS, strlen (response));
+    sprintf (buf, OK_TEXT_PLAIN "Content-Length: %zu" CRLF "Connection: close" END_HEADERS, strlen (response));
     // MSG_NOSIGNAL: Do not generate SIGPIPE if client has closed connection.
     // Send will return EPIPE if client already closed connection.
     send (sd, buf, strlen(buf), MSG_NOSIGNAL); 

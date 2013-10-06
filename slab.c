@@ -43,7 +43,7 @@ struct slab *slab_new () {
     cur = last->begin;
     end = cur + slab_size;
     total_size += slab_size;
-    printf ("allocated new slab at %p. total allocated is now %ld.\n", last->begin, total_size);    
+    printf ("allocated new slab at %p. total allocated is now %zd.\n", last->begin, total_size);    
     return last;
 }
 
