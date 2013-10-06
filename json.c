@@ -159,7 +159,7 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
             json_kv("id", stop_id);
         json_end_obj();
         json_kv("stopCode", NULL); /* eventually fill it with UserStopCode */
-        json_kv("platformCode", strcmp(platformcode,"") ? NULL : platformcode);
+        json_kv("platformCode", platformcode);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
 	if (arrival == UNREACHED)
