@@ -36,7 +36,8 @@ struct tdata_header {
     uint32_t loc_transfer_dist_meters; 
     uint32_t loc_trip_active; 
     uint32_t loc_route_active; 
-    uint32_t loc_stop_nameidx; 
+    uint32_t loc_stop_nameidx;
+    uint32_t loc_platformcodes;
     uint32_t loc_stop_names; 
     uint32_t loc_agency_ids;
     uint32_t loc_agency_names;
@@ -97,6 +98,17 @@ inline char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
         return "ONBOARD";
     default :
         return td->stop_names + (td->stop_name_width * td->stop_nameidx[stop_index]);
+    }
+}
+
+inline char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index) {
+    switch (stop_index) {
+    case NONE :
+        return NULL;
+    case ONBOARD :
+        return NULL;
+    default :
+        return td->platformcodes + (td->platformcode_width * stop_index);
     }
 }
 
@@ -244,6 +256,8 @@ void tdata_load(char *filename, tdata_t *td) {
     td->transfer_dist_meters = (uint8_t *) (b + header->loc_transfer_dist_meters);
     //maybe replace with pointers because there's a lot of wasted space?
     td->stop_nameidx = (uint32_t *) (b + header->loc_stop_nameidx);
+    td->platformcode_width = *((uint32_t *) (b + header->loc_platformcodes));
+    td->platformcodes = (char*) (b + header->loc_platformcodes + sizeof(uint32_t));
     td->stop_name_width = *((uint32_t *) (b + header->loc_stop_names));
     td->stop_names = (char*) (b + header->loc_stop_names + sizeof(uint32_t));
     td->agency_id_width = *((uint32_t *) (b + header->loc_agency_ids));

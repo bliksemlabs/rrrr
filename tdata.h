@@ -83,6 +83,8 @@ struct tdata {
     // optional data -- NULL pointer means it is not available
     latlon_t *stop_coords;
     uint32_t *stop_nameidx;
+    uint32_t platformcode_width;
+    char *platformcodes;
     uint32_t stop_name_width;
     char *stop_names;
     uint32_t agency_id_width;
@@ -147,6 +149,8 @@ char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_inde
 char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
 
 char *tdata_stop_name_for_index(tdata_t*, uint32_t stop_index);
+
+char *tdata_platformcode_for_index(tdata_t*, uint32_t stop_index);
 
 uint32_t tdata_stopidx_by_stop_name(tdata_t*, char* stop_name, uint32_t start_index);
 

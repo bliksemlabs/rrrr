@@ -131,7 +131,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ28I') 
+struct_header = Struct('8sQ29I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -157,6 +157,7 @@ def write_header () :
         loc_trip_active,
         loc_route_active,
         loc_stop_nameidx,
+        loc_platformcodes,
         loc_stop_names,
         loc_agency_ids,
         loc_agency_names,
@@ -202,11 +203,14 @@ stopnames = set([])
 # (loop over all stop IDs in alphabetical order)
 loc_stop_coords = out.tell()
 nameidx_for_name = {}
-nameidx_for_idx = [] 
-for sid, name, lat, lon in db.stops() :
+nameidx_for_idx = []
+platformcode_for_idx = []
+for sid, name, lat, lon, platform_code in db.stops() :
+    platform_code = platform_code or ''
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
     write2floats(lat, lon)
+    platformcode_for_idx.append(platform_code)
     if name in nameidx_for_name:
         nameidx = nameidx_for_name[name]
     else:
@@ -292,13 +296,17 @@ idx_for_productcategory = {}
 for route in route_for_idx :
     exemplar_trip = route.trip_ids[0]
     #  executemany
+    productcategory = ''
     rid, headsign, agency, short_name, long_name, mode = db.tripinfo(exemplar_trip)
     if (headsign is None) :
         headsign = ''
-    productcategory = ''
     route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
 
+    agency = agency or ''
+    headsign = headsign or ''
+    short_name = short_name or ''
+    productcategory = productcategory or ''
     if agency in idx_for_agency:
         agency_offset = idx_for_agency[agency]
     else:
@@ -607,6 +615,10 @@ write_text_comment("STOP NAME IDX")
 loc_stop_nameidx = tell()
 for nameidx in nameidx_for_idx:
     writeint(nameidx)
+
+print "writing out platformcodes for stops"
+write_text_comment("PLATFORM CODES")
+loc_platformcodes = write_string_table(platformcode_for_idx)
 
 print "writing out stop names to string table"
 write_text_comment("STOP NAME")

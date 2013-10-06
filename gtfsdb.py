@@ -455,7 +455,7 @@ FROM transfers WHERE to_stop_id = ?) as x"""
 
     def stops(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops ORDER BY stop_id" )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,platform_code FROM stops ORDER BY stop_id" )
         ret = list(c)
         c.close()
         return ret

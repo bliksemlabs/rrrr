@@ -149,6 +149,7 @@ static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_
 
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
     char *stop_name = tdata_stop_name_for_index(tdata, stop_index);
+    char *platformcode = tdata_platformcode_for_index(tdata, stop_index);
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
@@ -158,7 +159,7 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
             json_kv("id", stop_id);
         json_end_obj();
         json_kv("stopCode", NULL); /* eventually fill it with UserStopCode */
-        json_kv("platformCode", NULL);
+        json_kv("platformCode", strcmp(platformcode,"") ? NULL : platformcode);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
 	if (arrival == UNREACHED)
