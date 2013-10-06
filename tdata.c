@@ -331,7 +331,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
         fprintf (stderr, "error unpacking incoming gtfs-rt message\n");
         return;
     }
-    printf("Received feed message with %lu entities.\n", msg->n_entity);
+    printf("Received feed message with %zu entities.\n", msg->n_entity);
     for (int e = 0; e < msg->n_entity; ++e) {
         TransitRealtime__FeedEntity *entity = msg->entity[e];
         if (entity == NULL) goto cleanup;
@@ -398,7 +398,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *routeid_index, RadixT
         return;
     }
 
-    printf("Received feed message with %lu entities.\n", msg->n_entity);
+    printf("Received feed message with %zu entities.\n", msg->n_entity);
     for (int e = 0; e < msg->n_entity; ++e) {
         TransitRealtime__FeedEntity *entity = msg->entity[e];
         if (entity == NULL) goto cleanup;
