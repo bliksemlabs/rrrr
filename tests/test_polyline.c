@@ -7,11 +7,35 @@ struct latlon_double {
     double lon;
 };
 
-static inline void encode (struct latlon_double *lls, int n) {
+static void encode (struct latlon_double *lls, int n) {
     polyline_begin ();
     for (int i = 0; i < n; ++i) {
         polyline_point (lls[i].lat, lls[i].lon);
     }
+}
+
+static bool str_endswith (char *str, char *end) {
+    if (str == NULL || end == NULL) return false;
+    size_t str_size = strlen(str);
+    size_t end_size = strlen(end);
+    if (str_size < end_size) return false;
+    char *s = str + str_size;
+    char *e = end + end_size;
+    for (int i = 0; i < end_size; ++i) {
+        if (*(e--) != *(s--)) return false;
+    }
+    return true;
+}
+
+static bool str_startswith (char *str, char *pre) {
+    if (str == NULL || pre == NULL) return false;
+    size_t str_size = strlen(str);
+    size_t pre_size = strlen(pre);
+    if (str_size < pre_size) return false;
+    for (int i = 0; i < pre_size; ++i) {
+        if (str[i] != pre[i]) return false;
+    }
+    return true;
 }
 
 START_TEST (test_encode_one) {
@@ -27,6 +51,13 @@ START_TEST (test_encode_latlon) {
     int n = encode_latlon (ll, buf);
     //ck_assert_int_eq (n, ?);
     //ck_assert_str_eq ("?????????", buf);
+} END_TEST
+
+START_TEST (test_encode_zeros) {
+    struct latlon_double lls[4] = {{0, 0}, { 40.700, -120.950}, { 40.700, -120.950}, { 40.700, -120.950}};
+    encode (lls, 4);
+    ck_assert (str_endswith(polyline_result(), "????"));
+    ck_assert (str_startswith(polyline_result(), "??"));
 } END_TEST
 
 START_TEST (test_encode_polyline) {
@@ -67,6 +98,7 @@ START_TEST (test_glineenc) {
 Suite *make_polyline_suite (void) {
     Suite *s = suite_create ("Polyline");
     TCase *tc_core = tcase_create ("Core");
+    tcase_add_test  (tc_core, test_encode_zeros);
     tcase_add_test  (tc_core, test_encode_one);
     tcase_add_test  (tc_core, test_encode_latlon);
     tcase_add_test  (tc_core, test_encode_polyline);
