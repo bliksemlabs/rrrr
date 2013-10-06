@@ -145,9 +145,7 @@ int main(int argc, char **argv) {
 
     /* Output only final result in non-verbose mode */
     if (!verbose) {
-            struct plan plan;
-            router_result_to_plan (&plan, &router, &req);
-            uint32_t result_length = render_plan_json (&plan, &(router.tdata), result_buf, 32000);
+        router_result_dump(&router, &req, result_buf, 8000);
         printf("%s", result_buf);
     }    
     
