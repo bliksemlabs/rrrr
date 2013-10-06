@@ -82,11 +82,10 @@ struct tdata {
     uint8_t  *transfer_dist_meters;
     // optional data -- NULL pointer means it is not available
     latlon_t *stop_coords;
-    uint32_t *stop_nameidx;
     uint32_t platformcode_width;
     char *platformcodes;
-    uint32_t stop_name_width;
     char *stop_names;
+    uint32_t *stop_nameidx;
     uint32_t agency_id_width;
     char *agency_ids;
     uint32_t agency_name_width;

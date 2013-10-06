@@ -156,9 +156,9 @@ def write_header () :
         loc_transfer_dist_meters,
         loc_trip_active,
         loc_route_active,
-        loc_stop_nameidx,
         loc_platformcodes,
         loc_stop_names,
+        loc_stop_nameidx,
         loc_agency_ids,
         loc_agency_names,
         loc_agency_urls,
@@ -577,20 +577,25 @@ for bitfield in route_mask_for_idx :
     writeint(bitfield)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 
-print "writing out sorted nameidx's for stops"
-write_text_comment("STOP NAME IDX")
-loc_stop_nameidx = tell()
-for nameidx in nameidx_for_idx:
-    writeint(nameidx)
-
 print "writing out platformcodes for stops"
 write_text_comment("PLATFORM CODES")
 loc_platformcodes = write_string_table(platformcode_for_idx)
 
 print "writing out stop names to string table"
 write_text_comment("STOP NAME")
-stop_names = [stop_name for stop_name,idx in sorted(nameidx_for_name.iteritems(), key=operator.itemgetter(1))]
-loc_stop_names = write_string_table(stop_names)
+stop_names = sorted(nameidx_for_name.iteritems(), key=operator.itemgetter(1))
+location_for_nameidx = {}
+loc_stop_names = tell()
+for stop_name,nameidx in stop_names:
+    location_for_nameidx[nameidx] = out.tell() - loc_stop_names
+    out.write(stop_name+'\0')    
+out.write('\0')    
+
+print "writing out locations for stopnames"
+write_text_comment("STOP NAME LOCATIONS")
+loc_stop_nameidx = tell()
+for nameidx in nameidx_for_idx:
+    writeint(location_for_nameidx[nameidx])
 
 print "writing out agencies to string table"
 agencyIds = []
