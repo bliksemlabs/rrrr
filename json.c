@@ -47,7 +47,6 @@ static void string (const char *s) {
         case '\r' :
         case '\t' :
         case '\v' :
-        case '\'' :
         case '"' :
             check('\\');
         default:
