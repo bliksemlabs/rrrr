@@ -12,6 +12,7 @@
 #include "tdata.h"
 #include "router.h"
 #include "parse.h"
+#include "json.h"
 
 // consider changing to --arrive TIME or --depart TIME --date DATE
 // also look up stop ids
@@ -144,7 +145,9 @@ int main(int argc, char **argv) {
 
     /* Output only final result in non-verbose mode */
     if (!verbose) {
-        router_result_dump(&router, &req, result_buf, 8000);
+            struct plan plan;
+            router_result_to_plan (&plan, &router, &req);
+            uint32_t result_length = render_plan_json (&plan, &(router.tdata), result_buf, 32000);
         printf("%s", result_buf);
     }    
     

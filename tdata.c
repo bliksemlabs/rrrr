@@ -36,7 +36,8 @@ struct tdata_header {
     uint32_t loc_transfer_dist_meters; 
     uint32_t loc_trip_active; 
     uint32_t loc_route_active; 
-    uint32_t loc_stop_desc; 
+    uint32_t loc_stop_nameidx; 
+    uint32_t loc_stop_names; 
     uint32_t loc_agency_ids;
     uint32_t loc_agency_names;
     uint32_t loc_agency_urls;
@@ -88,20 +89,20 @@ inline char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcatego
     return td->productcategories + (td->productcategory_width * productcategory_index);
 }
 
-inline char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
+inline char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :
         return "NONE";
     case ONBOARD :
         return "ONBOARD";
     default :
-        return td->stop_desc + (td->stop_desc_width * stop_index);
+        return td->stop_names + (td->stop_name_width * td->stop_nameidx[stop_index]);
     }
 }
 
-inline uint32_t tdata_stopidx_by_stop_desc(tdata_t *td, char* stop_desc, uint32_t start_index) {
+inline uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_desc, uint32_t start_index) {
     for (uint32_t stop_index = start_index; stop_index < td->n_stops; stop_index++) {
-        if (strcasestr(td->stop_desc + (td->stop_desc_width * stop_index), stop_desc)) {
+        if (strcasestr(td->stop_names + (td->stop_name_width * td->stop_nameidx[stop_index]), stop_desc)) {
             return stop_index;
         }
     }
@@ -242,8 +243,9 @@ void tdata_load(char *filename, tdata_t *td) {
     td->transfer_target_stops = (uint32_t *) (b + header->loc_transfer_target_stops);
     td->transfer_dist_meters = (uint8_t *) (b + header->loc_transfer_dist_meters);
     //maybe replace with pointers because there's a lot of wasted space?
-    td->stop_desc_width = *((uint32_t *) (b + header->loc_stop_desc));
-    td->stop_desc = (char*) (b + header->loc_stop_desc + sizeof(uint32_t));
+    td->stop_nameidx = ((uint32_t *) (b + header->loc_stop_nameidx));
+    td->stop_name_width = *((uint32_t *) (b + header->loc_stop_names));
+    td->stop_names = (char*) (b + header->loc_stop_names + sizeof(uint32_t));
     td->agency_id_width = *((uint32_t *) (b + header->loc_agency_ids));
     td->agency_ids = (char*) (b + header->loc_agency_ids + sizeof(uint32_t));
     td->agency_name_width = *((uint32_t *) (b + header->loc_agency_names));
@@ -324,7 +326,7 @@ void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
         stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_idx, ti);
         printf("%s ", tdata_trip_id_for_index(td, route.trip_ids_offset + ti));
         for (uint32_t si = 0; si < route.n_stops; ++si) {
-            char *stop_id = tdata_stop_desc_for_index (td, stops[si]);
+            char *stop_id = tdata_stop_name_for_index (td, stops[si]);
             printf("%4d %35s [%06d] : %s", si, stop_id, stops[si], timetext(times[0][si].departure + td->trips[route.trip_ids_offset + ti].begin_time + RTIME_ONE_DAY));
          }
          printf("\n");
@@ -367,7 +369,7 @@ void tdata_dump(tdata_t *td) {
     }
     printf("\nSTOPIDS\n");
     for (uint32_t i = 0; i < td->n_stops; i++) {
-        printf("stop %03d has id %s \n", i, tdata_stop_desc_for_index(td, i));
+        printf("stop %03d has id %s \n", i, tdata_stop_name_for_index(td, i));
     }
 #if 0
     printf("\nROUTEIDS, TRIPIDS\n");

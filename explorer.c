@@ -45,18 +45,18 @@ int main(int argc, char **argv) {
             if (stop_index > tdata.n_stops) {
                 fprintf(stderr, "Only %d stops in %s\n", tdata.n_stops, argv[1]);
             } else {
-                printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_desc_for_index(&tdata, stop_index));
+                printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_name_for_index(&tdata, stop_index));
             }
         } else if (strcmp(argv[2], "STOPID") == 0) {
             uint32_t stop_index = tdata_stopidx_by_stop_id(&tdata, argv[3], 0);
             if (stop_index <= tdata.n_stops) {
-                printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_desc_for_index(&tdata, stop_index));
+                printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_name_for_index(&tdata, stop_index));
             }
         } else if (strcmp(argv[2], "STOPNAME") == 0) {
-            uint32_t stop_index = tdata_stopidx_by_stop_desc(&tdata, argv[3], 0);
+            uint32_t stop_index = tdata_stopidx_by_stop_name(&tdata, argv[3], 0);
             while (stop_index != NONE || stop_index < tdata.n_stops) {
-                printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_desc_for_index(&tdata, stop_index));
-                stop_index = tdata_stopidx_by_stop_desc(&tdata, argv[3], stop_index + 1);
+                printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_name_for_index(&tdata, stop_index));
+                stop_index = tdata_stopidx_by_stop_name(&tdata, argv[3], stop_index + 1);
             }
         }
     }

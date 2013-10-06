@@ -148,11 +148,11 @@ static void json_end_arr() {
 static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date) * 1000L; }
 
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
-    char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
+    char *stop_name = tdata_stop_name_for_index(tdata, stop_index);
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
-        json_kv("name", stop_desc);
+        json_kv("name", stop_name);
         json_key_obj("stopId");
             json_kv("agencyId", "NL");
             json_kv("id", stop_id);
@@ -395,8 +395,8 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
             json_kv("time", timetext(plan->req.time));
             json_kb("arriveBy", plan->req.arrive_by);
             json_kf("maxWalkDistance", 2000.0);
-            json_kv("fromPlace", tdata_stop_desc_for_index(tdata, plan->req.from));
-            json_kv("toPlace",   tdata_stop_desc_for_index(tdata, plan->req.to));
+            json_kv("fromPlace", tdata_stop_name_for_index(tdata, plan->req.from));
+            json_kv("toPlace",   tdata_stop_name_for_index(tdata, plan->req.to));
             json_kv("date", date);
             if (plan->req.mode == m_all) {
                 json_kv("mode", "TRANSIT,WALK");

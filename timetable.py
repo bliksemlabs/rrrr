@@ -131,7 +131,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ27I') 
+struct_header = Struct('8sQ28I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -156,7 +156,8 @@ def write_header () :
         loc_transfer_dist_meters,
         loc_trip_active,
         loc_route_active,
-        loc_stop_desc,
+        loc_stop_nameidx,
+        loc_stop_names,
         loc_agency_ids,
         loc_agency_names,
         loc_agency_urls,
@@ -177,7 +178,6 @@ out.seek(struct_header.size)
 print "building stop indexes and coordinate list"
 # establish a mapping between sorted stop ids and integer indexes (allowing binary search later)
 stop_id_for_idx = []
-stop_name_for_idx = []
 idx_for_stop_id = {}
 idx = 0
 query = """
@@ -200,17 +200,25 @@ CREATE VIRTUAL TABLE stops_fts USING FTS4 (
 stopnames = set([])
 # Write timetable segment 0 : stop coordinates
 # (loop over all stop IDs in alphabetical order)
-loc_stop_coords = out.tell() 
+loc_stop_coords = out.tell()
+nameidx_for_name = {}
+nameidx_for_idx = [] 
 for sid, name, lat, lon in db.stops() :
     idx_for_stop_id[sid] = idx
     stop_id_for_idx.append(sid)
-    stop_name_for_idx.append(name)
     write2floats(lat, lon)
+    if name in nameidx_for_name:
+        nameidx = nameidx_for_name[name]
+    else:
+        nameidx = len(nameidx_for_name)
+        nameidx_for_name[name] = nameidx
+    nameidx_for_idx.append(nameidx)
     if name not in stopnames:
         stopnames.add(name)
         cur.execute('INSERT INTO stops_fts VALUES (?,?)',(idx,name))
     idx += 1
 nstops = idx
+assert len(nameidx_for_idx) == idx
 conn.commit()
 conn.close()
 del stopnames
@@ -594,9 +602,16 @@ write_text_comment("PRODUCT CATEGORIES")
 sorted_productcategories = sorted(idx_for_productcategory.iteritems(), key=operator.itemgetter(1))
 loc_productcategories = write_string_table([productcategory for productcategory,idx in sorted_productcategories])
 
-print "writing out sorted stop descriptions to string table"
-write_text_comment("STOP DESC")
-loc_stop_desc = write_string_table(stop_name_for_idx)
+print "writing out sorted nameidx's for stops"
+write_text_comment("STOP NAME IDX")
+loc_stop_nameidx = tell()
+for nameidx in nameidx_for_idx:
+    writeint(nameidx)
+
+print "writing out stop names to string table"
+write_text_comment("STOP NAME")
+stop_names = [stop_name for stop_name,idx in sorted(nameidx_for_name.iteritems(), key=operator.itemgetter(1))]
+loc_stop_names = write_string_table(stop_names)
 
 # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
 print "writing route ids to string table"
