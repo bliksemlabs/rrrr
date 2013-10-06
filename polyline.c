@@ -1,8 +1,23 @@
-/* polyline.c */
+/* polyline.c : encode chains of latitude/longitude coordinates as printable ASCII text. */
 
 /* 
   https://developers.google.com/maps/documentation/utilities/polylinealgorithm 
-  https://developers.google.com/maps/documentation/utilities/polylineutility 
+  This official polyline description is a very imperative, algorithmic one and is missing some details. 
+  Here's my version:
+  Encoded polylines are variable-length base-64 encoding of latitude and longitude coordinates. Each coordinate is 
+  encoded separately using exactly the same method, in pairs (lat, lon). The first pair in a polyline is absolute, 
+  but subsequent ones are relative. Saving deltas between points makes the overall polyline much shorter since we use 
+  only as many bytes as necessary for each point. The latitude and longitude are first converted to integers: from 
+  floating point to fixed-point (5 decimal places). The twos-complement representation of the number is left-shifted by 
+  one and inverted (bitwise NOT) if it is negative. This has the effect of making the lowest-order bit a sign bit and 
+  makes the number of significant bits proportionate to the absolute value of the number. Starting from the low-order 
+  bits we mask off chunks of 5 bits, giving a range of 0-31 for each chunk. Chunks of zeros in the high order bits are 
+  dropped, with the sixth bit (0x20) used to indicate whether additional chunks follow. These six-bit chunks have a 
+  range of 0-63, and are shifted by 63 into the printable character block at 63-126, with characters from the second 
+  half at 95-126 making up the body of an encoded number and characters from the first half at 63-94 (for which bit 
+  6 is 0) terminating an encoded number.
+  
+  Results can be checked with: https://developers.google.com/maps/documentation/utilities/polylineutility 
 */
 
 #include "polyline.h"
@@ -12,8 +27,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-
-// this does not seem to work at 0, not that it matters
 int encode_double (double c, char *buf) {
     char *b = buf;
     uint32_t binary = 1e5 * c;
