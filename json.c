@@ -291,12 +291,10 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     ]
 */
         json_key_obj("legGeometry");
-        if (leg->route != WALK) {
-            polyline_for_ride (tdata, leg->route, leg->s0, leg->s1);
-            json_kv("points", polyline_result());
-            json_kv("levels", NULL);
-            json_kd("length", polyline_length());
-        }
+        polyline_for_leg (tdata, leg);
+        json_kv("points", polyline_result());
+        json_kv("levels", NULL);
+        json_kd("length", polyline_length());
         json_end_obj();
         json_key_arr("intermediateStops");
         if (req->intermediatestops && leg->route != WALK) { 
