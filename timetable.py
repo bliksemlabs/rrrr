@@ -591,14 +591,14 @@ stop_names = sorted(nameloc_for_name.iteritems(), key=operator.itemgetter(1))
 loc_stop_names = tell()
 for stop_name,nameloc in stop_names:
     assert nameloc == out.tell() - loc_stop_names
-    out.write(stop_name+'\0')    
-out.write('\0')    
+    out.write(stop_name+'\0')  
 
 print "writing out locations for stopnames"
 write_text_comment("STOP NAME LOCATIONS")
 loc_stop_nameidx = tell()
-for stop_name,nameloc in stop_names:
+for nameloc in nameloc_for_idx:
     writeint(nameloc)
+writeint(0)
 
 print "writing out agencies to string table"
 agencyIds = []
