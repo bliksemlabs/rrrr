@@ -3,6 +3,7 @@
 
 #include "geometry.h"
 #include "tdata.h"
+#include "router.h"
 
 int encode_double (double c, char *buf);
 
@@ -10,11 +11,12 @@ int encode_latlon (latlon_t ll, char *buf);
 
 void polyline_begin ();
 
-void polyline_point (latlon_t point);
+void polyline_point (double lat, double lon);
+
+void polyline_latlon (latlon_t ll);
 
 char *polyline_result (); // this could just be a global variable
 
-uint32_t polyline_length (); // this could just be a global variable
+uint32_t polyline_length (); // number of points in the polyline
 
-void polyline_for_ride (tdata_t *tdata, uint32_t route_idx, uint32_t sidx0, uint32_t sidx1);
-
+void polyline_for_leg (tdata_t *tdata, struct leg *leg);

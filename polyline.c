@@ -13,28 +13,35 @@
 #include <stdio.h>
 
 
-// TODO width of 'binary' and precision of dlon, dlat
-
+// this does not seem to work at 0, not that it matters
 int encode_double (double c, char *buf) {
     char *b = buf;
-    int64_t binary = (1e5 * c);
-    //printf ("%d \n", binary);
+    uint32_t binary = 1e5 * c;
+    // printf ("%+3.5f %+8d ", c, binary);
+    // use the lowest order bit as a sign bit
     binary <<= 1;
+    // printf ("%+8d ", binary);
     if (c < 0) binary = ~binary;
+    // printf ("%+8d ", binary);
     // 31 == (2^5 - 1) == 00000 00000 00000 00000 00000 11111
     uint32_t mask = 31;
-    uint8_t chunks[6];
+    char chunks[6];
+    int last_chunk = -1;
     for (int i = 0; i < 6; ++i) {
         chunks[i] = (binary & mask) >> (5 * i);
+        // printf ("%3d ", chunks[i]);
+        // track the last nonzero chunk. there may be zeros between positive chunks (rendered as '_' == 95)
+        if (chunks[i] != 0) last_chunk = i; 
         mask <<= 5;
     }
-    for (int i = 0; i < 6; ++i) {
-        if (i != 5 && chunks[i+1] != 0) chunks[i] |= 0x20;
-        chunks[i] += 63;
-        *(b++) = (char) chunks[i];            
-        if (chunks[i+1] == 0) break;
+    for (int i = 0; i <= last_chunk; ++i) {
+        char out = chunks[i];
+        if (i != last_chunk) out |= 0x20; // high bit (range 32-63) indicates another chunk follows
+        out += 63; // move into alphabetic range 63-126, with 95-126 indicating another chunk follows
+        *(b++) = out;
     }
     *b = '\0';
+    // printf ("%s \n", buf);
     return (b - buf);
 }
 
@@ -49,31 +56,37 @@ int encode_latlon (latlon_t ll, char *buf) {
 /* Internal buffer for building up polylines point by point. */
 
 #define BUFLEN 1024
-static latlon_t last_point;
+static double last_lat;
+static double last_lon;
 static char  buf[BUFLEN];
 static char *buf_cur;
 static char *buf_max = buf + BUFLEN - 13; // each latlon could take up to 12 chars
-static uint32_t length;
+static uint32_t n_points;
 
 void polyline_begin () {
-    last_point.lat = 0.0;
-    last_point.lon = 0.0;
+    last_lat = 0.0;
+    last_lon = 0.0;
     buf_cur = buf;
     *buf_cur = '\0';
-    length = 0;
+    n_points = 0;
 }
 
-void polyline_point (latlon_t point) {
-    // avoid buffer overflow
+/* Allows preserving precision by not using float-based latlon_t. */
+void polyline_point (double lat, double lon) {
+    // check for potential buffer overflow
     if (buf_cur >= buf_max) return; 
-    // encoded polylines are variable-width. use coordinate differences to save space.
-    double dlat = (double) (point.lat) - (double) (last_point.lat);
-    double dlon = (double) (point.lon) - (double) (last_point.lon);
-//    buf_cur += encode_latlon (ll, buf_cur);
+    // encoded polylines are variable-width, and use coordinate differences to save space.
+    double dlat = lat - last_lat;
+    double dlon = lon - last_lon;
     buf_cur += encode_double (dlat, buf_cur);
     buf_cur += encode_double (dlon, buf_cur);
-    last_point = point;
-    length += 1;
+    last_lat = lat;
+    last_lon = lon;
+    n_points += 1;
+}
+
+void polyline_latlon (latlon_t ll) {
+    polyline_point (ll.lat, ll.lon);
 }
 
 char *polyline_result () {
@@ -81,24 +94,35 @@ char *polyline_result () {
 }
 
 uint32_t polyline_length () {
-    return length;
+    return n_points;
 }
 
 /*
-  Produces a polyline connecting a subset of the stops in a route.
-  s0 and s1 are global stop indexes, not stop indexes within the route.
+  Produces a polyline connecting a subset of the stops in a route, 
+  or connecting two walk path endpoints if route_idx == WALK.
+  sidx0 and sidx1 are global stop indexes, not stop indexes within the route.
 */
-void polyline_for_ride (tdata_t *tdata, uint32_t route_idx, uint32_t sidx0, uint32_t sidx1) {
-    route_t route = tdata->routes[route_idx];
-    uint32_t *stops = tdata_stops_for_route (*tdata, route_idx);
-    bool output = false;
+void polyline_for_leg (tdata_t *tdata, struct leg *leg) {
     polyline_begin();
-    for (int s = 0; s < route.n_stops; ++s) {
-        uint32_t sidx = stops[s];
-        if (!output && (sidx == sidx0)) output = true;
-        if (output) polyline_point (tdata->stop_coords[sidx]);
-        if (sidx == sidx1) break;
+    if (leg->route == WALK) {
+        polyline_latlon (tdata->stop_coords[leg->s0]);
+        if (leg->s0 == leg->s1) return;
+        polyline_latlon (tdata->stop_coords[leg->s1]);
+    } else {
+        route_t route = tdata->routes[leg->route];
+        uint32_t *stops = tdata_stops_for_route (*tdata, leg->route);
+        bool output = false;
+        for (int s = 0; s < route.n_stops; ++s) {
+            uint32_t sidx = stops[s];
+            if (!output && (sidx == leg->s0)) output = true;
+            if (output) polyline_latlon (tdata->stop_coords[sidx]);
+            if (sidx == leg->s1) break;
+        }
     }
+<<<<<<< HEAD
     //printf ("%s\n", polyline_result ());
+=======
+    // printf ("final polyline: %s\n\n", polyline_result ());
+>>>>>>> bugfix: allow 0 chunks between positive chunks
 }
 
