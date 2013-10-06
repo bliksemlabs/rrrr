@@ -26,7 +26,8 @@ int encode_double (double c, char *buf) {
     // 31 == (2^5 - 1) == 00000 00000 00000 00000 00000 11111
     uint32_t mask = 31;
     char chunks[6];
-    int last_chunk = -1;
+    // initialization to 0 is important so we always get at least one '?' chunk, allowing zero coordinates and deltas
+    int last_chunk = 0; 
     for (int i = 0; i < 6; ++i) {
         chunks[i] = (binary & mask) >> (5 * i);
         // printf ("%3d ", chunks[i]);
@@ -106,7 +107,6 @@ void polyline_for_leg (tdata_t *tdata, struct leg *leg) {
     polyline_begin();
     if (leg->route == WALK) {
         polyline_latlon (tdata->stop_coords[leg->s0]);
-        if (leg->s0 == leg->s1) return;
         polyline_latlon (tdata->stop_coords[leg->s1]);
     } else {
         route_t route = tdata->routes[leg->route];
