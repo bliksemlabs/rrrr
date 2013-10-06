@@ -119,10 +119,6 @@ void polyline_for_leg (tdata_t *tdata, struct leg *leg) {
             if (sidx == leg->s1) break;
         }
     }
-<<<<<<< HEAD
-    //printf ("%s\n", polyline_result ());
-=======
     // printf ("final polyline: %s\n\n", polyline_result ());
->>>>>>> bugfix: allow 0 chunks between positive chunks
 }
 
