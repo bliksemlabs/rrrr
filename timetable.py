@@ -577,6 +577,21 @@ for bitfield in route_mask_for_idx :
     writeint(bitfield)
 print '(%d / %d bitmasks were zero)' % ( n_zeros, len(all_trip_ids) )
 
+print "writing out sorted nameidx's for stops"
+write_text_comment("STOP NAME IDX")
+loc_stop_nameidx = tell()
+for nameidx in nameidx_for_idx:
+    writeint(nameidx)
+
+print "writing out platformcodes for stops"
+write_text_comment("PLATFORM CODES")
+loc_platformcodes = write_string_table(platformcode_for_idx)
+
+print "writing out stop names to string table"
+write_text_comment("STOP NAME")
+stop_names = [stop_name for stop_name,idx in sorted(nameidx_for_name.iteritems(), key=operator.itemgetter(1))]
+loc_stop_names = write_string_table(stop_names)
+
 print "writing out agencies to string table"
 agencyIds = []
 agencyNames = []
@@ -609,21 +624,6 @@ print "writing out productcategories to string table"
 write_text_comment("PRODUCT CATEGORIES")
 sorted_productcategories = sorted(idx_for_productcategory.iteritems(), key=operator.itemgetter(1))
 loc_productcategories = write_string_table([productcategory for productcategory,idx in sorted_productcategories])
-
-print "writing out sorted nameidx's for stops"
-write_text_comment("STOP NAME IDX")
-loc_stop_nameidx = tell()
-for nameidx in nameidx_for_idx:
-    writeint(nameidx)
-
-print "writing out platformcodes for stops"
-write_text_comment("PLATFORM CODES")
-loc_platformcodes = write_string_table(platformcode_for_idx)
-
-print "writing out stop names to string table"
-write_text_comment("STOP NAME")
-stop_names = [stop_name for stop_name,idx in sorted(nameidx_for_name.iteritems(), key=operator.itemgetter(1))]
-loc_stop_names = write_string_table(stop_names)
 
 # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
 print "writing route ids to string table"
