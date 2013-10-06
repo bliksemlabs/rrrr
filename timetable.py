@@ -292,7 +292,8 @@ shortname_offsets = []
 headsign_offsets = []
 productcategory_offsets = []
 idx_for_agency = {}
-idx_for_headsign = {}
+loc_for_headsign = {}
+headsigncount = 0
 idx_for_shortname = {}
 idx_for_productcategory = {}
 for route in route_for_idx :
@@ -316,11 +317,12 @@ for route in route_for_idx :
         idx_for_agency[agency] = agency_offset
     agency_offsets.append(agency_offset)
 
-    if headsign in idx_for_headsign:
-        headsign_offset = idx_for_headsign[headsign]
+    if headsign in loc_for_headsign:
+        headsign_offset = loc_for_headsign[headsign]
     else:
-        headsign_offset = len(idx_for_headsign)
-        idx_for_headsign[headsign] = headsign_offset
+        headsign_offset = headsigncount
+        headsigncount += len(headsign)+1
+        loc_for_headsign[headsign] = headsign_offset
     headsign_offsets.append(headsign_offset)
 
     if short_name in idx_for_shortname:
@@ -618,8 +620,11 @@ loc_agency_urls = write_string_table(agencyUrls)
 
 print "writing out headsigns to string table"
 write_text_comment("HEADSIGNS")
-sorted_headsigns = sorted(idx_for_headsign.iteritems(), key=operator.itemgetter(1))
-loc_headsign = write_string_table([headsign for headsign,idx in sorted_headsigns])
+sorted_headsigns = sorted(loc_for_headsign.iteritems(), key=operator.itemgetter(1))
+loc_headsign = tell()
+for headsign,headsignloc in sorted_headsigns:
+    assert headsignloc == out.tell() - loc_headsign
+    out.write(headsign+'\0')
 
 print "writing out route_shortname's to string table"
 write_text_comment("ROUTE SHORT NAMES")

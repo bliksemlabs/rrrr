@@ -78,8 +78,8 @@ inline char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
     return td->agency_urls + (td->agency_url_width * agency_index);
 }
 
-inline char *tdata_headsign_for_index(tdata_t *td, uint32_t headsign_index) {
-    return td->headsigns + (td->headsign_width * headsign_index);
+inline char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset) {
+    return td->headsigns + headsign_offset;
 }
 
 inline char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index) {
@@ -152,7 +152,7 @@ inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
 
 inline char *tdata_headsign_for_route(tdata_t *td, uint32_t route_index) {
     route_t route = (td->routes)[route_index];
-    return td->headsigns + (td->headsign_width * route.headsign_index);
+    return td->headsigns + route.headsign_offset;
 }
 
 inline char *tdata_shortname_for_route(tdata_t *td, uint32_t route_index) {
@@ -265,8 +265,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->agency_names = (char*) (b + header->loc_agency_names + sizeof(uint32_t));
     td->agency_url_width = *((uint32_t *) (b + header->loc_agency_urls));
     td->agency_urls = (char*) (b + header->loc_agency_urls + sizeof(uint32_t));
-    td->headsign_width = *((uint32_t *) (b + header->loc_headsigns));
-    td->headsigns = (char*) (b + header->loc_headsigns + sizeof(uint32_t));
+    td->headsigns = (char*) (b + header->loc_headsigns);
     td->route_shortname_width = *((uint32_t *) (b + header->loc_route_shortnames));
     td->route_shortnames = (char*) (b + header->loc_route_shortnames + sizeof(uint32_t));
     td->productcategory_width = *((uint32_t *) (b + header->loc_productcategories));

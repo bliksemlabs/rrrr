@@ -20,7 +20,7 @@ typedef struct route route_t;
 struct route {
     uint32_t route_stops_offset;
     uint32_t trip_ids_offset;
-    uint32_t headsign_index;
+    uint32_t headsign_offset;
     uint16_t n_stops;
     uint16_t n_trips;
     uint16_t attributes;
@@ -92,7 +92,6 @@ struct tdata {
     char *agency_names;
     uint32_t agency_url_width;
     char *agency_urls;
-    uint32_t headsign_width;
     char *headsigns;
     uint32_t route_shortname_width;
     char *route_shortnames;
@@ -141,7 +140,7 @@ char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
 
 char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
 
-char *tdata_headsign_for_index(tdata_t *td, uint32_t headsign_index);
+char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset);
 
 char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index);
 
