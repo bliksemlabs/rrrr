@@ -3,7 +3,7 @@ CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := workerrrr-web workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test rrrrealtime-viz
+BINS    := workerrrr-web workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test rrrrealtime-viz profile
 HEADERS := $(wildcard *.h)
 
 BIN_BASES   := $(subst rrrr,r,$(BINS))
