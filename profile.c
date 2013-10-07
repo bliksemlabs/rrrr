@@ -78,9 +78,27 @@ static void states_reset () {
     states_tail = 0;
 }
 
+static bool path_has_stop (struct state *state, uint32_t stop_idx) {
+    while (state != NULL) {
+        if (stop_idx == state->stop) return true;
+        state = state->back_state;
+    }    
+    return false;
+}
+
+static bool path_has_route (struct state *state, uint32_t route_idx) {
+    while (state != NULL) {
+        if (route_idx == state->back_route) return true;
+        state = state->back_state;
+    }
+    return false;
+}
+
 /* Explore the given route starting at the given stop. Add a state at each stop with transfers. */
 static void explore_route (struct state *state, uint32_t route_idx, uint32_t stop_idx, rtime_t transfer_time) {
-    P printf ("exploring route %s [%d] toward X from stop %s [%d]\n", tdata_route_desc_for_index (&tdata, route_idx), route_idx, tdata_stop_desc_for_index (&tdata, stop_idx), stop_idx);
+    P printf ("    exploring route %s [%d] toward X from stop %s [%d]\n", 
+        tdata_route_desc_for_index (&tdata, route_idx), 
+        route_idx, tdata_stop_desc_for_index (&tdata, stop_idx), stop_idx);
     route_t route = tdata.routes[route_idx];
     uint32_t *route_stops = tdata_stops_for_route (tdata, route_idx);
     struct stats *stats0;
@@ -95,11 +113,10 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         if (!onboard) continue;
         // Only create states at stops that have transfers.
         if (tdata.stops[this_stop_idx].transfers_offset == tdata.stops[this_stop_idx + 1].transfers_offset) continue;
-        // Only create states at stops that do not appear in this chain of states
-        for (struct state *s = state->back_state; s != NULL; s = s->back_state) {
-            if (this_stop_idx == s->stop) continue;
-        }
+        // Only create states at stops that do not appear in the existing chain of states.
+        if (path_has_stop (state, this_stop_idx)) continue;
         if (this_stop_idx == target_stop) printf ("hit target.\n");
+        // printf ("      enqueueing state at stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, this_stop_idx), this_stop_idx);
         struct state *new_state = states_next ();
         new_state->stop = this_stop_idx;
         new_state->back_state = state;
@@ -115,14 +132,13 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
 
 /* Loop over all routes calling at this stop, exploring each route. TODO: Skip all used routes or their reversed "twins". */ 
 static void explore_stop (struct state *state, uint32_t stop_idx, rtime_t transfer_time) {
-    P printf ("exploring routes calling at stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, stop_idx), stop_idx);
+    P printf ("  exploring routes calling at stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, stop_idx), stop_idx);
     uint32_t *routes;
     uint32_t n_routes = tdata_routes_for_stop (&tdata, stop_idx, &routes);
     for (uint32_t r = 0; r < n_routes; ++r) {
         uint32_t route_idx = routes[r];
-        for (struct state *s = state; s != NULL; s = s->back_state) {
-            if (route_idx == s->back_route) continue; // avoid taking a previously used route
-        }
+        // Avoid boarding a previously used route.
+        if (path_has_route (state, route_idx)) continue;
         explore_route (state, route_idx, stop_idx, transfer_time);
     }
 }
@@ -229,8 +245,8 @@ int main () {
     states = malloc (sizeof(struct state) * MAX_STATES);
     struct state *state = states_next ();
     state_init (state);
-    state->stop = 4500;
-    target_stop = 6511;
+    state->stop = 9500;
+    target_stop = 1144;
     while (states_head < states_tail) {
         explore_transfers (states + states_head);
         ++states_head;
