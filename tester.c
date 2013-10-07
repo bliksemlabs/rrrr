@@ -17,6 +17,8 @@
 // consider changing to --arrive TIME or --depart TIME --date DATE
 // also look up stop ids
 
+#define OUTPUT_LEN 8000
+
 static struct option long_options[] = {
     { "arrive",        no_argument, NULL, 'a' },
     { "depart",        no_argument, NULL, 'd' },
@@ -120,11 +122,11 @@ int main(int argc, char **argv) {
     router_setup(&router, &tdata);
     //tdata_dump(&tdata); // debug timetable file format
 
-    char result_buf[8000];
+    char result_buf[OUTPUT_LEN];
     router_route (&router, &req);
     if (verbose) {
         router_request_dump (&router, &req);
-        router_result_dump(&router, &req, result_buf, 8000);
+        router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         printf("%s", result_buf);
     }
     // repeat search in reverse to compact transfers
@@ -138,14 +140,14 @@ int main(int argc, char **argv) {
         if (verbose) {
             printf ("Repeated search with reversed request: \n");
             router_request_dump (&router, &req);
-            router_result_dump(&router, &req, result_buf, 8000);
+            router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
             printf("%s", result_buf);
         }
     }
 
     /* Output only final result in non-verbose mode */
     if (!verbose) {
-        router_result_dump(&router, &req, result_buf, 8000);
+        router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         printf("%s", result_buf);
     }    
     
