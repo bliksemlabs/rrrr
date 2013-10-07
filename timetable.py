@@ -306,7 +306,7 @@ for route in route_for_idx :
     route_ids_for_idx.append(rid)
     route_attributes.append(1 << mode)
 
-    agency = agency or ''
+    agency = agency or '__DEFAULT__'
     headsign = headsign or ''
     short_name = short_name or ''
     productcategory = productcategory or ''
@@ -489,7 +489,7 @@ assert len(stop_routes_offsets) == nstops + 1
 del stop_routes
 
 print "saving transfer stops (footpaths)"
-write_text_comment("TRANSFERS BY STOP")
+write_text_comment("TRANSFER TARGET STOPS")
 loc_transfer_target_stops = tell()
 offset = 0
 transfers_offsets = []
@@ -505,7 +505,7 @@ transfers_offsets.append(offset) # sentinel
 assert len(transfers_offsets) == nstops + 1
 
 print "saving transfer distances (footpaths)"
-write_text_comment("TRANSFERS BY DISTANCE")
+write_text_comment("TRANSFER DISTANCES")
 loc_transfer_dist_meters = tell()
 offset = 0
 transfers_offsets = []
@@ -605,10 +605,15 @@ agencyIds = []
 agencyNames = []
 agencyUrls = []
 sorted_agencyIds = sorted(idx_for_agency.iteritems(), key=operator.itemgetter(1))
-for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]:
-    agencyIds.append(agency_id)
-    agencyNames.append(agency_name)
-    agencyUrls.append(agency_url)
+if len(sorted_agencyIds) == 0:
+    agencyIds.append('__DEFAULT__')
+    agencyNames.append('')
+    agencyUrls.append('')
+else:
+    for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]:
+        agencyIds.append(agency_id)
+        agencyNames.append(agency_name)
+        agencyUrls.append(agency_url)
 write_text_comment("AGENCY IDS")
 print "writing out agencyIds to string table"
 loc_agency_ids = write_string_table(agencyIds)

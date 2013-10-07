@@ -51,6 +51,7 @@ struct tdata_header {
 };
 
 inline char *tdata_route_id_for_index(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     return td->route_ids + (td->route_id_width * route_index);
 }
 
@@ -151,41 +152,47 @@ inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
 }
 
 inline char *tdata_headsign_for_route(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
     return td->headsigns + route.headsign_offset;
 }
 
 inline char *tdata_shortname_for_route(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
     return td->route_shortnames + (td->route_shortname_width * route.shortname_index);
 }
 
 inline char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
     return td->productcategories + (td->productcategory_width * route.productcategory_index);
 }
 
 inline char *tdata_agency_id_for_route(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
     return td->agency_ids + (td->agency_id_width * route.agency_index);
 }
 
 inline char *tdata_agency_name_for_route(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
     return td->agency_names + (td->agency_name_width * route.agency_index);
 }
 
 inline char *tdata_agency_url_for_route(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
     return td->agency_urls + (td->agency_url_width * route.agency_index);
 }
 
 void tdata_check_coherent (tdata_t *td) {
-    /* Check that all lat/lon look like valid coordinates for this part of Europe or tests */
-    float min_lat = 0.0;
-    float max_lat = 54.0;
-    float min_lon = -1.0;
-    float max_lon = 15.0;
+    /* Check that all lat/lon look like valid coordinates. */
+    float min_lat = -55.0; // farther south than Ushuaia, Argentina
+    float max_lat = +70.0; // farther north than Tromsø and Murmansk
+    float min_lon = -180.0;
+    float max_lon = +180.0;
     for (int s = 0; s < td->n_stops; ++s) {
         latlon_t ll = td->stop_coords[s];
         if (ll.lat < min_lat || ll.lat > max_lat || ll.lon < min_lon || ll.lon > max_lon) {
@@ -281,6 +288,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_attributes = (uint8_t*) (b + header->loc_trip_attributes);
     td->alerts = NULL;
 
+    // This is probably a bit slow and is not strictly necessary, but does page in all the timetable entries.
     tdata_check_coherent(td);
     D tdata_dump(td);
 }
@@ -309,7 +317,7 @@ inline uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **rou
 
 // TODO used only in dumping routes; trip_index is not used in the expression?
 inline stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
-    return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset].stop_times_offset;
+    return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset + trip_index].stop_times_offset;
 }
 
 inline trip_t *tdata_trips_for_route (tdata_t *td, uint32_t route_index) {
