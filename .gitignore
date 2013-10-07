@@ -29,8 +29,10 @@ struct_test
 testerrrr
 workerrrr
 workerrrr-web
+profile
 
 run_tests
+test.log
 
 stops
 trips
