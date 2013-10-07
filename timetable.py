@@ -444,7 +444,7 @@ assert len(stop_routes_offsets) == nstops + 1
 del stop_routes
 
 print "saving transfer stops (footpaths)"
-write_text_comment("TRANSFERS BY STOP")
+write_text_comment("TRANSFER TARGET STOPS")
 loc_transfer_target_stops = tell()
 offset = 0
 transfers_offsets = []
@@ -460,7 +460,7 @@ transfers_offsets.append(offset) # sentinel
 assert len(transfers_offsets) == nstops + 1
 
 print "saving transfer distances (footpaths)"
-write_text_comment("TRANSFERS BY DISTANCE")
+write_text_comment("TRANSFER DISTANCES")
 loc_transfer_dist_meters = tell()
 offset = 0
 transfers_offsets = []
