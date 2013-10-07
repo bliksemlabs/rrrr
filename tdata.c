@@ -103,6 +103,7 @@ inline uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t
 }
 
 inline char *tdata_route_desc_for_index(tdata_t *td, uint32_t route_index) {
+    if (route_index == NONE) return "NONE";
     return td->route_desc + (td->route_desc_width * route_index);
 }
 
