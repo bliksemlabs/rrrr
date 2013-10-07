@@ -136,7 +136,7 @@ def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
-    htext = "TTABLEV1"
+    htext = "TTABLEV2"
     packed = struct_header.pack(htext,
         calendar_start_time,
         nstops,
@@ -657,7 +657,7 @@ write_text_comment("TRIP IDS")
 loc_trip_ids = write_string_table(all_trip_ids)
 
 print "reached end of timetable file"
-write_text_comment("END TTABLEV1")
+write_text_comment("END TTABLEV2")
 loc_eof = tell()
 print "rewinding and writing header... ",
 write_header()

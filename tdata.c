@@ -244,8 +244,8 @@ void tdata_load(char *filename, tdata_t *td) {
 
     void *b = td->base;
     tdata_header_t *header = b;
-    if( strncmp("TTABLEV1", header->version_string, 8) )
-        die("the input file does not appear to be a timetable");
+    if( strncmp("TTABLEV2", header->version_string, 8) )
+        die("the input file does not appear to be a timetable or is of the wrong version");
     td->calendar_start_time = header->calendar_start_time;
     td->n_stops = header->n_stops;
     td->n_routes = header->n_routes;
