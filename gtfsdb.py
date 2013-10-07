@@ -59,7 +59,7 @@ class UTF8TextFile(object):
         
     def next(self):
         nextline = self.fp.next()
-        return nextline.encode( "ascii", "ignore" )
+        return nextline.encode( "UTF-8" )
         
     def __iter__(self):
         return self
@@ -303,6 +303,7 @@ class GTFSDatabase:
             except:
                 pass
         self.conn = sqlite3.connect( sqlite_filename )
+        self.conn.text_factory = str
 
     def get_cursor(self):
         # Attempts to get a cursor using the current connection to the db. If we've found ourselves in a different thread
