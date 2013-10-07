@@ -26,6 +26,7 @@ void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt,
             struct tm ltm;
             memset (&ltm, 0, sizeof(struct tm));
             strptime (optarg, "%Y-%m-%dT%H:%M:%S", &ltm);
+            ltm.tm_isdst = -1;
             router_request_from_epoch (req, tdata, mktime(&ltm)); // from struct_tm instead?
         }
         break;
