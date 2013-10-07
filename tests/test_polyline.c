@@ -74,7 +74,7 @@ START_TEST (test_encode_polyline) {
 } END_TEST
 
 /* Tests borrowed from https://code.google.com/p/py-gpolyencode/source/browse/trunk/tests/gpolyencode_tests.py */
-/* Failing due to a few individual characters being off by 2. */
+/* Failing due to a few individual characters being off by 2. Lowest order bit is sign bit, so this is probably a rounding error. */
 START_TEST (test_glineenc) {
 
     struct latlon_double llA[3] = {{38.5,-120.2}, {43.252,-126.453}, {40.7,-120.95}};
