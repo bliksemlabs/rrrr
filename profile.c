@@ -94,6 +94,13 @@ static bool path_has_route (struct state *state, uint32_t route_idx) {
     return false;
 }
 
+static void path_dump (struct state *state) {
+    while (state != NULL) {
+        printf ("stop %s via route %s \n", tdata_stop_desc_for_index (&tdata, state->stop), tdata_route_desc_for_index (&tdata, state->back_route));
+        state = state->back_state;
+    }    
+}
+
 /* Explore the given route starting at the given stop. Add a state at each stop with transfers. */
 static void explore_route (struct state *state, uint32_t route_idx, uint32_t stop_idx, rtime_t transfer_time) {
     P printf ("    exploring route %s [%d] toward X from stop %s [%d]\n", 
@@ -115,7 +122,6 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         if (tdata.stops[this_stop_idx].transfers_offset == tdata.stops[this_stop_idx + 1].transfers_offset) continue;
         // Only create states at stops that do not appear in the existing chain of states.
         if (path_has_stop (state, this_stop_idx)) continue;
-        if (this_stop_idx == target_stop) printf ("hit target.\n");
         // printf ("      enqueueing state at stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, this_stop_idx), this_stop_idx);
         struct state *new_state = states_next ();
         new_state->stop = this_stop_idx;
@@ -124,6 +130,10 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         new_state->stats = route_stats[route.route_stops_offset + s]; // copy stats for current stop in current route
         subtract_stats (&(new_state->stats), stats0); // relativize times to board location
         add_stats (&(new_state->stats), &(state->stats)); // accumulate stats from previous state
+        if (this_stop_idx == target_stop) {
+            printf ("hit target.\n");
+            path_dump (new_state);
+        }
     }
     // alternate iteration method
     // while (*curr_stop != state->stop) ++curr_stop;
@@ -245,8 +255,8 @@ int main () {
     states = malloc (sizeof(struct state) * MAX_STATES);
     struct state *state = states_next ();
     state_init (state);
-    state->stop = 9500;
-    target_stop = 1144;
+    state->stop = 1200;
+    target_stop = 1344;
     while (states_head < states_tail) {
         explore_transfers (states + states_head);
         ++states_head;
