@@ -43,7 +43,7 @@ void router_teardown(router_t *router) {
 // bitset for transfer target stops.
 /* Given a stop index, mark all routes that serve it as updated. */
 static inline void flag_routes_for_stop (router_t *r, router_request_t *req, uint32_t stop_index, uint32_t day_mask) {
-    /*restrict*/ uint32_t *routes;
+    uint32_t *routes;
     uint32_t n_routes = tdata_routes_for_stop (&(r->tdata), stop_index, &routes);
     for (uint32_t i = 0; i < n_routes; ++i) {
         uint32_t route_active_flags = r->tdata.route_active[routes[i]];
@@ -1025,10 +1025,10 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     req->day_mask = 1 << cal_day;    
 }
 
-void router_request_randomize(router_request_t *req) {
+void router_request_randomize (router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
-    req->from = rrrrandom(6600);
+    req->from = rrrrandom(6600); // 6600 for PDX, 70000 for NL
     req->to = rrrrandom(6600);
     req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
     req->via = NONE;
