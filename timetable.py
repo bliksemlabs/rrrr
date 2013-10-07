@@ -284,6 +284,8 @@ for route in route_for_idx :
     # print desc
     if (headsign is None) :
         headsign = ''
+    if (agency is None) :
+        agency = '__DEFAULT__'
     desc = ';'.join([desc, headsign])
     route_desc_for_idx.append(desc)
     route_ids_for_idx.append(rid)
@@ -541,7 +543,8 @@ loc_route_desc = write_string_table(route_desc_for_idx)
 print "writing out operators to string table"
 write_text_comment("OPERATORS")
 sorted_agencyIds = sorted(operator_for_idx.iteritems(), key=operator.itemgetter(1))
-loc_operator = write_string_table([';'.join(v or '' for v in db.agency(agencyId)) for agencyId,idx in sorted_agencyIds])
+# store a table where each entry is a semicolon-separated list of an agency's fields (id, name, URL, phone...)
+loc_operator = write_string_table([agencyId or "__DEFAULT__" for agencyId,idx in sorted_agencyIds])
 
 print "writing out sorted stop descriptions to string table"
 write_text_comment("STOP DESC")
