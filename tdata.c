@@ -118,11 +118,11 @@ inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
 }
 
 void tdata_check_coherent (tdata_t *td) {
-    /* Check that all lat/lon look like valid coordinates for this part of Europe or tests */
-    float min_lat = 0.0;
-    float max_lat = 54.0;
-    float min_lon = -1.0;
-    float max_lon = 15.0;
+    /* Check that all lat/lon look like valid coordinates. */
+    float min_lat = -55.0; // farther south than Ushuaia, Argentina
+    float max_lat = +70.0; // farther north than Tromsø and Murmansk
+    float min_lon = -180.0;
+    float max_lon = +180.0;
     for (int s = 0; s < td->n_stops; ++s) {
         latlon_t ll = td->stop_coords[s];
         if (ll.lat < min_lat || ll.lat > max_lat || ll.lon < min_lon || ll.lon > max_lon) {
@@ -209,6 +209,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_attributes = (uint8_t*) (b + header->loc_trip_attributes);
     td->alerts = NULL;
 
+    // This is probably a bit slow and is not strictly necessary, but does page in all the timetable entries.
     tdata_check_coherent(td);
     D tdata_dump(td);
 }
@@ -237,7 +238,7 @@ inline uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **rou
 
 // TODO used only in dumping routes; trip_index is not used in the expression?
 inline stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
-    return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset].stop_times_offset;
+    return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset + trip_index].stop_times_offset;
 }
 
 inline trip_t *tdata_trips_for_route (tdata_t *td, uint32_t route_index) {
