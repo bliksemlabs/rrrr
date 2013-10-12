@@ -7,63 +7,92 @@
 #include <stdio.h>
 
 #define N_QUANTILES 5
+#define MAX_STATES (10 * 1024 * 1024)
 
 /* 2^16 ~= 18.2 hours in seconds. */
 
 // control debug output
 #define P for(;0;)
 
-struct stats {
-    rtime_t quantiles[N_QUANTILES];
-    //rtime_t mean;
-    //rtime_t stddev; // cannot accumulate/subtract
-};
-
-struct state {
-    struct state *back_state; // could actually be an int index into the pool
-    uint32_t stop; // maybe store route_stop instead since global stop can be found from it, but not other way
-    uint32_t back_route;
-    struct stats stats;
-    //uint8_t  n_transfers;
-};
-
-/* Subtracts b out of a element-wise in place. */
-static void subtract_stats (struct stats *a, struct stats *b) {
-    for (int i = 0; i < N_QUANTILES; ++i) a->quantiles[i] -= b->quantiles[i];
-}
-
-/* Adds b into a element-wise in place. */
-static void add_stats (struct stats *a, struct stats *b) {
-    for (int i = 0; i < N_QUANTILES; ++i) a->quantiles[i] += b->quantiles[i];
-}
-
-static void state_init (struct state *state) {
-    state->stop = NONE;
-    state->back_state = NULL;
-    state->back_route = NONE;
-    for (int i = 0; i < N_QUANTILES; ++i) state->stats.quantiles[i] = 0;
-}
-
-// Bits for the days over which the analysis is performed.
-uint32_t day_mask;
-struct stats *route_stats = NULL;
-
-tdata_t tdata;
-
-// This array of states is a pre-allocated pool that also serves as a queue. This is basically a brute force search.
-#define MAX_STATES (100 * 1024 * 1024)
-struct state *states; // malloc to avoid relocation errors
-// these should probably be pointers
-uint32_t states_head = 0; // the first unexplored state
-uint32_t states_tail = 0; // the first unused state; this is also the number of states
-
 // where we are trying to reach
 static uint32_t target_stop;
 
-/*
-// store best min/average/max time to reach each stop, and prune some new states on basis of worst time.
-struct state best_times[n_stops];
+// Bits for the days over which the analysis is performed.
+static uint32_t day_mask;
+static struct stats *route_stats = NULL; 
+static struct stats *transfer_stats = NULL;
+static struct stats *stop_stats; // store best known for each stop, prune some new states on basis of worst time.
+static tdata_t tdata;
+
+// A pre-allocated pool of states that also serves as a queue.
+static struct state *states; // malloc to avoid relocation errors
+static uint32_t states_head = 0; // the first unexplored state (these should probably be pointers)
+static uint32_t states_tail = 0; // the first unused state; this is also the number of states
+
+//  Should probably add a per-route "frequency" as well. Freq(variant1 U variant2) is freq(v1) + freq(v2), freq(leg1, leg2) = min(freq(l1), freq(l2)).
+//  Then there can be an option to merge variants.
+
+
+/* 
+  Summary statistics over all trips on a given route at a given stop.
+  These must be additive functions because legs are summed to give stats for an entire itinerary.  
 */
+struct stats {
+    rtime_t min;
+    rtime_t max;
+    float mean;
+};
+
+/* Subtracts b out of a element-wise in place. This is valid because all our summary statistics are additive functions. */
+static void stats_subtract (struct stats *a, struct stats *b) {
+    a->min  -= b->min;
+    a->max  -= b->max;
+    a->mean -= b->mean;
+}
+
+/* Adds b into a element-wise in place. This is valid because all our summary statistics are additive functions. */
+static void stats_add (struct stats *a, struct stats *b) {
+    a->min  += b->min;
+    a->max  += b->max;
+    a->mean += b->mean;
+}
+
+static void stats_init (struct stats *s) {
+    s->min = UNREACHED;
+    s->max = 0;
+    s->mean = 0;
+}
+
+static void stats_print (struct stats *s) {
+    printf ("[%3d %2.1f %3d]", s->min, s->mean, s->max);
+}
+
+struct state {
+    struct state *back_state; // could actually be an int index into the pool
+    uint32_t stop;            // use route_stop instead? global stop can be found from it, but not other way round.
+    uint32_t back_route;      // WALK for states that result from transfers
+    struct stats stats;       //cumulative stats since the beginning of the route
+};
+
+static void state_init (struct state *state) {
+    state->back_state = NULL;
+    state->stop = NONE;
+    state->back_route = NONE;
+    stats_init (&(state->stats));
+}
+
+static void state_print (struct state *state) {
+    stats_print (&(state->stats));
+    uint32_t last_stop = state->back_state->stop;
+    uint32_t this_stop = state->stop;
+    
+    char *last_stop_string = tdata_stop_name_for_index (&tdata, last_stop);
+    char *this_stop_string = tdata_stop_name_for_index (&tdata, this_stop); 
+    char *route_shortname = tdata_shortname_for_route (&tdata, state->back_route);
+    char *route_headsign = tdata_headsign_for_route (&tdata, state->back_route);
+    printf (" FROM %s [%d] TO %s [%d] VIA %s %s [%d]\n", last_stop_string, last_stop, this_stop_string, this_stop, 
+        route_shortname, route_headsign, state->back_route);
+}
 
 static struct state *states_next () {
     if (states_tail >= MAX_STATES) exit (0);
@@ -94,10 +123,9 @@ static bool path_has_route (struct state *state, uint32_t route_idx) {
     return false;
 }
 
-static void path_dump (struct state *state) {
-    while (state != NULL) {
-        printf ("stop %s via route %s %s \n", tdata_stop_name_for_index (&tdata, state->stop), tdata_shortname_for_route (&tdata, state->back_route),
-                                                                                               tdata_headsign_for_route (&tdata, state->back_route));
+static void path_print (struct state *state) {
+    while (state != NULL && state->back_state != NULL) {
+        state_print (state);
         state = state->back_state;
     }    
 }
@@ -113,12 +141,13 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
     bool onboard = false;
     for (int s = 0; s < route.n_stops; ++s) {
         uint32_t this_stop_idx = route_stops[s];
-        if (!onboard && this_stop_idx == stop_idx) {
-            onboard = true;
-            stats0 = &(route_stats[route.route_stops_offset + s]);
+        if (!onboard) {
+            if (this_stop_idx == stop_idx) {
+                onboard = true;
+                stats0 = &(route_stats[route.route_stops_offset + s]);
+            }
             continue;
         }
-        if (!onboard) continue;
         // Only create states at stops that have transfers.
         if (tdata.stops[this_stop_idx].transfers_offset == tdata.stops[this_stop_idx + 1].transfers_offset) continue;
         // Only create states at stops that do not appear in the existing chain of states.
@@ -129,11 +158,11 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         new_state->back_state = state;
         new_state->back_route = route_idx;
         new_state->stats = route_stats[route.route_stops_offset + s]; // copy stats for current stop in current route
-        subtract_stats (&(new_state->stats), stats0); // relativize times to board location
-        add_stats (&(new_state->stats), &(state->stats)); // accumulate stats from previous state
+        stats_subtract (&(new_state->stats), stats0);                 // relativize times to board location
+        stats_add      (&(new_state->stats), &(state->stats));        // accumulate stats from previous state
         if (this_stop_idx == target_stop) {
             printf ("hit target.\n");
-            path_dump (new_state);
+            path_print (new_state);
         }
     }
     // alternate iteration method
@@ -190,51 +219,42 @@ static double quantile (rtime_t *times, uint32_t n, double q) {
     return v0 + (v1 - v0) * fractional_index;
 }
 
-/* Computes quantiles for the given array of times. Has the side-effect of sorting the input array. */
-static void quantiles (rtime_t *times, uint32_t n, struct stats *stats) {
-    /* Sort the arrival time array for this stop. */
-    qsort (times, n, sizeof(rtime_t), (__compar_fn_t) rtime_compare);
-    // printf ("computing quantiles for %d times: \n", n);
-    // for (int i = 0; i < n; ++i) printf ("%d ", times[i]);
-    // printf ("\n");
-    for (int i = 0; i < N_QUANTILES; ++i) {
-        double q = ((double)i) / (N_QUANTILES - 1);
-        double qi = quantile (times, n, q);
-        // printf ("q=%0.2f qi=%f \n", q, qi);
-        stats->quantiles[i] = qi;
-        // printf ("%4d ", stats->quantiles[i]);
-    }
-    // printf ("\n");
-}
-
-/* Analyze every route, finding the min, avg, and max travel time at each stop. (actually now it's quantiles)
+/* Analyze every route, finding the min, avg, and max travel time at each stop.
    The times are cumulative along the route, and relative to the first departure.
    The result should be the concatenation of a 'struct stats' array of length route.n_stops for each route, 
    in order of route index. This ragged array has the same general form as tdata.route_stops.  */
 void compute_route_stats () {
-    int total_n_stops = 0;
-    for (int r = 0; r < tdata.n_routes; ++r) total_n_stops += tdata.routes[r].n_stops;
-    /* static */ route_stats = malloc (total_n_stops * sizeof(struct stats));
+    {
+        int n_stops_all_routes = 0; // Sum(route.n_stops) over all routes. Each stop may appear in more than one route.
+        for (int r = 0; r < tdata.n_routes; ++r) n_stops_all_routes += tdata.routes[r].n_stops;
+        route_stats = malloc (n_stops_all_routes * sizeof(struct stats));
+    }
     
-    printf ("computing travel time quantiles...\n");
-    uint32_t route_begin_index = 0;
+    printf ("computing route/stop travel time stats...\n");
+    int route_first_index = 0;
     
-    /* Foreach route, find arrival time quantiles at each stop. */
+    /* For each trip in each route, iterate over the stops updating the per_stop stats. */
+    /* Many trips encountered are exact duplicates (TimeDemandTypes). */
+    /* Actually we probably need separate departures stats for relativizing. */
     for (int r = 0; r < tdata.n_routes; ++r) {
         route_t route = tdata.routes[r];
-        rtime_t arrivals[route.n_stops][route.n_trips];
-        /* Foreach trip in route, expand arrivals into stop-major rows. Many duplicate entries (timedemand). */
+        for (int s = 0; s < route.n_stops; ++s) {
+            stats_init (&(route_stats[route_first_index + s]));
+        }
         for (int t = 0; t < route.n_trips; ++t) {
-            /* Get the raw zero-based TimeDemandType stoptimes. */
-            stoptime_t *stoptimes = tdata_timedemand_type (&tdata, r, t);
+            stoptime_t *stoptimes = tdata_timedemand_type (&tdata, r, t); // Raw zero-based TimeDemandType stoptimes.
             for (int s = 0; s < route.n_stops; ++s) {
-                arrivals[s][t] = stoptimes[s].arrival;
+                struct stats *stats = &(route_stats[route_first_index + s]);
+                rtime_t arrival = stoptimes[s].arrival;
+                if (arrival < stats->min) stats->min = arrival;
+                if (arrival > stats->max) stats->max = arrival;
+                stats->mean += arrival;
             }
         }
         for (int s = 0; s < route.n_stops; ++s) {
-            quantiles (&(arrivals[s][0]), route.n_trips, &(route_stats[route_begin_index + s])); // OR tdata.route_stops_offset
+            route_stats[route_first_index + s].mean /= route.n_trips;
         }
-        route_begin_index += route.n_stops;
+        route_first_index += route.n_stops;
     }    
 }
 
@@ -250,10 +270,21 @@ static void profile_transfer (uint32_t route0, uint32_t stop0, uint32_t route1, 
     // 
 }
 
+void compute_transfer_stats () {
+    transfer_stats = malloc (tdata.n_stops * sizeof(struct stats));
+}
+
 int main () {
+
+    /* Load timetable data and summarize routes and transfers */
     tdata_load (RRRR_INPUT_FILE, &tdata);
-    compute_route_stats ();
+    compute_route_stats ();    // also allocates static array for route stats
+    compute_transfer_stats (); // also allocates static array for transfer stats
+
+    /* Allocate router scratch space */
     states = malloc (sizeof(struct state) * MAX_STATES);
+    stop_stats = malloc (sizeof(struct stats) * tdata.n_stops);
+
     struct state *state = states_next ();
     state_init (state);
     state->stop = 1200;
@@ -262,4 +293,11 @@ int main () {
         explore_transfers (states + states_head);
         ++states_head;
     }
+    
+    /* Free static arrays*/
+    free (route_stats);
+    free (transfer_stats);
+    free (states);
+    free (stop_stats);
+
 }

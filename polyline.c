@@ -18,6 +18,9 @@
   6 is 0) terminating an encoded number.
   
   Results can be checked with: https://developers.google.com/maps/documentation/utilities/polylineutility 
+  
+  For comparison see: https://developers.google.com/protocol-buffers/docs/encoding#optional
+  Repeated base-128 varints would be more efficient.
 */
 
 #include "polyline.h"
