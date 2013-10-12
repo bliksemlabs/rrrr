@@ -140,12 +140,13 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
     bool onboard = false;
     for (int s = 0; s < route.n_stops; ++s) {
         uint32_t this_stop_idx = route_stops[s];
-        if (!onboard && this_stop_idx == stop_idx) {
-            onboard = true;
-            stats0 = &(route_stats[route.route_stops_offset + s]);
+        if (!onboard) {
+            if (this_stop_idx == stop_idx) {
+                onboard = true;
+                stats0 = &(route_stats[route.route_stops_offset + s]);
+            }
             continue;
         }
-        if (!onboard) continue;
         // Only create states at stops that have transfers.
         if (tdata.stops[this_stop_idx].transfers_offset == tdata.stops[this_stop_idx + 1].transfers_offset) continue;
         // Only create states at stops that do not appear in the existing chain of states.
