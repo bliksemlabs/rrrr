@@ -150,6 +150,7 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
     char *stop_name = tdata_stop_name_for_index(tdata, stop_index);
     char *platformcode = tdata_platformcode_for_index(tdata, stop_index);
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
+    uint8_t *stop_attr = tdata_stop_attributes_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
         json_kv("name", stop_name);
@@ -161,6 +162,8 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
         json_kv("platformCode", platformcode);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
+        json_kv("wheelchairBoarding", (*stop_attr & sa_wheelchair_boarding) ? "true" : NULL);
+        json_kv("visualAccessible", (*stop_attr & sa_visual_accessible) ? "true" : NULL);
 	if (arrival == UNREACHED)
         	json_kv("arrival", NULL);
 	else

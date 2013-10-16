@@ -130,6 +130,8 @@ char *tdata_route_id_for_index(tdata_t*, uint32_t route_index);
 
 char *tdata_stop_id_for_index(tdata_t*, uint32_t stop_index);
 
+uint8_t *tdata_stop_attributes_for_index(tdata_t*, uint32_t stop_index);
+
 char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
 char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index);
