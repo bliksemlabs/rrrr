@@ -180,6 +180,8 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     char *route_desc = NULL;
     char *route_id = NULL;
     char *trip_id = NULL;
+    uint8_t trip_attributes = 0;
+    char *wheelchair_accessible = NULL;
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
 
@@ -188,6 +190,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         route_id = tdata_route_id_for_index(tdata, leg->route);
         trip_id = tdata_trip_id_for_route_trip_index(tdata, leg->route, leg->trip);
 
+        trip_attributes = tdata_trip_attributes_for_route(tdata, leg->route)[leg->trip];
         rtime_t begin_time = tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].begin_time;
 
         struct tm ltm;
@@ -197,6 +200,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
 
         departuredelay = tdata_delay_min (tdata, leg->route, leg->trip);
 
+        wheelchair_accessible = (trip_attributes & ta_accessible) ? "true" : NULL;
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else
         if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      mode = "RAIL";      else
@@ -222,6 +226,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kv("routeId", route_id);
         json_kv("tripId", trip_id);
         json_kv("serviceDate", servicedate);
+        json_kv("wheelchairAccessible", wheelchair_accessible);
 /* 
     "realTime": false,
     "distance": 2656.2383456335,
