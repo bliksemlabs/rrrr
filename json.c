@@ -188,6 +188,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     char *agency_id = NULL;
     char *agency_name = NULL;
     char *agency_url = NULL;
+
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
 
@@ -209,6 +210,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         strftime(servicedate, 9, "%Y%m%d\0", &ltm);
 
         departuredelay = tdata_delay_min (tdata, leg->route, leg->trip);
+
         wheelchair_accessible = (trip_attributes & ta_accessible) ? "true" : NULL;
         if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
         if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else
