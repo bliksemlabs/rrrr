@@ -149,6 +149,7 @@ static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
     char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
+    uint8_t *stop_attr = tdata_stop_attributes_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
         json_kv("name", stop_desc);
@@ -160,6 +161,8 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
+        json_kv("wheelchairBoarding", (*stop_attr & sa_wheelchair_boarding) ? "true" : "false");
+        json_kv("visualAccessible", (*stop_attr & sa_visual_accessible) ? "true" : "false");
 	if (arrival == UNREACHED)
         	json_kv("arrival", NULL);
 	else

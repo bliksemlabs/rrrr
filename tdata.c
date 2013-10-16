@@ -52,6 +52,10 @@ inline char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
     return td->stop_ids + (td->stop_id_width * stop_index);
 }
 
+inline uint8_t *tdata_stop_attributes_for_index(tdata_t *td, uint32_t stop_index) {
+    return td->stop_attributes + stop_index;
+}
+
 inline char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
     return td->trip_ids + (td->trip_id_width * trip_index);
 }
