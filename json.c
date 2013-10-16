@@ -161,8 +161,8 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
         json_kv("platformCode", NULL);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
-        json_kv("wheelchairBoarding", (*stop_attr & sa_wheelchair_boarding) ? "true" : "false");
-        json_kv("visualAccessible", (*stop_attr & sa_visual_accessible) ? "true" : "false");
+        json_kv("wheelchairBoarding", (*stop_attr & sa_wheelchair_boarding) ? "true" : NULL);
+        json_kv("visualAccessible", (*stop_attr & sa_visual_accessible) ? "true" : NULL);
 	if (arrival == UNREACHED)
         	json_kv("arrival", NULL);
 	else
