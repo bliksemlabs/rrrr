@@ -7,6 +7,8 @@ from gtfsdb import GTFSDatabase
 import os
 import sqlite3
 import operator
+from pytz import timezone
+import pytz
 
 MAX_DISTANCE = 801
 
@@ -32,7 +34,15 @@ except :
     print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
     start_date = db.find_max_service()
 print 'calendar start date is %s' % start_date
-calendar_start_time = time.mktime(datetime.datetime.combine(start_date, datetime.time.min).timetuple())
+
+timezones = db.agency_timezones()
+if len(db.agency_timezones()) > 1:
+    print 'Currently we only support one timezone being active, selected: '+timezones[0]
+print 'using timezone '+timezones[0]
+
+timezone = timezone(timezones[0])
+start_time = timezone.localize(datetime.datetime.combine(start_date, datetime.time.min))
+calendar_start_time = time.mktime(start_time.timetuple())
 print 'epoch time at which calendar starts: %d' % calendar_start_time
 
 sids = db.service_ids()
