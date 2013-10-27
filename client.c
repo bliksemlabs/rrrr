@@ -5,6 +5,7 @@
 #include <czmq.h>
 #include <assert.h>
 #include <unistd.h>
+#include <syslog.h>
 #include "rrrr.h"
 #include "router.h"
 #include "config.h"
