@@ -42,17 +42,26 @@ print 'using timezone '+timezones[0]
 
 timezone = timezone(timezones[0])
 start_time = timezone.localize(datetime.datetime.combine(start_date, datetime.time.min))
-calendar_start_time = time.mktime(start_time.timetuple())
+#Check whether DST is active on the serviceday, that means AFTER 3am, hence the +1 day.
+dst_active = start_time.timetuple().tm_isdst
+if dst_active == 1:
+    print 'DST active on start_time, adding one hour to start_time'
+calendar_start_time = time.mktime((start_time+timedelta(hours=dst_active)).timetuple())
 print 'epoch time at which calendar starts: %d' % calendar_start_time
 
 sids = db.service_ids()
 print '%d distinct service IDs' % len(sids)
                     
 bitmask_for_sid = {}
+dst_mask = 0
 for sid in sids :
     bitmask_for_sid[sid] = 0
 for day_offset in range(32) :
     date = start_date + timedelta(days = day_offset)
+    # Add one day because DST is in effect after 3am but all busses will drive after 3am thus in DST.
+    time = timezone.localize(datetime.datetime.combine(date + timedelta(days=1), datetime.time.min))
+    if time.timetuple().tm_isdst == 1:
+        dst_mask |= 1 << day_offset
     # db.date_range() is somewhat slow.
     # db.service_periods(sample_date) is slow because it checks its parameters with date_range().
     # this is very inefficient, but run time is reasonable for now and it uses existing code.
@@ -141,7 +150,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ23I') 
+struct_header = Struct('8sQ24I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -149,6 +158,7 @@ def write_header () :
     htext = "TTABLEV1"
     packed = struct_header.pack(htext,
         calendar_start_time,
+        dst_mask,
         nstops,
         nroutes,
         len(all_trip_ids),
