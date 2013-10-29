@@ -1154,7 +1154,7 @@ time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
     uint8_t cal_day = 0;
     while (day_mask >>= 1) cal_day++;
 
-    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
+    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) - ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
     localtime_r(&seconds, tm_out);
 
     return seconds;
@@ -1165,7 +1165,7 @@ time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
     uint8_t cal_day = 0;
     while (day_mask >>= 1) cal_day++;
 
-    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) + RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
+    time_t seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) + RTIME_TO_SEC(req->time - RTIME_ONE_DAY) - ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
     localtime_r(&seconds, tm_out);
 
     return seconds;

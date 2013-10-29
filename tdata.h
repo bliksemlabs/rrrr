@@ -66,7 +66,8 @@ struct tdata {
     void *base;
     size_t size;
     // required data
-    uint64_t calendar_start_time; // midnight of the first day in the 32-day calendar in seconds since the epoch
+    uint64_t calendar_start_time; // midnight of the first day in the 32-day calendar in seconds since the epoch, DST ignorant
+    uint32_t dst_active;
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;

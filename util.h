@@ -19,7 +19,9 @@ typedef uint16_t rtime_t;
 #define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
 #define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
 
-#define SEC_IN_ONE_DAY    (24 * 60 * 60)
+#define SEC_IN_ONE_MINUTE (60)
+#define SEC_IN_ONE_HOUR   (60 * SEC_IN_ONE_MINUTE)
+#define SEC_IN_ONE_DAY    (24 * SEC_IN_ONE_HOUR)
 #define SEC_IN_TWO_DAYS   (2 * SEC_IN_ONE_DAY)
 #define SEC_IN_THREE_DAYS (3 * SEC_IN_ONE_DAY)
 #define RTIME_ONE_DAY     (SEC_TO_RTIME(SEC_IN_ONE_DAY))

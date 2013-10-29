@@ -19,6 +19,7 @@ typedef struct tdata_header tdata_header_t;
 struct tdata_header {
     char version_string[8]; // should read "TTABLEV1"
     uint64_t calendar_start_time;
+    uint32_t dst_active;
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;
@@ -251,6 +252,7 @@ void tdata_load(char *filename, tdata_t *td) {
     if( strncmp("TTABLEV2", header->version_string, 8) )
         die("the input file does not appear to be a timetable or is of the wrong version");
     td->calendar_start_time = header->calendar_start_time;
+    td->dst_active = header->dst_active;
     td->n_stops = header->n_stops;
     td->n_routes = header->n_routes;
     td->n_trips = header->n_trips;
