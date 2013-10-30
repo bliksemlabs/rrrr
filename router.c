@@ -294,9 +294,9 @@ tdata_arrive (tdata_t* td, trip_t *trip, uint32_t route_stop) {
 
 /* Get the departure or arrival time of the given trip on the given service day, applying realtime data as needed. */
 static inline rtime_t 
-tdata_stoptime (tdata_t* tdata, trip_t *trip, uint32_t route_stop, bool arrive_by, struct service_day *sday) {
+tdata_stoptime (tdata_t* tdata, trip_t *trip, uint32_t route_stop, bool arrive, struct service_day *sday) {
     rtime_t time, time_adjusted;
-    if (arrive_by) time = tdata_arrive(tdata, trip, route_stop);
+    if (arrive) time = tdata_arrive(tdata, trip, route_stop);
     else           time = tdata_depart(tdata, trip, route_stop);
     time_adjusted = time + sday->midnight;
     /*
@@ -613,7 +613,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
                     }
                     continue; // to the next stop in the route
                 } else if (trip != NONE) { // We have already boarded a trip along this route.
-                    rtime_t time = tdata_stoptime (&(router.tdata), &(route_trips[trip]), route_stop, req->arrive_by, board_sday);
+                    rtime_t time = tdata_stoptime (&(router.tdata), &(route_trips[trip]), route_stop, !req->arrive_by, board_sday);
                     if (time == UNREACHED) continue; // overflow due to long overnight trips on day 2
                     T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
                     // Target pruning, sec. 3.1 of RAPTOR paper.
