@@ -10,7 +10,7 @@ Multiple RRRR processes running on the same machine map the same read-only data 
 
 Each worker is a separate process and keeps a permanent scratch buffer that is reused from one request to the next, so no dynamic memory allocation is performed in inner loops. Transit stops are the only locations considered. On-street searches will not be handled in the first phase of development. Eventually we will probably use protocol buffers over a 0MQ fan-out pattern to distribute real-time updates. This is basically standard GTFS-RT over a message passing system instead of HTTP pull.
 
-It looks like in may be possible to keep memory consumption for a Portland, Oregon-sized system under 10MiB. Full Netherlands coverage should be possible in about 50MiB.
+It looks like in may be possible to keep memory consumption for a Portland, Oregon-sized system under 10MiB. Full Netherlands coverage should be possible in about 20MiB.
 
 Dependencies
 ------------
@@ -51,7 +51,7 @@ Finally, run `python timetable.py output.gtfsdb` to create the timetable file `t
 Coding conventions
 -----------------------------
 Use specific types from stdint.h for cross-platform compatibility.
-Absolute times are stored in uint64 and referenced from the Epoch.
+Absolute times are stored in uint64 and referenced from the Epoch. The absolute time are always stored with DST disabled this as DST is defined at serviceday instead of the usual 3 am.
 Times in schedules are uint16 and referenced from midnight. 2**16 / 60 / 60 is only 18 hours, but by right-shifting all times one bit we get 36 hours (1.5 days) at 2 second resolution.
 When the result of a function is an array, the function should return a pointer to the array and store the number of elements in an indirected parameter (rather than the other way around).
 The data file is mostly a column store.
@@ -139,6 +139,6 @@ timetable.py test.gtfsdb
 The tool can now be executed:
 
 ```bash
-./testerrrr 1 2 ARRIVE 2014-01-01T00:00:00 timetable.dat
-./testerrrr 1 2 DEPART 2014-01-01T00:00:00 timetable.dat
+./testerrrr --from-idx=1 --to-idx=2 -a -D 2014-01-01T00:00:00 -T timetable.dat
+./testerrrr --from-idx=1 --to-idx=2 -d -D 2014-01-01T00:00:00 -T timetable.dat
 ```
