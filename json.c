@@ -243,6 +243,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kv("agencyName", agency_name);
         json_kv("agencyUrl", agency_url);
         json_kv("wheelchairAccessible", wheelchair_accessible);
+        json_kv("productCategory", productcategory);
 /* 
     "realTime": false,
     "distance": 2656.2383456335,
