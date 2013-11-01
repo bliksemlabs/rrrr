@@ -1,5 +1,5 @@
 
 ITIN 1 rides 
-WAIT    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Beginhalte;Beginhalte;
-RAIL     0   0     0     2 00:01:00 00:03:00 +0.0 ;bus;;Beginhalte;Uitstaphalte;
-WALK    -2  -2     2     3 00:03:00 00:03:00 +0.0 ;walk;walk;Uitstaphalte;Instaphalte;
+WAIT    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;;walk;walk;;Beginhalte;Beginhalte;
+RAIL     0   0     0     2 00:01:00 00:03:00 +0.0 ;Multimodale Reisinformatie;;;;Beginhalte;Uitstaphalte;
+WALK    -2  -2     2     3 00:03:00 00:03:00 +0.0 ;;walk;walk;;Uitstaphalte;Instaphalte;

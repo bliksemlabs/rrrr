@@ -147,18 +147,19 @@ static void json_end_arr() {
 static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date) * 1000L; }
 
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
-    char *stop_desc = tdata_stop_desc_for_index(tdata, stop_index);
+    char *stop_name = tdata_stop_name_for_index(tdata, stop_index);
+    char *platformcode = tdata_platformcode_for_index(tdata, stop_index);
     char *stop_id = tdata_stop_id_for_index(tdata, stop_index);
     uint8_t *stop_attr = tdata_stop_attributes_for_index(tdata, stop_index);
     latlon_t coords = tdata->stop_coords[stop_index];
     json_key_obj(key);
-        json_kv("name", stop_desc);
+        json_kv("name", stop_name);
         json_key_obj("stopId");
             json_kv("agencyId", "NL");
             json_kv("id", stop_id);
         json_end_obj();
         json_kv("stopCode", NULL); /* eventually fill it with UserStopCode */
-        json_kv("platformCode", NULL);
+        json_kv("platformCode", platformcode);
         json_kf("lat", coords.lat);
         json_kf("lon", coords.lon);
         json_kv("wheelchairBoarding", (*stop_attr & sa_wheelchair_boarding) ? "true" : NULL);
@@ -177,19 +178,29 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
 
 static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, time_t date) {
     char *mode = NULL;
-    char *route_desc = NULL;
+    char *headsign = NULL;
+    char *route_shortname = NULL;
+    char *productcategory = NULL;
     char *route_id = NULL;
     char *trip_id = NULL;
     uint8_t trip_attributes = 0;
     char *wheelchair_accessible = NULL;
+    char *agency_id = NULL;
+    char *agency_name = NULL;
+    char *agency_url = NULL;
+
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
 
     if (leg->route == WALK) mode = "WALK"; else {
-        route_desc = tdata_route_desc_for_index(tdata, leg->route);
+        headsign = tdata_headsign_for_route(tdata, leg->route);
+        route_shortname = tdata_shortname_for_route(tdata, leg->route);
+        productcategory = tdata_productcategory_for_route(tdata, leg->route);
         route_id = tdata_route_id_for_index(tdata, leg->route);
+        agency_id = tdata_agency_id_for_route(tdata, leg->route);
+        agency_name = tdata_agency_name_for_route(tdata, leg->route);
+        agency_url = tdata_agency_url_for_route(tdata, leg->route);
         trip_id = tdata_trip_id_for_route_trip_index(tdata, leg->route, leg->trip);
-
         trip_attributes = tdata_trip_attributes_for_route(tdata, leg->route)[leg->trip];
         rtime_t begin_time = tdata->trips[tdata->routes[leg->route].trip_ids_offset + leg->trip].begin_time;
 
@@ -222,11 +233,17 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kl("endTime",   endtime);
         json_kl("departureDelay", departuredelay);
         json_kl("arrivalDelay", 0);
-        json_kv("headsign", route_desc);
+        json_kv("routeShortName", route_shortname);
+        json_kv("route", route_shortname);
+        json_kv("headsign", headsign);
         json_kv("routeId", route_id);
         json_kv("tripId", trip_id);
         json_kv("serviceDate", servicedate);
+        json_kv("agencyId", agency_id);
+        json_kv("agencyName", agency_name);
+        json_kv("agencyUrl", agency_url);
         json_kv("wheelchairAccessible", wheelchair_accessible);
+        json_kv("productCategory", productcategory);
 /* 
     "realTime": false,
     "distance": 2656.2383456335,
@@ -385,8 +402,8 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
             json_kv("time", timetext(plan->req.time));
             json_kb("arriveBy", plan->req.arrive_by);
             json_kf("maxWalkDistance", 2000.0);
-            json_kv("fromPlace", tdata_stop_desc_for_index(tdata, plan->req.from));
-            json_kv("toPlace",   tdata_stop_desc_for_index(tdata, plan->req.to));
+            json_kv("fromPlace", tdata_stop_name_for_index(tdata, plan->req.from));
+            json_kv("toPlace",   tdata_stop_name_for_index(tdata, plan->req.to));
             json_kv("date", date);
             if (plan->req.mode == m_all) {
                 json_kv("mode", "TRANSIT,WALK");

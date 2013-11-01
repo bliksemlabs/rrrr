@@ -86,7 +86,7 @@ uint32_t trie_load(trie_t *t, tdata_t *td) {
     trie_t *root = t;
 
     for (uint32_t i = 0; i < td->n_stops; i++) {
-        char *stopname = tdata_stop_desc_for_index(td, i);
+        char *stopname = tdata_stop_name_for_index(td, i);
         uint32_t c, word_len = strlen(stopname);
 
         for (uint32_t j = 0; j < word_len; j++) {

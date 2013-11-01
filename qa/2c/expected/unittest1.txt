@@ -1,7 +1,7 @@
 
 ITIN 2 rides 
-WALK    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;walk;walk;Stop 2c1;Stop 2c1
-RAIL     1   0     0     1 00:01:00 00:02:00 +0.0 ;train 1;;Stop 2c1;Stop 2c2
-WALK    -2  -2     1     1 00:02:00 00:02:00 +0.0 ;walk;walk;Stop 2c2;Stop 2c2
-RAIL     2   0     1     2 00:03:00 00:04:00 +0.0 ;train 2;;Stop 2c2;Stop 2c3
-WALK    -2  -2     2     2 00:04:00 00:04:00 +0.0 ;walk;walk;Stop 2c3;Stop 2c3
+WAIT    -2  -2     0     0 00:01:00 00:01:00 +0.0 ;;walk;walk;;Stop 2c1;Stop 2c1;
+RAIL     1   0     0     1 00:01:00 00:02:00 +0.0 ;Multimodale Reisinformatie;;;;Stop 2c1;Stop 2c2;
+WAIT    -2  -2     1     1 00:02:00 00:02:00 +0.0 ;;walk;walk;;Stop 2c2;Stop 2c2;
+RAIL     2   0     1     2 00:03:00 00:04:00 +0.0 ;Multimodale Reisinformatie;;;;Stop 2c2;Stop 2c3;
+WAIT    -2  -2     2     2 00:04:00 00:04:00 +0.0 ;;walk;walk;;Stop 2c3;Stop 2c3;

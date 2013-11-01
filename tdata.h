@@ -9,6 +9,8 @@
 
 #include <stddef.h>
 
+typedef uint32_t calendar_t;
+
 typedef struct stop stop_t;
 struct stop {
     uint32_t stop_routes_offset;
@@ -20,10 +22,13 @@ typedef struct route route_t;
 struct route {
     uint32_t route_stops_offset;
     uint32_t trip_ids_offset;
+    uint32_t headsign_offset;
     uint16_t n_stops;
     uint16_t n_trips;
     uint16_t attributes;
-    uint16_t operator_index;
+    uint16_t agency_index;
+    uint16_t shortname_index;
+    uint16_t productcategory_index;
     rtime_t  min_time;
     rtime_t  max_time;
 };
@@ -63,7 +68,8 @@ struct tdata {
     void *base;
     size_t size;
     // required data
-    uint64_t calendar_start_time; // midnight of the first day in the 32-day calendar in seconds since the epoch
+    uint64_t calendar_start_time; // midnight of the first day in the 32-day calendar in seconds since the epoch, DST ignorant
+    calendar_t dst_active;
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;
@@ -79,14 +85,23 @@ struct tdata {
     uint8_t  *transfer_dist_meters;
     // optional data -- NULL pointer means it is not available
     latlon_t *stop_coords;
-    uint32_t stop_desc_width;
-    char *stop_desc;
-    uint32_t route_desc_width;
-    char *route_desc;
-    uint32_t operator_width;
-    char *operator;
-    uint32_t *trip_active;
-    uint32_t *route_active;
+    uint32_t platformcode_width;
+    char *platformcodes;
+    char *stop_names;
+    uint32_t *stop_nameidx;
+    uint32_t agency_id_width;
+    char *agency_ids;
+    uint32_t agency_name_width;
+    char *agency_names;
+    uint32_t agency_url_width;
+    char *agency_urls;
+    char *headsigns;
+    uint32_t route_shortname_width;
+    char *route_shortnames;
+    uint32_t productcategory_width;
+    char *productcategories;
+    calendar_t *trip_active;
+    calendar_t *route_active;
     uint8_t *trip_attributes;
     uint32_t route_id_width;
     char *route_ids;
@@ -124,23 +139,45 @@ char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
 char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index);
 
-char *tdata_operator_for_index(tdata_t *td, uint32_t operator_index);
+char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index);
 
-char *tdata_stop_desc_for_index(tdata_t*, uint32_t stop_index);
+char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
 
-uint32_t tdata_stopidx_by_stop_desc(tdata_t*, char* stop_desc, uint32_t start_index);
+char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
+
+char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset);
+
+char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index);
+
+char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
+
+char *tdata_stop_name_for_index(tdata_t*, uint32_t stop_index);
+
+char *tdata_platformcode_for_index(tdata_t*, uint32_t stop_index);
+
+uint32_t tdata_stopidx_by_stop_name(tdata_t*, char* stop_name, uint32_t start_index);
 
 uint32_t tdata_stopidx_by_stop_id(tdata_t*, char* stop_id, uint32_t start_index);
 
 uint32_t tdata_routeidx_by_route_id(tdata_t*, char* route_id, uint32_t start_index);
 
-char *tdata_route_desc_for_index(tdata_t*, uint32_t route_index);
-
 char *tdata_trip_ids_for_route(tdata_t*, uint32_t route_index);
 
 uint8_t *tdata_trip_attributes_for_route(tdata_t*, uint32_t route_index);
 
-uint32_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
+calendar_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_headsign_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_shortname_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_productcategory_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_agency_id_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_agency_name_for_route(tdata_t*, uint32_t route_index);
+
+char *tdata_agency_url_for_route(tdata_t*, uint32_t route_index);
 
 /* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must 
    be shifted in time to get the true scheduled arrival and departure times. */

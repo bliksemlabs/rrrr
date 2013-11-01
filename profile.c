@@ -86,11 +86,12 @@ static void state_print (struct state *state) {
     uint32_t last_stop = state->back_state->stop;
     uint32_t this_stop = state->stop;
     
-    char *last_stop_string = tdata_stop_desc_for_index (&tdata, last_stop);
-    char *this_stop_string = tdata_stop_desc_for_index (&tdata, this_stop); 
-    char *route_string = tdata_route_desc_for_index (&tdata, state->back_route);
-    printf (" FROM %s [%d] TO %s [%d] VIA %s [%d]\n", last_stop_string, last_stop, this_stop_string, this_stop, 
-        route_string, state->back_route);
+    char *last_stop_string = tdata_stop_name_for_index (&tdata, last_stop);
+    char *this_stop_string = tdata_stop_name_for_index (&tdata, this_stop); 
+    char *route_shortname = tdata_shortname_for_route (&tdata, state->back_route);
+    char *route_headsign = tdata_headsign_for_route (&tdata, state->back_route);
+    printf (" FROM %s [%d] TO %s [%d] VIA %s %s [%d]\n", last_stop_string, last_stop, this_stop_string, this_stop, 
+        route_shortname, route_headsign, state->back_route);
 }
 
 static struct state *states_next () {
@@ -131,9 +132,9 @@ static void path_print (struct state *state) {
 
 /* Explore the given route starting at the given stop. Add a state at each stop with transfers. */
 static void explore_route (struct state *state, uint32_t route_idx, uint32_t stop_idx, rtime_t transfer_time) {
-    P printf ("    exploring route %s [%d] toward X from stop %s [%d]\n", 
-        tdata_route_desc_for_index (&tdata, route_idx), 
-        route_idx, tdata_stop_desc_for_index (&tdata, stop_idx), stop_idx);
+    P printf ("    exploring route %s %s [%d] toward X from stop %s [%d]\n", 
+        tdata_shortname_for_route (&tdata, route_idx),  tdata_headsign_for_route (&tdata, route_idx),
+        route_idx, tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
     route_t route = tdata.routes[route_idx];
     uint32_t *route_stops = tdata_stops_for_route (tdata, route_idx);
     struct stats *stats0;
@@ -151,7 +152,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         if (tdata.stops[this_stop_idx].transfers_offset == tdata.stops[this_stop_idx + 1].transfers_offset) continue;
         // Only create states at stops that do not appear in the existing chain of states.
         if (path_has_stop (state, this_stop_idx)) continue;
-        // printf ("      enqueueing state at stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, this_stop_idx), this_stop_idx);
+        // printf ("      enqueueing state at stop %s [%d]\n", tdata_stop_name_for_index (&tdata, this_stop_idx), this_stop_idx);
         struct state *new_state = states_next ();
         new_state->stop = this_stop_idx;
         new_state->back_state = state;
@@ -171,7 +172,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
 
 /* Loop over all routes calling at this stop, exploring each route. TODO: Skip all used routes or their reversed "twins". */ 
 static void explore_stop (struct state *state, uint32_t stop_idx, rtime_t transfer_time) {
-    P printf ("  exploring routes calling at stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, stop_idx), stop_idx);
+    P printf ("  exploring routes calling at stop %s [%d]\n", tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
     uint32_t *routes;
     uint32_t n_routes = tdata_routes_for_stop (&tdata, stop_idx, &routes);
     for (uint32_t r = 0; r < n_routes; ++r) {
@@ -184,7 +185,7 @@ static void explore_stop (struct state *state, uint32_t stop_idx, rtime_t transf
 
 /* Loop over all transfers from the given stop, and explore_stop at each target stop including the given one. */
 static void explore_transfers (struct state *state) {
-    P printf ("exploring transfers from stop %s [%d]\n", tdata_stop_desc_for_index (&tdata, state->stop), state->stop);
+    P printf ("exploring transfers from stop %s [%d]\n", tdata_stop_name_for_index (&tdata, state->stop), state->stop);
     uint32_t stop_index_from = state->stop;
     uint32_t t  = tdata.stops[stop_index_from    ].transfers_offset;
     uint32_t tN = tdata.stops[stop_index_from + 1].transfers_offset;        
