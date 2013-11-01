@@ -9,6 +9,8 @@
 
 #include <stddef.h>
 
+typedef uint32_t calendar_t;
+
 typedef struct stop stop_t;
 struct stop {
     uint32_t stop_routes_offset;
@@ -67,7 +69,7 @@ struct tdata {
     size_t size;
     // required data
     uint64_t calendar_start_time; // midnight of the first day in the 32-day calendar in seconds since the epoch, DST ignorant
-    uint32_t dst_active;
+    calendar_t dst_active;
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;
@@ -98,8 +100,8 @@ struct tdata {
     char *route_shortnames;
     uint32_t productcategory_width;
     char *productcategories;
-    uint32_t *trip_active;
-    uint32_t *route_active;
+    calendar_t *trip_active;
+    calendar_t *route_active;
     uint8_t *trip_attributes;
     uint32_t route_id_width;
     char *route_ids;
@@ -163,7 +165,7 @@ char *tdata_trip_ids_for_route(tdata_t*, uint32_t route_index);
 
 uint8_t *tdata_trip_attributes_for_route(tdata_t*, uint32_t route_index);
 
-uint32_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
+calendar_t *tdata_trip_masks_for_route(tdata_t*, uint32_t route_index);
 
 char *tdata_headsign_for_route(tdata_t*, uint32_t route_index);
 

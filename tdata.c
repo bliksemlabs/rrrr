@@ -19,7 +19,7 @@ typedef struct tdata_header tdata_header_t;
 struct tdata_header {
     char version_string[8]; // should read "TTABLEV1"
     uint64_t calendar_start_time;
-    uint32_t dst_active;
+    calendar_t dst_active;
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;
@@ -151,7 +151,7 @@ inline char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
     return td->trip_ids + char_offset;
 }
 
-inline uint32_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
+inline calendar_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
     route_t route = (td->routes)[route_index];
     return td->trip_active + route.trip_ids_offset;
 }

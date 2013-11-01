@@ -46,7 +46,7 @@ static inline void flag_routes_for_stop (router_t *r, router_request_t *req, uin
     uint32_t *routes;
     uint32_t n_routes = tdata_routes_for_stop (&(r->tdata), stop_index, &routes);
     for (uint32_t i = 0; i < n_routes; ++i) {
-        uint32_t route_active_flags = r->tdata.route_active[routes[i]];
+        calendar_t route_active_flags = r->tdata.route_active[routes[i]];
         I printf ("  flagging route %d at stop %d\n", routes[i], stop_index);
         // CHECK that there are any trips running on this route (another bitfield)
         // printf("route flags %d", route_active_flags);
@@ -245,7 +245,7 @@ void dump_trips(router_t *prouter) {
         route_t route = router.tdata.routes[ridx];
         char (*trip_ids)[router.tdata.trip_id_width] = (void*)
             tdata_trip_ids_for_route(&(router.tdata), ridx);
-        uint32_t *trip_masks = tdata_trip_masks_for_route(&(router.tdata), ridx);
+        calendar_t *trip_masks = tdata_trip_masks_for_route(&(router.tdata), ridx);
         printf ("route %d (of %d), n trips %d, n stops %d\n", ridx, n_routes, route.n_trips, route.n_stops);
         for (uint32_t tidx = 0; tidx < route.n_trips; ++tidx) {
             printf ("trip index %d trip_id %s mask ", tidx, trip_ids[tidx]);
@@ -489,7 +489,7 @@ bool router_route(router_t *prouter, router_request_t *req) {
             uint8_t  *route_stop_attributes = tdata_stop_attributes_for_route(router.tdata, route_idx);
             trip_t   *route_trips = tdata_trips_for_route(&(router.tdata), route_idx); // TODO use to avoid calculating at every stop
             uint8_t  *route_trip_attributes = tdata_trip_attributes_for_route(&(router.tdata), route_idx);
-            uint32_t *trip_masks  = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
+            calendar_t *trip_masks  = tdata_trip_masks_for_route(&(router.tdata), route_idx); 
             uint32_t  trip = NONE; // trip index within the route. NONE means not yet boarded.
             uint32_t  board_stop;  // stop index where that trip was boarded
             rtime_t   board_time;  // time when that trip was boarded
