@@ -138,7 +138,7 @@ void router_request_dump(router_t*, router_request_t*);
 
 void router_request_initialize(router_request_t*);
 
-void router_request_randomize(router_request_t*);
+void router_request_randomize(router_request_t*, tdata_t *tdata);
 
 bool router_request_reverse(router_t*, router_request_t*);
 

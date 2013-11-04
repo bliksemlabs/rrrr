@@ -23,12 +23,17 @@ static void client_task (void *args, zctx_t *ctx, void *pipe) {
     uint32_t rc = zsocket_connect (sock, CLIENT_ENDPOINT);
     assert (rc == 0);
     uint32_t request_count = 0;
+
+    // load transit data from disk
+    tdata_t tdata;
+    tdata_load(RRRR_INPUT_FILE, &tdata);
+
     while (true) {
         router_request_t req;
         router_request_initialize (&req);
         // unfortunately tdata is not available here or we could initialize from current epoch time
         if (randomize) 
-            router_request_randomize (&req);
+            router_request_randomize (&req, &tdata);
         else {
             req.from=from_s;
             req.to=to_s;
