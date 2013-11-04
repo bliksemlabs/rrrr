@@ -1028,11 +1028,11 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     req->day_mask = 1 << cal_day;    
 }
 
-void router_request_randomize (router_request_t *req) {
+void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->walk_speed = 1.5; // m/sec
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
-    req->from = rrrrandom(6600); // 6600 for PDX, 70000 for NL
-    req->to = rrrrandom(6600);
+    req->from = rrrrandom(tdata->n_stops);
+    req->to = rrrrandom(tdata->n_stops);
     req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
     req->via = NONE;
     req->arrive_by = rrrrandom(2); // 0 or 1

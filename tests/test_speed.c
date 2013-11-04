@@ -66,7 +66,7 @@ START_TEST (test_speed_random) {
     for (int i = 0; i < N_REQUESTS; ++i) {
         printf (".");
         fflush (stdout);
-        router_request_randomize (&req);
+        router_request_randomize (&req, &tdata);
         stats_begin_clock ();
         router_route (&router, &req);
         stats_end_record ();

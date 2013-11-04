@@ -203,7 +203,7 @@ static void send_request (int nc, void *broker_socket) {
     qstring += 1; // skip question mark
     router_request_t req;
     router_request_initialize (&req);
-    router_request_randomize (&req); // This prevents segfaults because data is not initialised
+    router_request_randomize (&req, &tdata); // This prevents segfaults because data is not initialised
     parse_request_from_qstring(&req, &tdata, &hash_grid, qstring);
     zmsg_t *msg = zmsg_new ();
     zmsg_pushmem (msg, &req, sizeof(req));

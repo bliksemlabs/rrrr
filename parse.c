@@ -19,7 +19,7 @@ void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt,
         break;
     case 'r':
         srand(time(NULL));
-        router_request_randomize(req);
+        router_request_randomize(req, tdata);
         break;
     case 'D':
         {
