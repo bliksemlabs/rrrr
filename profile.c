@@ -8,6 +8,7 @@
 
 #define N_QUANTILES 5
 #define MAX_STATES (10 * 1024 * 1024)
+#define MAX_HOPS 4
 
 /* 2^16 ~= 18.2 hours in seconds. */
 
@@ -32,6 +33,8 @@ static uint32_t states_tail = 0; // the first unused state; this is also the num
 //  Should probably add a per-route "frequency" as well. Freq(variant1 U variant2) is freq(v1) + freq(v2), freq(leg1, leg2) = min(freq(l1), freq(l2)).
 //  Then there can be an option to merge variants.
 
+// Store lists of states at each stop, allows merging states from the same route.
+static struct state *stop_states;
 
 /* 
   Summary statistics over all trips on a given route at a given stop.
@@ -64,7 +67,7 @@ static void stats_init (struct stats *s) {
 }
 
 static void stats_print (struct stats *s) {
-    printf ("[%3d %2.1f %3d]", s->min, s->mean, s->max);
+    printf ("[%2.0f %2.0f %2.0f]", RTIME_TO_SEC(s->min) / 60.0, RTIME_TO_SEC(s->mean) / 60.0, RTIME_TO_SEC(s->max) / 60.0);
 }
 
 struct state {
@@ -89,8 +92,8 @@ static void state_print (struct state *state) {
     char *last_stop_string = tdata_stop_desc_for_index (&tdata, last_stop);
     char *this_stop_string = tdata_stop_desc_for_index (&tdata, this_stop); 
     char *route_string = tdata_route_desc_for_index (&tdata, state->back_route);
-    printf (" FROM %s [%d] TO %s [%d] VIA %s [%d]\n", last_stop_string, last_stop, this_stop_string, this_stop, 
-        route_string, state->back_route);
+    printf ("RIDE %s [%d] FROM %s [%d] TO %s [%d]\n", route_string, state->back_route, 
+        last_stop_string, last_stop, this_stop_string, this_stop);
 }
 
 static struct state *states_next () {
@@ -99,6 +102,10 @@ static struct state *states_next () {
     states_tail += 1;
     P if (states_tail % 10000 == 0) printf ("number of states is now %d\n", states_tail);
     return ret;
+}
+
+/* Cancel allocation of the topmost state on the stack. */
+static void state_pop () {
 }
 
 static void states_reset () {
@@ -127,6 +134,7 @@ static void path_print (struct state *state) {
         state_print (state);
         state = state->back_state;
     }    
+    printf ("\n");
 }
 
 /* Explore the given route starting at the given stop. Add a state at each stop with transfers. */
@@ -160,7 +168,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         stats_subtract (&(new_state->stats), stats0);                 // relativize times to board location
         stats_add      (&(new_state->stats), &(state->stats));        // accumulate stats from previous state
         if (this_stop_idx == target_stop) {
-            printf ("hit target.\n");
+            //printf ("hit target.\n");
             path_print (new_state);
         }
     }
@@ -195,6 +203,33 @@ static void explore_transfers (struct state *state) {
         explore_stop (state, stop_index_to, transfer_time);
     }
     explore_stop (state, stop_index_from, 0); 
+}
+
+static void route_transfer_print (route_transfer_t *rt) {
+    printf ("  route transfer to stop %d dist %d from route %d to route %d\n", rt->to_stop_idx, rt->dist_meters, rt->from_route_idx, rt->to_route_idx);
+}
+
+
+/* Loop over all route-transfers from the given stop, and explore_stop at each target stop including the given one. */
+static void explore_route_transfers (struct state *state) {
+    P printf ("exploring route transfers from stop %s [%d] on route %s [%d]\n", 
+        tdata_stop_desc_for_index (&tdata, state->stop), state->stop,
+        tdata_route_desc_for_index (&tdata, state->back_route), state->back_route);
+    uint32_t from_stop_idx  = state->stop;
+    uint32_t from_route_idx = state->back_route;
+    uint32_t toff0 = tdata.route_transfers_offsets[from_stop_idx];
+    uint32_t toff1 = tdata.route_transfers_offsets[from_stop_idx + 1];
+    for (uint32_t t = toff0; t < toff1; ++t) {
+        route_transfer_t rt = tdata.route_transfers[t];
+        P route_transfer_print (&rt);
+        if (rt.from_route_idx != from_route_idx) continue;
+        // Avoid boarding a previously used route.
+        if (path_has_route (state, rt.to_route_idx)) continue;
+        P printf ("  xfer: exploring route %s [%d] calling at stop %s [%d]\n", 
+            tdata_route_desc_for_index (&tdata, rt.to_route_idx), rt.to_route_idx,
+            tdata_stop_desc_for_index  (&tdata, rt.to_stop_idx),  rt.to_stop_idx);            
+        explore_route (state, rt.to_route_idx, rt.to_stop_idx, rt.dist_meters); // TODO scale by speed
+    }
 }
 
 static int rtime_compare (const rtime_t *a, const rtime_t *b) {
@@ -273,7 +308,14 @@ void compute_transfer_stats () {
     transfer_stats = malloc (tdata.n_stops * sizeof(struct stats));
 }
 
-int main () {
+void usage () {
+    printf ("command [from] [to]\n");
+    exit(0);
+}
+
+int main (int argc, char **argv) {
+
+    if (argc != 3) usage();
 
     /* Load timetable data and summarize routes and transfers */
     tdata_load (RRRR_INPUT_FILE, &tdata);
@@ -282,18 +324,22 @@ int main () {
 
     /* Allocate router scratch space */
     states = malloc (sizeof(struct state) * MAX_STATES);
-    stop_stats = malloc (sizeof(struct stats) * tdata.n_stops);
+    stop_stats =  malloc (sizeof(struct stats) * tdata.n_stops);
+    stop_states = malloc (sizeof(struct state) * tdata.n_stops);
 
     struct state *state = states_next ();
     state_init (state);
-    state->stop = 1200;
-    target_stop = 1344;
+    state->stop = atoi(argv[1]);
+    target_stop = atoi(argv[2]);
+    
+    /* For the first state, explore all transfers. For subsequent ones, explore only route-route transfers. */
+    explore_transfers (states + states_head++);
     while (states_head < states_tail) {
-        explore_transfers (states + states_head);
+        explore_route_transfers (states + states_head);
         ++states_head;
     }
     
-    /* Free static arrays*/
+    /* Free static arrays */
     free (route_stats);
     free (transfer_stats);
     free (states);

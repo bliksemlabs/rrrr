@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-import sys, struct, time
+import sys, struct, time, math
+import itertools
 from struct import Struct
 import datetime
 from datetime import timedelta, date
@@ -7,6 +8,7 @@ from gtfsdb import GTFSDatabase
 import os
 import sqlite3
 import operator
+from collections import defaultdict
 
 MAX_DISTANCE = 801
 
@@ -131,7 +133,7 @@ def write_string_table(strings) :
 # make this into a method on a Header class 
 # On 64-bit architectures using gcc long int is at least an int64_t.
 # We were using L in platform dependent mode, which just happened to work. TODO switch to platform independent mode?
-struct_header = Struct('8sQ23I') 
+struct_header = Struct('8sQ25I') 
 def write_header () :
     """ Write out a file header containing offsets to the beginning of each subsection. 
     Must match struct transit_data_header in transitdata.c """
@@ -152,6 +154,8 @@ def write_header () :
         loc_trips,
         loc_trip_attributes,
         loc_stop_routes,
+        loc_route_transfers,
+        loc_route_transfers_offsets,
         loc_transfer_target_stops,
         loc_transfer_dist_meters,
         loc_trip_active,
@@ -384,7 +388,7 @@ write_text_comment("TRIPS BY ROUTE")
 loc_trips = tell()
 toffset = 0
 trips_offsets = []
-trip_t = Struct('IHH') # Beware, Python structs do not have padding at the end.
+trip_t = Struct('IHH') # Beware, Python structs do not have padding at the end unless forced with e.g. 0I.
 
 all_trip_ids = []
 trip_ids_offsets = [] # also serves as offsets into per-trip "service active" bitfields
@@ -441,7 +445,119 @@ for idx in range(nstops) :
             offset += 1 
 stop_routes_offsets.append(offset) # sentinel
 assert len(stop_routes_offsets) == nstops + 1
+# delete stop_routes later, after finding route-by-route transfers
+
+# equirectangular / sinusoidal projection distance
+def distance (lat1, lon1, lat2, lon2, xscale) :
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    dlon *= xscale
+    d2 = dlon * dlon + dlat * dlat
+    return math.sqrt(d2) * 111111.111
+
+class route_xfer :
+    def __init__ (self, from_route, to_route, from_sidx, to_sidx, dist) :
+        self.from_route = from_route
+        self.to_route = to_route
+        self.from_sidx = from_sidx
+        self.to_sidx = to_sidx
+        self.dist = dist
+        
+def find_transfers (radius = 500, obstruction = 1.4) :
+    """Find best transfer point for each pair of routes, using the route grouping already performed above (stop_routes)."""
+    print "finding optimal route-to-route transfers"
+    all_query = "select stop_id, stop_name, stop_lat, stop_lon from stops;"
+    # a normal index on lat and lon is sufficiently fast, no need for a spatial index
+    near_query = """select stop_id, stop_name, stop_lat, stop_lon from stops where 
+    stop_lat > (:lat - :range_lat) and stop_lat < (:lat + :range_lat) and
+    stop_lon > (:lon - :range_lon) and stop_lon < (:lon + :range_lon) ;
+    """
+    # can also compare squared distances in scaled meters
+    transfers = {}
+    n_processed = 0
+    range_lat = radius / 111111.111
+    for sid, sname, lat, lon in list(db.conn.execute(all_query)) :
+        xscale = math.cos(math.radians(lat)) 
+        range_lon = range_lat * xscale
+        sidx = idx_for_stop_id[sid]
+        if sid not in stop_routes : continue # Dutch dataset has some stops with no routes
+        routes = stop_routes[sid] # yes, it's keyed on id not index
+        for sid2, sname2, lat2, lon2 in db.conn.execute(near_query, locals()):
+            # include transfers from/to the same stop
+            d = distance (lat, lon, lat2, lon2, xscale)
+            if d > radius : continue
+            d *= obstruction
+            sidx2 = idx_for_stop_id[sid2]
+            if sid2 not in stop_routes : continue
+            routes2 = stop_routes[sid2]
+            for pair in itertools.product (routes, routes2) :
+                if pair[0] == pair[1] : continue 
+                if pair in transfers :
+                    from_sidx, to_sidx, dist = transfers[pair]
+                    if d < dist :
+                       transfers[pair] = (sidx, sidx2, d)
+                else : transfers[pair] = (sidx, sidx2, d)
+        n_processed += 1;
+        if n_processed % 5000 == 0 : print 'processed %d origin stops' % n_processed
+    return transfers
+
+# we frequently get a lot of route-route transfers between the same pair of stops
+# therefore store a list of route-route pairs for each stop, using the high bit to signal a transition 
+# to a new destination stop / distance pair. 
+# many transfers may also come from the same origin route, and the high-order bits can also be used to group by from_ridx.
+# distance does not really need to be stored, since we will be calculating transfer stats for each route-route pair at startup.
+# we could use the same stucture and just skip checking the individual stop lists for RAPTOR operation, since all
+# "useful" stop-stop pairs for transfers should be present.
+# If we do pre-calculate the route-route transfer time stats (which might not be a good idea due to the number of them)
+# this optimization is useless since each transfer has its own characteristics.
+# Uncompressed, this is over 70MB in the Dutch data set.
+transfers_by_stop = defaultdict(list)
+for key, value in find_transfers().iteritems() :
+    transfers_by_stop[value[0]].append(key + value)
+
+# this might be more efficient if stored by routestop
+struct_route_transfer = Struct('IHHH0I') # to stop, distance, from route, to route. 0I aligns properly to uint32.
+
+print "saving route-route transfers"
+write_text_comment("ROUTE-ROUTE TRANSFERS")
+loc_route_transfers = tell()
+offset = 0
+transfers_offsets = []
+for from_sidx, from_sid in enumerate(stop_id_for_idx) :
+    #print "from stop index %d" % from_sidx
+    transfers_offsets.append(offset)
+    transfers = transfers_by_stop[from_sidx]
+    transfers.sort (key = lambda (xfer) : xfer[3]) # sort on and group by target stop index
+    for from_ridx, to_ridx, from_sidx, to_sidx, dist in transfers :
+        #print "from route %d to route %d target stop %d at %d meters" % (from_ridx, to_ridx, to_sidx, dist)
+        #if to_sidx != last_to_sidx :
+        #    # indicate transition to a new target stop, including distance
+        #    print "  to stop index %d (at %d meters)" % (to_sidx, dist)
+        #if from_ridx != last_from_ridx :
+        #    print "    from route index %d (at %d meters)" % (to_sidx, dist)
+        #print "    route %d to %d" % (from_ridx, to_ridx)
+        out.write(struct_route_transfer.pack(to_sidx, dist, from_ridx, to_ridx))
+        offset += 1
+
+print "saving offsets into route-route transfer table (for each origin stop)"
+write_text_comment("ROUTE-ROUTE OFFSETS")
+transfers_offsets.append(offset) # sentinel
+loc_route_transfers_offsets = tell()
+for to in transfers_offsets : writeint (to)
+    
+# after finding route-by-route transfers we no longer need these structures
+print "total %d route-route transfers" % offset
 del stop_routes
+del transfers_offsets
+
+# add function for nearby stops
+# index stop coordinates in GTFS->SQLite loader
+# loop over stops
+# get nearby stops and loop over them
+#    find distance to each stop
+#    loop over routes at orign stop
+#       loop over routes at destination stop 
+#          store for key (orig_route dest_route) the lowest known distance
 
 print "saving transfer stops (footpaths)"
 write_text_comment("TRANSFER TARGET STOPS")

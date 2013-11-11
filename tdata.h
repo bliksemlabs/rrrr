@@ -57,6 +57,13 @@ typedef enum routestop_attribute {
     rsa_alighting    =   4  // a passenger can leave the vehicle at this stop
 } routestop_attribute_t;
 
+typedef struct {
+    uint32_t to_stop_idx;
+    uint16_t dist_meters;
+    uint16_t from_route_idx;
+    uint16_t to_route_idx;
+} route_transfer_t;
+
 // treat entirely as read-only?
 typedef struct tdata tdata_t;
 struct tdata {
@@ -75,6 +82,8 @@ struct tdata {
     stoptime_t *stop_times;
     trip_t *trips;
     uint32_t *stop_routes;
+    route_transfer_t *route_transfers;
+    uint32_t *route_transfers_offsets;
     uint32_t *transfer_target_stops;
     uint8_t  *transfer_dist_meters;
     // optional data -- NULL pointer means it is not available
