@@ -90,6 +90,7 @@ int main(int argc, char **argv) {
     // zframe_send (&frame, zmq_sock, 0);
     // syslog(LOG_INFO, "departure message sent to load balancer");
     // zmsg_t *msg = zmsg_recv (zmq_sock);
+    router_teardown(&router);
     tdata_close(&tdata);
     zctx_destroy (&zctx); //zmq_close(socket) necessary before context destroy?
     exit(EXIT_SUCCESS);
