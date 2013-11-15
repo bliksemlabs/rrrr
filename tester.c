@@ -151,6 +151,7 @@ int main(int argc, char **argv) {
         printf("%s", result_buf);
     }    
     
+    router_teardown(&router);
     tdata_close(&tdata);
 
     exit(EXIT_SUCCESS);
