@@ -9,6 +9,7 @@
 #include "config.h"
 #include "rrrr.h"
 #include "tdata.h"
+#include "router.h"
 
 int main(int argc, char **argv) {
     if (argc < 4) {
@@ -16,7 +17,8 @@ int main(int argc, char **argv) {
                "                            ROUTEID route_id\n"
                "                            STOP stop_idx\n"
                "                            STOPID stop_id\n"
-               "                            STOPNAME stopname\n", argv[0]);
+               "                            STOPNAME stopname\n"
+               "                            TRANSFER stop_idx stop_idx\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
 
@@ -58,6 +60,16 @@ int main(int argc, char **argv) {
                 printf ("%d %s %s\n", stop_index, tdata_stop_id_for_index(&tdata, stop_index), tdata_stop_name_for_index(&tdata, stop_index));
                 stop_index = tdata_stopidx_by_stop_name(&tdata, argv[3], stop_index + 1);
             }
+        }
+    } else if (strcmp(argv[2], "TRANSFER") == 0) {
+        uint32_t stop_index1 = strtol(argv[3], NULL, 10);
+        uint32_t stop_index2 = strtol(argv[4], NULL, 10);
+        if (stop_index1 > tdata.n_stops || stop_index2 > tdata.n_stops) {
+            fprintf(stderr, "Only %d stops in %s\n", tdata.n_stops, argv[1]);
+        } else {
+            printf ("%d %s %s %d %s %s %d\n", stop_index1, tdata_stop_id_for_index(&tdata, stop_index1), tdata_stop_name_for_index(&tdata, stop_index1),
+                                              stop_index2, tdata_stop_id_for_index(&tdata, stop_index2), tdata_stop_name_for_index(&tdata, stop_index2),
+                                              transfer_distance (&tdata, stop_index1, stop_index2));
         }
     }
 
