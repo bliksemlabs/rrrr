@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 /* converts a hex character to its integer value */
-static char from_hex(char ch) {
+static unsigned char from_hex(unsigned char ch) {
     return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
 }
 
