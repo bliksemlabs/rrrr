@@ -42,7 +42,7 @@ void router_teardown(router_t *router) {
 // TODO? flag_routes_for_stops all at once after doing transfers? this would require another stops 
 // bitset for transfer target stops.
 /* Given a stop index, mark all routes that serve it as updated. */
-static inline void flag_routes_for_stop (router_t *router, router_request_t *req, uint32_t stop_index, uint32_t day_mask) {
+static inline void flag_routes_for_stop (router_t *router, router_request_t *req, uint32_t stop_index) {
     uint32_t *routes;
     uint32_t n_routes = tdata_routes_for_stop (router->tdata, stop_index, &routes);
     for (uint32_t i = 0; i < n_routes; ++i) {
@@ -51,7 +51,7 @@ static inline void flag_routes_for_stop (router_t *router, router_request_t *req
         // CHECK that there are any trips running on this route (another bitfield)
         // printf("route flags %d", route_active_flags);
         // printBits(4, &route_active_flags);
-        if ((day_mask & route_active_flags) && // seems to provide about 14% increase in throughput
+        if ((router->day_mask & route_active_flags) && // seems to provide about 14% increase in throughput
             (req->mode & router->tdata->routes[routes[i]].attributes) > 0) {
            bitset_set (router->updated_routes, routes[i]);
            I printf ("  route running\n");
@@ -127,7 +127,7 @@ transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index
  stored in the walk time member of states.
 */
 static inline void 
-apply_transfers (router_t *router, router_request_t *req, uint32_t round, uint32_t day_mask) {
+apply_transfers (router_t *router, router_request_t *req, uint32_t round) {
     router_state_t *states = router->states + (round * router->tdata->n_stops);
     /* The transfer process will flag routes that should be explored in the next round */
     bitset_reset (router->updated_routes);
@@ -159,7 +159,7 @@ apply_transfers (router_t *router, router_request_t *req, uint32_t round, uint32
             state_from->walk_time = time_from; 
             state_from->walk_from = stop_index_from;
             // assert (router->best_time[stop_index_from] == time_from);
-            flag_routes_for_stop (router, req, stop_index_from, day_mask);
+            flag_routes_for_stop (router, req, stop_index_from);
             unflag_banned_routes (router, req);
         }
         /* Then apply transfers from the stop to nearby stops */
@@ -187,7 +187,7 @@ apply_transfers (router_t *router, router_request_t *req, uint32_t round, uint32
                 state_to->walk_time = time_to; 
                 state_to->walk_from = stop_index_from;
                 router->best_time[stop_index_to] = time_to;
-                flag_routes_for_stop (router, req, stop_index_to, day_mask);
+                flag_routes_for_stop (router, req, stop_index_to);
                 unflag_banned_routes (router, req);
             }
         }
@@ -260,11 +260,11 @@ uint32_t find_departure(route_t *route, stoptime_t (*stop_times)[route->n_stops]
 
 typedef struct service_day {
     rtime_t  midnight;
-    uint32_t mask;
+    calendar_t mask;
     bool     apply_realtime;
 } sday_t;
 
-static void day_mask_dump (uint32_t mask) {
+static void day_mask_dump (calendar_t mask) {
     printf ("day mask: ");
     printBits (4, &mask);
     printf ("bits set: ");
@@ -312,25 +312,25 @@ tdata_stoptime (tdata_t* tdata, trip_t *trip, uint32_t route_stop, bool arrive, 
 bool router_route(router_t *router, router_request_t *req) {
     // router_request_dump(router, preq);
     uint32_t n_stops = router->tdata->n_stops;
-    uint32_t day_mask = req->day_mask;
+    router->day_mask = req->day_mask;
     
     /* One struct service_day for each of: yesterday, today, tomorrow (for overnight searches) */
     /* Note that yesterday's bit flag will be 0 if today is the first day of the calendar. */
     struct service_day days[3];
     {
         // One bit for the calendar day on which realtime data should be applied (applying only on the true current calendar day)
-        uint32_t realtime_mask = 1 << ((time(NULL) - router->tdata->calendar_start_time) / SEC_IN_ONE_DAY);
+        calendar_t realtime_mask = 1 << ((time(NULL) - router->tdata->calendar_start_time) / SEC_IN_ONE_DAY);
         struct service_day yesterday;
         yesterday.midnight = 0;
-        yesterday.mask = day_mask >> 1;
+        yesterday.mask = router->day_mask >> 1;
         yesterday.apply_realtime = yesterday.mask & realtime_mask;
         struct service_day today;
         today.midnight = RTIME_ONE_DAY;
-        today.mask = day_mask;
+        today.mask = router->day_mask;
         today.apply_realtime = today.mask & realtime_mask;
         struct service_day tomorrow;
         tomorrow.midnight = RTIME_TWO_DAYS;
-        tomorrow.mask = day_mask << 1;
+        tomorrow.mask = router->day_mask << 1;
         tomorrow.apply_realtime = tomorrow.mask & realtime_mask;
         /* Iterate backward over days for arrive-by searches. */
         if (req->arrive_by) {
@@ -343,10 +343,10 @@ bool router_route(router_t *router, router_request_t *req) {
             days[2] = tomorrow;        
         }        
         /* set day_mask to catch all days (0, 1, 2) */
-        day_mask = yesterday.mask | today.mask | tomorrow.mask;
+        router->day_mask = yesterday.mask | today.mask | tomorrow.mask;
     }
     // for (int i = 0; i < 3; ++i) service_day_dump (&days[i]);
-    // day_mask_dump (day_mask);    
+    // day_mask_dump (router->day_mask); 
 
     I router_request_dump(router, req);
     T printf("\norigin_time %s \n", timetext(req->time));
@@ -448,7 +448,7 @@ bool router_route(router_t *router, router_request_t *req) {
         // Remove the banned stops from the bitset (do we really want to do this here? this could only remove the origin stop.)
         unflag_banned_stops(router, req);
         // Apply transfers to initial state, which also initializes the updated routes bitset.
-        apply_transfers(router, req, 1, day_mask);
+        apply_transfers(router, req, 1);
         // dump_results(router);
     }    
     
@@ -655,7 +655,7 @@ bool router_route(router_t *router, router_request_t *req) {
         // Remove the banned stops from the bitset, so no transfers will happen there.
         unflag_banned_stops(router, req);
         /* Also updates the list of routes for next round based on stops that were touched in this round. */
-        apply_transfers(router, req, round, day_mask);
+        apply_transfers(router, req, round);
         // exit(0);
         /* Initialize the stops in round 1 that were used as starting points for round 0. */
         if (round == 0) initialize_transfers (router, 1, origin);
@@ -1142,7 +1142,7 @@ void router_request_dump(router_t *router, router_request_t *req) {
 }
 
 time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
-    uint32_t day_mask = req->day_mask;
+    calendar_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
     while (day_mask >>= 1) cal_day++;
 
@@ -1153,7 +1153,7 @@ time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
 }
 
 time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
-    uint32_t day_mask = req->day_mask;
+    calendar_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
     while (day_mask >>= 1) cal_day++;
 

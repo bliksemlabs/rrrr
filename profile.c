@@ -18,7 +18,7 @@
 static uint32_t target_stop;
 
 // Bits for the days over which the analysis is performed.
-static uint32_t day_mask;
+static calendar_t day_mask;
 static struct stats *route_stats = NULL; 
 static struct stats *transfer_stats = NULL;
 static struct stats *stop_stats; // store best known for each stop, prune some new states on basis of worst time.

@@ -38,6 +38,7 @@ struct router {
     BitSet *updated_stops;  // Used to track which stops improved during each round
     BitSet *updated_routes; // Used to track which routes might have changed during each round
 
+    calendar_t day_mask;
     // We should move more routing state in here, like round and sub-scratch pointers.
 };
 
@@ -83,7 +84,7 @@ struct router_request {
     uint8_t walk_slack;  // an extra delay per transfer, in seconds 
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
-    uint32_t day_mask;   // bit for the day on which we are searching, relative to the timetable calendar
+    calendar_t day_mask; // bit for the day on which we are searching, relative to the timetable calendar
     uint8_t mode;        // selects the mode by a bitfield
     uint8_t trip_attributes; // select required attributes bitfield (from trips)
     uint8_t optimise;    // restrict the output to specific optimisation flags
