@@ -483,10 +483,10 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         trip_t   *route_trips = tdata_trips_for_route(router->tdata, route_idx); // TODO use to avoid calculating at every stop
         uint8_t  *route_trip_attributes = tdata_trip_attributes_for_route(router->tdata, route_idx);
         calendar_t *trip_masks  = tdata_trip_masks_for_route(router->tdata, route_idx); 
-        uint32_t  trip = NONE; // trip index within the route. NONE means not yet boarded.
-        uint32_t  board_stop;  // stop index where that trip was boarded
-        rtime_t   board_time;  // time when that trip was boarded
-        serviceday_t *board_serviceday;  // Service day on which that trip was boarded
+        uint32_t      trip = NONE;             // trip index within the route. NONE means not yet boarded.
+        uint32_t      board_stop = 0;          // stop index where that trip was boarded
+        rtime_t       board_time = 0;          // time when that trip was boarded
+        serviceday_t *board_serviceday = NULL; // Service day on which that trip was boarded
         /*
             Iterate over stop indexes within the route. Each one corresponds to a global stop index.
             Note that the stop times array should be accessed with [trip][route_stop] not [trip][stop].
@@ -553,7 +553,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     Scanning through the whole list of trips reduces speed by ~20 percent over binary search. */
                 uint32_t best_trip = NONE;
                 rtime_t  best_time = req->arrive_by ? 0 : UINT16_MAX;
-                serviceday_t  *best_serviceday;
+                serviceday_t  *best_serviceday = NULL;
                 /* Search trips within days. The loop nesting could also be inverted. */
                 for (serviceday_t *serviceday = router->servicedays; serviceday <= router->servicedays + 2; ++serviceday) {
                     /* Check that this route still has any trips running on this day. */
