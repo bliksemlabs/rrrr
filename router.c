@@ -373,13 +373,12 @@ bool router_route(router_t *router, router_request_t *req) {
     for (uint32_t s = 0; s < n_stops; ++s) router->best_time[s] = UNREACHED;
 
     /* Stop indexes where the search process begins and ends, independent of arrive_by */
-    uint32_t origin, target; 
     if (req->arrive_by) {
-        origin = req->to;
-        target = req->from;
+        router->origin = req->to;
+        router->target = req->from;
     } else {
-        origin = req->from;
-        target = req->to;
+        router->origin = req->from;
+        router->target = req->to;
     }
     
     if (req->start_trip_route != NONE && req->start_trip_trip != NONE) {
@@ -418,10 +417,10 @@ bool router_route(router_t *router, router_request_t *req) {
             // printf ("Based on start trip and time, chose previous stop %s [%d] at %s\n", prev_stop_id, prev_stop, timetext(prev_stop_time));
             req->from = ONBOARD;
             /* Initialize origin state */
-            origin = prev_stop; // only origin is used from here on in routing
-            router->best_time[origin]    = prev_stop_time;
-            states[1][origin].time      = prev_stop_time;
-            states[1][origin].walk_time = prev_stop_time; 
+            router->origin = prev_stop; // only origin is used from here on in routing
+            router->best_time[router->origin]   = prev_stop_time;
+            states[1][router->origin].time      = prev_stop_time;
+            states[1][router->origin].walk_time = prev_stop_time; 
             /* When starting on board, only flag one route and do not apply transfers, only a single walk. */
             bitset_reset (router->updated_stops);
             bitset_reset (router->updated_routes);
@@ -432,19 +431,19 @@ bool router_route(router_t *router, router_request_t *req) {
     /* Initialize origin state if not beginning the search on board. */
     if (req->from != ONBOARD) {
         /* We will use round 1 to hold the initial state for round 0. Round 1 must then be re-initialized before use. */
-        router->best_time[origin] = req->time;
-        states[1][origin].time   = req->time;
+        router->best_time[router->origin] = req->time;
+        states[1][router->origin].time   = req->time;
         // the rest of these should be unnecessary
-        states[1][origin].back_stop  = NONE;
-        states[1][origin].back_route = NONE;
-        states[1][origin].back_trip  = NONE;
-        states[1][origin].board_time = UNREACHED;
+        states[1][router->origin].back_stop  = NONE;
+        states[1][router->origin].back_route = NONE;
+        states[1][router->origin].back_trip  = NONE;
+        states[1][router->origin].board_time = UNREACHED;
         /* Hack to communicate the origin time to itinerary renderer. It would be better to just include rtime_t in request structs. */
         // TODO eliminate this now that we have rtimes in requests
-        states[0][origin].time = req->time;
+        states[0][router->origin].time = req->time;
         bitset_reset(router->updated_stops);
         // This is inefficient, as it depends on iterating over a bitset with only one bit true.
-        bitset_set(router->updated_stops, origin);
+        bitset_set(router->updated_stops, router->origin);
         // Remove the banned stops from the bitset (do we really want to do this here? this could only remove the origin stop.)
         unflag_banned_stops(router, req);
         // Apply transfers to initial state, which also initializes the updated routes bitset.
@@ -609,9 +608,9 @@ bool router_route(router_t *router, router_request_t *req) {
                     if (time == UNREACHED) continue; // overflow due to long overnight trips on day 2
                     T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
                     // Target pruning, sec. 3.1 of RAPTOR paper.
-                    if ((router->best_time[target] != UNREACHED) && 
-                        (req->arrive_by ? time < router->best_time[target] 
-                                       : time > router->best_time[target])) { 
+                    if ((router->best_time[router->target] != UNREACHED) && 
+                        (req->arrive_by ? time < router->best_time[router->target] 
+                                       : time > router->best_time[router->target])) { 
                         T printf("    (target pruning)\n");
                         // We cannot break out of this route entirely, because re-boarding may occur at a later stop.
                         continue;
@@ -658,7 +657,7 @@ bool router_route(router_t *router, router_request_t *req) {
         apply_transfers(router, req, round);
         // exit(0);
         /* Initialize the stops in round 1 that were used as starting points for round 0. */
-        if (round == 0) initialize_transfers (router, 1, origin);
+        if (round == 0) initialize_transfers (router, 1, router->origin);
         // dump_results(router); // DEBUG
     } // end for (round)
     return true;

@@ -38,6 +38,8 @@ struct router {
     BitSet *updated_stops;  // Used to track which stops improved during each round
     BitSet *updated_routes; // Used to track which routes might have changed during each round
 
+    uint32_t origin;
+    uint32_t target;
     calendar_t day_mask;
     // We should move more routing state in here, like round and sub-scratch pointers.
 };
