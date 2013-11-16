@@ -226,7 +226,7 @@ static double quantile (rtime_t *times, uint32_t n, double q) {
 void compute_route_stats () {
     {
         int n_stops_all_routes = 0; // Sum(route.n_stops) over all routes. Each stop may appear in more than one route.
-        for (int r = 0; r < tdata.n_routes; ++r) n_stops_all_routes += tdata.routes[r].n_stops;
+        for (uint32_t r = 0; r < tdata.n_routes; ++r) n_stops_all_routes += tdata.routes[r].n_stops;
         route_stats = malloc (n_stops_all_routes * sizeof(struct stats));
     }
     
@@ -236,7 +236,7 @@ void compute_route_stats () {
     /* For each trip in each route, iterate over the stops updating the per_stop stats. */
     /* Many trips encountered are exact duplicates (TimeDemandTypes). */
     /* Actually we probably need separate departures stats for relativizing. */
-    for (int r = 0; r < tdata.n_routes; ++r) {
+    for (uint32_t r = 0; r < tdata.n_routes; ++r) {
         route_t route = tdata.routes[r];
         for (int s = 0; s < route.n_stops; ++s) {
             stats_init (&(route_stats[route_first_index + s]));

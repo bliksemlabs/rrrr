@@ -200,14 +200,14 @@ void tdata_check_coherent (tdata_t *tdata) {
     float max_lat = +70.0; // farther north than Tromsø and Murmansk
     float min_lon = -180.0;
     float max_lon = +180.0;
-    for (int s = 0; s < tdata->n_stops; ++s) {
+    for (uint32_t s = 0; s < tdata->n_stops; ++s) {
         latlon_t ll = tdata->stop_coords[s];
         if (ll.lat < min_lat || ll.lat > max_lat || ll.lon < min_lon || ll.lon > max_lon) {
             printf ("stop lat/lon out of range: lat=%f, lon=%f \n", ll.lat, ll.lon);
         }
     }
     /* Check that all timedemand types start at 0 and consist of monotonically increasing times. */
-    for (int r = 0; r < tdata->n_routes; ++r) {
+    for (uint32_t r = 0; r < tdata->n_routes; ++r) {
         route_t route = tdata->routes[r];
         trip_t *trips = tdata->trips + route.trip_ids_offset;
         int n_nonincreasing_trips = 0;
@@ -267,7 +267,7 @@ void tdata_check_coherent (tdata_t *tdata) {
 /* Map an input file into memory and reconstruct pointers to its contents. */
 void tdata_load(char *filename, tdata_t *td) {
 
-    uint32_t fd = open(filename, O_RDWR);
+    int fd = open(filename, O_RDWR);
     if (fd == -1) 
         die("could not find input file");
 
@@ -452,7 +452,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
         return;
     }
     printf("Received feed message with %zu entities.\n", msg->n_entity);
-    for (int e = 0; e < msg->n_entity; ++e) {
+    for (size_t e = 0; e < msg->n_entity; ++e) {
         TransitRealtime__FeedEntity *entity = msg->entity[e];
         if (entity == NULL) goto cleanup;
         // printf("  entity %d has id %s\n", e, entity->id);
@@ -491,7 +491,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
 
 void tdata_clear_gtfsrt (tdata_t *tdata) {
     /* If we had the total number of trips nested loops would not be necessary. */
-    for (int r = 0; r < tdata->n_routes; ++r) {
+    for (uint32_t r = 0; r < tdata->n_routes; ++r) {
         route_t route = tdata->routes[r];
         trip_t *trips = tdata_trips_for_route(tdata, r);
         for (int t = 0; t < route.n_trips; ++t) {
@@ -501,7 +501,7 @@ void tdata_clear_gtfsrt (tdata_t *tdata) {
 }
 
 void tdata_apply_gtfsrt_file (tdata_t *tdata, RadixTree *tripid_index, char *filename) {
-    uint32_t fd = open(filename, O_RDONLY);
+    int fd = open(filename, O_RDONLY);
     if (fd == -1) die("Could not find GTFS_RT input file.\n");
     struct stat st;
     if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    
@@ -519,14 +519,14 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *routeid_index, RadixT
     }
 
     printf("Received feed message with %zu entities.\n", msg->n_entity);
-    for (int e = 0; e < msg->n_entity; ++e) {
+    for (size_t e = 0; e < msg->n_entity; ++e) {
         TransitRealtime__FeedEntity *entity = msg->entity[e];
         if (entity == NULL) goto cleanup;
         // printf("  entity %d has id %s\n", e, entity->id);
         TransitRealtime__Alert *alert = entity->alert;
         if (alert == NULL) goto cleanup;
 
-        for (int ie = 0; ie < alert->n_informed_entity; ++ie) {
+        for (size_t ie = 0; ie < alert->n_informed_entity; ++ie) {
             TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[ie];
             if (!informed_entity) continue;
 
@@ -571,7 +571,7 @@ void tdata_clear_gtfsrt_alerts (tdata_t *tdata) {
 }
 
 void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, RadixTree *routeid_index, RadixTree *stopid_index, RadixTree *tripid_index, char *filename) {
-    uint32_t fd = open(filename, O_RDONLY);
+    int fd = open(filename, O_RDONLY);
     if (fd == -1) die("Could not find GTFS_RT input file.\n");
     struct stat st;
     if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    

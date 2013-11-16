@@ -681,7 +681,7 @@ static bool check_plan_invariants (struct plan *plan) {
     struct itinerary *prev_itin = NULL;
     rtime_t prev_target_time = UNREACHED;
     /* Loop over all itineraries in this plan. */
-    for (int i = 0; i < plan->n_itineraries; ++i) {
+    for (uint32_t i = 0; i < plan->n_itineraries; ++i) {
         struct itinerary *itin = plan->itineraries + i;
         if (itin->n_legs < 1) {
             fprintf(stderr, "itinerary contains no legs.\n");
@@ -729,7 +729,7 @@ static bool check_plan_invariants (struct plan *plan) {
         }
         /* Check per-leg invariants within each itinerary. */
         struct leg *prev_leg = NULL;
-        for (int l = 0; l < itin->n_legs; ++l) {
+        for (uint32_t l = 0; l < itin->n_legs; ++l) {
             struct leg *leg = itin->legs + l;
             if (l % 2 == 0) {
                 if (leg->route != WALK) fprintf(stderr, "even numbered leg %d has route %d not WALK.\n", l, leg->route);
@@ -891,12 +891,12 @@ static inline char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdat
 
         char *alert_msg = NULL;
         if (leg->route != WALK && tdata->alerts) {
-            for (int e = 0; e < tdata->alerts->n_entity; ++e) {
+            for (size_t e = 0; e < tdata->alerts->n_entity; ++e) {
                 TransitRealtime__FeedEntity *entity = tdata->alerts->entity[e];
                 if (entity == NULL) break;
                 TransitRealtime__Alert *alert = entity->alert;
                 if (alert == NULL) break;
-                for (int ie = 0; ie < alert->n_informed_entity; ++ie) {
+                for (size_t ie = 0; ie < alert->n_informed_entity; ++ie) {
                     TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[ie];
                     // TransitRealtime__TripDescriptor *trip = informed_entity->trip;
                     
