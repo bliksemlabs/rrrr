@@ -207,7 +207,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         struct tm ltm;
         time_t servicedate_time = date + RTIME_TO_SEC(begin_time);
         localtime_r(&servicedate_time, &ltm);
-        strftime(servicedate, 9, "%Y%m%d\0", &ltm);
+        strftime(servicedate, 9, "%Y%m%d", &ltm);
 
         departuredelay = tdata_delay_min (tdata, leg->route, leg->trip);
 
@@ -393,7 +393,7 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
     struct tm ltm;
     time_t date_seconds = req_to_date(& plan->req, tdata, &ltm);
     char date[11];
-    strftime(date, 11, "%Y-%m-%d\0", &ltm);
+    strftime(date, 11, "%Y-%m-%d", &ltm);
 
     json_begin(buf, buflen);
     json_obj();
