@@ -1002,11 +1002,11 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     struct tm origin_tm;
     req->time = epoch_to_rtime (epochtime, &origin_tm);
     // TODO not DST-proof, use noons
-    int32_t cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
-    if (cal_day < 0 || cal_day > 31 ) {
+    uint32_t cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
+    if (cal_day > 31 ) {
         /* date not within validity period of the timetable file, wrap to validity range */
-        cal_day %= 32;
-        if (cal_day < 0) cal_day += 32;
+        cal_day %= 28; // a multiple of 7, so we always wrap to the same day of the week
+        printf ("calendar day out of range. wrapping to %d, which is on the same day of the week.\n", cal_day);
         /* should set a flag in response to say that results are estimated */
     }
     req->day_mask = 1 << cal_day;    
