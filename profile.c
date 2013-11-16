@@ -136,7 +136,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         tdata_shortname_for_route (&tdata, route_idx),  tdata_headsign_for_route (&tdata, route_idx),
         route_idx, tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
     route_t route = tdata.routes[route_idx];
-    uint32_t *route_stops = tdata_stops_for_route (tdata, route_idx);
+    uint32_t *route_stops = tdata_stops_for_route (&tdata, route_idx);
     struct stats *stats0;
     bool onboard = false;
     for (int s = 0; s < route.n_stops; ++s) {

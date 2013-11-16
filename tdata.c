@@ -304,14 +304,14 @@ void tdata_close(tdata_t *td) {
 }
 
 // TODO should pass pointer to tdata?
-inline uint32_t *tdata_stops_for_route(tdata_t td, uint32_t route) {
-    route_t route0 = td.routes[route];
-    return td.route_stops + route0.route_stops_offset;
+inline uint32_t *tdata_stops_for_route(tdata_t *td, uint32_t route) {
+    route_t route0 = td->routes[route];
+    return td->route_stops + route0.route_stops_offset;
 }
 
-inline uint8_t *tdata_stop_attributes_for_route(tdata_t td, uint32_t route) {
-    route_t route0 = td.routes[route];
-    return td.route_stop_attributes + route0.route_stops_offset;
+inline uint8_t *tdata_stop_attributes_for_route(tdata_t *td, uint32_t route) {
+    route_t route0 = td->routes[route];
+    return td->route_stop_attributes + route0.route_stops_offset;
 }
 
 inline uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret) {
@@ -341,7 +341,7 @@ inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_i
 }
 
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
-    uint32_t *stops = tdata_stops_for_route(*td, route_idx);
+    uint32_t *stops = tdata_stops_for_route(td, route_idx);
     route_t route = td->routes[route_idx];
     printf("\nRoute details for %s %s %s '%s %s' [%d] (n_stops %d, n_trips %d)\n", tdata_agency_name_for_route(td, route_idx),
         tdata_agency_id_for_route(td, route_idx), tdata_agency_url_for_route(td, route_idx),

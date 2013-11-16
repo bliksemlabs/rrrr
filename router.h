@@ -32,7 +32,7 @@ struct router_state {
 // Making this opaque requires more dynamic allocation.
 typedef struct router router_t;
 struct router {
-    tdata_t tdata;          // The transit / timetable data tables
+    tdata_t *tdata;         // The transit / timetable data tables
     rtime_t *best_time;     // The best known time at each stop 
     router_state_t *states; // One router_state_t per stop, per round
     BitSet *updated_stops;  // Used to track which stops improved during each round

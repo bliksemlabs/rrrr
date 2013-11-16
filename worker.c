@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
             struct plan plan;
             router_result_to_plan (&plan, &router, &req);
             plan.req.time = preq->time; // restore the original request time
-            uint32_t result_length = render_plan_json (&plan, &(router.tdata), result_buf, OUTPUT_LEN);
+            uint32_t result_length = render_plan_json (&plan, router.tdata, result_buf, OUTPUT_LEN);
 
             zframe_reset (frame, result_buf, result_length);
         } else {
