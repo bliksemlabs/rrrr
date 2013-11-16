@@ -28,16 +28,27 @@ struct router_state {
     rtime_t  walk_time;  // The time when this stop was reached by walking (2nd phase)
 };
 
+
+typedef struct service_day {
+    rtime_t  midnight;
+    calendar_t mask;
+    bool     apply_realtime;
+} serviceday_t;
+
 // Scratch space for use by the routing algorithm.
 // Making this opaque requires more dynamic allocation.
 typedef struct router router_t;
 struct router {
-    tdata_t tdata;          // The transit / timetable data tables
+    tdata_t *tdata;         // The transit / timetable data tables
     rtime_t *best_time;     // The best known time at each stop 
     router_state_t *states; // One router_state_t per stop, per round
     BitSet *updated_stops;  // Used to track which stops improved during each round
     BitSet *updated_routes; // Used to track which routes might have changed during each round
 
+    uint32_t origin;
+    uint32_t target;
+    calendar_t day_mask;
+    serviceday_t servicedays[3];
     // We should move more routing state in here, like round and sub-scratch pointers.
 };
 
@@ -83,7 +94,7 @@ struct router_request {
     uint8_t walk_slack;  // an extra delay per transfer, in seconds 
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
-    uint32_t day_mask;   // bit for the day on which we are searching, relative to the timetable calendar
+    calendar_t day_mask; // bit for the day on which we are searching, relative to the timetable calendar
     uint8_t mode;        // selects the mode by a bitfield
     uint8_t trip_attributes; // select required attributes bitfield (from trips)
     uint8_t optimise;    // restrict the output to specific optimisation flags

@@ -126,7 +126,7 @@ void polyline_for_leg (tdata_t *tdata, struct leg *leg) {
         polyline_latlon (tdata->stop_coords[leg->s1]);
     } else {
         route_t route = tdata->routes[leg->route];
-        uint32_t *stops = tdata_stops_for_route (*tdata, leg->route);
+        uint32_t *stops = tdata_stops_for_route (tdata, leg->route);
         bool output = false;
         for (int s = 0; s < route.n_stops; ++s) {
             uint32_t sidx = stops[s];

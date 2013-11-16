@@ -18,7 +18,7 @@
 static uint32_t target_stop;
 
 // Bits for the days over which the analysis is performed.
-static uint32_t day_mask;
+static calendar_t day_mask;
 static struct stats *route_stats = NULL; 
 static struct stats *transfer_stats = NULL;
 static struct stats *stop_stats; // store best known for each stop, prune some new states on basis of worst time.
@@ -136,7 +136,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
         tdata_shortname_for_route (&tdata, route_idx),  tdata_headsign_for_route (&tdata, route_idx),
         route_idx, tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
     route_t route = tdata.routes[route_idx];
-    uint32_t *route_stops = tdata_stops_for_route (tdata, route_idx);
+    uint32_t *route_stops = tdata_stops_for_route (&tdata, route_idx);
     struct stats *stats0;
     bool onboard = false;
     for (int s = 0; s < route.n_stops; ++s) {
