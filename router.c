@@ -258,12 +258,6 @@ uint32_t find_departure(route_t *route, stoptime_t (*stop_times)[route->n_stops]
     return NONE;
 }
 
-typedef struct service_day {
-    rtime_t  midnight;
-    calendar_t mask;
-    bool     apply_realtime;
-} sday_t;
-
 static void day_mask_dump (calendar_t mask) {
     printf ("day mask: ");
     printBits (4, &mask);
@@ -272,10 +266,10 @@ static void day_mask_dump (calendar_t mask) {
     printf ("\n");
 }
 
-static void service_day_dump (struct service_day *sd) {
-    printf ("service day\nmidnight: %s \n", timetext(sd->midnight));
-    day_mask_dump (sd->mask);
-    printf ("real-time: %s \n\n", sd->apply_realtime ? "YES" : "NO");
+static void service_day_dump (serviceday_t *serviceday) {
+    printf ("service day\nmidnight: %s \n", timetext(serviceday->midnight));
+    day_mask_dump (serviceday->mask);
+    printf ("real-time: %s \n\n", serviceday->apply_realtime ? "YES" : "NO");
 }
 
 static inline rtime_t 
@@ -290,22 +284,22 @@ tdata_arrive (tdata_t* td, trip_t *trip, uint32_t route_stop) {
 
 /* Get the departure or arrival time of the given trip on the given service day, applying realtime data as needed. */
 static inline rtime_t 
-tdata_stoptime (tdata_t* tdata, trip_t *trip, uint32_t route_stop, bool arrive, struct service_day *sday) {
+tdata_stoptime (tdata_t* tdata, trip_t *trip, uint32_t route_stop, bool arrive, serviceday_t *serviceday) {
     rtime_t time, time_adjusted;
     if (arrive) time = tdata_arrive(tdata, trip, route_stop);
     else           time = tdata_depart(tdata, trip, route_stop);
-    time_adjusted = time + sday->midnight;
+    time_adjusted = time + serviceday->midnight;
     /*
     printf ("boarding at stop %d, time is: %s \n", route_stop, timetext (time));
     printf ("   after adjusting: %s \n", timetext (time_adjusted));
-    printf ("   midnight: %d \n", sday->midnight);
+    printf ("   midnight: %d \n", serviceday->midnight);
     printf ("   delay (4sec): %d \n", trip->realtime_delay);
     */
     /* Detect overflow (this will still not catch wrapping due to negative delays on small positive times) */
-    // actually this happens naturally with times like '03:00+1day' transposed to sday 'tomorrow'
+    // actually this happens naturally with times like '03:00+1day' transposed to serviceday 'tomorrow'
     if (time_adjusted < time) return UNREACHED;
     /* Apply real time delay on the relevant days. */
-    if (sday->apply_realtime) time_adjusted += trip->realtime_delay;
+    if (serviceday->apply_realtime) time_adjusted += trip->realtime_delay;
     return time_adjusted;
 }
 
@@ -314,38 +308,37 @@ bool router_route(router_t *router, router_request_t *req) {
     uint32_t n_stops = router->tdata->n_stops;
     router->day_mask = req->day_mask;
     
-    /* One struct service_day for each of: yesterday, today, tomorrow (for overnight searches) */
+    /* One serviceday_t for each of: yesterday, today, tomorrow (for overnight searches) */
     /* Note that yesterday's bit flag will be 0 if today is the first day of the calendar. */
-    struct service_day days[3];
     {
         // One bit for the calendar day on which realtime data should be applied (applying only on the true current calendar day)
         calendar_t realtime_mask = 1 << ((time(NULL) - router->tdata->calendar_start_time) / SEC_IN_ONE_DAY);
-        struct service_day yesterday;
+        serviceday_t yesterday;
         yesterday.midnight = 0;
         yesterday.mask = router->day_mask >> 1;
         yesterday.apply_realtime = yesterday.mask & realtime_mask;
-        struct service_day today;
+        serviceday_t today;
         today.midnight = RTIME_ONE_DAY;
         today.mask = router->day_mask;
         today.apply_realtime = today.mask & realtime_mask;
-        struct service_day tomorrow;
+        serviceday_t tomorrow;
         tomorrow.midnight = RTIME_TWO_DAYS;
         tomorrow.mask = router->day_mask << 1;
         tomorrow.apply_realtime = tomorrow.mask & realtime_mask;
         /* Iterate backward over days for arrive-by searches. */
         if (req->arrive_by) {
-            days[0] = tomorrow;
-            days[1] = today;
-            days[2] = yesterday;        
+            router->servicedays[0] = tomorrow;
+            router->servicedays[1] = today;
+            router->servicedays[2] = yesterday;        
         } else {
-            days[0] = yesterday;
-            days[1] = today;
-            days[2] = tomorrow;        
+            router->servicedays[0] = yesterday;
+            router->servicedays[1] = today;
+            router->servicedays[2] = tomorrow;        
         }        
-        /* set day_mask to catch all days (0, 1, 2) */
+        /* set day_mask to catch all service days (0, 1, 2) */
         router->day_mask = yesterday.mask | today.mask | tomorrow.mask;
     }
-    // for (int i = 0; i < 3; ++i) service_day_dump (&days[i]);
+    // for (int i = 0; i < 3; ++i) service_day_dump (&routers->servicedays[i]);
     // day_mask_dump (router->day_mask); 
 
     I router_request_dump(router, req);
@@ -402,7 +395,7 @@ bool router_route(router_t *router, router_request_t *req) {
         // add tdata function to return next stop and stoptime given route, trip, and time
         for (int route_stop = 0; route_stop < route.n_stops; ++route_stop) {
             uint32_t stop = route_stops[route_stop];
-            rtime_t time = tdata_stoptime (router->tdata, trip, route_stop, false, &(days[1]));
+            rtime_t time = tdata_stoptime (router->tdata, trip, route_stop, false, &(router->servicedays[1]));
             /* Find stop immediately after the given time on the given trip. */
             if (req->arrive_by ? time > req->time : time < req->time) {
                 if (prev_stop_time == UNREACHED || (req->arrive_by ? time < prev_stop_time : time > prev_stop_time)) {
@@ -484,7 +477,7 @@ bool router_route(router_t *router, router_request_t *req) {
             uint32_t  trip = NONE; // trip index within the route. NONE means not yet boarded.
             uint32_t  board_stop;  // stop index where that trip was boarded
             rtime_t   board_time;  // time when that trip was boarded
-            sday_t   *board_sday;  // Service day on which that trip was boarded
+            serviceday_t *board_serviceday;  // Service day on which that trip was boarded
             /*
               Iterate over stop indexes within the route. Each one corresponds to a global stop index.
               Note that the stop times array should be accessed with [trip][route_stop] not [trip][stop].
@@ -523,7 +516,7 @@ bool router_route(router_t *router, router_request_t *req) {
                     } else {
                         // removed xfer slack for simplicity
                         // is this repetitively triggering re-boarding searches along a single route?
-                        rtime_t trip_time = tdata_stoptime (router->tdata, &(route_trips[trip]), route_stop, req->arrive_by, board_sday);
+                        rtime_t trip_time = tdata_stoptime (router->tdata, &(route_trips[trip]), route_stop, req->arrive_by, board_serviceday);
                         if (trip_time == UNREACHED) attempt_board = false;
                         else if (req->arrive_by ? prev_time > trip_time
                                                 : prev_time < trip_time) {
@@ -551,30 +544,30 @@ bool router_route(router_t *router, router_request_t *req) {
                        Scanning through the whole list of trips reduces speed by ~20 percent over binary search. */
                     uint32_t best_trip = NONE;
                     rtime_t  best_time = req->arrive_by ? 0 : UINT16_MAX;
-                    sday_t  *best_sday;
+                    serviceday_t  *best_serviceday;
                     /* Search trips within days. The loop nesting could also be inverted. */
-                    for (struct service_day *sday = days; sday <= days + 2; ++sday) {
+                    for (serviceday_t *serviceday = router->servicedays; serviceday <= router->servicedays + 2; ++serviceday) {
                         /* Check that this route still has any trips running on this day. */
-                        if (req->arrive_by ? prev_time < sday->midnight + route.min_time
-                                           : prev_time > sday->midnight + route.max_time) continue;
+                        if (req->arrive_by ? prev_time < serviceday->midnight + route.min_time
+                                           : prev_time > serviceday->midnight + route.max_time) continue;
                         /* Check whether there's any chance of improvement by scanning additional days. */ 
                         /* Note that day list is reversed for arrive-by searches. */
                         if (best_trip != NONE && ! route_overlap) break;
                         for (uint32_t this_trip = 0; this_trip < route.n_trips; ++this_trip) {
                             // D printBits(4, & (trip_masks[this_trip]));
-                            // D printBits(4, & (sday->mask));
+                            // D printBits(4, & (serviceday->mask));
                             // D printf("\n");
                             /* skip this trip if it is banned */
                             for (uint32_t bt = 0; bt < req->n_banned_trips; bt++) if (route_idx == req->banned_trip_route && this_trip == req->banned_trip_offset) continue;
                             /* skip this trip if it is not running on the current service day */
-                            if ( ! (sday->mask & trip_masks[this_trip])) continue;
+                            if ( ! (serviceday->mask & trip_masks[this_trip])) continue;
                             /* skip this trip if it doesn't have all our required attributes */
                             if ( ! ((req->trip_attributes & route_trip_attributes[this_trip]) == req->trip_attributes)) continue;
                             /* skip this trip if the realtime delay equals CANCELED */
                             if ( route_trips[this_trip].realtime_delay == CANCELED) continue;
                             
                             /* consider the arrival or departure time on the current service day */ 
-                            rtime_t time = tdata_stoptime (router->tdata, &(route_trips[this_trip]), route_stop, req->arrive_by, sday);
+                            rtime_t time = tdata_stoptime (router->tdata, &(route_trips[this_trip]), route_stop, req->arrive_by, serviceday);
                             // T printf("    board option %d at %s \n", this_trip, ...
                             if (time == UNREACHED) continue; // rtime overflow due to long overnight trips on day 2
                             /* Mark trip for boarding if it improves on the last round's post-walk time at this stop.
@@ -584,7 +577,7 @@ bool router_route(router_t *router, router_request_t *req) {
                                                : time >= prev_time && time < best_time) {
                                 best_trip = this_trip;
                                 best_time = time;
-                                best_sday = sday;
+                                best_serviceday = serviceday;
                             }
                         } // end for (trips within this route)
                     } // end for (service days: yesterday, today, tomorrow)
@@ -596,7 +589,7 @@ bool router_route(router_t *router, router_request_t *req) {
                             // use a router_state struct for all this?
                             board_time = best_time;
                             board_stop = stop;
-                            board_sday = best_sday;
+                            board_serviceday = best_serviceday;
                             trip = best_trip;
                         }
                     } else {
@@ -604,7 +597,7 @@ bool router_route(router_t *router, router_request_t *req) {
                     }
                     continue; // to the next stop in the route
                 } else if (trip != NONE) { // We have already boarded a trip along this route.
-                    rtime_t time = tdata_stoptime (router->tdata, &(route_trips[trip]), route_stop, !req->arrive_by, board_sday);
+                    rtime_t time = tdata_stoptime (router->tdata, &(route_trips[trip]), route_stop, !req->arrive_by, board_serviceday);
                     if (time == UNREACHED) continue; // overflow due to long overnight trips on day 2
                     T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
                     // Target pruning, sec. 3.1 of RAPTOR paper.

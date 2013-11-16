@@ -28,6 +28,13 @@ struct router_state {
     rtime_t  walk_time;  // The time when this stop was reached by walking (2nd phase)
 };
 
+
+typedef struct service_day {
+    rtime_t  midnight;
+    calendar_t mask;
+    bool     apply_realtime;
+} serviceday_t;
+
 // Scratch space for use by the routing algorithm.
 // Making this opaque requires more dynamic allocation.
 typedef struct router router_t;
@@ -41,6 +48,7 @@ struct router {
     uint32_t origin;
     uint32_t target;
     calendar_t day_mask;
+    serviceday_t servicedays[3];
     // We should move more routing state in here, like round and sub-scratch pointers.
 };
 
