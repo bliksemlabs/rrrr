@@ -22,6 +22,9 @@ void binheap_new (int cap) {
     capacity = cap < BINHEAP_MIN_CAPACITY ? BINHEAP_MIN_CAPACITY : cap;
     elem = malloc (sizeof(void*) * (capacity + 1)); // 1-based indexing
     prio = malloc (sizeof(float) * (capacity + 1)); // 1-based indexing
+    if (prio == NULL || elem == NULL) {
+        die ("Failed to allocate memory for binheap initialization.");
+    }
     size = 0;
     prio[0] = -INFINITY; // set sentinel
 }
@@ -51,12 +54,11 @@ void binheap_dump () {
 /* empties the queue in one operation */
 void binheap_reset () { size=0; }
 
-/* needs some work */
-void *expand_array (void *ary, size_t elem_size) {
-    int array_length = capacity + 1;
-    void *new = malloc (array_length * elem_size);
-    memcpy (new, ary, capacity); // sizes are not right
-    free (ary);
+static void *expand_array (void *ary, size_t elem_size) {
+    void *new = realloc (ary, elem_size * (capacity + 1));
+    if (new == NULL) {
+        die ("Failed to expand binheap array.");
+    }
     return new;
 }
 
