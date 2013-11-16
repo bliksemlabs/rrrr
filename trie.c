@@ -21,7 +21,7 @@ inline trie_t *trie_init(void) {
 void trie_add(trie_t *t, char *word) {
     uint32_t c;
     while ((c = *word++)) {
-        assert(c >= 0 && c < TRIE_SIZE);
+        assert(c < TRIE_SIZE);
         if (t->chars[c] == NULL) {
             t->chars[c] = trie_init();
         }
@@ -92,7 +92,7 @@ uint32_t trie_load(trie_t *t, tdata_t *td) {
         for (uint32_t j = 0; j < word_len; j++) {
             /* lowercase */
             c = stopname[j] >= 'A' && stopname[j] <= 'Z' ? stopname[j] | 0x60 : stopname[j];
-            assert(c >= 0 && c < TRIE_SIZE);
+            assert(c < TRIE_SIZE);
             if (t->chars[c] == NULL) {
                 t->chars[c] = trie_init();
             }
