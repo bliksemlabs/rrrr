@@ -70,6 +70,9 @@ int main(int argc, char **argv) {
             printf ("%d %s %s %d %s %s %d\n", stop_index1, tdata_stop_id_for_index(&tdata, stop_index1), tdata_stop_name_for_index(&tdata, stop_index1),
                                               stop_index2, tdata_stop_id_for_index(&tdata, stop_index2), tdata_stop_name_for_index(&tdata, stop_index2),
                                               transfer_distance (&tdata, stop_index1, stop_index2));
+            printf ("%d %s %s %d %s %s %d\n", stop_index2, tdata_stop_id_for_index(&tdata, stop_index2), tdata_stop_name_for_index(&tdata, stop_index2),
+                                              stop_index1, tdata_stop_id_for_index(&tdata, stop_index1), tdata_stop_name_for_index(&tdata, stop_index1),
+                                              transfer_distance (&tdata, stop_index2, stop_index1));
         }
     }
 
