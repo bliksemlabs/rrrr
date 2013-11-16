@@ -129,6 +129,18 @@ static bool remove_conn (uint32_t nc) {
     return true;
 }
 
+// OS X doesn't have MSG_NOSIGNAL
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#define setsockopt_no_sigpipe(conn_sd) setsockopt(conn_sd, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
+#else
+#define setsockopt_no_sigpipe(conn_sd)
+#endif
+
+#ifndef SOCK_NONBLOCK
+#define SOCK_NONBLOCK O_NONBLOCK
+#endif
+
 // Removing a connection from pollitems and closing its SD are separate, because we have no connection number in the ZMQ response. Connection numbers are always changing.
 
 /* Remove all connections that have been enqueued for removal in a single operation. */
@@ -217,6 +229,7 @@ static void send_request (int nc, void *broker_socket) {
     return;
 
     cleanup:
+    setsockopt_no_sigpipe(conn_sd);
     send (conn_sd, ERROR_404, strlen(ERROR_404), MSG_NOSIGNAL);
     remove_conn_later (nc); // could this lead to double-remove?
     return;
@@ -227,8 +240,9 @@ void respond (int sd, char *response) {
     sprintf (buf, OK_TEXT_PLAIN "Content-Length: %zu" CRLF "Connection: close" END_HEADERS, strlen (response));
     // MSG_NOSIGNAL: Do not generate SIGPIPE if client has closed connection.
     // Send will return EPIPE if client already closed connection.
-    send (sd, buf, strlen(buf), MSG_NOSIGNAL); 
-    if (send (sd, response, strlen(response), MSG_NOSIGNAL) == -1 && errno == EPIPE) 
+    setsockopt_no_sigpipe(sd);
+    send (sd, buf, strlen(buf), MSG_NOSIGNAL);
+    if (send (sd, response, strlen(response), MSG_NOSIGNAL) == -1 && errno == EPIPE)
         printf ("              [fd=%02d] socket is closed, response dropped.\n", sd);
     else 
         printf ("              [fd=%02d] sent response to client.\n", sd);
