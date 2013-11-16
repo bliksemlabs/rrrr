@@ -261,7 +261,7 @@ void tdata_check_coherent (tdata_t *tdata) {
             if ( ! found_reverse) printf ("transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
         }
     }    
-    printf ("checked %d transfers for symmetry.\n");
+    printf ("checked %d transfers for symmetry.\n", n_transfers_checked);
 }
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
