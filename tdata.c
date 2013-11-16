@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "config.h"
 #include "util.h"
@@ -192,28 +193,29 @@ inline char *tdata_agency_url_for_route(tdata_t *td, uint32_t route_index) {
     return td->agency_urls + (td->agency_url_width * route.agency_index);
 }
 
-void tdata_check_coherent (tdata_t *td) {
+void tdata_check_coherent (tdata_t *tdata) {
+    printf ("checking tdata coherency...\n");
     /* Check that all lat/lon look like valid coordinates. */
     float min_lat = -55.0; // farther south than Ushuaia, Argentina
     float max_lat = +70.0; // farther north than Tromsø and Murmansk
     float min_lon = -180.0;
     float max_lon = +180.0;
-    for (int s = 0; s < td->n_stops; ++s) {
-        latlon_t ll = td->stop_coords[s];
+    for (int s = 0; s < tdata->n_stops; ++s) {
+        latlon_t ll = tdata->stop_coords[s];
         if (ll.lat < min_lat || ll.lat > max_lat || ll.lon < min_lon || ll.lon > max_lon) {
             printf ("stop lat/lon out of range: lat=%f, lon=%f \n", ll.lat, ll.lon);
         }
     }
     /* Check that all timedemand types start at 0 and consist of monotonically increasing times. */
-    for (int r = 0; r < td->n_routes; ++r) {
-        route_t route = td->routes[r];
-        trip_t *trips = td->trips + route.trip_ids_offset;
+    for (int r = 0; r < tdata->n_routes; ++r) {
+        route_t route = tdata->routes[r];
+        trip_t *trips = tdata->trips + route.trip_ids_offset;
         int n_nonincreasing_trips = 0;
         for (int t = 0; t < route.n_trips; ++t) {
             trip_t trip = trips[t];
             stoptime_t *prev_st = NULL;
             for (int s = 0; s < route.n_stops; ++s) {
-                stoptime_t *st = td->stop_times + trip.stop_times_offset + s;
+                stoptime_t *st = tdata->stop_times + trip.stop_times_offset + s;
                 if (s == 0 && st->arrival != 0) printf ("timedemand type begins at %d,%d not 0.\n", st->arrival, st->departure);
                 if (st->departure < st->arrival) printf ("departure before arrival at route %d, trip %d, stop %d.\n", r, t, s);
                 if (prev_st != NULL) {
@@ -228,7 +230,38 @@ void tdata_check_coherent (tdata_t *td) {
         }
         if (n_nonincreasing_trips > 0) printf ("route %d has %d trips with negative travel times\n", r, n_nonincreasing_trips);
     }
-
+    /* Check that all transfers are symmetric. */
+    int n_transfers_checked = 0;
+    for (uint32_t stop_index_from = 0; stop_index_from < tdata->n_stops; ++stop_index_from) {
+        /* Iterate over all transfers going out of this stop */
+        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
+        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;        
+        for ( ; t < tN ; ++t) {
+            uint32_t stop_index_to = tdata->transfer_target_stops[t];
+            uint32_t forward_distance = tdata->transfer_dist_meters[t] << 4; // actually in units of 16 meters
+            if (stop_index_to == stop_index_from) printf ("loop transfer from/to stop %d.\n", stop_index_from);
+            /* Find the reverse transfer (stop_index_to -> stop_index_from) */
+            bool found_reverse = false;
+            uint32_t u  = tdata->stops[stop_index_to    ].transfers_offset;
+            uint32_t uN = tdata->stops[stop_index_to + 1].transfers_offset;
+            for ( ; u < uN ; ++u) {
+                n_transfers_checked += 1;
+                if (tdata->transfer_target_stops[u] == stop_index_from) {
+                    /* this is the same transfer in reverse */
+                    uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
+                    if (reverse_distance != forward_distance) {
+                        printf ("transfer from %d to %d is not symmetric. "
+                                "forward distance is %d, reverse distance is %d.\n", 
+                                stop_index_from, stop_index_to, forward_distance, reverse_distance);
+                    }
+                    found_reverse = true;
+                    break;
+                }
+            }
+            if ( ! found_reverse) printf ("transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
+        }
+    }    
+    printf ("checked %d transfers for symmetry.\n");
 }
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
