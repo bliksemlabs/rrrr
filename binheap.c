@@ -21,7 +21,7 @@ void binheap_new (int cap) {
     if (cap == 0) cap = BINHEAP_DEFAULT_CAPACITY;
     capacity = cap < BINHEAP_MIN_CAPACITY ? BINHEAP_MIN_CAPACITY : cap;
     elem = malloc (sizeof(void*) * (capacity + 1)); // 1-based indexing
-    prio = malloc (sizeof(void*) * (capacity + 1)); // 1-based indexing
+    prio = malloc (sizeof(float) * (capacity + 1)); // 1-based indexing
     size = 0;
     prio[0] = -INFINITY; // set sentinel
 }
@@ -43,13 +43,13 @@ void *binheap_peek_min () {
 
 void binheap_dump () {
 	for (int i=0; i<=capacity; i++) {
-    	printf("%d\t%f\t%s\t%s\n", i, prio[i], elem[i], (i > size) ? "(UNUSED)" : "");
+        printf("%d\t%f\t%p\t%s\n", i, prio[i], elem[i], (i > size) ? "(UNUSED)" : "");
 	}
 	printf("-----------------------\n");
 }
     
 /* empties the queue in one operation */
-inline void binheap_reset () { size=0; } 
+void binheap_reset () { size=0; }
 
 /* needs some work */
 void *expand_array (void *ary, size_t elem_size) {
