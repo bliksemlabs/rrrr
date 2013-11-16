@@ -67,47 +67,54 @@ static void ekey (const char *k) {
 
 /* public functions (eventually) */
 
-static void json_begin(char *buf, size_t buflen) { 
+void json_begin(char *buf, size_t buflen) { 
     buf_start = b = buf; 
     buf_end = b + buflen - 1;
     in_list = false;
     overflowed = false; 
 }
 
-static void json_dump() { 
+void json_dump() { 
     *b = '\0'; 
     if (overflowed) printf ("[JSON OVERFLOW]\n");
     printf("%s\n", buf_start); 
 }
 
-static size_t json_length() { return b - buf_start; }
+size_t json_length() { return b - buf_start; }
 
-static void json_kv(char *key, char *value) {
+void json_kv(char *key, char *value) {
     ekey(key);
     string(value);
 }
 
-static void json_kd(char *key, int value) {
+void json_string (char *str) {
+    // could this just be handled with json_kv and a NULL key?
+    comma();
+    string (str);
+    in_list = true;
+}
+
+void json_kd(char *key, int value) {
     ekey(key);
     if (remaining(11)) b += sprintf(b, "%d", value);
 }
 
-static void json_kf(char *key, double value) {
+void json_kf(char *key, double value) {
     ekey(key);
     if (remaining(12)) b += sprintf(b, "%5.5f", value);
 }
 
-static void json_kl(char *key, int64_t value) {
+void json_kl(char *key, int64_t value) {
     ekey(key);
     if (remaining(21)) b += sprintf(b, "%" PRId64 , value);
 }
 
-static void json_kb(char *key, bool value) {
+void json_kb(char *key, bool value) {
     ekey(key);
     if (remaining(5)) b += sprintf(b, value ? "true" : "false");
 }
 
-static void json_key_obj(char *key) {
+void json_key_obj(char *key) {
     if (key)
         ekey(key);
     else
@@ -116,30 +123,30 @@ static void json_key_obj(char *key) {
     in_list = false;
 }
 
-static void json_key_arr(char *key) {
+void json_key_arr(char *key) {
     ekey(key);
     check('[');
     in_list = false;
 }
 
-static void json_obj() {
+void json_obj() {
     comma();
     check('{');
     in_list = false;
 }
 
-static void json_arr() {
+void json_arr() {
     comma();
     check('[');
     in_list = false;
 }
 
-static void json_end_obj() {
+void json_end_obj() {
     check('}');
     in_list = true;
 }
 
-static void json_end_arr() {
+void json_end_arr() {
     check(']');
     in_list = true;
 }
@@ -419,3 +426,6 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
     // json_dump();
     return json_length();
 }
+
+
+
