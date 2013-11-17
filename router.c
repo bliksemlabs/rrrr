@@ -982,6 +982,7 @@ void router_request_initialize(router_request_t *req) {
     req->time_cutoff = UNREACHED;
     req->walk_speed = 1.5; // m/sec
     req->arrive_by = true;
+    req->time_rounded = false;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
     req->trip_attributes = ta_none;
@@ -1009,6 +1010,7 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     // router_request_initialize (req);
     struct tm origin_tm;
     req->time = epoch_to_rtime (epochtime, &origin_tm);
+    req->time_rounded = (origin_tm.tm_sec % 4);
     // TODO not DST-proof, use noons
     uint32_t cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
     if (cal_day > 31 ) {

@@ -254,6 +254,11 @@ bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, HashGrid 
         router_request_from_epoch (req, tdata, mktime(&ltm));
     }
 
+    if (req->time_rounded && !(req->arrive_by)) {
+        req->time++;    // Round time upwards when departing after a requested time
+    }
+    req->time_rounded = false;
+
     return true;
 }
 

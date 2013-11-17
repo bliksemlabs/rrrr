@@ -101,6 +101,11 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
+    if (req.time_rounded && !(req.arrive_by)) {
+        req.time++;     // Round time upwards when departing after a requested time
+    }
+    req.time_rounded = false;
+
     // load gtfs-rt file from disk
     if (gtfsrt_file != NULL || gtfsrt_alerts_file != NULL) {
         RadixTree *tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_id_width, tdata.n_trips);

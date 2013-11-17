@@ -93,6 +93,7 @@ struct router_request {
     double walk_speed;   // speed at which the user walks, in meters per second
     uint8_t walk_slack;  // an extra delay per transfer, in seconds 
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
+    bool time_rounded;   // whether the requested time had to be rounded down to fit in an rtime field
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     calendar_t day_mask; // bit for the day on which we are searching, relative to the timetable calendar
     uint8_t mode;        // selects the mode by a bitfield
