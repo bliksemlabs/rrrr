@@ -21,7 +21,7 @@ static bool str_endswith (char *str, char *end) {
     if (str_size < end_size) return false;
     char *s = str + str_size;
     char *e = end + end_size;
-    for (int i = 0; i < end_size; ++i) {
+    for (size_t i = 0; i < end_size; ++i) {
         if (*(e--) != *(s--)) return false;
     }
     return true;
@@ -32,7 +32,7 @@ static bool str_startswith (char *str, char *pre) {
     size_t str_size = strlen(str);
     size_t pre_size = strlen(pre);
     if (str_size < pre_size) return false;
-    for (int i = 0; i < pre_size; ++i) {
+    for (size_t i = 0; i < pre_size; ++i) {
         if (str[i] != pre[i]) return false;
     }
     return true;
