@@ -6,22 +6,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-inline void bitset_reset(BitSet *self) {
-    memset(self->chunks, 0, sizeof(uint64_t) * self->nchunks);
-}
-
 /* Initialize a pre-allocated bitset struct, allocating memory for the uint64s holding the bits. */
 static void bitset_init(BitSet *self, uint32_t capacity) {
     self->capacity = capacity;
-    self->nchunks = capacity / 64;
-    if (capacity % 64) 
-        self->nchunks += 1;
-    self->chunks = malloc(sizeof(uint64_t) * self->nchunks);
+    self->nchunks = (capacity + 63) / 64;   // Round upwards
+    self->chunks = calloc(self->nchunks, sizeof(uint64_t));
     if (self->chunks == NULL) {
         printf("bitset chunk allocation failure.");
         exit(1);
     }
-    bitset_reset(self);
 }
 
 /* Allocate a new bitset of the specified capacity, and return a pointer to the BitSet struct. */
@@ -40,6 +33,10 @@ static inline void index_check(BitSet *self, uint32_t index) {
         printf("bitset index %d out of range [0, %d)\n", index, self->capacity);
         exit(1);    
    }
+}
+
+void bitset_reset(BitSet *self) {
+    memset(self->chunks, 0, sizeof(uint64_t) * self->nchunks);
 }
 
 void bitset_set(BitSet *self, uint32_t index) {
