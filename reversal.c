@@ -21,9 +21,9 @@ void reversal (tdata_t *tdata, router_request_t *req, bool verbose) {
     }
 
     /* Repeat search in reverse to compress transfers */
-    uint32_t n_reversals = req.arrive_by ? 1 : 2;
+    uint32_t n_reversals = req->arrive_by ? 1 : 2;
     /* but do not reverse requests starting on board (they cannot be compressed, earliest arrival is good enough) */
-    if (req.start_trip_trip != NONE) n_reversals = 0;
+    if (req->start_trip_trip != NONE) n_reversals = 0;
 
     for (uint32_t i = 0; i < n_reversals; ++i) {
         router_request_reverse (&router, &req); // handle case where route is not reversed
@@ -40,8 +40,8 @@ void reversal (tdata_t *tdata, router_request_t *req, bool verbose) {
     if (!verbose) {
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         printf("%s", result_buf);
-    }    
-    
+    }
+
     router_teardown(&router);
 
 }
