@@ -1,5 +1,5 @@
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -fpic -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
@@ -13,13 +13,17 @@ LIB_SOURCES := $(filter-out $(BIN_SOURCES),$(SOURCES))
 LIB_OBJECTS := $(filter-out $(BIN_OBJECTS),$(OBJECTS))
 LIB_NAME    := librrrr.a
 
-.PHONY: clean show check all 
+.PHONY: clean cleanpy py show check all
 
-all: $(BINS)
+all: $(BINS) librrrr.so
 
 # make an archived static library to link into all executables
 librrrr.a: $(LIB_OBJECTS)
 	ar crsT $(LIB_NAME) $(LIB_OBJECTS)
+
+librrrr.so: $(LIB_OBJECTS)
+	gcc -shared -lprotobuf-c -fPIC $(LIB_OBJECTS) -o librrrr.so
+	cp librrrr.so py/librrrr.so
 
 # recompile everything if any headers change
 %.o: %.c $(HEADERS)
@@ -40,9 +44,17 @@ realtime-viz.o: realtime-viz.c
 rrrrealtime-viz: realtime-viz.o $(LIB_NAME)
 	$(CC) $(CFLAGS) $(shell sdl-config --cflags) $^ $(LIBS) -lSDL -lGL -lshp -o $@
 
+py:
+	make -C py
+
 clean:
 	rm -f *.o *.d *.a *~ core $(BINS)
 	rm -f tests/*.o tests/*~ run_tests
+
+cleanpy:
+	        make -C py clean
+
+cleanall: clean cleanpy
 
 show:
 	# $(SOURCES)
@@ -62,5 +74,4 @@ check: run_tests
 
 run_tests: $(TEST_OBJECTS) $(LIB_NAME)
 	$(CC) $(CFLAGS) $^ $(TEST_LIBS) -o run_tests
-
 

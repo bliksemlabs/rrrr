@@ -444,3 +444,19 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
     // json_dump();
     return json_length();
 }
+
+
+uint32_t render_itin_json_only(struct plan *plan, tdata_t *tdata, char *buf, uint32_t buflen)
+{
+    struct tm ltm;
+    time_t date_seconds = req_to_date(& plan->req, tdata, &ltm);
+
+    json_begin(buf, buflen);
+    for (int i = 0; i < plan->n_itineraries; ++i) 
+        json_itinerary (plan->itineraries + i, tdata, &plan->req, date_seconds);
+    json_end_arr();
+    json_end_obj();
+    json_end_obj();
+    
+    return json_length();
+}
