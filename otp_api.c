@@ -230,7 +230,7 @@ static void send_request (int nc, void *broker_socket) {
 
     cleanup:
     setsockopt_no_sigpipe(conn_sd);
-    send (conn_sd, ERROR_404, sizeof(ERROR_404), MSG_NOSIGNAL);
+    send (conn_sd, ERROR_404, sizeof(ERROR_404) - 1, MSG_NOSIGNAL);
     remove_conn_later (nc); // could this lead to double-remove?
     return;
 }
