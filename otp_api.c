@@ -37,7 +37,7 @@
 #define ALLOW_ORIGIN    "Access-Control-Allow-Origin:*"
 #define ALLOW_HEADERS    "Access-Control-Allow-Headers:Requested-With,Content-Type"
 #define OK_TEXT_PLAIN "HTTP/1.0 200 OK" HEADERS APPLICATION_JSON CRLF ALLOW_ORIGIN CRLF ALLOW_HEADERS CRLF
-#define ERROR_404     "HTTP/1.0 404 Not Found" HEADERS TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
+#define ERROR_404     "HTTP/1.0 404 Not Found" HEADERS "Content-Length: 16" CRLF "Connection: close" CRLF TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
 
 #define BUFLEN     1024
 #define PORT       9393 
