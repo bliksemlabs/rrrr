@@ -1,4 +1,4 @@
-RRRR Rapid Round-based Routing
+RRRR Rapid Real-time Routing
 ==============================
 
 Introduction
