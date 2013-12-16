@@ -142,3 +142,8 @@ The tool can now be executed:
 ./testerrrr --from-idx=1 --to-idx=2 -a -D 2014-01-01T00:00:00 -T timetable.dat
 ./testerrrr --from-idx=1 --to-idx=2 -d -D 2014-01-01T00:00:00 -T timetable.dat
 ```
+
+License
+-------
+
+Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. RRRR is released under the BSD 2-clause (simplified) license.
