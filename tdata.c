@@ -1,3 +1,5 @@
+/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+
 /* tdata.c : handles memory mapped data file containing transit timetable etc. */
 
 #include "tdata.h" // make sure it works alone

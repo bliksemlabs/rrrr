@@ -1,3 +1,5 @@
+/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+
 /* adapted from the binheap class in OpenTripPlanner */
 /* along with dynamic allocation in slab.c, a major enabler for fast MOA* searches. */
 

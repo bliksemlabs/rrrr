@@ -1,3 +1,5 @@
+/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+
 #include <stdio.h>
 #include <stdint.h>
 typedef uint16_t rtime_t;

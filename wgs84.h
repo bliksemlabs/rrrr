@@ -1,3 +1,5 @@
+/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+
 #include <math.h>
 #define deg2rad(d) ((d*M_PI)/180.0f)
 #define rad2deg(d) ((d*180.0f)/M_PI)
