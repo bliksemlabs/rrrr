@@ -483,13 +483,13 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         trip_t   *route_trips = tdata_trips_for_route(router->tdata, route_idx); // TODO use to avoid calculating at every stop
         uint8_t  *route_trip_attributes = tdata_trip_attributes_for_route(router->tdata, route_idx);
         calendar_t *trip_masks  = tdata_trip_masks_for_route(router->tdata, route_idx); 
-        uint32_t      trip = NONE;             // trip index within the route. NONE means not yet boarded.
+        uint32_t      trip_idx = NONE;         // trip index within the route. NONE means not yet boarded.
         uint32_t      board_stop = 0;          // stop index where that trip was boarded
         rtime_t       board_time = 0;          // time when that trip was boarded
         serviceday_t *board_serviceday = NULL; // Service day on which that trip was boarded
         /*
             Iterate over stop indexes within the route. Each one corresponds to a global stop index.
-            Note that the stop times array should be accessed with [trip][route_stop] not [trip][stop].
+            Note that the stop times array should be accessed with [trip_idx][route_stop] not [trip_idx][stop].
             The iteration variable is signed to allow ending the iteration at the beginning of the route.
         */
         for (int route_stop = req->arrive_by ? route.n_stops - 1 : 0;
@@ -506,7 +506,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             */
             for (uint32_t bsh = 0; bsh < req->n_banned_stops_hard; bsh++) {
                 if (stop == req->banned_stop_hard) {
-                    trip = NONE;
+                    trip_idx = NONE;
                     continue;
                 }
             }
@@ -518,14 +518,14 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             bool attempt_board = false;
             rtime_t prev_time = states[last_round][stop].walk_time;
             if (prev_time != UNREACHED) { // Only board at placed that have been reached.
-                if (trip == NONE || req->via == stop) {
+                if (trip_idx == NONE || req->via == stop) {
                     attempt_board = true;
-                } else if (trip != NONE && req->via != NONE && req->via == board_stop) {
+                } else if (trip_idx != NONE && req->via != NONE && req->via == board_stop) {
                     attempt_board = false;
                 } else {
                     // removed xfer slack for simplicity
                     // is this repetitively triggering re-boarding searches along a single route?
-                    rtime_t trip_time = tdata_stoptime (router->tdata, &(route_trips[trip]), route_stop, req->arrive_by, board_serviceday);
+                    rtime_t trip_time = tdata_stoptime (router->tdata, &(route_trips[trip_idx]), route_stop, req->arrive_by, board_serviceday);
                     if (trip_time == UNREACHED) attempt_board = false;
                     else if (req->arrive_by ? prev_time > trip_time
                                             : prev_time < trip_time) {
@@ -536,10 +536,10 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             }
 
             if (!(route_stop_attributes[route_stop] & rsa_boarding)) //Boarding not allowed
-                if (req->arrive_by ? trip != NONE : attempt_board) //and we're attempting to board
+                if (req->arrive_by ? trip_idx != NONE : attempt_board) //and we're attempting to board
                     continue; //Boarding not allowed and attemping to board
             if (!(route_stop_attributes[route_stop] & rsa_alighting)) //Alighting not allowed
-                if (req->arrive_by ? attempt_board : trip != NONE) //and we're seeking to alight
+                if (req->arrive_by ? attempt_board : trip_idx != NONE) //and we're seeking to alight
                     continue; //Alighting not allowed and attemping to alight
 
             /* If we have not yet boarded a trip on this route, see if we can board one.
@@ -599,16 +599,16 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         board_time = best_time;
                         board_stop = stop;
                         board_serviceday = best_serviceday;
-                        trip = best_trip;
+                        trip_idx = best_trip;
                     }
                 } else {
                     T printf("    no suitable trip to board.\n");
                 }
                 continue; // to the next stop in the route
-            } else if (trip != NONE) { // We have already boarded a trip along this route.
-                rtime_t time = tdata_stoptime (router->tdata, &(route_trips[trip]), route_stop, !req->arrive_by, board_serviceday);
+            } else if (trip_idx != NONE) { // We have already boarded a trip along this route.
+                rtime_t time = tdata_stoptime (router->tdata, &(route_trips[trip_idx]), route_stop, !req->arrive_by, board_serviceday);
                 if (time == UNREACHED) continue; // overflow due to long overnight trips on day 2
-                T printf("    on board trip %d considering time %s \n", trip, timetext(time)); 
+                T printf("    on board trip %d considering time %s \n", trip_idx, timetext(time)); 
                 // Target pruning, sec. 3.1 of RAPTOR paper.
                 if ((router->best_time[router->target] != UNREACHED) && 
                     (req->arrive_by ? time < router->best_time[router->target] 
@@ -640,7 +640,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     router->best_time[stop] = time;
                     states[round][stop].time = time;
                     states[round][stop].back_route = route_idx; 
-                    states[round][stop].back_trip  = trip; 
+                    states[round][stop].back_trip  = trip_idx; 
                     states[round][stop].back_stop  = board_stop;
                     states[round][stop].board_time = board_time;
                     if (req->arrive_by) {
