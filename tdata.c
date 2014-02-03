@@ -327,6 +327,16 @@ void tdata_load(char *filename, tdata_t *td) {
     td->trip_attributes = (uint8_t*) (b + header->loc_trip_attributes);
     td->alerts = NULL;
 
+    #ifdef RRRR_REALTIME
+    #ifdef RRRR_REALTIME_DELAY
+    td->trip_realtime_delay = (rtime_t *) calloc (header->n_trips, sizeof (stoptime_t *));
+    #endif
+    #ifdef RRRR_REALTIME_EXPANDED
+    td->trip_stop_times_expanded = (stoptime_t **) calloc (header->n_trips, sizeof (stoptime_t *));
+    td->stop_times_expanded = NULL;
+    #endif
+    #endif
+
     // This is probably a bit slow and is not strictly necessary, but does page in all the timetable entries.
     tdata_check_coherent(td);
     D tdata_dump(td);
@@ -334,6 +344,16 @@ void tdata_load(char *filename, tdata_t *td) {
 
 void tdata_close(tdata_t *td) {
     munmap(td->base, td->size);
+
+    #ifdef RRRR_REALTIME
+    #ifdef RRRR_REALTIME_DELAY
+    free (td->trip_realtime_delay);
+    #endif
+    #ifdef RRRR_REALTIME_EXPANDED
+    free (td->trip_stop_times_expanded);
+    free (td->stop_times_expanded);
+    #endif
+    #endif
 }
 
 // TODO should pass pointer to tdata?

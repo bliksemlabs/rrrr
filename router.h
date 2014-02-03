@@ -18,14 +18,14 @@ typedef struct router_state router_state_t;
    a trip can pass through a stop more than once.
    TODO rename members to ride_from, walk_from, route, trip, ride_time, walk_time ? */
 struct router_state {
-    uint32_t back_stop;  // The index of the previous stop in the itinerary
-    uint32_t back_route; // The index of the route used to travel from back_stop to here, or WALK
-    uint32_t back_trip;  // The index of the trip used to travel from back_stop to here, or WALK
-    rtime_t  time;       // The time when this stop was reached
-    rtime_t  board_time; // The time at which the trip within back_route left back_stop
+    uint32_t back_stop_idx;  // The index of the previous stop in the itinerary
+    uint32_t back_route_idx; // The index of the route used to travel from back_stop to here, or WALK
+    uint32_t back_trip_offset; // The offset of the trip used (within a route) to travel from back_stop to here, or WALK
+    rtime_t  time;           // The time when this stop was reached
+    rtime_t  board_time;     // The time at which the trip within back_route left back_stop
     /* Second phase footpath/transfer results */
-    uint32_t walk_from;  // The stop from which this stop was reached by walking (2nd phase)
-    rtime_t  walk_time;  // The time when this stop was reached by walking (2nd phase)
+    uint32_t walk_from;      // The stop from which this stop was reached by walking (2nd phase)
+    rtime_t  walk_time;      // The time when this stop was reached by walking (2nd phase)
 };
 
 

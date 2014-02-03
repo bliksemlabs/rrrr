@@ -2,6 +2,7 @@
 #ifndef _TDATA_H
 #define _TDATA_H
 
+#include "config.h"
 #include "geometry.h"
 #include "util.h"
 #include "radixtree.h"
@@ -110,6 +111,15 @@ struct tdata {
     uint32_t trip_id_width;
     char *trip_ids;
     TransitRealtime__FeedMessage *alerts;
+    #ifdef RRRR_REALTIME
+    #ifdef RRRR_REALTIME_DELAY
+    rtime_t *trip_realtime_delay;
+    #endif
+    #ifdef RRRR_REALTIME_EXPANDED
+    stoptime_t **trip_stop_times_expanded;
+    stoptime_t  *stop_times_expanded;
+    #endif
+    #endif
 };
 
 void tdata_load(char* filename, tdata_t*);

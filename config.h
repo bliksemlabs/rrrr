@@ -1,5 +1,9 @@
 /* config.h */
 
+#define RRRR_REALTIME 1
+#define RRRR_REALTIME_DELAY 1
+#define RRRR_REALTIME_EXPANDED 1
+
 #define RRRR_TEST_CONCURRENCY 4
 #define RRRR_INPUT_FILE "timetable.dat"
 
