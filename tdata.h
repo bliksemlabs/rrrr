@@ -75,6 +75,7 @@ struct tdata {
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;
+    uint32_t n_agencies;
     stop_t *stops;
     uint8_t *stop_attributes;
     route_t *routes;
@@ -140,6 +141,8 @@ uint8_t *tdata_stop_attributes_for_index(tdata_t*, uint32_t stop_index);
 char *tdata_trip_id_for_index(tdata_t*, uint32_t trip_index);
 
 char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index);
+
+uint32_t tdata_agencyidx_by_agency_name(tdata_t*, char* agency_name, uint32_t start_index);
 
 char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index);
 

@@ -26,6 +26,7 @@ struct tdata_header {
     uint32_t n_stops;
     uint32_t n_routes;
     uint32_t n_trips;
+    /* uint32_t n_agencies; */
     uint32_t loc_stops;
     uint32_t loc_stop_attributes;
     uint32_t loc_stop_coords;
@@ -177,6 +178,15 @@ inline char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) 
     return td->productcategories + (td->productcategory_width * route.productcategory_index);
 }
 
+inline uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t start_index) {
+    for (uint32_t agency_index = start_index; agency_index < td->n_agencies; agency_index++) {
+        if (strcasestr(td->agency_names + (td->agency_name_width * agency_index), agency_name)) {
+            return agency_index;
+        }
+    }
+    return NONE;
+}
+
 inline char *tdata_agency_id_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
     route_t route = (td->routes)[route_index];
@@ -291,6 +301,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->n_stops = header->n_stops;
     td->n_routes = header->n_routes;
     td->n_trips = header->n_trips;
+    /* td->n_agencies = header->n_agencies; */
     td->stops = (stop_t*) (b + header->loc_stops);
     td->stop_attributes = (uint8_t*) (b + header->loc_stop_attributes);
     td->stop_coords = (latlon_t*) (b + header->loc_stop_coords);
@@ -328,6 +339,13 @@ void tdata_load(char *filename, tdata_t *td) {
     td->route_active = (uint32_t*) (b + header->loc_route_active);
     td->trip_attributes = (uint8_t*) (b + header->loc_trip_attributes);
     td->alerts = NULL;
+
+    // This should be migrated to n_agencies from the timetable generation in my humble option.
+    td->n_agencies = 0;
+    for (uint32_t r = 0; r < td->n_routes; ++r) {
+       if (td->routes[r].agency_index > td->n_agencies)
+          td->n_agencies = td->routes[r].agency_index;
+    }
 
     // This is probably a bit slow and is not strictly necessary, but does page in all the timetable entries.
     tdata_check_coherent(td);
