@@ -21,11 +21,11 @@ static bool overflowed = false;
 static bool remaining(size_t n) {
     if (b + n < buf_end) return true;
     overflowed = true;
-    return false; 
+    return false;
 }
 
 /* Overflow-checked copy of a single char to the buffer. */
-static void check(char c) { 
+static void check(char c) {
     if (b >= buf_end) overflowed = true;
     else *(b++) = c;
 }
@@ -58,7 +58,7 @@ static void string (const char *s) {
     check('"');
 }
 
-/* Escape a key and copy it to the buffer, preparing for a single value. 
+/* Escape a key and copy it to the buffer, preparing for a single value.
    This should only be used internally, since it sets in_list _before_ the value is added. */
 static void ekey (const char *k) {
     comma();
@@ -69,17 +69,17 @@ static void ekey (const char *k) {
 
 /* public functions (eventually) */
 
-static void json_begin(char *buf, size_t buflen) { 
-    buf_start = b = buf; 
+static void json_begin(char *buf, size_t buflen) {
+    buf_start = b = buf;
     buf_end = b + buflen - 1;
     in_list = false;
-    overflowed = false; 
+    overflowed = false;
 }
 
-static void json_dump() { 
-    *b = '\0'; 
+static void json_dump() {
+    *b = '\0';
     if (overflowed) printf ("[JSON OVERFLOW]\n");
-    printf("%s\n", buf_start); 
+    printf("%s\n", buf_start);
 }
 
 static size_t json_length() { return b - buf_start; }
@@ -146,7 +146,7 @@ static void json_end_arr() {
     in_list = true;
 }
 
-static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date) * 1000L; }
+static int64_t rtime_to_msec(rtime_t rtime, time_t date) { return (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date) * 1000LL; }
 
 static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t stop_index, tdata_t *tdata, time_t date) {
     char *stop_name = tdata_stop_name_for_index(tdata, stop_index);
@@ -170,7 +170,7 @@ static void json_place (char *key, rtime_t arrival, rtime_t departure, uint32_t 
         	json_kv("arrival", NULL);
 	else
         	json_kl("arrival", rtime_to_msec(arrival, date));
-	
+
 	if (departure == UNREACHED)
 		json_kv("departure", NULL);
 	else
@@ -246,7 +246,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kv("agencyUrl", agency_url);
         json_kv("wheelchairAccessible", wheelchair_accessible);
         json_kv("productCategory", productcategory);
-/* 
+/*
     "realTime": false,
     "distance": 2656.2383456335,
     "mode": "BUS",
@@ -313,7 +313,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     "duration": 720000,
     "intermediateStops": null,
     "steps": [
-      
+
     ]
 */
         json_key_obj("legGeometry");
@@ -323,7 +323,7 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
             json_kd("length", polyline_length());
         json_end_obj();
         json_key_arr("intermediateStops");
-        if (req->intermediatestops && leg->route != WALK) { 
+        if (req->intermediatestops && leg->route != WALK) {
             bool visible = false;
             for (uint32_t i = 0; i < tdata->routes[leg->route].n_stops; i++) {
                 uint32_t stop_idx = tdata->route_stops[tdata->routes[leg->route].route_stops_offset + i];
@@ -387,7 +387,7 @@ static void json_itinerary (struct itinerary *itin, tdata_t *tdata, router_reque
         json_kb("walkLimitExceeded", false);
         json_kd("elevationLost",0);
         json_kd("elevationGained",0);
- 
+
     json_end_obj();
 }
 
@@ -428,12 +428,12 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
             }
         json_end_obj();
         json_key_obj("plan");
-            json_kl("date", date_seconds * 1000L);
+            json_kl("date", date_seconds * 1000LL);
             json_place("from", UNREACHED, UNREACHED, plan->req.from, tdata, date_seconds);
             json_place("to", UNREACHED, UNREACHED, plan->req.to, tdata, date_seconds);
             json_key_arr("itineraries");
                 for (uint32_t i = 0; i < plan->n_itineraries; ++i) json_itinerary (plan->itineraries + i, tdata, &plan->req, date_seconds);
-            json_end_arr();    
+            json_end_arr();
         json_end_obj();
         #if 0
         json_key_obj("debug");
