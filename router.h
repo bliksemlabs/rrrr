@@ -156,6 +156,8 @@ void router_request_randomize(router_request_t*, tdata_t *tdata);
 
 bool router_request_reverse(router_t*, router_request_t*);
 
+void router_request_next(router_request_t *req);
+
 void router_teardown(router_t*);
 
 bool router_route(router_t*, router_request_t*);

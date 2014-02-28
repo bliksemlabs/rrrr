@@ -1,9 +1,9 @@
 CC      := clang
-CFLAGS  := -g -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
+CFLAGS  := -ggdb3 -march=native -Wall -Wno-unused -O3 -D_GNU_SOURCE # -flto -B/home/abyrd/svn/binutils/build/gold/ld-new -use-gold-plugin
 LIBS    := -lzmq -lczmq -lm -lwebsockets -lprotobuf-c
 SOURCES := $(wildcard *.c)
 OBJECTS := $(SOURCES:.c=.o)
-BINS    := workerrrr-web workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test rrrrealtime-viz profile
+BINS    := workerrrr-web workerrrr brrrroker client lookup-console testerrrr explorerrrr rrrrealtime otp_api otp_client struct_test rrrrealtime-viz profile testerrrr-viz
 HEADERS := $(wildcard *.h)
 
 BIN_BASES   := $(subst rrrr,r,$(BINS))
@@ -29,16 +29,23 @@ librrrr.a: $(LIB_OBJECTS)
 .SECONDEXPANSION:
 
 # each binary depends on its own .o file and the library
-$(filter-out rrrrealtime-viz,$(BINS)): $$(subst rrrr,r,$$@).o $(LIB_NAME)
+$(filter-out testerrrr-viz,$(filter-out rrrrealtime-viz,$(BINS))): $$(subst rrrr,r,$$@).o $(LIB_NAME)
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 
-# rrrrealtime-viz is exceptional and compiled separately because it uses libSDL, libGL, and libshp
+# *-viz is exceptional and compiled separately because it uses libSDL, libGL, and libshp
 
 realtime-viz.o: realtime-viz.c
 	$(CC) -c $(CFLAGS) $(shell sdl-config --cflags) $^ -o $@
 
+tester-viz-sdl.o: tester-viz-sdl.c
+	$(CC) -c $(CFLAGS) $(shell sdl-config --cflags) $^ -o $@
+
 rrrrealtime-viz: realtime-viz.o $(LIB_NAME)
-	$(CC) $(CFLAGS) $(shell sdl-config --cflags) $^ $(LIBS) -lSDL -lGL -lshp -o $@
+	$(CC) $(CFLAGS) $(shell sdl-config --cflags) $^ $(LIBS) -lSDL -lGL -lshp -lX11 -lGLU -o $@
+
+testerrrr-viz: tester-viz.o $(LIB_NAME)
+	$(CC) $(CFLAGS) $(shell sdl-config --cflags) $^ $(LIBS) -lSDL -lGL -lshp -lX11 -lGLU -o $@
+
 
 clean:
 	rm -f *.o *.d *.a *~ core $(BINS)

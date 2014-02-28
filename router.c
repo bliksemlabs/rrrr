@@ -1052,6 +1052,19 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->intermediatestops = false;
 }
 
+void router_request_next(router_request_t *req) {
+    req->time += 15;
+
+    if (req->time >= 21600) {
+        req->day_mask++;
+        req->time -= 21600;
+    }
+
+    req->time_cutoff = UNREACHED;
+    req->time_rounded = false;
+    req->max_transfers = RRRR_MAX_ROUNDS - 1;
+}
+
 void router_state_dump (router_state_t *state) {
     printf ("-- Router State --\n");
     printf ("walk time:    %s \n", timetext(state->walk_time));
