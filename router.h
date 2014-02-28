@@ -99,6 +99,9 @@ struct router_request {
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
     calendar_t day_mask; // bit for the day on which we are searching, relative to the timetable calendar
     uint8_t mode;        // selects the mode by a bitfield
+    #ifdef FEATURE_AGENCY_FILTER
+    uint16_t agency;     // filters routes by a specific agency
+    #endif
     uint8_t trip_attributes; // select required attributes bitfield (from trips)
     uint8_t optimise;    // restrict the output to specific optimisation flags
     uint32_t n_banned_routes; // 1

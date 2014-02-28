@@ -470,6 +470,11 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     route_idx != BITSET_NONE;
                     route_idx  = bitset_next_set_bit (router->updated_routes, route_idx + 1)) {
         route_t route = router->tdata->routes[route_idx]; // really, 'trip' should be a trip_t to follow this same convention, and trip_idx should be its index
+
+        #ifdef FEATURE_AGENCY_FILTER
+        if (req->agency != AGENCY_UNFILTERED && req->agency != route.agency_index) continue;
+        #endif
+
         bool route_overlap = route.min_time < route.max_time - RTIME_ONE_DAY;
         /*
         if (route_overlap) printf ("min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
@@ -987,6 +992,7 @@ void router_request_initialize(router_request_t *req) {
     req->time_rounded = false;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->mode = m_all;
+    req->agency = AGENCY_UNFILTERED;
     req->trip_attributes = ta_none;
     req->optimise = o_all;
     req->n_banned_routes = 0;
@@ -1038,6 +1044,7 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
     req->day_mask = 1 << rrrrandom(32);
     req->mode = m_all;
+    req->agency = AGENCY_UNFILTERED;
     req->trip_attributes = ta_none;
     req->optimise = o_all;
     req->n_banned_routes = 0;

@@ -38,6 +38,8 @@ typedef uint16_t rtime_t;
 #define ONBOARD   (UINT32_MAX - 2)
 #define CANCELED  INT16_MAX
 
+#define AGENCY_UNFILTERED (UINT16_MAX)
+
 void die(const char* message);
 
 char *btimetext(rtime_t t, char *buf); // minimum buffer size is 9 characters
