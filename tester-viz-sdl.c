@@ -280,8 +280,48 @@ int drawGLScene( GLvoid )
     /* Move into the screen 1 unit */
     // glTranslatef( 0.0f, 0.0f, -1.0f );
 
-    glBegin(GL_POINTS);
 
+    router_state_t (*states)[router->tdata->n_stops] = (router_state_t(*)[]) (router->states);
+
+    for (uint32_t i = 0; i < tdata->n_stops; i++) {
+        if (router->best_time[i] != UNREACHED) {
+            GLfloat cnt1 = lon2x_d(tdata->stop_coords[i].lon);
+            GLfloat cnt2 = lat2y_d(tdata->stop_coords[i].lat);
+
+            int8_t round = RRRR_MAX_ROUNDS;
+            do {
+                round--;
+                /* fan-out transfer locations */
+                /*
+                if (states[round][i].time != UNREACHED && states[round][i].back_stop != NONE) {
+                    glBegin(GL_LINES);
+                    glVertex2f(cnt1,cnt2);
+                    GLfloat x = lon2x_d(tdata->stop_coords[states[round][i].back_stop].lon);
+                    GLfloat y = lat2y_d(tdata->stop_coords[states[round][i].back_stop].lat);
+                    glVertex2f(x,y);
+                    glEnd();
+                    break;
+                }
+                */
+
+                /* visualise the transfers taken by feet */
+                if (states[round][i].walk_time != UNREACHED && states[round][i].walk_from != NONE && states[round][i].time > states[round][i].walk_time) {
+                    glColor3f(0.4f, 0.4f, 0.4f);
+                    glBegin(GL_LINES);
+                    glVertex2f(cnt1,cnt2);
+                    GLfloat x = lon2x_d(tdata->stop_coords[states[round][i].walk_from].lon);
+                    GLfloat y = lat2y_d(tdata->stop_coords[states[round][i].walk_from].lat);
+                    glVertex2f(x,y);
+                    glEnd();
+                    break;
+                }
+
+            } while (round > 0);
+        }
+    }
+
+
+    glBegin(GL_POINTS);
     for (uint32_t i = 0; i < tdata->n_stops; i++) {
         if (router->best_time[i] != UNREACHED) {
             GLfloat cnt1 = lon2x_d(tdata->stop_coords[i].lon);
@@ -305,19 +345,14 @@ int drawGLScene( GLvoid )
                        1.0f * ( float )sin(frequency * delta + 4 + phase) * width + center );
 
             glVertex2f(cnt1, cnt2);
-
-            /* Print text to the screen */
-                glPrint( cnt1, cnt2, "%.2d:%.2d", router->best_time[i] / 900, (router->best_time[i] - ((router->best_time[i] / 900) * 900) ) / 15 ); // still in r_time
-            // }
         }
     }
 
     glEnd();
+
     /* Print text to the screen */
-
-    glColor3f(0.4f, 0.4f, 0.4f);
-
     if (zoom_level >= 6) {
+        glColor3f(0.4f, 0.4f, 0.4f);
         for (uint32_t i = 0; i < tdata->n_stops; i++) {
             if (router->best_time[i] != UNREACHED) {
                 GLfloat cnt1 = lon2x_d(tdata->stop_coords[i].lon);
