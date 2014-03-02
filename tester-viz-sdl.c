@@ -85,15 +85,15 @@ GLvoid buildFont( GLvoid )
 
     /* If the above font didn't exist try one that should */
     if ( fontInfo == NULL )
-	{
-	    fontInfo = XLoadQueryFont( dpy, "fixed" );
-	    /* If that font doesn't exist, something is wrong */
-	    if ( fontInfo == NULL )
-		{
-		    fprintf( stderr, "no X font available?\n" );
-		    Quit( 1 );
-		}
-	}
+    {
+        fontInfo = XLoadQueryFont( dpy, "fixed" );
+        /* If that font doesn't exist, something is wrong */
+        if ( fontInfo == NULL )
+        {
+            fprintf( stderr, "no X font available?\n" );
+            Quit( 1 );
+        }
+    }
 
     /* generate the list */
     glXUseXFont( fontInfo->fid, 32, 96, base );
@@ -115,7 +115,7 @@ GLvoid glPrint( GLfloat cnt1, GLfloat cnt2, const char *fmt, ... )
 
     /* If there's no text, do nothing */
     if ( fmt == NULL )
-	return;
+    return;
 
     /* Position The Text On The Screen */
     glRasterPos2f( cnt1, cnt2 );
@@ -188,17 +188,17 @@ int resizeWindow( int width, int height )
 void handleKeyPress( SDL_keysym *keysym )
 {
     switch ( keysym->sym )
-	{
-	case SDLK_ESCAPE:
-	    /* ESC key was pressed */
-	    Quit( 0 );
-	    break;
-	case SDLK_F1:
-	    /* F1 key was pressed
-	     * this toggles fullscreen mode
-	     */
-	    SDL_WM_ToggleFullScreen( surface );
-	    break;
+    {
+    case SDLK_ESCAPE:
+        /* ESC key was pressed */
+        Quit( 0 );
+        break;
+    case SDLK_F1:
+        /* F1 key was pressed
+         * this toggles fullscreen mode
+         */
+        SDL_WM_ToggleFullScreen( surface );
+        break;
 
     case SDLK_KP_PLUS:
         zoom_level ++;
@@ -230,8 +230,8 @@ void handleKeyPress( SDL_keysym *keysym )
         perspective();
         break;
 default:
-	    break;
-	}
+        break;
+    }
 
     return;
 }
@@ -346,14 +346,14 @@ int drawGLScene( GLvoid )
     /* Gather our frames per second */
     Frames++;
     {
-	GLint t = SDL_GetTicks();
-	if (t - T0 >= 5000) {
-	    GLfloat seconds = (t - T0) / 1000.0;
-	    GLfloat fps = Frames / seconds;
-	    printf("%d frames in %g seconds = %g FPS\n", Frames, seconds, fps);
-	    T0 = t;
-	    Frames = 0;
-	}
+    GLint t = SDL_GetTicks();
+    if (t - T0 >= 5000) {
+        GLfloat seconds = (t - T0) / 1000.0;
+        GLfloat fps = Frames / seconds;
+        printf("%d frames in %g seconds = %g FPS\n", Frames, seconds, fps);
+        T0 = t;
+        Frames = 0;
+    }
     }
 
     return( TRUE );
@@ -378,21 +378,21 @@ int sdl_main( router_t *prouter, tdata_t *ptdata, router_request_t *preq )
 
     /* initialize SDL */
     if ( SDL_Init( SDL_INIT_VIDEO ) < 0 )
-	{
-	    fprintf( stderr, "Video initialization failed: %s\n",
-		     SDL_GetError( ) );
-	    Quit( 1 );
-	}
+    {
+        fprintf( stderr, "Video initialization failed: %s\n",
+             SDL_GetError( ) );
+        Quit( 1 );
+    }
 
     /* Fetch the video info */
     videoInfo = SDL_GetVideoInfo( );
 
     if ( !videoInfo )
-	{
-	    fprintf( stderr, "Video query failed: %s\n",
-		     SDL_GetError( ) );
-	    Quit( 1 );
-	}
+    {
+        fprintf( stderr, "Video query failed: %s\n",
+             SDL_GetError( ) );
+        Quit( 1 );
+    }
 
     /* the flags to pass to SDL_SetVideoMode */
     videoFlags  = SDL_OPENGL;          /* Enable OpenGL in SDL */
@@ -402,27 +402,27 @@ int sdl_main( router_t *prouter, tdata_t *ptdata, router_request_t *preq )
 
     /* This checks to see if surfaces can be stored in memory */
     if ( videoInfo->hw_available )
-	videoFlags |= SDL_HWSURFACE;
+    videoFlags |= SDL_HWSURFACE;
     else
-	videoFlags |= SDL_SWSURFACE;
+    videoFlags |= SDL_SWSURFACE;
 
     /* This checks if hardware blits can be done */
     if ( videoInfo->blit_hw )
-	videoFlags |= SDL_HWACCEL;
+    videoFlags |= SDL_HWACCEL;
 
     /* Sets up OpenGL double buffering */
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
     /* get a SDL surface */
     surface = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP,
-				videoFlags );
+                videoFlags );
 
     /* Verify there is a surface */
     if ( !surface )
-	{
-	    fprintf( stderr,  "Video mode set failed: %s\n", SDL_GetError( ) );
-	    Quit( 1 );
-	}
+    {
+        fprintf( stderr,  "Video mode set failed: %s\n", SDL_GetError( ) );
+        Quit( 1 );
+    }
 
     /* initialize OpenGL */
     initGL( );
@@ -432,40 +432,40 @@ int sdl_main( router_t *prouter, tdata_t *ptdata, router_request_t *preq )
 
     /* wait for events */
     while ( !done )
-	{
-	    /* handle the events in the queue */
+    {
+        /* handle the events in the queue */
 
-	    while ( SDL_PollEvent( &event ) )
-		{
-		    switch( event.type )
-			{
-			case SDL_ACTIVEEVENT:
-			    /* Something's happend with our focus
-			     * If we lost focus or we are iconified, we
-			     * shouldn't draw the screen
-			     */
-			    if ( event.active.gain == 0 )
-				isActive = FALSE;
-			    else
-				isActive = TRUE;
-			    break;
-			case SDL_VIDEORESIZE:
-			    /* handle resize event */
-			    surface = SDL_SetVideoMode( event.resize.w,
-							event.resize.h,
-							16, videoFlags );
-			    if ( !surface )
-				{
-				    fprintf( stderr, "Could not get a surface after resize: %s\n", SDL_GetError( ) );
-				    Quit( 1 );
-				}
-			    resizeWindow( event.resize.w, event.resize.h );
-			    break;
-			case SDL_KEYDOWN:
-			    /* handle key presses */
-			    handleKeyPress( &event.key.keysym );
+        while ( SDL_PollEvent( &event ) )
+        {
+            switch( event.type )
+            {
+            case SDL_ACTIVEEVENT:
+                /* Something's happend with our focus
+                 * If we lost focus or we are iconified, we
+                 * shouldn't draw the screen
+                 */
+                if ( event.active.gain == 0 )
+                isActive = FALSE;
+                else
                 isActive = TRUE;
-			    break;
+                break;
+            case SDL_VIDEORESIZE:
+                /* handle resize event */
+                surface = SDL_SetVideoMode( event.resize.w,
+                            event.resize.h,
+                            16, videoFlags );
+                if ( !surface )
+                {
+                    fprintf( stderr, "Could not get a surface after resize: %s\n", SDL_GetError( ) );
+                    Quit( 1 );
+                }
+                resizeWindow( event.resize.w, event.resize.h );
+                break;
+            case SDL_KEYDOWN:
+                /* handle key presses */
+                handleKeyPress( &event.key.keysym );
+                isActive = TRUE;
+                break;
             case SDL_MOUSEBUTTONDOWN:
                 {
                     int x = event.motion.x;
@@ -521,17 +521,17 @@ int sdl_main( router_t *prouter, tdata_t *ptdata, router_request_t *preq )
                     }
                     break;
             }
-			case SDL_QUIT:
-			    /* handle quit requests */
-			    done = TRUE;
-			    break;
-			default:
-			    break;
-			}
-		}
+            case SDL_QUIT:
+                /* handle quit requests */
+                done = TRUE;
+                break;
+            default:
+                break;
+            }
+        }
 
-	    /* draw the scene */
-	    if ( isActive ) {
+        /* draw the scene */
+        if ( isActive ) {
             router_request_next (req);
 
             router_route (router, req);
@@ -542,9 +542,9 @@ int sdl_main( router_t *prouter, tdata_t *ptdata, router_request_t *preq )
             //    router_route (router, req);
             //}
 
-    		drawGLScene( );
+            drawGLScene( );
         }
-	}
+    }
 
     /* clean ourselves up and exit */
     Quit( 0 );
