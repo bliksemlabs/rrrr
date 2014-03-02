@@ -179,5 +179,9 @@ time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 
 uint32_t transfer_distance (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to);
 
+uint32_t rrrrandom(uint32_t limit);
+
+uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index);
+
 #endif // _ROUTER_H
 

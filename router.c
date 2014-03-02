@@ -980,6 +980,30 @@ uint32_t rrrrandom(uint32_t limit) {
     return (uint32_t) (limit * (random() / (RAND_MAX + 1.0)));
 }
 
+uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index) {
+	uint32_t n_routes_agency = 0;
+
+	for (uint32_t route_idx = 0; route_idx < tdata->n_routes; route_idx++) {
+		if (tdata->routes[route_idx].agency_index == agency_index) n_routes_agency++;
+	}
+
+	if (n_routes_agency == 0) return NONE;
+
+	n_routes_agency = rrrrandom (n_routes_agency + 1);
+
+	for (uint32_t route_idx = 0; route_idx < tdata->n_routes; route_idx++) {
+		if (tdata->routes[route_idx].agency_index == agency_index) {
+			if (n_routes_agency == 0) {
+				return tdata->route_stops[tdata->routes[route_idx].route_stops_offset + rrrrandom (tdata->routes[route_idx].n_stops)];
+			} else {
+				n_routes_agency--;
+			}
+		}
+	}
+
+	return NONE;
+}
+
 void router_request_initialize(router_request_t *req) {
     req->walk_speed = 1.5; // m/sec
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
