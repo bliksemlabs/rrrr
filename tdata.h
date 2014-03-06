@@ -184,7 +184,7 @@ char *tdata_agency_name_for_route(tdata_t*, uint32_t route_index);
 
 char *tdata_agency_url_for_route(tdata_t*, uint32_t route_index);
 
-/* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must 
+/* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t*, uint32_t route_index, uint32_t trip_index);
 
@@ -205,6 +205,6 @@ void tdata_clear_gtfsrt_alerts (tdata_t *tdata);
 
 /* The signed delay of the specified trip in seconds. */
 float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_index);
- 
+
 #endif // _TDATA_H
 

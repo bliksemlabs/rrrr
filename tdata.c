@@ -37,12 +37,12 @@ struct tdata_header {
     uint32_t loc_trips;
     uint32_t loc_trip_attributes;
     uint32_t loc_stop_routes;
-    uint32_t loc_transfer_target_stops; 
-    uint32_t loc_transfer_dist_meters; 
-    uint32_t loc_trip_active; 
-    uint32_t loc_route_active; 
+    uint32_t loc_transfer_target_stops;
+    uint32_t loc_transfer_dist_meters;
+    uint32_t loc_trip_active;
+    uint32_t loc_route_active;
     uint32_t loc_platformcodes;
-    uint32_t loc_stop_names; 
+    uint32_t loc_stop_names;
     uint32_t loc_stop_nameidx;
     uint32_t loc_agency_ids;
     uint32_t loc_agency_names;
@@ -235,9 +235,9 @@ void tdata_check_coherent (tdata_t *tdata) {
                         // printf ("negative travel time arriving at route %d, trip %d, stop %d.\n", r, t, s);
                         // printf ("(%d, %d) -> (%d, %d)\n", prev_st->arrival, prev_st->departure, st->arrival, st->departure);
                         n_nonincreasing_trips += 1;
-                    } // there are also lots of 0 travel times...	
+                    } // there are also lots of 0 travel times...
                 }
-                prev_st = st;                
+                prev_st = st;
             }
         }
         if (n_nonincreasing_trips > 0) printf ("route %d has %d trips with negative travel times\n", r, n_nonincreasing_trips);
@@ -247,7 +247,7 @@ void tdata_check_coherent (tdata_t *tdata) {
     for (uint32_t stop_index_from = 0; stop_index_from < tdata->n_stops; ++stop_index_from) {
         /* Iterate over all transfers going out of this stop */
         uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
-        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;        
+        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             uint32_t stop_index_to = tdata->transfer_target_stops[t];
             uint32_t forward_distance = tdata->transfer_dist_meters[t] << 4; // actually in units of 16 meters
@@ -263,7 +263,7 @@ void tdata_check_coherent (tdata_t *tdata) {
                     uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
                     if (reverse_distance != forward_distance) {
                         printf ("transfer from %d to %d is not symmetric. "
-                                "forward distance is %d, reverse distance is %d.\n", 
+                                "forward distance is %d, reverse distance is %d.\n",
                                 stop_index_from, stop_index_to, forward_distance, reverse_distance);
                     }
                     found_reverse = true;
@@ -272,7 +272,7 @@ void tdata_check_coherent (tdata_t *tdata) {
             }
             if ( ! found_reverse) printf ("transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
         }
-    }    
+    }
     printf ("checked %d transfers for symmetry.\n", n_transfers_checked);
 }
 
@@ -280,16 +280,16 @@ void tdata_check_coherent (tdata_t *tdata) {
 void tdata_load(char *filename, tdata_t *td) {
 
     int fd = open(filename, O_RDWR);
-    if (fd == -1) 
+    if (fd == -1)
         die("could not find input file");
 
     struct stat st;
-    if (stat(filename, &st) == -1) 
+    if (stat(filename, &st) == -1)
         die("could not stat input file");
-    
+
     td->base = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     td->size = st.st_size;
-    if (td->base == (void*)(-1)) 
+    if (td->base == (void*)(-1))
         die("could not map input file");
 
     void *b = td->base;
@@ -453,15 +453,15 @@ void tdata_dump(tdata_t *td) {
 #if 0
     printf("\nROUTEIDS, TRIPIDS\n");
     for (uint32_t i = 0; i < td->n_routes; i++) {
-        printf("route %03d has id %s and first trip id %s \n", i, 
+        printf("route %03d has id %s and first trip id %s \n", i,
             tdata_route_desc_for_index(td, i),
             tdata_trip_ids_for_route(td, i));
     }
 #endif
 }
 
-/* 
-  Decodes the GTFS-RT message of lenth len in buffer buf, extracting vehicle position messages 
+/*
+  Decodes the GTFS-RT message of lenth len in buffer buf, extracting vehicle position messages
   and using the delay extension (1003) to update RRRR's per-trip delay information.
 */
 void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, size_t len) {
@@ -499,7 +499,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
         uint32_t trip_index = rxt_find (tripid_index, trip_id);
         if (trip_index == RADIX_TREE_NONE) {
             printf ("    trip id was not found in the radix tree.\n");
-        } else {   
+        } else {
             // printf ("    trip_id %s, trip number %d, applying delay of %d sec.\n", trip_id, trip_index, delay_sec);
             trip_t *trip = tdata->trips + trip_index;
             trip->realtime_delay = SEC_TO_RTIME(delay_sec);
@@ -524,7 +524,7 @@ void tdata_apply_gtfsrt_file (tdata_t *tdata, RadixTree *tripid_index, char *fil
     int fd = open(filename, O_RDONLY);
     if (fd == -1) die("Could not find GTFS_RT input file.\n");
     struct stat st;
-    if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    
+    if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");
     uint8_t *buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) die("Could not map GTFS-RT input file.\n");
     tdata_apply_gtfsrt (tdata, tripid_index, buf, st.st_size);
@@ -557,7 +557,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, RadixTree *routeid_index, RadixT
                 }
                 memcpy (informed_entity->route_id, &route_index, sizeof(route_index));
             }
-            
+
             if (informed_entity->stop_id) {
                 uint32_t stop_index = rxt_find (stopid_index, informed_entity->stop_id);
                 if (stop_index == RADIX_TREE_NONE) {
@@ -594,7 +594,7 @@ void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, RadixTree *routeid_index, R
     int fd = open(filename, O_RDONLY);
     if (fd == -1) die("Could not find GTFS_RT input file.\n");
     struct stat st;
-    if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");    
+    if (stat(filename, &st) == -1) die("Could not stat GTFS_RT input file.\n");
     uint8_t *buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) die("Could not map GTFS-RT input file.\n");
     tdata_apply_gtfsrt_alerts (tdata, routeid_index, stopid_index, tripid_index, buf, st.st_size);

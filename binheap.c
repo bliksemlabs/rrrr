@@ -16,7 +16,7 @@
 
 static float *prio;
 static void  **elem;
-static int   size; 
+static int   size;
 static int   capacity;
 
 void binheap_new (int cap) {
@@ -30,7 +30,7 @@ void binheap_new (int cap) {
     size = 0;
     prio[0] = -INFINITY; // set sentinel
 }
-    
+
 bool binheap_empty () { return size <= 0; }
 
 float binheap_peek_min_key () {
@@ -38,12 +38,12 @@ float binheap_peek_min_key () {
 	else die ("An empty queue does not have a minimum key.");
 	return NAN;
 }
-    
+
 void *binheap_peek_min () {
 	if (size > 0) return elem[1];
 	else return NULL;
 }
-    
+
 // public void rekey(T e, double p) { UNIMPLEMENTED }
 
 void binheap_dump () {
@@ -52,7 +52,7 @@ void binheap_dump () {
 	}
 	printf("-----------------------\n");
 }
-    
+
 /* empties the queue in one operation */
 void binheap_reset () { size=0; }
 
@@ -82,8 +82,8 @@ void binheap_insert (void *e, float p) {
     }
     elem[i] = e;
     prio[i] = p;
-}    
-    
+}
+
 void *binheap_extract_min () {
     int   i, child;
     void *minElem  = elem[1];
@@ -103,5 +103,5 @@ void *binheap_extract_min () {
     prio[i] = lastPrio;
     return minElem;
 }
-    
+
 

@@ -1,7 +1,7 @@
 /* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
 
 /* qstring.c : utility functions for handling cgi query strings */
-#include "qstring.h" 
+#include "qstring.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <ctype.h>
@@ -36,10 +36,10 @@ static void url_decode (char *buf) {
 bool qstring_next_pair(const char *qstring, char *buf, char **vbuf, uint32_t buflen) {
     static const char *q = NULL;
     // set up if not currently working on a qstring
-    if (q == NULL) 
-        q = qstring; 
-    
-    if (*q == '\0') { 
+    if (q == NULL)
+        q = qstring;
+
+    if (*q == '\0') {
         q = NULL; // set internal state (no work in progress)
         return false; // signal this query string is fully parsed
     }
@@ -56,7 +56,7 @@ bool qstring_next_pair(const char *qstring, char *buf, char **vbuf, uint32_t buf
             ++q;
             break;
         } else {
-            *buf++ = *q++; 
+            *buf++ = *q++;
         }
     }
     *buf = '\0'; // terminate value string

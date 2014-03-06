@@ -27,7 +27,7 @@ def light(environ, start_response):
     if socks.get(request_bliksem) == zmq.POLLIN:
         reply = request_bliksem.recv()
         start_response('200 OK', COMMON_HEADERS + [('Content-length', str(len(reply)))])
-        return reply 
+        return reply
     else:
         start_response('500 NOK', COMMON_HEADERS)
         return ''

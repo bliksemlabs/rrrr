@@ -2,7 +2,7 @@
 
 /* Load-balancing broker using CZMQ API. Borrows heavily from load balancer pattern in 0MQ Guide. */
 
-#include <stdbool.h> 
+#include <stdbool.h>
 #include <syslog.h>
 #include <czmq.h>
 #include "rrrr.h"
@@ -21,7 +21,7 @@ int main (void) {
     zsocket_bind (frontend, CLIENT_ENDPOINT);
     zsocket_bind (backend,  WORKER_ENDPOINT);
     uint32_t frx = 0, ftx = 0, brx = 0, btx = 0, nworkers = 0, npoll = 0;
-    
+
     //  Queue of available workers
     zlist_t *workers = zlist_new ();
 
@@ -64,7 +64,7 @@ int main (void) {
             }
         }
     }
-    
+
     //  When we're done, clean up properly
     syslog(LOG_INFO, "broker terminating");
     while (zlist_size (workers)) {

@@ -101,7 +101,7 @@ uint32_t trie_load(trie_t *t, tdata_t *td) {
             t->node = 1;
             t = t->chars[c];
         }
-        
+
         t->index = global_index;
         global_index++;
 //        t->chars[TRIE_SENTINEL] = trie_init();

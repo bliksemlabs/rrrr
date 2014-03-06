@@ -32,19 +32,19 @@
 
 /* http://stackoverflow.com/questions/1644868/c-define-macro-for-debug-printing */
 #ifdef RRRR_INFO
- #define I 
+ #define I
 #else
  #define I for(;0;)
 #endif
 
 #ifdef RRRR_DEBUG
- #define D 
+ #define D
 #else
  #define D for(;0;)
 #endif
 
 #ifdef RRRR_TRACE
- #define T 
+ #define T
 #else
  #define T for(;0;)
 #endif

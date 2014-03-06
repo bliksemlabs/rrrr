@@ -33,7 +33,7 @@ BitSet *bitset_new(uint32_t capacity) {
 static inline void index_check(BitSet *self, uint32_t index) {
     if (index >= self->capacity) {
         printf("bitset index %d out of range [0, %d)\n", index, self->capacity);
-        exit(1);    
+        exit(1);
    }
 }
 
@@ -68,30 +68,30 @@ void bitset_dump(BitSet *self) {
 
 uint32_t bitset_enumerate(BitSet *self) {
     uint32_t total = 0;
-    for (uint32_t elem = bitset_next_set_bit(self, 0); 
-                  elem != BITSET_NONE; 
+    for (uint32_t elem = bitset_next_set_bit(self, 0);
+                  elem != BITSET_NONE;
                   elem = bitset_next_set_bit(self, elem + 1)) {
-        //printf ("%d ", elem); 
+        //printf ("%d ", elem);
         total += elem;
     }
     return total;
 }
 
-/* 
-  De-allocate a BitSet struct as well as the memory it references internally for the bit fields. 
+/*
+  De-allocate a BitSet struct as well as the memory it references internally for the bit fields.
 */
 void bitset_destroy(BitSet *self) {
     free(self->chunks);
     free(self);
 }
 
-/* 
+/*
   Return the next set index in this BitSet greater than or equal to the specified index.
-  Returns BITSET_NONE if there are no more set bits. 
+  Returns BITSET_NONE if there are no more set bits.
 */
 inline uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
     uint64_t *chunk = bs->chunks + (index >> 6);  // 2^6 == 64
-    uint64_t mask = 1ull << (index & 0x3F);       // binary 111111, i.e. the six lowest-order bits 
+    uint64_t mask = 1ull << (index & 0x3F);       // binary 111111, i.e. the six lowest-order bits
     while (index < bs->capacity) {
         /* check current bit in current chunk */
         if (mask & *chunk)

@@ -71,7 +71,7 @@ void parse_request(router_request_t *req, tdata_t *tdata, HashGrid *hg, int opt,
                     coord_t qc;
                     double radius_meters = 150;
                     coord_from_lat_lon (&qc, lat, lon);
-                    HashGrid_query (hg, &result, qc, radius_meters); 
+                    HashGrid_query (hg, &result, qc, radius_meters);
                     uint32_t item = HashGridResult_closest (&result);
                     if (opt == 'l') {
                         req->from = item;
@@ -203,9 +203,9 @@ bool parse_request_from_qstring(router_request_t *req, tdata_t *tdata, HashGrid 
     while (qstring_next_pair(qstring, key, &val, BUFLEN)) {
         int opt = 0;
         if (strcmp(key, "from-latlng") == 0) {
-            opt = 'l';    
+            opt = 'l';
         } else if (strcmp(key, "to-latlng") == 0) {
-            opt = 'L';    
+            opt = 'L';
         } else if (strcmp(key, "arrive") == 0) {
             opt = 'a';
         } else if (strcmp(key, "depart") == 0) {

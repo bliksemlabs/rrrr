@@ -2,12 +2,12 @@
 
 /* realtime.c */
 
-/*  
+/*
     Fetch GTFS-RT updates over Websockets
     Depends on https://github.com/warmcat/libwebsockets
     compile with -lwebsockets -lprotobuf-c
-    
-    protoc-c --c_out . protobuf/gtfs-realtime.proto    
+
+    protoc-c --c_out . protobuf/gtfs-realtime.proto
     clang -O2 -c gtfs-realtime.pb-c.c -o gtfs-realtime.pb-c.o
     clang -O2 realtime.c gtfs-realtime.pb-c.o -o rrrrealtime -lwebsockets -lprotobuf-c
 
@@ -220,7 +220,7 @@ int initGL( GLvoid )
 
     #if 0
     /* Enables Depth Testing */
-    glEnable( GL_DEPTH_TEST ); 
+    glEnable( GL_DEPTH_TEST );
 
     /* The Type Of Depth Test To Do */
     glDepthFunc( GL_LEQUAL );
@@ -290,8 +290,8 @@ int drawGLScene( GLvoid )
     return( TRUE );
 }
 
-/* 
-Websockets exchange frames. Messages can be split across frames.  
+/*
+Websockets exchange frames. Messages can be split across frames.
 Libwebsockets does not aggregate frames into messages, you must do it manually.
 "The configuration-time option MAX_USER_RX_BUFFER has been replaced by a
 buffer size chosen per-protocol.  For compatibility, there's a default
@@ -314,7 +314,7 @@ http://www.lenholgate.com/blog/2011/07/websockets-is-a-stream-not-a-message-base
 uint8_t msg[MAX_MESSAGE_LENGTH];
 size_t msg_len = 0;
 
-static void msg_add_frame (uint8_t *frame, size_t len) { 
+static void msg_add_frame (uint8_t *frame, size_t len) {
     if (msg_len + len > MAX_MESSAGE_LENGTH) {
         fprintf (stderr, "message exceeded maximum message length\n");
         msg_len = 0;
@@ -333,7 +333,7 @@ static void msg_dump () {
     }
     printf ("\n===============  END OF MESSAGE  ================\n");
 }
- 
+
 /* Protocol: Incremental GTFS-RT */
 
 static void show_gtfsrt (uint8_t *buf, size_t len) {
@@ -373,7 +373,7 @@ static void show_gtfsrt (uint8_t *buf, size_t len) {
 
 static bool socket_closed = false;
 static bool force_exit = false;
- 
+
 static int callback_gtfs_rt (struct libwebsocket_context *this,
                              struct libwebsocket *wsi,
                              enum libwebsocket_callback_reasons reason,
@@ -395,7 +395,7 @@ static int callback_gtfs_rt (struct libwebsocket_context *this,
                 /* single frame message, nothing in the buffer */
                 fprintf(stderr, "single-frame message. ");
                 if (len > 0) show_gtfsrt (in, len);
-            } else { 
+            } else {
                 /* last frame in a multi-frame message */
                 fprintf(stderr, "had previous fragment frames. ");
                 msg_add_frame (in, len);
@@ -633,7 +633,7 @@ int main(int argc, char **argv) {
             /* draw the scene */
             if ( isActive )
                 drawGLScene( );
-        }	
+        }
 
 bail:
     fprintf(stderr, "Exiting\n");
@@ -644,5 +644,5 @@ bail:
 usage:
     fprintf(stderr, "Usage: rrrrealtime [--address=<server address>] [--port=<p>] [--path=/<path>]\n");
     return 1;
-    
+
 }

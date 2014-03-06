@@ -71,7 +71,7 @@ bool IntSet_contains (IntSet *is, uint32_t value) {
         if (e->key == value) return true;
         e = e->next;
     }
-    return false;    
+    return false;
 }
 
 void IntSet_add (IntSet *is, uint32_t value) {

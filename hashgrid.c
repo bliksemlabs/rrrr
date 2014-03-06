@@ -11,18 +11,18 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <math.h> // be sure to link with math library (-lm) 
+#include <math.h> // be sure to link with math library (-lm)
 
 // http://stackoverflow.com/a/859694/778449
 // cdecl> declare items as pointer to array 10 of pointer to void
 // void *(*items)[10]
 
 // treat as unsigned to get 0-wrapping right? use only powers of 2 and bitshifting/masking to bin?
-// ints are a circle coming back around to 0 after -1, 
+// ints are a circle coming back around to 0 after -1,
 // masking only the last B bits should wrap perfectly at both 0 and +180 degrees (except that the internal coords are projected).
 // adding brad coords with overflow should also work, but you have to make sure overflow is happening (-fwrapv?)
 static inline uint32_t xbin (HashGrid *hg, coord_t *coord) {
-    uint32_t x = abs(coord->x / (hg->bin_size.x)); 
+    uint32_t x = abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
     T printf("binning x coord %d, bin is %d \n", coord->x, x);
     return x;
@@ -81,12 +81,12 @@ uint32_t HashGridResult_next (HashGridResult *r) {
 }
 
 /*
-  Pre-filter the results, removing most false positives using a bounding box. This will only work if 
-  the initial coordinate list is still available (was not freed or did not go out of scope). We 
-  could also return a boolean to indicate whether there is a result, and have an out-parameter 
+  Pre-filter the results, removing most false positives using a bounding box. This will only work if
+  the initial coordinate list is still available (was not freed or did not go out of scope). We
+  could also return a boolean to indicate whether there is a result, and have an out-parameter
   for the index.
   The hashgrid can provide many false positives, but no false negatives (what is the term?).
-  A bounding box or the squared distance can both be used to filter points. 
+  A bounding box or the squared distance can both be used to filter points.
   Note that most false positives are quite far away so a bounding box is effective.
 */
 uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
@@ -96,7 +96,7 @@ uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
         // printf ("%f,%f\n", latlon.lat, latlon.lon);
-        if (coord->x > r->min.x && coord->x < r->max.x && 
+        if (coord->x > r->min.x && coord->x < r->max.x &&
             coord->y > r->min.y && coord->y < r->max.y) {
             // item's coordinate is within bounding box, calculate actual distance
             *distance = coord_distance_meters (&(r->coord), coord);
@@ -118,7 +118,7 @@ uint32_t HashGridResult_closest (HashGridResult *r) {
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
         // printf ("%f,%f\n", latlon.lat, latlon.lon);
-        if (coord->x > r->min.x && coord->x < r->max.x && 
+        if (coord->x > r->min.x && coord->x < r->max.x &&
             coord->y > r->min.y && coord->y < r->max.y) {
             // false positives filtered, item's coordinate is within bounding box
             double distance = coord_distance_meters (&(r->coord), coord);
@@ -156,13 +156,13 @@ void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coo
         counts[ybin(hg, coords + c)][xbin(hg, coords + c)] += 1;
     }
     // Set bin pointers to alias subregions of the items array (which will be filled later).
-    uint32_t *bin = hg->items; 
+    uint32_t *bin = hg->items;
     for (uint32_t y = 0; y < grid_dim; ++y) {
         for (uint32_t x = 0; x < grid_dim; ++x) {
             bins[y][x] = bin;
             bin += counts[y][x];
             // Reset bin item count for reuse when filling up bins.
-            counts[y][x] = 0; 
+            counts[y][x] = 0;
         }
     }
     // Add the item indexes to the bins, which are pointers to regions within the items array.
@@ -207,7 +207,7 @@ void HashGrid_dump (HashGrid* hg) {
 }
 
 void HashGrid_teardown(HashGrid *hg) {
-    // Free up dynamically allocated arrays. 
+    // Free up dynamically allocated arrays.
     // Individual bins do not need to be freed separately from items.
     free (hg->counts);
     free (hg->bins);

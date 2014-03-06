@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 // Mean of Earth's equatorial and meridional circumferences.
-#define EARTH_CIRCUMFERENCE 40041438.5 
+#define EARTH_CIRCUMFERENCE 40041438.5
 // UINT32_MAX is also the full range of INT32.
 #define INT32_RANGE UINT32_MAX
 // We could have more resolution in the latitude direction by mapping 90 degrees to the int32 range
@@ -60,11 +60,11 @@ We can either sacrifice vertical resolution and store both coordinates at the x 
 */
 void coord_from_lat_lon (coord_t *coord, double lat, double lon) {
     coord->y = lat * UINT32_MAX / 360.0;
-    coord->x = lon * UINT32_MAX / 360.0 * xscale_at_lat (lat); 
+    coord->x = lon * UINT32_MAX / 360.0 * xscale_at_lat (lat);
 }
 
 void coord_from_meters (coord_t *coord, double meters_x, double meters_y) {
-    coord->x = meters_x / METERS_PER_BRAD; 
+    coord->x = meters_x / METERS_PER_BRAD;
     coord->y = meters_y / METERS_PER_BRAD;
 }
 

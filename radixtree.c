@@ -39,7 +39,7 @@ RadixTree *rxt_new () {
 static int edge_prefix_length (struct edge *e) {
     int n = 0;
     char *c = e->prefix;
-    while (*c != '\0' && n < RADIX_TREE_PREFIX_SIZE) { 
+    while (*c != '\0' && n < RADIX_TREE_PREFIX_SIZE) {
         ++n;
         ++c;
     }
@@ -73,11 +73,11 @@ void rxt_insert (struct edge *root, const char *key, uint32_t value) {
     const char *k = key;
     struct edge *e = root;
     /* Loop over edges labeled to continuation from within nested loops. */
-    tail_recurse: while (e != NULL) { 
+    tail_recurse: while (e != NULL) {
         if (*k == '\0') {
             fprintf (stderr, "Attempt to insert 0-length string.\n");
             return; // refuse to insert 0-length strings.
-        }    
+        }
         char *p = e->prefix;
         if (*p == '\0') {
             // Case 1: We have key characters and a fresh (empty) edge for use (whose next pointer should also be NULL).
@@ -98,7 +98,7 @@ void rxt_insert (struct edge *root, const char *key, uint32_t value) {
                 goto tail_recurse;
             }
         }
-        if (*k == *p) { 
+        if (*k == *p) {
             // Case 2: This edge matches the key at least partially, consume some characters.
             for (int i = 0; i < RADIX_TREE_PREFIX_SIZE; ++i, ++k, ++p) {
                 if (*p == '\0') break; // whole prefix was consumed
@@ -131,11 +131,11 @@ void rxt_insert (struct edge *root, const char *key, uint32_t value) {
             if (*k == '\0') {
                 // This edge consumed the entire key, it is a match. Replace its value.
                 e->value = value;
-                return; 
+                return;
             }
             // Key characters remain, tail-recurse on those remaining characters, creating a new edge list as needed.
             if (e->child == NULL) e->child = edge_new();
-            e = e->child; 
+            e = e->child;
             goto tail_recurse;
         }
         // Case 3: No edges so far have been empty or matched at all. Move on to the next edge in the edge list.

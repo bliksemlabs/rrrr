@@ -15,8 +15,8 @@
 
 /* When associated with a stop index, a router_state_t describes a leg of an itinerary. */
 typedef struct router_state router_state_t;
-/* We could potentially remove the back_time from router_state, but this requires implementing some 
-   lookup functions and storing the back_trip_stop rather than the back_stop (global stop index): 
+/* We could potentially remove the back_time from router_state, but this requires implementing some
+   lookup functions and storing the back_trip_stop rather than the back_stop (global stop index):
    a trip can pass through a stop more than once.
    TODO rename members to ride_from, walk_from, route, trip, ride_time, walk_time ? */
 struct router_state {
@@ -42,7 +42,7 @@ typedef struct service_day {
 typedef struct router router_t;
 struct router {
     tdata_t *tdata;         // The transit / timetable data tables
-    rtime_t *best_time;     // The best known time at each stop 
+    rtime_t *best_time;     // The best known time at each stop
     router_state_t *states; // One router_state_t per stop, per round
     BitSet *updated_stops;  // Used to track which stops improved during each round
     BitSet *updated_routes; // Used to track which routes might have changed during each round
@@ -91,9 +91,9 @@ struct router_request {
     uint32_t start_trip_route; // for onboard departure: route index on which to begin
     uint32_t start_trip_trip;  // for onboard departure: trip index within that route
     rtime_t time;        // the departure or arrival time at which to search (in internal rtime)
-    rtime_t time_cutoff; // the latest (or earliest in arrive_by) acceptable time to reach the destination 
+    rtime_t time_cutoff; // the latest (or earliest in arrive_by) acceptable time to reach the destination
     double walk_speed;   // speed at which the user walks, in meters per second
-    uint8_t walk_slack;  // an extra delay per transfer, in seconds 
+    uint8_t walk_slack;  // an extra delay per transfer, in seconds
     bool arrive_by;      // whether the given time is an arrival time rather than a departure time
     bool time_rounded;   // whether the requested time had to be rounded down to fit in an rtime field
     uint32_t max_transfers;  // the largest number of transfers to allow in the result
@@ -108,11 +108,11 @@ struct router_request {
     uint32_t n_banned_stops; // 1
     uint32_t n_banned_stops_hard; // 1
     uint32_t n_banned_trips; // 1
-    uint32_t banned_route; // One route which is banned 
-    uint32_t banned_stop; // One stop which is banned 
+    uint32_t banned_route; // One route which is banned
+    uint32_t banned_stop; // One stop which is banned
     uint32_t banned_trip_route; // One trip which is banned, this is its route
     uint32_t banned_trip_offset; // One trip which is banned, this is its tripoffset
-    uint32_t banned_stop_hard; // One stop which is banned 
+    uint32_t banned_stop_hard; // One stop which is banned
     bool intermediatestops; // Show intermetiastops in the output
 };
 

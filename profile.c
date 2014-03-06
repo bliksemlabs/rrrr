@@ -21,7 +21,7 @@ static uint32_t target_stop;
 
 // Bits for the days over which the analysis is performed.
 static calendar_t day_mask;
-static struct stats *route_stats = NULL; 
+static struct stats *route_stats = NULL;
 static struct stats *transfer_stats = NULL;
 static struct stats *stop_stats; // store best known for each stop, prune some new states on basis of worst time.
 static tdata_t tdata;
@@ -35,9 +35,9 @@ static uint32_t states_tail = 0; // the first unused state; this is also the num
 //  Then there can be an option to merge variants.
 
 
-/* 
+/*
   Summary statistics over all trips on a given route at a given stop.
-  These must be additive functions because legs are summed to give stats for an entire itinerary.  
+  These must be additive functions because legs are summed to give stats for an entire itinerary.
 */
 struct stats {
     rtime_t min;
@@ -87,12 +87,12 @@ static void state_print (struct state *state) {
     stats_print (&(state->stats));
     uint32_t last_stop = state->back_state->stop;
     uint32_t this_stop = state->stop;
-    
+
     char *last_stop_string = tdata_stop_name_for_index (&tdata, last_stop);
-    char *this_stop_string = tdata_stop_name_for_index (&tdata, this_stop); 
+    char *this_stop_string = tdata_stop_name_for_index (&tdata, this_stop);
     char *route_shortname = tdata_shortname_for_route (&tdata, state->back_route);
     char *route_headsign = tdata_headsign_for_route (&tdata, state->back_route);
-    printf (" FROM %s [%d] TO %s [%d] VIA %s %s [%d]\n", last_stop_string, last_stop, this_stop_string, this_stop, 
+    printf (" FROM %s [%d] TO %s [%d] VIA %s %s [%d]\n", last_stop_string, last_stop, this_stop_string, this_stop,
         route_shortname, route_headsign, state->back_route);
 }
 
@@ -113,7 +113,7 @@ static bool path_has_stop (struct state *state, uint32_t stop_idx) {
     while (state != NULL) {
         if (stop_idx == state->stop) return true;
         state = state->back_state;
-    }    
+    }
     return false;
 }
 
@@ -129,12 +129,12 @@ static void path_print (struct state *state) {
     while (state != NULL && state->back_state != NULL) {
         state_print (state);
         state = state->back_state;
-    }    
+    }
 }
 
 /* Explore the given route starting at the given stop. Add a state at each stop with transfers. */
 static void explore_route (struct state *state, uint32_t route_idx, uint32_t stop_idx, rtime_t transfer_time) {
-    P printf ("    exploring route %s %s [%d] toward X from stop %s [%d]\n", 
+    P printf ("    exploring route %s %s [%d] toward X from stop %s [%d]\n",
         tdata_shortname_for_route (&tdata, route_idx),  tdata_headsign_for_route (&tdata, route_idx),
         route_idx, tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
     route_t route = tdata.routes[route_idx];
@@ -172,7 +172,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
     // while (curr_stop <= end_stop) {
 }
 
-/* Loop over all routes calling at this stop, exploring each route. TODO: Skip all used routes or their reversed "twins". */ 
+/* Loop over all routes calling at this stop, exploring each route. TODO: Skip all used routes or their reversed "twins". */
 static void explore_stop (struct state *state, uint32_t stop_idx, rtime_t transfer_time) {
     P printf ("  exploring routes calling at stop %s [%d]\n", tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
     uint32_t *routes;
@@ -190,14 +190,14 @@ static void explore_transfers (struct state *state) {
     P printf ("exploring transfers from stop %s [%d]\n", tdata_stop_name_for_index (&tdata, state->stop), state->stop);
     uint32_t stop_index_from = state->stop;
     uint32_t t  = tdata.stops[stop_index_from    ].transfers_offset;
-    uint32_t tN = tdata.stops[stop_index_from + 1].transfers_offset;        
+    uint32_t tN = tdata.stops[stop_index_from + 1].transfers_offset;
     for ( ; t < tN ; ++t) {
         uint32_t stop_index_to = tdata.transfer_target_stops[t];
         rtime_t  transfer_time = tdata.transfer_dist_meters[t] << 4; // in meters / seconds, not rtime
         //if (stop_index_to == state->back_state->stop) continue; // no taking the same route
         explore_stop (state, stop_index_to, transfer_time);
     }
-    explore_stop (state, stop_index_from, 0); 
+    explore_stop (state, stop_index_from, 0);
 }
 
 static int rtime_compare (const rtime_t *a, const rtime_t *b) {
@@ -209,7 +209,7 @@ static int rtime_compare (const rtime_t *a, const rtime_t *b) {
 static double quantile (rtime_t *times, uint32_t n, double q) {
     if (q < 0 || q > 1 || n < 1) return UNREACHED;
     // index of Q0 is 0; index of Q100 is n-1.
-    uint32_t i100 = n - 1; // index could be 0 if there is only one element.    
+    uint32_t i100 = n - 1; // index could be 0 if there is only one element.
     double fractional_index = q * (i100);
     uint32_t integral_index = fractional_index; // truncate
     //printf ("fractional index = %f, integral index = %d ", fractional_index, integral_index);
@@ -223,7 +223,7 @@ static double quantile (rtime_t *times, uint32_t n, double q) {
 
 /* Analyze every route, finding the min, avg, and max travel time at each stop.
    The times are cumulative along the route, and relative to the first departure.
-   The result should be the concatenation of a 'struct stats' array of length route.n_stops for each route, 
+   The result should be the concatenation of a 'struct stats' array of length route.n_stops for each route,
    in order of route index. This ragged array has the same general form as tdata.route_stops.  */
 void compute_route_stats () {
     {
@@ -231,10 +231,10 @@ void compute_route_stats () {
         for (uint32_t r = 0; r < tdata.n_routes; ++r) n_stops_all_routes += tdata.routes[r].n_stops;
         route_stats = malloc (n_stops_all_routes * sizeof(struct stats));
     }
-    
+
     printf ("computing route/stop travel time stats...\n");
     int route_first_index = 0;
-    
+
     /* For each trip in each route, iterate over the stops updating the per_stop stats. */
     /* Many trips encountered are exact duplicates (TimeDemandTypes). */
     /* Actually we probably need separate departures stats for relativizing. */
@@ -257,7 +257,7 @@ void compute_route_stats () {
             route_stats[route_first_index + s].mean /= route.n_trips;
         }
         route_first_index += route.n_stops;
-    }    
+    }
 }
 
 /* Compute stats for one route-route transfer on the fly, respecting the distance-based minimum transfer time. */
@@ -269,7 +269,7 @@ static void profile_transfer (uint32_t route0, uint32_t stop0, uint32_t route1, 
     //   loop over arrival times on route 0 at stop 0
     //     step forward in arrival times on route 1 at stop 1 looking for departure >= arrival + xfer time
     //     record transfer time in array of length (ntrips in route0)
-    // 
+    //
 }
 
 void compute_transfer_stats () {
@@ -295,7 +295,7 @@ int main () {
         explore_transfers (states + states_head);
         ++states_head;
     }
-    
+
     /* Free static arrays*/
     free (route_stats);
     free (transfer_stats);

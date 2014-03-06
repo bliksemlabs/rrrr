@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     }
 
     /* SETUP */
-    
+
     // load transit data from disk
     tdata_t tdata;
     tdata_load(argv[1], &tdata);

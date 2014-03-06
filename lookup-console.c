@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
   // put keyboard (stdin, actually) in raw, unbuffered mode
   tcgetattr(0, &g_old_kbd_mode);
   memcpy(&new_kbd_mode, &g_old_kbd_mode, sizeof(struct termios));
- 
+
   new_kbd_mode.c_lflag &= ~(ICANON | ECHO);
   new_kbd_mode.c_cc[VTIME] = 0;
   new_kbd_mode.c_cc[VMIN] = 1;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
 
         exit(0);
     } else if (ch == 8 || ch == 127) {
-        if (len > 0) { 
+        if (len > 0) {
             ch = 8;
             len--;
             text[len] = '\0';
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
         len++;
         text[len] = '\0';
     }
-    
+
     putchar(ch);
     index = trie_complete(t, text, suffix);
     printf("%s                                         %d                \r%s", suffix, index, text);

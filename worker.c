@@ -18,27 +18,27 @@
 int main(int argc, char **argv) {
 
     /* SETUP */
-    
+
     // logging
     setlogmask(LOG_UPTO(LOG_DEBUG));
     openlog(PROGRAM_NAME, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
     syslog(LOG_INFO, "worker starting up");
-    
+
     // load transit data from disk
     tdata_t tdata;
     tdata_load(RRRR_INPUT_FILE, &tdata);
-    
+
     // initialize router
     router_t router;
     router_setup(&router, &tdata);
     //tdata_dump(&tdata); // debug timetable file format
-    
+
     // establish zmq connection
     zctx_t *zctx = zctx_new ();
     void *zsock = zsocket_new(zctx, ZMQ_REQ);
     uint32_t zrc = zsocket_connect(zsock, WORKER_ENDPOINT);
     if (zrc != 0) exit(1);
-    
+
     // signal to the broker/load balancer that this worker is ready
     zframe_t *frame = zframe_new (WORKER_READY, 1);
     zframe_send (&frame, zsock, 0);
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     while (true) {
         zmsg_t *msg = zmsg_recv (zsock);
         if (!msg) // interrupted (signal)
-            break; 
+            break;
         if (++request_count % 100 == 0)
             syslog(LOG_INFO, "worker received %d requests\n", request_count);
         // only manipulate the last frame, then send the recycled message back to the broker
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
         // send response to broker, thereby requesting more work
         zmsg_send (&msg, zsock);
     }
-    
+
     /* TEAR DOWN */
     syslog(LOG_INFO, "worker terminating");
     // frame = zframe_new (WORKER_LEAVING, 1);

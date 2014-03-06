@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     }
 
     /* SETUP */
-    
+
     // load transit data from disk
     tdata_t tdata;
     tdata_load(tdata_file, &tdata);
@@ -90,15 +90,15 @@ int main(int argc, char **argv) {
         opt = getopt_long(argc, argv, "adrhD:s:S:o:f:t:V:m:Q:x:y:z:w:A:g:G:T:v", long_options, NULL);
         parse_request(&req, &tdata, NULL, opt, optarg);
     }
-    
+
     if (req.from == NONE || req.to == NONE) goto usage;
-    
-    if (req.from == req.to) {  
+
+    if (req.from == req.to) {
         fprintf(stderr, "Dude, you are already there.\n");
         exit(-1);
     }
 
-    if (req.from >= tdata.n_stops || req.to >= tdata.n_stops) {   
+    if (req.from >= tdata.n_stops || req.to >= tdata.n_stops) {
         fprintf(stderr, "Invalid stopids in from and/or to.\n");
         exit(-1);
     }
@@ -156,13 +156,13 @@ int main(int argc, char **argv) {
     if (!verbose) {
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         printf("%s", result_buf);
-    }    
-    
+    }
+
     router_teardown(&router);
     tdata_close(&tdata);
 
     exit(EXIT_SUCCESS);
-    
+
     usage:
     printf("Usage:\n%s [-r(andomize)] [--from-idx from_stop] [--to-idx to_stop] [-a(rrive)] [-d(epart)] [-D YYYY-MM-DDThh:mm:ss] [-g gtfsrt.pb] [-T timetable.dat]\n", argv[0]);
     exit(-2);

@@ -6,9 +6,9 @@
   An allocator that services many small incremental allocations by slicing up a few huge allocations.
   All the small allocations can then be freed in an O(1) blanket deallocation; this is basically a stack.
   This is a major enabler for fast MOA* routing where many states must be dynamically allocated.
-  
+
   We could either reset to a marked intermediate point or always reset completely.
-  We could either leave the slabs allocated at the high water mark or not (wait to call shrink).  
+  We could either leave the slabs allocated at the high water mark or not (wait to call shrink).
   This could also be a pool of equally sized objects, i.e. each slab contains an array and a next pointer.
 */
 
@@ -45,7 +45,7 @@ struct slab *slab_new () {
     cur = last->begin;
     end = cur + slab_size;
     total_size += slab_size;
-    printf ("allocated new slab at %p. total allocated is now %zd.\n", last->begin, total_size);    
+    printf ("allocated new slab at %p. total allocated is now %zd.\n", last->begin, total_size);
     return last;
 }
 
@@ -119,12 +119,12 @@ typedef struct {
 #define ALLOCS (1000 * 1000 * 12)
 #define SLAB_SIZE (1024 * 1024 * 2)
 // do not allocate this huge array on the stack, it will blow up (thanks valgrind)
-static test_s *tsps[ALLOCS]; 
+static test_s *tsps[ALLOCS];
 
 int test_slab (int argc, char **argv) {
     // track runtime
-    struct timeval t0, t1; 
-    
+    struct timeval t0, t1;
+
     // malloc version
     gettimeofday (&t0, NULL);
     for (int p = 0; p < PASSES; ++p) {
@@ -141,7 +141,7 @@ int test_slab (int argc, char **argv) {
     }
     gettimeofday (&t1, NULL);
     double mdt = ((t1.tv_usec + 1000000 * t1.tv_sec) - (t0.tv_usec + 1000000 * t0.tv_sec)) / 1000000.0;
-    
+
     // slab alloc version
     gettimeofday (&t0, NULL);
     slab_init (SLAB_SIZE);
@@ -154,7 +154,7 @@ int test_slab (int argc, char **argv) {
             ts->c = (i % 2 == 0);
             tsps[i] = ts;
         }
-    }    
+    }
     gettimeofday (&t1, NULL);
     double sdt = ((t1.tv_usec + 1000000 * t1.tv_sec) - (t0.tv_usec + 1000000 * t0.tv_sec)) / 1000000.0;
 
@@ -165,7 +165,7 @@ int test_slab (int argc, char **argv) {
             printf ("ERR ptr=%p, i=%d, a=%d, b=%f, c=%s\n", tsps[i], i, ts.a, ts.b, ts.c ? "EVEN" : "ODD");
         }
     }
-    
+
     fprintf (stderr, "%f sec malloc, %f sec slab, speedup %f\n", mdt, sdt, mdt/sdt);
     return 0;
 }

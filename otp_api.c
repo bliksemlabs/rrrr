@@ -2,12 +2,12 @@
 
 /* otp_api.c */
 
-/* 
+/*
   A single-purpose "HTTP server" that provides an OTP REST API for RRRR.
   It ignores everything but lines matching the pattern: GET *?querystring
   It converts querystring into an RRRR request, sends the request to the broker, and waits for a response.
   It then sends the response back to the HTTP client and closes the connection.
-  It is event-driven (single-threaded, single-process) and multiplexes all TCP and ZMQ communication via a polling loop. 
+  It is event-driven (single-threaded, single-process) and multiplexes all TCP and ZMQ communication via a polling loop.
 */
 
 // $ time for i in {1..2000}; do curl localhost:9393/plan?0; done
@@ -42,7 +42,7 @@
 #define ERROR_404     "HTTP/1.0 404 Not Found" HEADERS "Content-Length: 16" CRLF "Connection: close" CRLF TEXT_PLAIN END_HEADERS "FOUR ZERO FOUR" CRLF
 
 #define BUFLEN     1024
-#define PORT       9393 
+#define PORT       9393
 #define QUEUE_CONN  500
 #define MAX_CONN    100 // maximum number of simultaneous incoming HTTP connections
 
@@ -57,7 +57,7 @@ struct buffer {
 /* Poll items, including zmq broker, http listening, and http client communication sockets */
 zmq_pollitem_t  poll_items [2 + MAX_CONN];
 
-/* Open HTTP connections. */ 
+/* Open HTTP connections. */
 zmq_pollitem_t *conn_items;        // Simply the tail of the poll_items array, without the first two items.
 uint32_t        n_conn;            // Number of open connections.
 struct buffer   buffers[MAX_CONN]; // We can swap these structs directly, including the char pointers they contain.
@@ -72,8 +72,8 @@ tdata_t tdata;
 // For looking up stops by location
 HashGrid hash_grid;
 
-/* 
-  Schedule a connection for removal from the poll_items / open connections. It will be removed at the end of the 
+/*
+  Schedule a connection for removal from the poll_items / open connections. It will be removed at the end of the
   current polling iteration to avoid reordering other poll_items in the middle of an iteration.
   Note that scheduling the same connection for removal more than once will have unpredictable effects.
 */
@@ -108,8 +108,8 @@ static void add_conn (uint32_t sd) {
     }
 }
 
-/* 
-  Remove the HTTP connection with index nc from the list of open connections. 
+/*
+  Remove the HTTP connection with index nc from the list of open connections.
   The last open connection in the list is swapped into the hole created.
   Returns true if the poll item was removed, false if the operation failed.
 */
@@ -123,7 +123,7 @@ static bool remove_conn (uint32_t nc) {
     /* Swap in the buffer struct for the last active connection (retain char *buf). */
     struct buffer temp;
     temp = buffers[nc];
-    buffers[nc] = buffers[last_index]; 
+    buffers[nc] = buffers[last_index];
     buffers[last_index] = temp;
     buffers[last_index].size = 0;
     n_conn--;
@@ -153,7 +153,7 @@ static void remove_conn_enqueued () {
     conn_remove_n = 0;
 }
 
-/* 
+/*
   Read input from the socket associated with connection index nc into the corresponding buffer.
   Implementation note:
   POLLIN tells us that "data is available", which actually means "you can call read on this socket without blocking".
@@ -222,10 +222,10 @@ static void send_request (int nc, void *broker_socket) {
     zmsg_t *msg = zmsg_new ();
     zmsg_pushmem (msg, &req, sizeof(req));
     // Prefix the request with the socket descriptor for use upon reply. Worker ignores all frames but the last one.
-    zmsg_pushmem (msg, &conn_sd, sizeof(conn_sd)); 
+    zmsg_pushmem (msg, &conn_sd, sizeof(conn_sd));
     zmsg_send (&msg, broker_socket);
     printf ("connection %02d [fd=%02d] sent request to broker.\n", nc, conn_sd);
-    // TODO: Do not remove_conn_later yet. Continue polling so we detect client closing, 
+    // TODO: Do not remove_conn_later yet. Continue polling so we detect client closing,
     // avoiding TIME_WAIT on server side and supporting persistent connections.
     remove_conn_later (nc); // remove from poll list. stops accepting input from this connection.
     return;
@@ -246,26 +246,26 @@ void respond (int sd, char *response) {
     send (sd, buf, strlen(buf), MSG_NOSIGNAL);
     if (send (sd, response, strlen(response), MSG_NOSIGNAL) == -1 && errno == EPIPE)
         printf ("              [fd=%02d] socket is closed, response dropped.\n", sd);
-    else 
+    else
         printf ("              [fd=%02d] sent response to client.\n", sd);
 }
 
 int main (void) {
-    
-    tdata_load (RRRR_INPUT_FILE, &tdata);    
+
+    tdata_load (RRRR_INPUT_FILE, &tdata);
     coord_t coords[tdata.n_stops];
     for (uint32_t c = 0; c < tdata.n_stops; ++c) {
         coord_from_latlon(coords + c, tdata.stop_coords + c);
     }
     HashGrid_init (&hash_grid, 100, 500.0, coords, tdata.n_stops);
-    
+
     /* Set up TCP/IP stream socket to listed for incoming HTTP requests. */
     struct sockaddr_in server_in_addr = {
         .sin_family = AF_INET,
         .sin_port = htons(PORT),
         .sin_addr.s_addr = htonl(INADDR_ANY)
     };
-    
+
     /* Listening socket is nonblocking: connections or bytes may not be waiting. */
     uint32_t server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     int one = 1; // Bind even when in TIME_WAIT due to a recently closed socket.
@@ -300,36 +300,36 @@ int main (void) {
     zctx_t *ctx = zctx_new ();
     void *broker_socket = zsocket_new (ctx, ZMQ_DEALER); // full async: dealer (api side) to router (broker side)
     if (zsocket_connect (broker_socket, CLIENT_ENDPOINT)) die ("RRRR OTP REST API server could not connect to broker.");
-    
+
     /* Set up the poll_items for the main polling loop. */
     zmq_pollitem_t *broker_item = &(poll_items[0]);
     zmq_pollitem_t *http_item   = &(poll_items[1]);
-    
+
     /* First poll item is ØMQ socket to and from the RRRR broker. */
     broker_item->socket = broker_socket;
     broker_item->fd = 0;
     broker_item->events = ZMQ_POLLIN;
-    
+
     /* Second poll item is a standard socket for incoming HTTP requests. */
-    http_item->socket = NULL; 
+    http_item->socket = NULL;
     http_item->fd = server_socket;
     http_item->events = ZMQ_POLLIN;
-    
+
     /* The remaining poll_items are incoming HTTP connections. */
     conn_items  = &(poll_items[2]);
     n_conn = 0;
-    
+
     /* Allocate buffers for incoming HTTP requests. */
     for (int i = 0; i < MAX_CONN; ++i) buffers[i].buf = malloc (BUFLEN);
-    
+
     long n_in = 0, n_out = 0;
     for (;;) {
         /* Suspend polling (ignore enqueued incoming HTTP connections) when we already have too many. */
         http_item->events = n_conn < MAX_CONN ? ZMQ_POLLIN : 0;
         /* Blocking poll for queued incoming TCP connections, traffic on open TCP connections, and ZMQ broker events. */
-        int n_waiting = zmq_poll (poll_items, 2 + n_conn, -1); 
+        int n_waiting = zmq_poll (poll_items, 2 + n_conn, -1);
         if (n_waiting < 1) {
-            printf ("ZMQ poll call interrupted.\n"); 
+            printf ("ZMQ poll call interrupted.\n");
             break; // Really, we should stop accepting incoming connections and break only when all connections closed.
         }
         /* Check if the ØMQ broker socket has a message for us. If so, write it out to the client socket. */
@@ -340,7 +340,7 @@ int main (void) {
             char *response = zmsg_popstr (msg);
             // printf ("ZMQ broker socket received message for socket %02d:\n%s", sd, response);
             respond (sd, response);
-            // We do not handle persistent connections. 
+            // We do not handle persistent connections.
             // Connection has already been removed from polling list when ZMQ message was sent to broker.
             // Unfortunately if the ZMQ response never arrives, the SD will remain open indefinitely.
             close (sd); // server actively closes
@@ -351,9 +351,9 @@ int main (void) {
         if (http_item->revents & ZMQ_POLLIN) {
             struct sockaddr_in client_in_addr;
             socklen_t in_addr_length;
-            // Adding a connection will increase the total connection count, but in the loop over open connections 
+            // Adding a connection will increase the total connection count, but in the loop over open connections
             // n_waiting should hit zero before the new one is encountered.
-            // Checking open connections before adding the new one would be less efficient since each incoming 
+            // Checking open connections before adding the new one would be less efficient since each incoming
             // connection would trigger an iteration through the whole list of (possibly inactive) existing connections.
             // Will these client sockets necessarily be nonblocking because the listening socket is?
             int client_socket = accept (server_socket, (struct sockaddr *) &client_in_addr, &in_addr_length);
@@ -370,7 +370,7 @@ int main (void) {
             }
         }
         /* Remove all connections found to be closed during this poll iteration. */
-        remove_conn_enqueued (); 
+        remove_conn_enqueued ();
     }
     zctx_destroy (&ctx);
     close (server_socket);
