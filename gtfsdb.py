@@ -524,8 +524,10 @@ ORDER BY stop_id
     def agency(self,agency_id):
         query = "SELECT agency_id,agency_name,agency_url,agency_phone,agency_timezone FROM agency WHERE agency_id = ?"
         res = list(self.get_cursor().execute( query,(agency_id,) ))
-        if len(res) != 1:
-            return None
+        if len(res) == 0:
+            raise Exception('feed error: agency_id not found')
+        elif len(res) > 1:
+            raise Exception('feed error: multiple results for agency_id')
         return res[0]
 
     def compile_trip_bundles(self, maxtrips=None, reporter=None):
