@@ -267,13 +267,18 @@ int main (void) {
     };
 
     /* Listening socket is nonblocking: connections or bytes may not be waiting. */
-    uint32_t server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    /* uint32_t server_socket = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0); */
+    uint32_t server_socket = socket (AF_INET, SOCK_STREAM, 0);
+    fcntl(server_socket, F_SETFL, O_NONBLOCK);
+
     int one = 1; // Bind even when in TIME_WAIT due to a recently closed socket.
     setsockopt (server_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
     socklen_t in_addr_length = sizeof (server_in_addr);
-    if (bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr)))
+    if (bind(server_socket, (struct sockaddr *) &server_in_addr, sizeof(server_in_addr))) {
+        printf("error: %d\n", errno);
         die ("Failed to bind socket.\n");
+    }
 
     /* Check if we are root */
     if (getuid() == 0  || geteuid() == 0) {
