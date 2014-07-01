@@ -399,7 +399,7 @@ uint32_t render_plan_json(struct plan *plan, tdata_t *tdata, char *buf, uint32_t
 
     json_begin(buf, buflen);
     json_obj();
-        json_kv("error", "null");
+        json_kv("error", NULL);
         json_key_obj("requestParameters");
             json_kv("time", timetext(plan->req.time));
             json_kb("arriveBy", plan->req.arrive_by);
