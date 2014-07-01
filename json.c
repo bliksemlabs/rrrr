@@ -190,11 +190,15 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
     char *agency_id = NULL;
     char *agency_name = NULL;
     char *agency_url = NULL;
+    int distance = -1;
 
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
 
-    if (leg->route == WALK) mode = "WALK"; else {
+    if (leg->route == WALK) {
+        mode = "WALK";
+        distance = (int)((double)RTIME_TO_SEC(leg->t1 - leg->t0) / req->walk_speed);
+    } else {
         headsign = tdata_headsign_for_route(tdata, leg->route);
         route_shortname = tdata_shortname_for_route(tdata, leg->route);
         productcategory = tdata_productcategory_for_route(tdata, leg->route);
@@ -246,6 +250,8 @@ static void json_leg (struct leg *leg, tdata_t *tdata, router_request_t *req, ti
         json_kv("agencyUrl", agency_url);
         json_kv("wheelchairAccessible", wheelchair_accessible);
         json_kv("productCategory", productcategory);
+        if (distance >= 0)
+            json_kd("distance", distance);
 /*
     "realTime": false,
     "distance": 2656.2383456335,
