@@ -39,7 +39,7 @@ int encode_double (double c, char *buf) {
     // use the lowest order bit as a sign bit
     binary <<= 1;
     // printf ("%+8d ", binary);
-    if (c < 0) binary = ~binary;
+    if ((int32_t)binary < 0) binary = ~binary;
     // printf ("%+8d ", binary);
     // 31 == (2^5 - 1) == 00000 00000 00000 00000 00000 11111
     uint32_t mask = 31;
