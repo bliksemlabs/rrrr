@@ -1005,13 +1005,12 @@ uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index) {
 }
 
 void router_request_initialize(router_request_t *req) {
+    memset(req, '\0', sizeof(router_request_t));
     req->walk_speed = 1.5; // m/sec
     req->walk_slack = RRRR_WALK_SLACK_SEC; // sec
-    req->from = req->to = NONE;
     req->from = req->to = req->via = NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
-    req->walk_speed = 1.5; // m/sec
     req->arrive_by = true;
     req->time_rounded = false;
     req->max_transfers = RRRR_MAX_ROUNDS - 1;
