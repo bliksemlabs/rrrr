@@ -31,16 +31,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
 
 int encode_double (double c, char *buf) {
     char *b = buf;
-    uint32_t binary = 1e5 * c;
-    // printf ("%+3.5f %+8d ", c, binary);
+    uint32_t binary = round(1e5 * c);
+    // printf ("%+10.5f %+10d ", c, binary);
     // use the lowest order bit as a sign bit
     binary <<= 1;
-    // printf ("%+8d ", binary);
+    // printf ("%+10d ", binary);
     if ((int32_t)binary < 0) binary = ~binary;
-    // printf ("%+8d ", binary);
+    // printf ("%+10d ", binary);
     // 31 == (2^5 - 1) == 00000 00000 00000 00000 00000 11111
     uint32_t mask = 31;
     char chunks[6];

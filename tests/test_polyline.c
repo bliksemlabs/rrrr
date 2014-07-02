@@ -60,6 +60,12 @@ START_TEST (test_encode_zeros) {
     ck_assert (str_startswith(polyline_result(), "??"));
 } END_TEST
 
+START_TEST (test_encode_small_neg_delta) {
+    struct latlon_double lls[2] = {{47.214558,-1.555912}, {47.214554,-1.552331}};
+    encode (lls, 2);
+    ck_assert_str_eq ("_rd_Hl{nH?kU", polyline_result());
+} END_TEST
+
 START_TEST (test_encode_polyline) {
     struct latlon_double lls[3] = { 
         { 38.500, -120.200},
@@ -67,7 +73,7 @@ START_TEST (test_encode_polyline) {
         { 43.252, -126.453} 
     };
     encode (lls, 3);
-    ck_assert_str_eq ("_p~iF|ps|U_ulLnnqC}lqNvxq`@", polyline_result ());    
+    ck_assert_str_eq ("_p~iF~ps|U_ulLnnqC_mqNvxq`@", polyline_result ());
     // Check that an empty polyline is zero-terminated.
     polyline_begin ();
     ck_assert (strlen(polyline_result()) == 0);
@@ -83,13 +89,13 @@ START_TEST (test_glineenc) {
 
     struct latlon_double llB[3] = {{37.4419,-122.1419}, {37.4519,-122.1519}, {37.4619,-122.1819}};
     encode (llB, 3);
-    ck_assert_str_eq ("yzocFzynhVq}@n}@o}@nzD", polyline_result());
+    ck_assert_str_eq ("{zocFzynhVo}@n}@o}@nzD", polyline_result());
     
-    struct latlon_double llC[1] = {{37.4419,-122.1419}};
+    struct latlon_double llC[1] = {{38.5,-120.2}};
     encode (llC, 1);
     ck_assert_str_eq ("_p~iF~ps|U", polyline_result());
     
-    struct latlon_double llD[5] = {{52.29834,8.94328}, {52.29767,8.93614}, {52.29322,8.93301}, {8.93036,52.28938}, {8.97475,52.27014}};
+    struct latlon_double llD[5] = {{52.29834,8.94328}, {52.29767,8.93614}, {52.29322,8.93301}, {52.28938,8.93036}, {52.27014,8.97475}};
     encode (llD, 5);
     ck_assert_str_eq ("soe~Hovqu@dCrk@xZpR~VpOfwBmtG", polyline_result());
     
@@ -102,6 +108,7 @@ Suite *make_polyline_suite (void) {
     tcase_add_test  (tc_core, test_encode_one);
     tcase_add_test  (tc_core, test_encode_latlon);
     tcase_add_test  (tc_core, test_encode_polyline);
+    tcase_add_test  (tc_core, test_encode_small_neg_delta);
     tcase_add_test  (tc_core, test_glineenc);
     suite_add_tcase (s, tc_core);
     return s;
