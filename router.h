@@ -52,6 +52,12 @@ struct router {
     calendar_t day_mask;
     serviceday_t servicedays[3];
     // We should move more routing state in here, like round and sub-scratch pointers.
+
+    /* Store the number of rounds. The callee is responsible for calling the
+     * _round function this many times. If it stops doing that, the request
+     * is "cancelled". Obviously, it needs to be "cancelled" by inter-thread
+     * communication that is out of the scope of this library. */
+    uint32_t n_rounds;
 };
 
 
@@ -164,6 +170,9 @@ void router_request_next(router_request_t *req);
 void router_teardown(router_t*);
 
 bool router_route(router_t*, router_request_t*);
+
+/* Note that the callee is responsible for calling _round ->n_rounds times. */
+bool router_route_in_rounds(router_t*, router_request_t*);
 
 void router_round(router_t *router, router_request_t *req, uint8_t round);
 

@@ -306,6 +306,18 @@ tdata_stoptime (tdata_t* tdata, trip_t *trip, uint32_t route_stop, bool arrive, 
 }
 
 bool router_route(router_t *router, router_request_t *req) {
+    bool res = router_route_in_rounds(router, req);
+    if (res != true)
+        return result;
+
+    // Iterate over rounds. In round N, we have made N transfers.
+    for (uint8_t round = 0; round < router->n_rounds; ++round) {  // < n_rounds to apply upper bound on transfers...
+        router_round(router, req, round);
+    } // end for (round)
+    return true;
+}
+
+bool router_route_in_rounds(router_t *router, router_request_t *req) {
     // router_request_dump(router, preq);
     uint32_t n_stops = router->tdata->n_stops;
     router->day_mask = req->day_mask;
@@ -451,10 +463,8 @@ bool router_route(router_t *router, router_request_t *req) {
     if (n_rounds > RRRR_MAX_ROUNDS)
         n_rounds = RRRR_MAX_ROUNDS;
 
-    // Iterate over rounds. In round N, we have made N transfers.
-    for (uint8_t round = 0; round < n_rounds; ++round) {  // < n_rounds to apply upper bound on transfers...
-        router_round(router, req, round);
-    } // end for (round)
+    router->n_rounds = n_rounds;
+
     return true;
 }
 
