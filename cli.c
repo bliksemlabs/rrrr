@@ -46,7 +46,6 @@ time_t strtoepoch (char *time) {
 }
 #endif
 
-
 latlon_t strtolatlon (char *latlon) {
     latlon_t result;
     char *endptr;
@@ -186,7 +185,6 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
                         req.via_latlon = strtolatlon(&argv[i][13]);
                     }
-
                     break;
 
                 case 'w':
@@ -196,7 +194,7 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--walk-slack=", 13) == 0) {
                         req.walk_slack = (float) strtod(&argv[i][13], NULL);
                     }
-
+                    break;
                 }
             }
         }
