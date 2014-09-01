@@ -9,11 +9,6 @@
 
 #include "stubs.h"
 
-#if 0
-#include "tdata.h"
-#include "router.h"
-#endif
-
 #define OUTPUT_LEN 8000
 
 typedef struct cli_arguments cli_arguments_t;
