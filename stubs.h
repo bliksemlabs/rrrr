@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <time.h>
 
+typedef uint16_t rtime_t;
+
 typedef struct latlon latlon_t;
 struct latlon {
     float lat;
@@ -18,7 +20,9 @@ struct router_request {
     uint32_t via;
     float walk_slack;
     float walk_speed;
+    rtime_t time;
     bool arrive_by;
+    bool time_rounded;
 };
 
 typedef struct router_t router_t;

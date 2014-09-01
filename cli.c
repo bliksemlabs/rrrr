@@ -195,6 +195,17 @@ int main (int argc, char *argv[]) {
         }
     }
 
+    /* The internal time representation uses a resolution of 4 seconds per
+     * time unit. This allows to store up to 3 days in 16 bits. When a user
+     * specified a clockwise search departing after 12:00:03, this would
+     * actually be interpreted as 12:00:00.
+     */
+
+    if (req.time_rounded && ! (req.arrive_by)) {
+        req.time++;
+    }
+    req.time_rounded = false;
+
     /* * * * * * * * * * * * * * * * * *
      * PHASE ONE: INITIALISE THE ROUTER
      *
