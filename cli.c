@@ -283,17 +283,17 @@ int main (int argc, char *argv[]) {
         }
     }
 
+    /* * * * * * * * * * * * * * * * * * *
+     *  PHASE THREE: RENDER THE RESULTS
+     *
+     * * * * * * * * * * * * * * * * * * */
+
     /* Output only final result in non-verbose mode */
     if ( ! cli_args.verbose) {
         char result_buf[OUTPUT_LEN];
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         puts (result_buf);
     }
-
-    /* * * * * * * * * * * * * * * * * * *
-     *  PHASE THREE: RENDER THE RESULTS
-     *
-     * * * * * * * * * * * * * * * * * * */
 
     /* * * * * * * * * * * * * * * * * * *
      *  PHASE FOUR: DESTRUCTION
