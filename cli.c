@@ -84,9 +84,9 @@ int main (int argc, char *argv[]) {
                         , argv[0]);
     }
 
-    /* The first mandartory argument is the timetable file.
-     * We must initialise the timetable prior to parsing so
-     * we are able to check the validity of the input.
+    /* The first mandartory argument is the timetable file. We must initialise
+     * the timetable prior to parsing so we are able to check the validity of
+     * the input.
      *
      * The tdata_file stores timetable data in binary format.
      * We have several ways to load this data from disk;
@@ -217,8 +217,8 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
-    /* While the scratch space remains allocated, each new search
-     * may require reinitialisation of this memory.
+    /* While the scratch space remains allocated, each new search may require
+     * reinitialisation of this memory.
      */
     router_reset (&router);
 
@@ -241,30 +241,27 @@ int main (int argc, char *argv[]) {
         puts(result_buf);
     }
 
-    /* When searching clockwise we will board any trip that will
-     * bring us at the earliest time at any destination location.
-     * If we have to wait at some stage for a connection, and this
-     * wait time exceeds the frequency of the ingress network, we
-     * may suggest a later departure decreases overal waitingtime.
+    /* When searching clockwise we will board any trip that will bring us at
+     * the earliest time at any destination location. If we have to wait at
+     * some stage for a connection, and this wait time exceeds the frequency
+     * of the ingress network, we may suggest a later departure decreases
+     * overal waitingtime.
      *
-     * To compress waitingtime we employ a reversal. A clockwise
-     * search departing at 9:00am and arriving at 10:00am is
-     * observed as was requested: what trip allows to arrive at
-     * 10:00am? The counter clockwise search starts at 10:00am
-     * and offers the last possible arrival at 9:15am. This bounds
-     * our searchspace between 9:15am and 10:00am.
+     * To compress waitingtime we employ a reversal. A clockwise search
+     * departing at 9:00am and arriving at 10:00am is observed as was
+     * requested: what trip allows to arrive at 10:00am? The counter clockwise
+     * search starts at 10:00am and offers the last possible arrival at 9:15am.
+     * This bounds our searchspace between 9:15am and 10:00am.
      *
-     * Because of the memory structure. We are not able to render
-     * an arrive-by search, therefore the second arrival will
-     * start at 9:15am and should render exactly the same trip.
-     * This is not always true, especially not when there are
-     * multiple paths with exactly the same transittime.
+     * Because of the memory structure. We are not able to render an arrive-by
+     * search, therefore the second arrival will start at 9:15am and should
+     * render exactly the same trip. This is not always true, especially not
+     * when there are multiple paths with exactly the same transittime.
      *
      *
-     * For an arrive_by counter clockwise search, we must make
-     * the result clockwise. Only one reversal is required.
-     * for the more regular clockwise search, the compression
-     * is handled in the first reversal (ccw) and made
+     * For an arrive_by counter clockwise search, we must make the result
+     * clockwise. Only one reversal is required. For the more regular clockwise
+     * search, the compression is handled in the first reversal (ccw) and made
      * clockwise in the second reversal.
      */
 
@@ -303,9 +300,9 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
-    /* The operation system takes care for our deallocation when we
-     * exit the application. For debugging purposes we want to be
-     * completely clear about our memory allocation and deallocation.
+    /* The operation system takes care for our deallocation when we exit the
+     * application. For debugging purposes we want to be completely clear about
+     * our memory allocation and deallocation.
      */
 
 #ifndef DEBUG
