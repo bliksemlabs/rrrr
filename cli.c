@@ -215,7 +215,7 @@ int main (int argc, char *argv[]) {
      * required for a search operation.
      * Secondary it initialises the hashgrid used for distance calculations.
      *
-     * The contents of this MUST NOT be changed directly.
+     * The contents of this struct MUST NOT be changed directly.
      */
     if ( ! router_setup (&router, &tdata)) {
         /* if the memory is not allocated we must exit */
