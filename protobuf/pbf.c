@@ -127,7 +127,8 @@ void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *call
                     id  += dense->id[n];
                     lat += dense->lat[n];
                     lon += dense->lon[n];
-                    tag += dense->keys_vals[n];
+                    // keys_vals can be null                    
+                    // if (dense->keys_vals != NULL) tag += dense->keys_vals[n];
                     node.id  = id;
                     node.lat = lat;
                     node.lon = lon;
