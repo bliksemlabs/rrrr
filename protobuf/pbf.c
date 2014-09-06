@@ -144,9 +144,9 @@ void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
     OSMPBF__HeaderBlock *header = NULL;
     int blobcount = 0;
     for (void *buf = map; buf < map + map_size; ++blobcount) {
-        if (blobcount % 100 == 0)
-            printf("loading blob %d\n", blobcount);
-
+        if (blobcount % 1000 == 0) {
+            printf("loading blob %d (%ldMB)\n", blobcount, (buf - map) / 1024 / 1024);
+        }
         /* read blob header */
         OSMPBF__BlobHeader *blobh;
         // header prefixed with 4-byte contain network (big-endian) order message length
