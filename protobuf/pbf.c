@@ -1,4 +1,5 @@
 /* pbf.c */
+#include "pbf.h"
 
 #include "fileformat.pb-c.h"
 #include "osmformat.pb-c.h"
@@ -75,23 +76,17 @@ static int zinflate(ProtobufCBinaryData *in, unsigned char *out) {
     
 }
 
-static int noderefs = 0;
+static long noderefs = 0;
 void handle_way(OSMPBF__Way *way) {
     for (int r = 0; r < way->n_refs; ++r) {
         ++noderefs;
     }
 }
 
-static int nodecount = 0;
+static long nodecount = 0;
 void handle_node(OSMPBF__Node *node) {
     ++nodecount;
 }
-
-typedef struct osm_callbacks osm_callbacks_t;
-struct osm_callbacks {
-    void (*way) (OSMPBF__Way*);
-    void (*node) (OSMPBF__Node*);
-};
 
 void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *callbacks) {
     size_t nstrings = block->stringtable->n_s;
@@ -221,8 +216,8 @@ int main (int argc, const char * argv[]) {
     callbacks.node = &handle_node;
     //callbacks.node = NULL;
     scan_pbf(filename, &callbacks);
-    printf("total node references %d\n", noderefs);
-    printf("total nodes %d\n", nodecount);
+    printf("total node references %ld\n", noderefs);
+    printf("total nodes %ld\n", nodecount);
     return 0;
 }
 
