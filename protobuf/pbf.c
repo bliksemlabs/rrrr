@@ -13,7 +13,8 @@
 #include <arpa/inet.h>
 #include "zlib.h"
 
-// install protobuf-c-compiler and libprotobuf-c0-dev, then 
+// sudo apt-get install protobuf-c-compiler libprotobuf-c0-dev zlib1g-dev
+// then compile the protobuf with: 
 // protoc-c --c_out . ./osmformat.proto
 // protoc-c --c_out . ./fileformat.proto
 
@@ -81,6 +82,11 @@ void handle_way(OSMPBF__Way *way) {
     }
 }
 
+static int nodecount = 0;
+void handle_node(OSMPBF__Node *node) {
+    ++nodecount;
+}
+
 typedef struct osm_callbacks osm_callbacks_t;
 struct osm_callbacks {
     void (*way) (OSMPBF__Way*);
@@ -93,11 +99,12 @@ void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *call
     int32_t granularity = block->has_granularity ? block->granularity : 1;
     int64_t lat_offset = block->has_lat_offset ? block->lat_offset : 0;
     int64_t lon_offset = block->has_lon_offset ? block->lon_offset : 0;
-    //printf("pblock with granularity %d and offsets %d, %d\n", granularity, lat_offset, lon_offset);
+    // printf("pblock with granularity %d and offsets %d, %d\n", granularity, lat_offset, lon_offset);
+    // It seems like a block often contains only one group.
     for (int g = 0; g < block->n_primitivegroup; ++g) { 
         OSMPBF__PrimitiveGroup *group = block->primitivegroup[g];
-        //printf("pgroup with %d nodes, %d dense nodes, %d ways, %d relations\n",  group->n_nodes, 
-        //    group->dense ? group->dense->n_id : 0, group->n_ways, group->n_relations);
+        // printf("pgroup with %d nodes, %d dense nodes, %d ways, %d relations\n",  group->n_nodes, 
+        //     group->dense ? group->dense->n_id : 0, group->n_ways, group->n_relations);
         if (callbacks->way) {
             for (int w = 0; w < group->n_ways; ++w) {
                 OSMPBF__Way *way = group->ways[w];
@@ -109,6 +116,25 @@ void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *call
                 OSMPBF__Node *node = group->nodes[n];
                 (*(callbacks->node))(node);
             }
+            if (group->dense) {
+                OSMPBF__Node node;
+                OSMPBF__DenseNodes *dense = group->dense;
+                int64_t id  = 0;
+                int64_t lat = lat_offset;
+                int64_t lon = lon_offset;
+                int32_t tag = 0;
+                for (int n = 0; n < dense->n_id; ++n) {
+                    id  += dense->id[n];
+                    lat += dense->lat[n];
+                    lon += dense->lon[n];
+                    tag += dense->keys_vals[n];
+                    node.id  = id;
+                    node.lat = lat;
+                    node.lon = lon;
+                    // keys&vals...
+                    (*(callbacks->node))(&node);
+                }
+            }
         }
     }
 }
@@ -118,7 +144,7 @@ void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
     OSMPBF__HeaderBlock *header = NULL;
     int blobcount = 0;
     for (void *buf = map; buf < map + map_size; ++blobcount) {
-        if (blobcount % 1000 == 0)
+        if (blobcount % 100 == 0)
             printf("loading blob %d\n", blobcount);
 
         /* read blob header */
@@ -191,9 +217,11 @@ int main (int argc, const char * argv[]) {
     const char *filename = argv[1];
     osm_callbacks_t callbacks;
     callbacks.way = &handle_way;
-    callbacks.node = NULL;
+    callbacks.node = &handle_node;
+    //callbacks.node = NULL;
     scan_pbf(filename, &callbacks);
     printf("total node references %d\n", noderefs);
+    printf("total nodes %d\n", nodecount);
     return 0;
 }
 
