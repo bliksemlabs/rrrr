@@ -77,18 +77,18 @@ static int zinflate(ProtobufCBinaryData *in, unsigned char *out) {
 }
 
 static long noderefs = 0;
-void handle_way(OSMPBF__Way *way) {
+static void handle_way(OSMPBF__Way *way) {
     for (int r = 0; r < way->n_refs; ++r) {
         ++noderefs;
     }
 }
 
 static long nodecount = 0;
-void handle_node(OSMPBF__Node *node) {
+static void handle_node(OSMPBF__Node *node) {
     ++nodecount;
 }
 
-void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *callbacks) {
+static void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *callbacks) {
     size_t nstrings = block->stringtable->n_s;
     ProtobufCBinaryData *s = block->stringtable->s;
     int32_t granularity = block->has_granularity ? block->granularity : 1;
@@ -135,6 +135,7 @@ void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *call
     }
 }
 
+/* externally visible */
 void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
     pbf_map(filename);
     OSMPBF__HeaderBlock *header = NULL;
@@ -207,7 +208,7 @@ void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
     pbf_unmap();
 }
 
-int main (int argc, const char * argv[]) {
+int test_main (int argc, const char * argv[]) {
     if (argc < 2)
         die("usage: pbf input.pbf");
     const char *filename = argv[1];
