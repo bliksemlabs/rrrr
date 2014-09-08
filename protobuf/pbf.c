@@ -141,8 +141,8 @@ void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
     OSMPBF__HeaderBlock *header = NULL;
     int blobcount = 0;
     for (void *buf = map; buf < map + map_size; ++blobcount) {
-        if (blobcount % 1000 == 0) {
-            printf("loading blob %d (%ldMB)\n", blobcount, (buf - map) / 1024 / 1024);
+        if (blobcount % 10000 == 0) {
+            printf("loading blob %dk (%ldMB)\n", blobcount/1000, (buf - map) / 1024 / 1024);
         }
         /* read blob header */
         OSMPBF__BlobHeader *blobh;
