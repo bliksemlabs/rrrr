@@ -71,17 +71,13 @@ typedef struct {
 */
 
 /* 
-  The root of the grid tree. It consumes the most significant 8 bits of each axis.
+  The spatial index grid.
   It is likely to be only 1/3 full due to ocean and wilderness. 
-  Note that it can have at most 65536=2^16 children, one for each cell. 
-  Therefore, they can be indexed with 16 bit integers.
-  TODO it would be reasonable to double the resolution... but then we'd need 32bit int indexes.
-  TODO check fill rate (do little sea islands make a difference)?
   TODO eliminate coastlines etc.
 */
 typedef struct {
     int32_t blocks[GRID_DIM][GRID_DIM]; // contains indexes to way_blocks
-} GridRoot;
+} Grid;
 
 // cannot mmap to the same location, so don't use pointers. 
 // instead use object indexes (which could be 32-bit!) and one mmapped file per object type.
@@ -147,21 +143,22 @@ void *map_file(const char *name, size_t size) {
 }
 
 /* Arrays of memory-mapped structs */
-GridRoot  *gridRoot;
-Node      *nodes;
-Way       *ways;
-WayBlock  *way_blocks;
-int64_t   *node_refs;  // negative means last in a list of refs.
-uint32_t  n_node_refs; // the number of used node refs.
+Grid     *grid;
+Node     *nodes;
+Way      *ways;
+WayBlock *way_blocks;
+int64_t  *node_refs;  // negative means last in a list of refs.
+uint32_t n_node_refs; // the number of used node refs.
 /* 
   The number way blocks currently allocated.
   Start at 1 so we can use the "empty file" 0 value to mean "unassigned". 
 */
 uint32_t way_block_count  = 1;
 static uint32_t new_way_block() {
-    if (way_block_count % 100000 == 0)
+    if (way_block_count % 10000 == 0)
         printf("%dk way blocks in use.\n", way_block_count / 1000);
-    way_blocks[way_block_count].next = -WAY_BLOCK_SIZE; // neg -> number of free slots
+    // neg value in last ref -> number of free slots
+    way_blocks[way_block_count].refs[WAY_BLOCK_SIZE-1] = -WAY_BLOCK_SIZE; 
     // printf("created way block %d\n", way_block_count);
     return way_block_count++;
 }
@@ -181,14 +178,22 @@ static uint32_t new_way_block() {
 static uint32_t get_grid_way_block (Node *node) {
     uint32_t xb = ((uint32_t)node->x) >> (32 - GRID_BITS); // unsigned: logical shift
     uint32_t yb = ((uint32_t)node->y) >> (32 - GRID_BITS); // unsigned: logical shift
-    uint32_t index = gridRoot->blocks[xb][yb];
+    uint32_t index = grid->blocks[xb][yb];
     if (index == 0) {
         index = new_way_block();
-        gridRoot->blocks[xb][yb] = index;
+        grid->blocks[xb][yb] = index;
     }
     // printf("xbin=%d ybin=%d\n", xb, yb);
     // printf("index=%d\n", index);
     return index;
+}
+
+// TODO pass node by value since it is small?
+static void set_grid_way_block (Node *node, uint32_t wbi) {
+    // TODO remove duplicate code (see above)
+    uint32_t xb = ((uint32_t)node->x) >> (32 - GRID_BITS); // unsigned: logical shift
+    uint32_t yb = ((uint32_t)node->y) >> (32 - GRID_BITS); // unsigned: logical shift
+    grid->blocks[xb][yb] = wbi;
 }
 
 static int32_t lon_to_x (double lon) {
@@ -222,7 +227,7 @@ static void handle_node (OSMPBF__Node *node) {
     nodes[node->id].x = lon_to_x(lon);
     nodes[node->id].y = lat_to_y(lat);
     nodes_loaded++;
-    if (nodes_loaded % 100000000 == 0)
+    if (nodes_loaded % 1000000 == 0)
         printf("loaded %ldM nodes\n", nodes_loaded / 1000 / 1000);
     //printf ("---\nlon=%.5f lat=%.5f\nx=%d y=%d\n", lon, lat, nodes[node->id].x, nodes[node->id].y); 
 }
@@ -248,23 +253,25 @@ static void handle_way (OSMPBF__Way *way) {
     // Index this way, as being in the grid cell of its first node
     uint32_t wbi = get_grid_way_block(&(nodes[way->refs[0]]));
     WayBlock *wb = &(way_blocks[wbi]);
-    // next > 0 is a chained way block index. Skip forward to last block. TODO insert at head?
-    while (wb->next > 0) wb = &(way_blocks[wb->next]);
-    if (wb->next == 0) {
-        // next == 0 means no free slots remaining. chain another block.
-        int32_t wbi = new_way_block();
+    // last ref >= 0 means no free slots remaining. chain an empty block.
+    // insert at head to avoid too much scanning though large swaths of memory.
+    if (wb->refs[WAY_BLOCK_SIZE - 1] >= 0) {
+        int32_t n_wbi = new_way_block();
+        wb = &(way_blocks[n_wbi]);
         wb->next = wbi;
-        wb = &(way_blocks[wbi]);
+        set_grid_way_block(&(nodes[way->refs[0]]), n_wbi);
     }
     // We are now certain to have a free slot in the current block.
-    if (wb->next >= 0) die ("failed assertion: next should be negative.");
-    // next < 0 gives the number of remaining slots.
-    int free_idx = WAY_BLOCK_SIZE + wb->next; 
+    int nfree = wb->refs[WAY_BLOCK_SIZE - 1];
+    if (nfree >= 0) die ("failed assertion: final ref should be negative.");
+    // a final ref < 0 gives the number of remaining slots.
+    int free_idx = WAY_BLOCK_SIZE + nfree; 
     wb->refs[free_idx] = way->id;
-    (wb->next)++; // reduce number of free slots in this block by one
+    // If this was not the last available slot, reduce number of free slots in this block by one
+    if (nfree != -1) (wb->refs[WAY_BLOCK_SIZE - 1])++; 
     ways_loaded++;
-    if (ways_loaded % 1000000 == 0)
-        printf("loaded %ldM ways\n", ways_loaded / 1000 / 1000);
+    if (ways_loaded % 100000 == 0)
+        printf("loaded %ldk ways\n", ways_loaded / 1000);
 }
 
 /* 
@@ -276,7 +283,7 @@ void fillFactor () {
     int used = 0;
     for (int i = 0; i < GRID_DIM; ++i) {
         for (int j = 0; j < GRID_DIM; ++j) {
-            if (gridRoot->blocks[i][j] != 0) used++;
+            if (grid->blocks[i][j] != 0) used++;
         }
     }
     printf("index grid: %d used, %.2f%% full\n", 
@@ -288,17 +295,16 @@ int main (int argc, const char * argv[]) {
     if (argc < 2) die("usage: cosm input.osm.pbf [database_dir]");
     const char *filename = argv[1];
     if (argc > 2) database_path = argv[2];
-    gridRoot    = map_file("grid_root",  sizeof(GridRoot));
-    nodes       = map_file("nodes",      sizeof(Node)     * MAX_NODE_ID);
-    ways        = map_file("ways",       sizeof(Way)      * MAX_WAY_ID);
-    node_refs   = map_file("node_refs",  sizeof(int64_t)  * MAX_NODE_ID);
-    way_blocks  = map_file("way_blocks", sizeof(WayBlock) * MAX_WAY_BLOCKS);
+    grid       = map_file("grid",       sizeof(Grid));
+    nodes      = map_file("nodes",      sizeof(Node)     * MAX_NODE_ID);
+    ways       = map_file("ways",       sizeof(Way)      * MAX_WAY_ID);
+    node_refs  = map_file("node_refs",  sizeof(int64_t)  * MAX_NODE_ID);
+    way_blocks = map_file("way_blocks", sizeof(WayBlock) * MAX_WAY_BLOCKS);
     // ^ Assume that there are as many node refs as there are node ids including holes. [MAX_NODE_ID]
 
     osm_callbacks_t callbacks;
     callbacks.way = &handle_way;
     callbacks.node = &handle_node;
-    fillFactor();
     for (int i=0; i<REF_HISTOGRAM_BINS; i++) node_ref_histogram[i] = 0;
     scan_pbf(filename, &callbacks);
     fillFactor();
