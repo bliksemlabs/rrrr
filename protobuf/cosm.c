@@ -21,8 +21,7 @@
 #define MAX_NODE_ID 4000000000
 #define MAX_WAY_ID 400000000
 // ^ There are over 10 times as many nodes as ways in OSM
-#define WAY_BLOCK_SIZE 32 /* Per grid cell */
-#define NODE_BLOCK_SIZE 10
+#define WAY_BLOCK_SIZE 32 /* Think of typical number of ways per grid cell... */
 #define TAG_HIGHWAY_PRIMARY   1
 #define TAG_HIGHWAY_SECONDARY 2
 #define TAG_HIGHWAY_TERTIARY  3
@@ -30,18 +29,14 @@
 static const char *database_path = "/mnt/ssd2/cosm_db/";
 
 typedef struct {
-    int64_t refs[NODE_BLOCK_SIZE]; 
-} NodeBlock; // actually node /references/
-
-typedef struct {
     int32_t refs[WAY_BLOCK_SIZE]; 
     int32_t next; // index of next way block, or number of free slots if negative
 } WayBlock; // actually way /references/
 
 /* 
-  A node's int32 coordinates, from which we can easily determine its grid bin. 
+  A node's int32 coordinates, from which we can easily determine its grid bin by bitshifting. 
   An array of 2^64 these serves as a map from node ids to nodes. Node IDs are assigned
-  sequentially, so really you only need about 2^33 entries as of 2014.
+  sequentially, so you really need less than 2^32 entries as of 2014.
   Note that when nodes are deleted their IDs are not reused, so there are holes in
   this range, but the filesystem should take care of that.
 */
@@ -52,7 +47,7 @@ typedef struct {
 } Node;
 
 typedef struct {
-    NodeBlock node_refs; // the head block of node refs is included directly in the Way
+    uint32_t node_ref_offset;
     uint32_t tags; // bit flags for common tags we care about. highway = ?
 } Way;
 
@@ -64,10 +59,6 @@ typedef struct {
   to dynamically allocated ones, with additional blocks being dynamically allocated.
   However this makes for a really big file, and some grid cells will in fact be empty,
   so we can use UINT32_MAX to mean "none". It is already 11GB with only the int indexes here.
-typedef struct {
-    uint32_t nodes;
-    uint32_t ways;
-} GridLeaf;
 */
 
 /* 
@@ -77,9 +68,6 @@ typedef struct {
   index them. However, unlike the root node, there is probably some object in every subgrid. 
   If that is the case then there is no need for any indirection, we can just store the bin 
   structs directly at this level.
-typedef struct {
-    GridLeaf leaves[256][256];
-} GridBlock;
 */
 
 /* 
@@ -100,7 +88,7 @@ typedef struct {
 // sort nodes so we can do a binary search?
 // " Deleted node ids must not be reused, unless a former node is now undeleted. "
 
-/* Print human readable size. */
+/* Print human readable size. TODO write this into an internal buffer. */
 void human (double s) {
     if (s < 1024) {
         printf ("%.1lfbytes", s);
@@ -162,25 +150,14 @@ void *map_file(const char *name, size_t size) {
 GridRoot  *gridRoot;
 Node      *nodes;
 Way       *ways;
-NodeBlock *node_blocks;
 WayBlock  *way_blocks;
-
+int64_t   *node_refs;  // negative means last in a list of refs.
+uint32_t  n_node_refs; // the number of used node refs.
 /* 
-  The number of grid, node, and way blocks currently allocated.
+  The number way blocks currently allocated.
   Start at 1 so we can use the "empty file" 0 value to mean "unassigned". 
-*/ 
+*/
 uint32_t way_block_count  = 1;
-uint32_t node_block_count = 1;
-
-// Maybe use mmap default file contents value of 0?
-
-static int32_t new_node_block() {
-    if (node_block_count % 100000 == 0)
-        printf("%dk node ref blocks in use.\n", node_block_count / 1000);
-    // node ref blocks are memory mapped, behave as if prefilled with zeros
-    return node_block_count++;
-}
-
 static uint32_t new_way_block() {
     if (way_block_count % 100000 == 0)
         printf("%dk way blocks in use.\n", way_block_count / 1000);
@@ -259,23 +236,16 @@ static void handle_way (OSMPBF__Way *way) {
         die("OSM data contains ways greater IDs than expected.");
     int nr = (way->n_refs > REF_HISTOGRAM_BINS - 1) ? REF_HISTOGRAM_BINS - 1 : way->n_refs;
     node_ref_histogram[nr]++;
-    NodeBlock *nb = &(ways[way->id].node_refs);
-    int idx = 0; // index within the node block
+    // Copy node references into. 
+    // NOTE that all refs in a list are always known at once, so we can use exact-length lists. 
+    // Each way stores the position of its first node ref, and a negative ref is used
+    // to signal the end of the list.
+    ways[way->id].node_ref_offset = n_node_refs;
     for (int r = 0; r < way->n_refs; r++) {
-        int64_t node_id = way->refs[r];
-        if (node_id > MAX_NODE_ID)
-            die("Way references node with larger ID than expected.");
-        // If we are going to overflow this block, chain another one
-        if (idx == (NODE_BLOCK_SIZE - 1) && (way->n_refs - r > 1)) { 
-            int32_t n_nb = new_node_block();
-            nb->refs[idx] = -n_nb; // negative ref means block continues at this index
-            nb = &(node_blocks[n_nb]);
-            idx = 0;
-        }
-        nb->refs[idx] = node_id;
-        idx++;
+        node_refs[n_node_refs++] = way->refs[r];
     }
-    // Index this way in the grid cell of its first node
+    node_refs[n_node_refs - 1] *= -1; // Negate last node ref to signal end of list.
+    // Index this way, as being in the grid cell of its first node
     uint32_t wbi = get_grid_way_block(&(nodes[way->refs[0]]));
     WayBlock *wb = &(way_blocks[wbi]);
     // next > 0 is a chained way block index. Skip forward to last block. TODO insert at head?
@@ -293,32 +263,9 @@ static void handle_way (OSMPBF__Way *way) {
     wb->refs[free_idx] = way->id;
     (wb->next)++; // reduce number of free slots in this block by one
     ways_loaded++;
-    if (ways_loaded % 10000000 == 0)
-        printf("loaded %ldM ways\n", ways_loaded / 1024 / 1024);
+    if (ways_loaded % 1000000 == 0)
+        printf("loaded %ldM ways\n", ways_loaded / 1000 / 1000);
 }
-
-/*
-    if (leaf->nodes == 0) 
-        leaf->nodes = new_node_block();
-    NodeBlock *nblock = &(node_blocks[leaf->nodes]);
-    // Fast-forward to end of linked list (actually we should insert new blocks at the head)
-    while (nblock->next != NEXT_NONE)
-        nblock = &(node_blocks[nblock->next]);
-    // Insert a new block at the head if this block is full.
-    if (nblock->nodes[NODE_BLOCK_SIZE - 1] != NODE_ID_UNUSED) {
-        uint32_t nbidx = new_node_block();
-        nblock = &(node_blocks[nbidx]);
-        nblock->next = leaf->nodes;
-        leaf->nodes = nbidx;
-    }
-    for (int n = 0; n < NODE_BLOCK_SIZE; ++n) {
-        if (nblock->nodes[n] == NODE_ID_UNUSED) {
-            nblock->nodes[n] = node->id;
-            //printf("inserted %d,%d:%d\n", coord.xbin, coord.ybin, n); 
-            break;
-        }
-    }
-*/
 
 /* 
   With 8 bit (255x255) grid, planet.pbf gives 36.87% full
@@ -341,11 +288,12 @@ int main (int argc, const char * argv[]) {
     if (argc < 2) die("usage: cosm input.osm.pbf [database_dir]");
     const char *filename = argv[1];
     if (argc > 2) database_path = argv[2];
-    gridRoot    = map_file("grid_root",   sizeof(GridRoot));
-    nodes       = map_file("nodes",       sizeof(Node)      * MAX_NODE_ID);
-    ways        = map_file("ways",        sizeof(Way)       * MAX_WAY_ID);
-    node_blocks = map_file("node_blocks", sizeof(NodeBlock) * MAX_NODE_BLOCKS);
-    way_blocks  = map_file("way_blocks",  sizeof(WayBlock)  * MAX_WAY_BLOCKS);
+    gridRoot    = map_file("grid_root",  sizeof(GridRoot));
+    nodes       = map_file("nodes",      sizeof(Node)     * MAX_NODE_ID);
+    ways        = map_file("ways",       sizeof(Way)      * MAX_WAY_ID);
+    node_refs   = map_file("node_refs",  sizeof(int64_t)  * MAX_NODE_ID);
+    way_blocks  = map_file("way_blocks", sizeof(WayBlock) * MAX_WAY_BLOCKS);
+    // ^ Assume that there are as many node refs as there are node ids including holes. [MAX_NODE_ID]
 
     osm_callbacks_t callbacks;
     callbacks.way = &handle_way;
