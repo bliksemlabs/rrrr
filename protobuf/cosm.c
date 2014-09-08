@@ -88,6 +88,9 @@ typedef struct {
   It is likely to be only 1/3 full due to ocean and wilderness. 
   Note that it can have at most 65536=2^16 children, one for each cell. 
   Therefore, they can be indexed with 16 bit integers.
+  TODO it would be reasonable to double the resolution... but then we'd need 32bit int indexes.
+  TODO check fill rate (do little sea islands make a difference)?
+  TODO eliminate coastlines etc.
 */
 typedef struct {
     uint16_t blocks[256][256];
@@ -146,8 +149,8 @@ void *map_file(const char *name, size_t size) {
     printf("mapping file '%s' of size ", buf);
     human(size);
     printf("\n");
-    // remove O_TRUNC to reload files on start
-    int fd = open(buf, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    // including O_TRUNC causes much slower write (swaps pages in?)
+    int fd = open(buf, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     void *base = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (base == MAP_FAILED) 
         die("could not memory map file");
@@ -264,6 +267,9 @@ static void handle_node (OSMPBF__Node *node) {
     nodeStems[node->id].xbin = coord.xbin;
     nodeStems[node->id].ybin = coord.ybin;
     GridLeaf *leaf = get_grid_leaf(&coord);
+}
+
+/*
     if (leaf->nodes == 0) 
         leaf->nodes = new_node_block();
     NodeBlock *nblock = &(nodeBlocks[leaf->nodes]);
@@ -284,6 +290,18 @@ static void handle_node (OSMPBF__Node *node) {
             break;
         }
     }
+*/
+
+void fillFactor () {
+    int empty = 0;
+    int used = 0;
+    for (int i = 0; i < 256; ++i) {
+        for (int j = 0; j < 256; ++j) {
+            gridRoot->blocks[i][j] == 0 ? empty++ : used++ ;
+        }
+    }
+    printf("index grid: %d empty %d used, %.2f%% full\n", 
+        empty, used, ((double)used)/(used+empty) * 100); 
 }
 
 int main (int argc, const char * argv[]) {
@@ -300,8 +318,12 @@ int main (int argc, const char * argv[]) {
     osm_callbacks_t callbacks;
     callbacks.way = &handle_way;
     callbacks.node = &handle_node;
+    fillFactor();
     scan_pbf(filename, &callbacks);
+    fillFactor();
     return EXIT_SUCCESS;
+
+// TODO check fill proportion of grid blocks
 
 }
 
