@@ -29,8 +29,18 @@
 static const char *database_path = "/mnt/ssd2/cosm_db/";
 
 typedef struct {
+    int32_t x;
+    int32_t y; 
+} coord_t;
+
+static void to_coord (coord_t *coord, double lat, double lon) {
+    coord->x = (lon * INT32_MAX) / 180;
+    coord->y = (lat * INT32_MAX) / 90;
+}
+
+typedef struct {
     int32_t refs[WAY_BLOCK_SIZE]; 
-    int32_t next; // index of next way block, or number of free slots if negative
+    uint32_t next; // index of next way block, or number of free slots if negative
 } WayBlock; // actually way /references/
 
 /* 
@@ -41,8 +51,7 @@ typedef struct {
   this range, but the filesystem should take care of that.
 */
 typedef struct {
-    uint32_t x;
-    uint32_t y;
+    coord_t coord;
     uint32_t tags; // bit flags for common tags we care about. highway = ?
 } Node;
 
@@ -76,7 +85,7 @@ typedef struct {
   TODO eliminate coastlines etc.
 */
 typedef struct {
-    int32_t blocks[GRID_DIM][GRID_DIM]; // contains indexes to way_blocks
+    uint32_t cells[GRID_DIM][GRID_DIM]; // contains indexes to way_blocks
 } Grid;
 
 // cannot mmap to the same location, so don't use pointers. 
@@ -120,9 +129,11 @@ void die (char *s) {
   providing that size when the file is first mapped in with mmap().
   Linux provides the mremap() system call for expanding or shrinking the size of a given mapping. 
   msync() flushes.
-  Interestingly the ext4 filesystem seems to understand "holes". Creating 100GB of empty file by
-  calling truncate() does not increase the disk usage, though the files appear to have their full size.
-  So you can make the file as big as you'll ever need, and the filesystem will take care of it! 
+  The ext3 and ext4 filesystems understand "holes" via the sparse files mechanism:
+  http://en.wikipedia.org/wiki/Sparse_file#Sparse_files_in_Unix
+  Creating 100GB of empty file by calling truncate() does not increase the disk usage, 
+  though the files appear to have their full size in 'ls' for example.
+  So you can make the file as big as you'll ever need, and the filesystem will take care of it.
 */
 void *map_file(const char *name, size_t size) {
     char buf[256];
@@ -175,33 +186,28 @@ static uint32_t new_way_block() {
 
 // replace internal_coord_t with a union
 
+static uint32_t bin (int32_t coord) {
+    return ((uint32_t)(coord)) >> (32 - GRID_BITS); // unsigned: logical shift
+}
+
+static uint32_t *get_grid_cell(coord_t coord) {
+    return &(grid->cells[bin(coord.x)][bin(coord.y)]);
+}
+
 static uint32_t get_grid_way_block (Node *node) {
-    uint32_t xb = ((uint32_t)node->x) >> (32 - GRID_BITS); // unsigned: logical shift
-    uint32_t yb = ((uint32_t)node->y) >> (32 - GRID_BITS); // unsigned: logical shift
-    uint32_t index = grid->blocks[xb][yb];
-    if (index == 0) {
-        index = new_way_block();
-        grid->blocks[xb][yb] = index;
+    uint32_t *cell = get_grid_cell(node->coord);
+    if (*cell == 0) {
+        *cell = new_way_block();
     }
     // printf("xbin=%d ybin=%d\n", xb, yb);
     // printf("index=%d\n", index);
-    return index;
+    return *cell;
 }
 
-// TODO pass node by value since it is small?
+// TODO make this insert a new block instead of just setting it
 static void set_grid_way_block (Node *node, uint32_t wbi) {
-    // TODO remove duplicate code (see above)
-    uint32_t xb = ((uint32_t)node->x) >> (32 - GRID_BITS); // unsigned: logical shift
-    uint32_t yb = ((uint32_t)node->y) >> (32 - GRID_BITS); // unsigned: logical shift
-    grid->blocks[xb][yb] = wbi;
-}
-
-static int32_t lon_to_x (double lon) {
-    return (lon * INT32_MAX) / 180;
-}
-
-static int32_t lat_to_y (double lat) {
-    return (lat * INT32_MAX) / 90;
+    uint32_t *cell = get_grid_cell(node->coord);
+    *cell = wbi;
 }
 
 static long nodes_loaded = 0;
@@ -224,8 +230,7 @@ static void handle_node (OSMPBF__Node *node) {
         die("All nodes must appear before any ways in input file.");
     double lat = node->lat * 0.0000001;
     double lon = node->lon * 0.0000001;
-    nodes[node->id].x = lon_to_x(lon);
-    nodes[node->id].y = lat_to_y(lat);
+    to_coord(&(nodes[node->id].coord), lat, lon);
     nodes_loaded++;
     if (nodes_loaded % 1000000 == 0)
         printf("loaded %ldM nodes\n", nodes_loaded / 1000 / 1000);
@@ -246,8 +251,10 @@ static void handle_way (OSMPBF__Way *way) {
     // Each way stores the position of its first node ref, and a negative ref is used
     // to signal the end of the list.
     ways[way->id].node_ref_offset = n_node_refs;
-    for (int r = 0; r < way->n_refs; r++) {
-        node_refs[n_node_refs++] = way->refs[r];
+    int64_t node_id = 0;
+    for (int r = 0; r < way->n_refs; r++, n_node_refs++) {
+        node_id += way->refs[r]; // node refs are delta coded
+        node_refs[n_node_refs] = node_id;
     }
     node_refs[n_node_refs - 1] *= -1; // Negate last node ref to signal end of list.
     // Index this way, as being in the grid cell of its first node
@@ -283,36 +290,102 @@ void fillFactor () {
     int used = 0;
     for (int i = 0; i < GRID_DIM; ++i) {
         for (int j = 0; j < GRID_DIM; ++j) {
-            if (grid->blocks[i][j] != 0) used++;
+            if (grid->cells[i][j] != 0) used++;
         }
     }
     printf("index grid: %d used, %.2f%% full\n", 
         used, ((double)used) / (GRID_DIM * GRID_DIM) * 100); 
 }
 
+static void usage () {
+    printf("usage:\ncosm database_dir input.osm.pbf\n");
+    printf("cosm database_dir min_lat min_lon max_lat max_lon\n");
+    exit(EXIT_SUCCESS);
+}
+
+static void check_lat_range(double lat) {
+    if (lat < -90 && lat > 90)
+        die ("latitude out of range.");
+}
+
+static void check_lon_range(double lon) {
+    if (lon < -180 && lon > 180)
+        die ("longitude out of range.");
+}
+
 int main (int argc, const char * argv[]) {
 
-    if (argc < 2) die("usage: cosm input.osm.pbf [database_dir]");
-    const char *filename = argv[1];
-    if (argc > 2) database_path = argv[2];
+    if (argc != 3 && argc != 6) usage();
+    database_path = argv[1];
     grid       = map_file("grid",       sizeof(Grid));
     nodes      = map_file("nodes",      sizeof(Node)     * MAX_NODE_ID);
     ways       = map_file("ways",       sizeof(Way)      * MAX_WAY_ID);
     node_refs  = map_file("node_refs",  sizeof(int64_t)  * MAX_NODE_ID);
     way_blocks = map_file("way_blocks", sizeof(WayBlock) * MAX_WAY_BLOCKS);
-    // ^ Assume that there are as many node refs as there are node ids including holes. [MAX_NODE_ID]
-
-    osm_callbacks_t callbacks;
-    callbacks.way = &handle_way;
-    callbacks.node = &handle_node;
-    for (int i=0; i<REF_HISTOGRAM_BINS; i++) node_ref_histogram[i] = 0;
-    scan_pbf(filename, &callbacks);
-    fillFactor();
-    for (int i=0; i<REF_HISTOGRAM_BINS; i++) printf("%2d refs: %d\n", i, node_ref_histogram[i]);
-    printf("loaded %ld nodes and %ld ways total.\n", nodes_loaded, ways_loaded);
-    return EXIT_SUCCESS;
-
-// TODO check fill proportion of grid blocks
+    // ^ Assume that there are as many node refs as there are 
+    // node ids including holes. [MAX_NODE_ID]
+    if (argc == 3) {
+        /* LOAD */
+        const char *filename = argv[2];
+        osm_callbacks_t callbacks;
+        callbacks.way = &handle_way;
+        callbacks.node = &handle_node;
+        for (int i=0; i<REF_HISTOGRAM_BINS; i++) 
+            node_ref_histogram[i] = 0;
+        scan_pbf(filename, &callbacks); // we could just pass the callbacks by value
+        fillFactor();
+        for (int i=0; i<REF_HISTOGRAM_BINS; i++) 
+            printf("%2d refs: %d\n", i, node_ref_histogram[i]);
+        printf("loaded %ld nodes and %ld ways total.\n", nodes_loaded, ways_loaded);
+        return EXIT_SUCCESS;    
+    } else if (argc == 6) {
+        /* QUERY */
+        double min_lat = strtod(argv[2], NULL);
+        double min_lon = strtod(argv[3], NULL);
+        double max_lat = strtod(argv[4], NULL);
+        double max_lon = strtod(argv[5], NULL);
+        printf("min = (%.5lf, %.5lf) max = (%.5lf, %.5lf)\n", min_lat, min_lon, max_lat, max_lon);
+        check_lat_range(min_lat);
+        check_lat_range(max_lat);
+        check_lon_range(min_lon);
+        check_lon_range(max_lon);
+        if (min_lat >= max_lat) die ("min lat must be less than max lat.");
+        if (min_lon >= max_lon) die ("min lon must be less than max lon.");
+        coord_t cmin, cmax;
+        to_coord(&cmin, min_lat, min_lon);
+        to_coord(&cmax, max_lat, max_lon);
+        uint32_t min_xbin = bin(cmin.x);
+        uint32_t max_xbin = bin(cmax.x);
+        uint32_t min_ybin = bin(cmin.y);
+        uint32_t max_ybin = bin(cmax.y);
+        for (uint32_t x = min_xbin; x <= max_xbin; x++) {
+            for (uint32_t y = min_ybin; y <= max_ybin; y++) {
+                uint32_t wbidx = grid->cells[x][y];
+                printf ("%d %d %u\n", x, y, wbidx);
+                if (wbidx == 0) continue; // no ways in this cell
+                WayBlock *wb = &(way_blocks[wbidx]);
+                for (;;) {
+                    for (int w = 0; w < WAY_BLOCK_SIZE; w++) {
+                        int32_t way_id = wb->refs[w];
+                        if (way_id <= 0) break;
+                        printf("way %d {\n", way_id);
+                        int32_t nr = ways[way_id].node_ref_offset;
+                        for (;; nr++) {
+                            int64_t node_id = node_refs[nr];
+                            if (node_id < 0) {
+                                node_id = -node_id;
+                                printf("  node %ld\n}\n", node_id);
+                                break;
+                            }
+                            printf("  node %ld\n", node_id);
+                        }
+                    }
+                    if (wb->next == 0) break;
+                    wb = &(way_blocks[wb->next]);
+                }
+            }
+        }
+    } else usage();
 
 }
 
