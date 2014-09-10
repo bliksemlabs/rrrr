@@ -19,6 +19,8 @@ def dump_tags(tags):
     weighted.sort(key=lambda x: x[3], reverse=True)
     for num, tag in enumerate(weighted):
         print num, "%s=%s (%d)" % tag[:3]
+        if num > 512:
+            break
 
 class TagCounter(object):
     way_tags = {}
