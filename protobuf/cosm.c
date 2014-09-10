@@ -28,6 +28,29 @@
 
 static const char *database_path = "/mnt/ssd2/cosm_db/";
 
+static int n_key_strings = 0;
+static char key_strings[256][32];
+static uint8_t find_or_save_key (char* key, int len) {
+    int k;
+    for (k=0; k<n_key_strings; k++) {
+        char *k0 = &(key_strings[k][0]);
+        char *k1 = key;
+        int i;        
+        for (i=0; i<len; i++) {
+            if (*(k0++) != *(k1++)) break;
+        }
+        if (i==len && *k0 == '\0') return k; // all of both keys was consumed: match
+    }
+    // No match. Add the key to the table.
+    if (k < 256) {
+        memcpy(&(key_strings[k][0]), key, len);
+        key_strings[k][len] = '\0';
+        n_key_strings++;
+        return k;
+    }
+    return -1;
+}
+
 typedef struct {
     int32_t x;
     int32_t y; 
@@ -222,8 +245,7 @@ static long ways_loaded = 0;
 // The ratio of node to way block sizes should make this value also usable for ways.
 #define MAX_WAY_BLOCKS (0.35 * GRID_DIM * GRID_DIM) /* about 100 Mstructs */
 #define MAX_NODE_BLOCKS MAX_WAY_ID /* One additional block of node refs per way. */
-
-static void handle_node (OSMPBF__Node *node) {
+static void handle_node (OSMPBF__Node *node, ProtobufCBinaryData *string_table) {
     if (node->id > MAX_NODE_ID) 
         die("OSM data contains nodes with larger IDs than expected.");
     if (ways_loaded > 0)
@@ -231,6 +253,11 @@ static void handle_node (OSMPBF__Node *node) {
     double lat = node->lat * 0.0000001;
     double lon = node->lon * 0.0000001;
     to_coord(&(nodes[node->id].coord), lat, lon);
+    for (int t=0; t<node->n_keys; t++) {
+        ProtobufCBinaryData key = string_table[node->keys[t]];
+        ProtobufCBinaryData val = string_table[node->vals[t]];
+        printf ("%.*s=%.*s\n", (int)(key.len), key.data, (int)(val.len), val.data);
+    }
     nodes_loaded++;
     if (nodes_loaded % 1000000 == 0)
         printf("loaded %ldM nodes\n", nodes_loaded / 1000 / 1000);
@@ -241,7 +268,7 @@ static void handle_node (OSMPBF__Node *node) {
 static int node_ref_histogram[REF_HISTOGRAM_BINS]; // initialized and displayed in main
 
 /* Nodes must come before ways for this to work. */
-static void handle_way (OSMPBF__Way *way) {
+static void handle_way (OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
     if (way->id > MAX_WAY_ID)
         die("OSM data contains ways greater IDs than expected.");
     int nr = (way->n_refs > REF_HISTOGRAM_BINS - 1) ? REF_HISTOGRAM_BINS - 1 : way->n_refs;

@@ -77,20 +77,21 @@ static int zinflate(ProtobufCBinaryData *in, unsigned char *out) {
 }
 
 static long noderefs = 0;
-static void handle_way(OSMPBF__Way *way) {
+static void handle_way(OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
     for (int r = 0; r < way->n_refs; ++r) {
         ++noderefs;
     }
 }
 
 static long nodecount = 0;
-static void handle_node(OSMPBF__Node *node) {
+static void handle_node(OSMPBF__Node *node, ProtobufCBinaryData *string_table) {
     ++nodecount;
 }
 
+// tags are stored in a string table at the PrimitiveBlock level 
+#define MAX_TAGS 64
 static void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *callbacks) {
-    size_t nstrings = block->stringtable->n_s;
-    ProtobufCBinaryData *s = block->stringtable->s;
+    ProtobufCBinaryData *string_table = block->stringtable->s;
     int32_t granularity = block->has_granularity ? block->granularity : 1;
     int64_t lat_offset = block->has_lat_offset ? block->lat_offset : 0;
     int64_t lon_offset = block->has_lon_offset ? block->lon_offset : 0;
@@ -103,32 +104,51 @@ static void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_
         if (callbacks->way) {
             for (int w = 0; w < group->n_ways; ++w) {
                 OSMPBF__Way *way = group->ways[w];
-                (*(callbacks->way))(way);
+                (*(callbacks->way))(way, string_table);
             }
         }
         if (callbacks->node) {
             for (int n = 0; n < group->n_nodes; ++n) {
                 OSMPBF__Node *node = group->nodes[n];
-                (*(callbacks->node))(node);
+                (*(callbacks->node))(node, string_table);
             }
             if (group->dense) {
-                OSMPBF__Node node;
                 OSMPBF__DenseNodes *dense = group->dense;
+                OSMPBF__Node node; // struct reused to carry the data from each dense node
+                uint32_t keys[MAX_TAGS]; // keys and vals reused for string table references
+                uint32_t vals[MAX_TAGS]; 
+                node.keys = keys;
+                node.vals = vals;
+                node.n_keys = 0;
+                node.n_vals = 0;
+                int kv0 = 0; // index into source keys_values array (concatenated, 0-len separated)
                 int64_t id  = 0;
                 int64_t lat = lat_offset;
                 int64_t lon = lon_offset;
-                int32_t tag = 0;
                 for (int n = 0; n < dense->n_id; ++n) {
-                    id  += dense->id[n];
+                    // Coordinates and IDs are delta coded
+                    id  += dense->id[n]; 
                     lat += dense->lat[n];
                     lon += dense->lon[n];
-                    // keys_vals can be null                    
-                    // if (dense->keys_vals != NULL) tag += dense->keys_vals[n];
                     node.id  = id;
                     node.lat = lat;
                     node.lon = lon;
-                    // keys&vals...
-                    (*(callbacks->node))(&node);
+                    // Copy tag string indexes over from concatenated alternating array
+                    int kv1 = 0; // index into target keys and values array
+                    while (string_table[dense->keys_vals[kv0]].len > 0) {
+                        if (kv1 < MAX_TAGS) { // target buffers are reused and fixed-length
+                            keys[kv1] = dense->keys_vals[kv0++];
+                            vals[kv1] = dense->keys_vals[kv0++];
+                            kv1++;
+                        } else {
+                            kv0 += 2; // skip both key and value
+                            printf ("skipping tags after 64th.\n");
+                        }
+                    }
+                    node.n_keys = kv1;
+                    node.n_vals = kv1;
+                    kv0++; // skip zero length string indicating end of k-v pairs for this node
+                    (*(callbacks->node))(&node, string_table);
                 }
             }
         }

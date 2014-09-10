@@ -5,8 +5,8 @@
 #include "osmformat.pb-c.h"
 
 typedef struct {
-    void (*way) (OSMPBF__Way*);
-    void (*node) (OSMPBF__Node*);
+    void (*way) (OSMPBF__Way*, ProtobufCBinaryData *string_table);
+    void (*node) (OSMPBF__Node*, ProtobufCBinaryData *string_table);
 } osm_callbacks_t;
 
 void scan_pbf(const char *filename, osm_callbacks_t *callbacks);
