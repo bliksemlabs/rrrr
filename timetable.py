@@ -631,7 +631,10 @@ if len(sorted_agencyIds) == 0:
     agencyUrls.append('')
 else:
     for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]:
-        agencyIds.append(agency_id)
+        if agency_id == None: # agency_id is an optional value in GTFS
+            agencyIds.append('')
+        else:
+            agencyIds.append(agency_id)
         agencyNames.append(agency_name)
         agencyUrls.append(agency_url)
 write_text_comment("AGENCY IDS")
