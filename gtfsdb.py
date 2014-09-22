@@ -522,8 +522,12 @@ ORDER BY stop_id
         return list(x[0] for x in self.get_cursor().execute( query,() ))
 
     def agency(self,agency_id):
-        query = "SELECT agency_id,agency_name,agency_url,agency_phone,agency_timezone FROM agency WHERE agency_id = ?"
-        res = list(self.get_cursor().execute( query,(agency_id,) ))
+        if agency_id == "__DEFAULT__": # Likely only one entry
+            query = "SELECT agency_id,agency_name,agency_url,agency_phone,agency_timezone FROM agency"
+            res = list(self.get_cursor().execute( query ))
+        else:
+            query = "SELECT agency_id,agency_name,agency_url,agency_phone,agency_timezone FROM agency WHERE agency_id = ?"
+            res = list(self.get_cursor().execute( query,(agency_id,) ))
         if len(res) == 0:
             raise Exception('feed error: agency_id not found')
         elif len(res) > 1:
