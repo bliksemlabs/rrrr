@@ -558,7 +558,10 @@ ORDER BY stop_id
             
             d = self.get_cursor()
             d.execute( "SELECT trip_id, arrival_time, departure_time, stop_id, route_id, pickup_type, drop_off_type,timepoint FROM stop_times LEFT JOIN trips using (trip_id) WHERE trip_id = ? AND arrival_time NOT NULL AND departure_time NOT NULL ORDER BY trip_id,stop_sequence", (trip_id,) )
-            trip_ids, arrival_times, departure_times, stop_ids, route_ids, pickup_types, drop_off_types,timepoints = (list(x) for x in zip(*d)) # builtin for zip(*d)?
+            results = zip(*d)
+            if not results:
+                continue
+            trip_ids, arrival_times, departure_times, stop_ids, route_ids, pickup_types, drop_off_types,timepoints = (list(x) for x in results) # builtin for zip(*d)?
             timepoints[0] = 1
             trip_begin_time = arrival_times[0]
             # trip_id is already set ! #= stop_times[trip_id for trip_id, arrival_time, departure_time, stop_id,route_id,pickup_type,drop_off_type in stop_times][0]
