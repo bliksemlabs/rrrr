@@ -11,7 +11,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(OBJECTS) $(LIBS) -o $@
 
 clean:
-	rm -rf $(OBJECTS) $(EXECUTABLE)
+	rm -f $(OBJECTS) $(EXECUTABLE)
 
 test: $(SOURCES)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
