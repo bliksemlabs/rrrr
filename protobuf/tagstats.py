@@ -4,6 +4,12 @@
 # sudo apt-get install build-essential python-dev protobuf-compiler libprotobuf-dev libtokyocabinet-dev python-psycopg2 libgeos-c1 python-pip
 # sudo pip install imposm.parser
     
+# NOTE that similar tag statistics functionality is available in 'osmfilter'
+# which is part of the ubuntu package 'osmctools' (C language OSM tools).
+# Also includes 'osmconvert' and 'osmchange'.
+# https://gitorious.org/osm-c-tools/
+# These are speedy tools that handle the PBF format among others.
+
 from imposm.parser import OSMParser
 import sys
 

@@ -1,6 +1,5 @@
 /* pbf.c */
 #include "pbf.h"
-
 #include "fileformat.pb-c.h"
 #include "osmformat.pb-c.h"
 #include <fcntl.h>
@@ -18,6 +17,9 @@
 // then compile the protobuf with: 
 // protoc-c --c_out . ./osmformat.proto
 // protoc-c --c_out . ./fileformat.proto
+
+// The osmpbf-dev debian package (https://github.com/scrosby/OSM-binary) is for C++ but provides
+// the protobuf definition files.
 
 static void die(const char *msg) {
     fprintf(stderr, "%s\n", msg);
@@ -49,6 +51,7 @@ static void pbf_unmap() {
 #define MAX_BLOB_SIZE_UNCOMPRESSED 32 * 1024 * 1024
 static unsigned char zbuf[MAX_BLOB_SIZE_UNCOMPRESSED];
 
+// TODO ZLIB actually has compress/uncompress utility functions that work on buffers.
 static int zinflate(ProtobufCBinaryData *in, unsigned char *out) {
     int ret;
     
@@ -89,7 +92,7 @@ static void handle_node(OSMPBF__Node *node, ProtobufCBinaryData *string_table) {
 }
 
 // tags are stored in a string table at the PrimitiveBlock level 
-#define MAX_TAGS 64
+#define MAX_TAGS 256
 static void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_t *callbacks) {
     ProtobufCBinaryData *string_table = block->stringtable->s;
     int32_t granularity = block->has_granularity ? block->granularity : 1;
@@ -135,14 +138,18 @@ static void handle_primitive_block(OSMPBF__PrimitiveBlock *block, osm_callbacks_
                     node.lon = lon;
                     // Copy tag string indexes over from concatenated alternating array
                     int kv1 = 0; // index into target keys and values array
-                    while (string_table[dense->keys_vals[kv0]].len > 0) {
-                        if (kv1 < MAX_TAGS) { // target buffers are reused and fixed-length
-                            keys[kv1] = dense->keys_vals[kv0++];
-                            vals[kv1] = dense->keys_vals[kv0++];
-                            kv1++;
-                        } else {
-                            kv0 += 2; // skip both key and value
-                            printf ("skipping tags after 64th.\n");
+                    // some blocks have no tags at all, check that the array pointer is not null
+                    if (dense->keys_vals != NULL) { 
+                        // key-val list for each node is terminated with a zero-length string
+                        while (string_table[dense->keys_vals[kv0]].len > 0) {
+                            if (kv1 < MAX_TAGS) { // target buffers are reused and fixed-length
+                                keys[kv1] = dense->keys_vals[kv0++];
+                                vals[kv1] = dense->keys_vals[kv0++];
+                                kv1++;
+                            } else {
+                                kv0 += 2; // skip both key and value
+                                printf ("skipping tags after number %d.\n", MAX_TAGS);
+                            }
                         }
                     }
                     node.n_keys = kv1;
@@ -162,12 +169,12 @@ void scan_pbf(const char *filename, osm_callbacks_t *callbacks) {
     int blobcount = 0;
     for (void *buf = map; buf < map + map_size; ++blobcount) {
         if (blobcount % 10000 == 0) {
-            printf("loading blob %dk (%ldMB)\n", blobcount/1000, (buf - map) / 1024 / 1024);
+            printf("Loading PBF blob %dk (position %ldMB)\n", blobcount/1000, (buf - map) / 1024 / 1024);
         }
         /* read blob header */
         OSMPBF__BlobHeader *blobh;
         // header prefixed with 4-byte contain network (big-endian) order message length
-        int32_t msg_length = ntohl(*((int*)buf));
+        int32_t msg_length = ntohl(*((int*)buf)); // TODO shouldn't this be an exact-width type cast?
         buf += sizeof(int32_t);
         blobh = osmpbf__blob_header__unpack(NULL, msg_length, buf); 
         buf += msg_length;
