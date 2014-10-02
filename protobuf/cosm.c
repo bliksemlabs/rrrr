@@ -90,32 +90,32 @@ typedef struct {
     uint32_t cells[GRID_DIM][GRID_DIM]; // contains indexes to way_blocks
 } Grid;
 
-/* Print human readable representation of a number of bytes into a static buffer. */
+/* Print human readable representation based on multiples of 1024 into a static buffer. */
 static char human_buffer[128];
 char *human (size_t bytes) {
     /* Convert to a double, so division can yield results with decimal places. */
     double s = bytes; 
     if (s < 1024) {
-        sprintf (human_buffer, "%.1lf bytes", s);
+        sprintf (human_buffer, "%.1lf ", s);
         return human_buffer;
     }
     s /= 1024;
     if (s < 1024) {
-        sprintf (human_buffer, "%.1lf kB", s);
+        sprintf (human_buffer, "%.1lf ki", s);
         return human_buffer;
     }
     s /= 1024;
     if (s < 1024) {
-        sprintf (human_buffer, "%.1lf MB", s);
+        sprintf (human_buffer, "%.1lf Mi", s);
         return human_buffer;
     }
     s /= 1024;
     if (s < 1024) {
-        sprintf (human_buffer, "%.1lf GB", s);
+        sprintf (human_buffer, "%.1lf Gi", s);
         return human_buffer;
     }
     s /= 1024;
-    sprintf (human_buffer, "%.1lf TB", s);
+    sprintf (human_buffer, "%.1lf Ti", s);
     return human_buffer;
 }
 
@@ -148,7 +148,7 @@ void *map_file(const char *name, size_t size) {
     if (strlen(name) >= sizeof(buf) - strlen(database_path) - 2)
         die ("name too long");
     sprintf (buf, "%s/%s", database_path, name); 
-    printf("mapping file '%s' of size %s\n", buf, human(size));
+    printf("mapping file '%s' of size %sB\n", buf, human(size));
     // including O_TRUNC causes much slower write (swaps pages in?)
     int fd = open(buf, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     void *base = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -338,8 +338,9 @@ static void handle_way (OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
     /* Save tags to compacted tag array, and record the index where that tag list begins. */
     ways[way->id].tags = write_tags(way->keys, way->vals, way->n_keys, string_table);
     if (ways_loaded % 100000 == 0) {
-        printf("loaded %ldk ways\n", ways_loaded / 1000);
-        printf("tag file at position %s\n", human(ways[way->id].tags));
+        printf("loaded %ldM ways\n", ways_loaded / 1000 / 1000);
+        printf("32bit tag file index %s\n", human(ways[way->id].tags));
+        printf("32bit node ref index %s\n", human(n_node_refs));
     }
 }
 
