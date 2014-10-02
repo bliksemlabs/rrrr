@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h> 
 #include <sys/stat.h>
@@ -241,8 +242,8 @@ static void set_grid_way_block (Node *node, uint32_t wbi) {
 }
 
 /* Given parallel arrays of length n containing key and value string indexes, write k=v to a file. */
-static uint32_t write_tags (uint32_t *keys, uint32_t *vals, int n, ProtobufCBinaryData *string_table) {
-    if (n == 0) return UINT32_MAX;
+static uint64_t write_tags (uint32_t *keys, uint32_t *vals, int n, ProtobufCBinaryData *string_table) {
+    if (n == 0) return 0; // if there are no tags, always point to index 0, which should contain a single terminator char.
     uint64_t position = ftell(tag_file);
     if (position % (1024 * 1024 * 100) == 0 && position != 0) {
         printf("tag file at position %s\n", human(position));
@@ -314,10 +315,13 @@ static void handle_way (OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
     // Each way stores the position of its first node ref, and a negative ref is used
     // to signal the end of the list.
     ways[way->id].node_ref_offset = n_node_refs;
+    //printf("WAY %ld\n", way->id);
+    //printf("node ref offset %d\n", ways[way->id].node_ref_offset);
     int64_t node_id = 0;
     for (int r = 0; r < way->n_refs; r++, n_node_refs++) {
         node_id += way->refs[r]; // node refs are delta coded
         node_refs[n_node_refs] = node_id;
+        //printf("  NODE %ld\n", node_id);
     }
     node_refs[n_node_refs - 1] *= -1; // Negate last node ref to signal end of list.
     // Index this way, as being in the grid cell of its first node
@@ -453,54 +457,6 @@ static void print_way (int64_t way_id) {
     printf("\n");
 }
 
-/* Reusable buffers for loading internal ways into OSMPBF ways. */
-#define MAX_REFS 2048
-static int64_t refs_buf[MAX_REFS];
-
-/* Load a COSM Way from the internal representation into an OSMPBF__Way struct. */
-static void load_pbf_way(OSMPBF__Way *pbf_way, uint64_t way_id) {
-    Way way = ways[way_id];
-    uint32_t nri = way.node_ref_offset;
-    size_t n_refs = 0;
-    // We can't just point to the refs mmap since A) it contains negative values and B) we need to delta code.
-    int64_t prev_ref = 0; 
-    for (;;) {
-        int64_t ref = node_refs[nri++];
-        if (ref < 0) {
-            refs_buf[n_refs++] = (-ref) - prev_ref; 
-            break;
-        }
-        refs_buf[n_refs++] = ref - prev_ref; // refs within a way are delta coded
-        if (n_refs == MAX_REFS) {
-            printf("Hit maximum number of references in a way, skipping some.\n");
-            break;
-        }
-        prev_ref = ref;
-    }
-/*
-    prev_ref = 0;
-    for (int i=0; i<n_refs; i++) {
-        int64_t ref = refs_buf[i];
-        ref += prev_ref;
-        printf("%d %ld %ld\n", i, refs_buf[i], ref);
-        prev_ref = ref;
-        if (ref < 0) exit(-1);
-    }
-*/
-    osmpbf__way__init(pbf_way);
-    pbf_way->id = way_id;
-    pbf_way->refs = refs_buf;
-    pbf_way->n_refs = n_refs;
-    /* LOAD_TAGS
-    way.n_keys;
-    way.keys;
-    way.n_vals;
-    way.vals;
-    */
-}
-
-
-
 int main (int argc, const char * argv[]) {
 
     if (argc != 3 && argc != 6) usage();
@@ -523,6 +479,8 @@ int main (int argc, const char * argv[]) {
         for (int i=0; i<REF_HISTOGRAM_BINS; i++) 
             node_ref_histogram[i] = 0;
         tag_file = open_file("tags");
+        // all elements without tags will point to index 0, which contains the tag list terminator.
+        fputc(INT8_MAX, tag_file); 
         scan_pbf(filename, &callbacks); // we could just pass the callbacks by value
         fclose(tag_file);
         fillFactor();
@@ -550,52 +508,47 @@ int main (int argc, const char * argv[]) {
         uint32_t max_xbin = bin(cmax.x);
         uint32_t min_ybin = bin(cmin.y);
         uint32_t max_ybin = bin(cmax.y);
-
         FILE *pbf_file = open_file("out.pbf");
         write_pbf_begin(pbf_file);
-        OSMPBF__Way pbf_way;
-
-        save_init();
-        for (uint32_t x = min_xbin; x <= max_xbin; x++) {
-            for (uint32_t y = min_ybin; y <= max_ybin; y++) {
-                uint32_t wbidx = grid->cells[x][y];
-                // printf ("xbin=%d ybin=%d way bin index %u\n", x, y, wbidx);
-                if (wbidx == 0) continue; // no ways in this cell
-                WayBlock *wb = &(way_blocks[wbidx]);
-                for (;;) {
-                    for (int w = 0; w < WAY_BLOCK_SIZE; w++) {
-                        int32_t way_id = wb->refs[w];
-                        if (way_id <= 0) break;
-                        save_way(way_id);
-
-                        load_pbf_way(&pbf_way, way_id);
-                        write_pbf_way(&pbf_way);
-
-                        int32_t nr = ways[way_id].node_ref_offset;
-                        for (;; nr++) {
-                            int64_t node_id = node_refs[nr];
-                            if (node_id < 0) {
-                                node_id = -node_id;
-                                save_node(node_id);
-
-                                Node node = nodes[node_id];
-                                write_pbf_node(node_id, get_lat(&(node.coord)), get_lon(&(node.coord)), (int8_t*) &(tags[node.tags]));
-
-                                //printf("\n");
-                                break;
+        for (int stage = 0; stage < 2; stage++) {
+            for (uint32_t x = min_xbin; x <= max_xbin; x++) {
+                for (uint32_t y = min_ybin; y <= max_ybin; y++) {
+                    uint32_t wbidx = grid->cells[x][y];
+                    // printf ("xbin=%d ybin=%d way bin index %u\n", x, y, wbidx);
+                    if (wbidx == 0) continue; // There are no ways in this grid cell.
+                    /* Iterate over all ways in this block, and its chained blocks. */
+                    WayBlock *wb = &(way_blocks[wbidx]);
+                    for (;;) {
+                        for (int w = 0; w < WAY_BLOCK_SIZE; w++) {
+                            int64_t way_id = wb->refs[w];
+                            if (way_id <= 0) break;
+                            Way way = ways[way_id];
+                            if (stage == 1) {
+                                write_pbf_way(way_id, &(node_refs[way.node_ref_offset]), &(tags[way.tags]));
+                            } else if (stage == 0) {
+                                /* Output all nodes in this way. */
+                                uint32_t nr = way.node_ref_offset;
+                                bool more = true;
+                                for (; more; nr++) {
+                                    int64_t node_id = node_refs[nr];
+                                    if (node_id < 0) {
+                                        node_id = -node_id;
+                                        more = false;
+                                    }
+                                    Node node = nodes[node_id];
+                                    write_pbf_node(node_id, get_lat(&(node.coord)), get_lon(&(node.coord)), 
+                                        (int8_t *) &(tags[node.tags]));
+                                }
                             }
-                            save_node(node_id);
                         }
+                        if (wb->next == 0) break;
+                        wb = &(way_blocks[wb->next]);
                     }
-                    if (wb->next == 0) break;
-                    wb = &(way_blocks[wb->next]);
                 }
             }
         }
-        
         write_pbf_flush();
         fclose(pbf_file);
-        
     } else usage();
 
 }

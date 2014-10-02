@@ -253,6 +253,7 @@ int8_t encode_tag (ProtobufCBinaryData key, ProtobufCBinaryData val) {
     return 0; // No code found for this KV pair
 }
 
+/* Return the number of characters consumed. We could also just return the new position of the pointer? */
 size_t decode_tag (char *buf, KeyVal *kv) {
     char *c = buf;
     int8_t code = (int8_t) *(c++);
