@@ -13,9 +13,6 @@
 #include "pbf.h"
 #include "tags.h"
 
-// Test this out on a small dataset.
-// To test, can we just run this in memory and let swapping happen?
-// Map long indexes to files of a fixed size (1 gigastruct), then index within file
 // 14 bits -> 1.7km at 45 degrees
 // 13 bits -> 3.4km at 45 degrees
 // at 45 degrees cos(pi/4)~=0.7
@@ -25,90 +22,79 @@
 #define MAX_NODE_ID 4000000000
 #define MAX_WAY_ID 400000000
 // ^ There are over 10 times as many nodes as ways in OSM
-#define WAY_BLOCK_SIZE 32 /* Think of typical number of ways per grid cell... */
-#define TAG_HIGHWAY_PRIMARY   1
-#define TAG_HIGHWAY_SECONDARY 2
-#define TAG_HIGHWAY_TERTIARY  3
 
+/* Way reference block size is based on the typical number of ways per grid cell. */
+#define WAY_BLOCK_SIZE 32 
+/* Assume half as many blocks as cells in the grid, considering grid is only ~15% full. */
+#define MAX_WAY_BLOCKS (GRID_DIM * GRID_DIM / 2) 
+
+/* The location where we will save all files. This can be set using a command line parameter. */
 static const char *database_path = "/mnt/ssd2/cosm_db/";
 
+/* Compact geographic position. Latitude and longitude mapped to the signed 32-bit int range. */
 typedef struct {
     int32_t x;
     int32_t y; 
 } coord_t;
 
-static void to_coord (coord_t *coord, double lat, double lon) {
+/* Convert double-precision floating point latitude and longitude to internal representation. */
+static void to_coord (/*OUT*/ coord_t *coord, double lat, double lon) {
     coord->x = (lon * INT32_MAX) / 180;
     coord->y = (lat * INT32_MAX) / 90;
-}
+} // TODO this is a candidate for return by value
 
+/* Converts the y field of a coord to a floating point latitude. */
 static double get_lat (coord_t *coord) {
     return ((double) coord->y) * 90 / INT32_MAX;
 }
 
+/* Converts the x field of a coord to a floating point longitude. */
 static double get_lon (coord_t *coord) {
     return ((double) coord->x) * 180 / INT32_MAX;
 }
 
+/* A block of way references. Chained together to record which ways begin in each grid cell. */
 typedef struct {
     int32_t refs[WAY_BLOCK_SIZE]; 
     uint32_t next; // index of next way block, or number of free slots if negative
-} WayBlock; // actually way /references/
+} WayBlock;
 
 /* 
-  A node's int32 coordinates, from which we can easily determine its grid bin by bitshifting. 
-  An array of 2^64 these serves as a map from node ids to nodes. Node IDs are assigned
-  sequentially, so you really need less than 2^32 entries as of 2014.
+  A single OSM node. An array of 2^64 these serves as a map from node ids to nodes. 
+  OSM assigns node IDs sequentially, so you only need about the first 2^32 entries as of 2014.
   Note that when nodes are deleted their IDs are not reused, so there are holes in
-  this range, but the filesystem should take care of that.
+  this range, but sparse file support in the filesystem should take care of that.
+  "Deleted node ids must not be reused, unless a former node is now undeleted."
 */
 typedef struct {
-    coord_t coord;
-    uint32_t tags; // offset into the tags file
+    coord_t coord; // compact internal representation of latitude and longitude
+    uint32_t tags; // byte offset into the packed tags array where this node's tag list begins
 } Node;
 
+/* 
+  A single OSM way. Like nodes, way IDs are assigned sequentially, so a zero-indexed array of these
+  serves as a map from way IDs to ways.
+*/
 typedef struct {
-    uint32_t node_ref_offset;
-    uint32_t tags; // offset into the tags file
+    uint32_t node_ref_offset; // the index of the first node in this way's node list
+    uint32_t tags; // byte offset into the packed tags array where this node's tag list begins
 } Way;
 
 /* 
-  The leaves of the grid tree. 
-  These contain linked lists of nodes and ways. 
-  Assuming each cell contains at least one node and one way, we could avoid a level 
-  of indirection by storing the head nodes of the lists directly here rather then indexes 
-  to dynamically allocated ones, with additional blocks being dynamically allocated.
-  However this makes for a really big file, and some grid cells will in fact be empty,
-  so we can use UINT32_MAX to mean "none". It is already 11GB with only the int indexes here.
-*/
-
-/* 
-  The intermediate level of the grid tree. 
-  These nodes consume the most significant remaining 8 bits on each axis.
-  There can be at most (2^16 * 2^16) == 2^32 leaf nodes, so we could use 32 bit integers to 
-  index them. However, unlike the root node, there is probably some object in every subgrid. 
-  If that is the case then there is no need for any indirection, we can just store the bin 
-  structs directly at this level.
-*/
-
-/* 
-  The spatial index grid.
-  It is likely to be only 1/3 full due to ocean and wilderness. 
-  TODO eliminate coastlines etc.
+  The spatial index grid. A node's grid bin is determined by right-shifting its coordinates.
+  Initially this was a multi-level grid, but it turns out to work fine as a single level.
+  Rather than being directly composed of way reference blocks, there is a level of indirection
+  because the grid is mostly empty due to ocean and wilderness. TODO eliminate coastlines etc.
 */
 typedef struct {
     uint32_t cells[GRID_DIM][GRID_DIM]; // contains indexes to way_blocks
 } Grid;
 
-// cannot mmap to the same location, so don't use pointers. 
-// instead use object indexes (which could be 32-bit!) and one mmapped file per object type.
-// sort nodes so we can do a binary search?
-// " Deleted node ids must not be reused, unless a former node is now undeleted. "
-
-/* Print human readable size into a static buffer. */
+/* Print human readable representation of a number of bytes into a static buffer. */
 static char human_buffer[128];
-char *human (double s) {
-    // parameter is a double, so division can yield results with some decimal places
+char *human (size_t bytes) {
+    /* Convert to a double, so division can yield results with decimal places. */
+    double s = bytes; 
     if (s < 1024) {
         sprintf (human_buffer, "%.1lf bytes", s);
         return human_buffer;
@@ -139,16 +125,23 @@ void die (char *s) {
 }
 
 /*
-  mmap will map a zero-length file, in which case it will cause a bus error when it tries to write. 
-  you could "reserve" the address space for the maximum size of the file by 
-  providing that size when the file is first mapped in with mmap().
+  Map a file in the database directory into memory, letting the OS handle paging.
+  Note that we cannot reliably re-map a file to the same memory address, so the files should not 
+  contain pointers. Instead we store array indexes, which can have the advantage of being 32-bits 
+  wide. We map one file per OSM object type.
+  
+  Mmap will happily map a zero-length file to a nonzero-length block of memory, but a bus error 
+  will occur when you try to write to the memory. 
+
+  It is tricky to expand the mapped region on demand you'd need to trap the bus error.
+  Instead we reserve enough address space for the maximum size we ever expect the file to reach. 
   Linux provides the mremap() system call for expanding or shrinking the size of a given mapping. 
-  msync() flushes.
+  msync() flushes the changes in memory to disk.
+
   The ext3 and ext4 filesystems understand "holes" via the sparse files mechanism:
   http://en.wikipedia.org/wiki/Sparse_file#Sparse_files_in_Unix
-  Creating 100GB of empty file by calling truncate() does not increase the disk usage, 
-  though the files appear to have their full size in 'ls' for example.
-  So you can make the file as big as you'll ever need, and the filesystem will take care of it.
+  Creating 100GB of empty file by calling truncate() does not increase the disk usage. 
+  The files appear to have their full size using 'ls', but 'du' reveals that no blocks are in use.
 */
 void *map_file(const char *name, size_t size) {
     char buf[256];
@@ -166,7 +159,7 @@ void *map_file(const char *name, size_t size) {
     return base;
 }
 
-/* Open a file in the database directory, performing some checks. */
+/* Open a buffered read/write FILE in the database directory, performing some checks. */
 FILE *open_file(const char *name) {
     char buf[256];
     if (strlen(name) >= sizeof(buf) - strlen(database_path) - 2)
@@ -179,52 +172,50 @@ FILE *open_file(const char *name) {
     return file;
 }
 
-/* Arrays of memory-mapped structs */
+/* Arrays of memory-mapped structs. This is where we store the bulk of our data. */
 Grid     *grid;
 Node     *nodes;
 Way      *ways;
 WayBlock *way_blocks;
-int64_t  *node_refs;  // negative means last in a list of refs.
-uint32_t n_node_refs; // the number of used node refs. FIXME is this going to overflow? ~2x current number of nodes in planet...
-char     *tags;       // a coded & compressed stream of tags
+int64_t  *node_refs;  // A negative node_ref marks the end of a list of refs.
+char     *tags;       // A coded & compressed stream of tags.
+uint32_t n_node_refs; // The number of node refs currently used. 
+// FIXME n_node_refs will eventually overflow. The fact that it's unsigned gives us a little slack.
 
-/* A file where tags are being written. Maybe replace with mmaped file. */
+/* A file stream for writing coded-compressed tags. TODO Maybe write to the mmaped file instead. */
 FILE *tag_file;
 
 /* 
-  The number way blocks currently allocated.
-  Start at 1 so we can use the "empty file" 0 value to mean "unassigned". 
+  The number of way reference blocks currently allocated.
+  Sparse files appear to be full of zeros until you write to them. Therefore we skip way block zero 
+  so we can use the zero index to mean "no way block".
 */
-uint32_t way_block_count  = 1;
+uint32_t way_block_count = 1;
 static uint32_t new_way_block() {
     if (way_block_count % 10000 == 0)
-        printf("%dk way blocks in use.\n", way_block_count / 1000);
-    // neg value in last ref -> number of free slots
+        printf("%dk way blocks in use out of %dk.\n", way_block_count/1000, MAX_WAY_BLOCKS/1000);
+    if (way_block_count >= MAX_WAY_BLOCKS)
+        die("More way reference blocks are used than expected.");
+    // A negative value in the last ref entry gives the number of free slots in this block.
     way_blocks[way_block_count].refs[WAY_BLOCK_SIZE-1] = -WAY_BLOCK_SIZE; 
     // printf("created way block %d\n", way_block_count);
     return way_block_count++;
 }
 
-// note that this is essentially a node stem plus offsets. 
-// we could either explicitly use the node stem type, or save the whole mess in the node table
-// with only the node references in the grid leaves. This also avoids having to scan through the bin
-// to remove a node.
-// then the node and way lists could just be copy-on-write compacted reference lists.
-// or to begin with, uncompacted reference lists.
-// this could in fact be a union type of two 32-bit x and y or four 16-bit bins or 
-// two 8-bit bin levels and one 16-bit offset per axis.
-// 8block-8leaf-16offset
-
-// replace internal_coord_t with a union
-
-static uint32_t bin (int32_t coord) {
-    return ((uint32_t)(coord)) >> (32 - GRID_BITS); // unsigned: logical shift
+/* Get the x or y bin for the given x or y coordinate. */
+static uint32_t bin (int32_t xy) {
+    return ((uint32_t)(xy)) >> (32 - GRID_BITS); // unsigned: logical shift
 }
 
+/* Get the address of the grid cell for the given internal coord. */
 static uint32_t *get_grid_cell(coord_t coord) {
     return &(grid->cells[bin(coord.x)][bin(coord.y)]);
 }
 
+/* 
+  Given a Node struct, return the index of the way reference block at the head of the Node's grid
+  cell, creating a new way reference block if the grid cell is currently empty. 
+*/
 static uint32_t get_grid_way_block (Node *node) {
     uint32_t *cell = get_grid_cell(node->coord);
     if (*cell == 0) {
@@ -235,57 +226,56 @@ static uint32_t get_grid_way_block (Node *node) {
     return *cell;
 }
 
-// TODO make this insert a new block instead of just setting it
+/* TODO make this insert a new block instead of just setting the grid cell contents. */
 static void set_grid_way_block (Node *node, uint32_t wbi) {
     uint32_t *cell = get_grid_cell(node->coord);
     *cell = wbi;
 }
 
-/* Given parallel arrays of length n containing key and value string indexes, write k=v to a file. */
+/* 
+  Given parallel tag key and value arrays of length n containing string table indexes, 
+  write compacted lists of key=value pairs to a file which do not require the string table. 
+  Returns the byte offset of the beginning of the new tag list within that file. 
+*/
 static uint64_t write_tags (uint32_t *keys, uint32_t *vals, int n, ProtobufCBinaryData *string_table) {
     if (n == 0) return 0; // if there are no tags, always point to index 0, which should contain a single terminator char.
     uint64_t position = ftell(tag_file);
-    if (position % (1024 * 1024 * 100) == 0 && position != 0) {
-        printf("tag file at position %s\n", human(position));
-    }
     for (int t = 0; t < n; t++) {
         ProtobufCBinaryData key = string_table[keys[t]];
         ProtobufCBinaryData val = string_table[vals[t]];
         // skip unneeded keys
-        if (memcmp("source",      key.data, key.len) == 0 ||
-            memcmp("created_by",  key.data, key.len) == 0 ||
+        if (memcmp("created_by",  key.data, key.len) == 0 ||
             memcmp("import_uuid", key.data, key.len) == 0 ||
             memcmp("attribution", key.data, key.len) == 0 ||
+            memcmp("source",      key.data, 6) == 0 ||
             memcmp("tiger:",      key.data, 6) == 0) {
             continue;
         }
         int8_t code = encode_tag(key, val);
-        fputc(code, tag_file); // code is always written to show type of kv storage
-        if (code == 0) { // key and value are written out in full
+        // Code always written out to encode a key and/or a value, or indicate they are free text.
+        fputc(code, tag_file); 
+        if (code == 0) { 
+            // Code 0 means zero-terminated key and value are written out in full.
             fwrite(key.data, key.len, 1, tag_file);
             fputc(0, tag_file);
             fwrite(val.data, val.len, 1, tag_file);
             fputc(0, tag_file);
-        } else if (code < 0) { // value is written as zero-terminated free text
+        } else if (code < 0) { 
+            // Negative code provides key lookup, but value is written as zero-terminated free text.
             fwrite(val.data, val.len, 1, tag_file);
             fputc(0, tag_file);
         }
     }
-    fputc(INT8_MAX, tag_file); // terminate tag list
+    /* The tag list is terminated with a single character. TODO maybe use 0 as terminator. */
+    fputc(INT8_MAX, tag_file); 
     return position;
 }
 
+/* Count the number of nodes and ways loaded, just for progress reporting. */
 static long nodes_loaded = 0;
 static long ways_loaded = 0;
 
-// Considering ocean covers 70 percent of the earth and the total number of theoretical 
-// grid bins is 2^16, we would estimate (UINT16_MAX / 3) ~= 22000 blocks actually used.
-// Experiment gives a similar but somewhat higher number of ~24000 grid blocks actually used 
-// when loading the entire planet.pbf.
-// #define MAX_GRID_BLOCKS (30000)
-// Max number of node/way blocks. This is probably an underestimate due to underfilled node blocks.
-// The ratio of node to way block sizes should make this value also usable for ways.
-#define MAX_WAY_BLOCKS (0.5 * GRID_DIM * GRID_DIM) /* about 100 Mstructs */
+/* Node callback handed to the general-purpose PBF loading code. */
 static void handle_node (OSMPBF__Node *node, ProtobufCBinaryData *string_table) {
     if (node->id > MAX_NODE_ID) 
         die("OSM data contains nodes with larger IDs than expected.");
@@ -301,19 +291,20 @@ static void handle_node (OSMPBF__Node *node, ProtobufCBinaryData *string_table) 
     //printf ("---\nlon=%.5f lat=%.5f\nx=%d y=%d\n", lon, lat, nodes[node->id].x, nodes[node->id].y); 
 }
 
-#define REF_HISTOGRAM_BINS 20
-static int node_ref_histogram[REF_HISTOGRAM_BINS]; // initialized and displayed in main
-
-/* Nodes must come before ways for this to work. */
+/* 
+  Way callback handed to the general-purpose PBF loading code.
+  All nodes must come before any ways in the input for this to work. 
+*/
 static void handle_way (OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
     if (way->id > MAX_WAY_ID)
         die("OSM data contains ways greater IDs than expected.");
-    int nr = (way->n_refs > REF_HISTOGRAM_BINS - 1) ? REF_HISTOGRAM_BINS - 1 : way->n_refs;
-    node_ref_histogram[nr]++;
-    // Copy node references into. 
-    // NOTE that all refs in a list are always known at once, so we can use exact-length lists. 
-    // Each way stores the position of its first node ref, and a negative ref is used
-    // to signal the end of the list.
+    /* 
+       Copy node references into a sub-segment of one big array, reversing the PBF delta coding so 
+       they are absolute IDs. All the refs within a way or relation are always known at once, so 
+       we can use exact-length lists (unlike the lists of ways within a grid cell).
+       Each way stores the index of the first node reference in its list, and a negative node 
+       ID is used to signal the end of the list.
+    */
     ways[way->id].node_ref_offset = n_node_refs;
     //printf("WAY %ld\n", way->id);
     //printf("node ref offset %d\n", ways[way->id].node_ref_offset);
@@ -324,37 +315,40 @@ static void handle_way (OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
         //printf("  NODE %ld\n", node_id);
     }
     node_refs[n_node_refs - 1] *= -1; // Negate last node ref to signal end of list.
-    // Index this way, as being in the grid cell of its first node
+    /* Index this way, as being in the grid cell of its first node. */
     uint32_t wbi = get_grid_way_block(&(nodes[way->refs[0]]));
     WayBlock *wb = &(way_blocks[wbi]);
-    // last ref >= 0 means no free slots remaining. chain an empty block.
-    // insert at head to avoid too much scanning though large swaths of memory.
+    /* If the last node ref is non-negative, no free slots remain. Chain a new empty block. */
     if (wb->refs[WAY_BLOCK_SIZE - 1] >= 0) {
         int32_t n_wbi = new_way_block();
+        // Insert new block at head of list to avoid later scanning though large swaths of memory.
         wb = &(way_blocks[n_wbi]);
         wb->next = wbi;
         set_grid_way_block(&(nodes[way->refs[0]]), n_wbi);
     }
-    // We are now certain to have a free slot in the current block.
+    /* We are now certain to have a free slot in the current block. */
     int nfree = wb->refs[WAY_BLOCK_SIZE - 1];
-    if (nfree >= 0) die ("failed assertion: final ref should be negative.");
-    // a final ref < 0 gives the number of remaining slots.
+    if (nfree >= 0) die ("Final ref should be negative, indicating number of empty slots.");
+    /* A final ref < 0 gives the number of free slots in this block. */
     int free_idx = WAY_BLOCK_SIZE + nfree; 
     wb->refs[free_idx] = way->id;
-    // If this was not the last available slot, reduce number of free slots in this block by one
+    /* If this was not the last available slot, reduce number of free slots in this block by one. */
     if (nfree != -1) (wb->refs[WAY_BLOCK_SIZE - 1])++; 
     ways_loaded++;
+    /* Save tags to compacted tag array, and record the index where that tag list begins. */
     ways[way->id].tags = write_tags(way->keys, way->vals, way->n_keys, string_table);
-    if (ways_loaded % 100000 == 0)
+    if (ways_loaded % 100000 == 0) {
         printf("loaded %ldk ways\n", ways_loaded / 1000);
+        printf("tag file at position %s\n", human(ways[way->id].tags));
+    }
 }
 
 /* 
+  Used for setting the grid side empirically.
   With 8 bit (255x255) grid, planet.pbf gives 36.87% full
-  With 14 bit grid: 248351486 empty 20083970 used, 7.48% full (!)
-  With 13 bit grid: 248351486 empty 20083970 used, 10.76% full
+  With 14 bit grid: 248351486 empty 20083970 used, 7.48% full
 */
-void fillFactor () {
+static void fillFactor () {
     int used = 0;
     for (int i = 0; i < GRID_DIM; ++i) {
         for (int j = 0; j < GRID_DIM; ++j) {
@@ -365,22 +359,26 @@ void fillFactor () {
         used, ((double)used) / (GRID_DIM * GRID_DIM) * 100); 
 }
 
+/* Print out a message explaining command line parameters to the user, then exit. */
 static void usage () {
     printf("usage:\ncosm database_dir input.osm.pbf\n");
     printf("cosm database_dir min_lat min_lon max_lat max_lon\n");
     exit(EXIT_SUCCESS);
 }
 
+/* Range checking. */
 static void check_lat_range(double lat) {
     if (lat < -90 && lat > 90)
-        die ("latitude out of range.");
+        die ("Latitude out of range.");
 }
 
+/* Range checking. */
 static void check_lon_range(double lon) {
     if (lon < -180 && lon > 180)
-        die ("longitude out of range.");
+        die ("Longitude out of range.");
 }
 
+/* Functions beginning with print_ output OSM in a simple structured text format. */
 static void print_tags (uint32_t idx) {
     if (idx == UINT32_MAX) return; // special index indicating no tags
     char *t = &(tags[idx]);
@@ -391,7 +389,23 @@ static void print_tags (uint32_t idx) {
     }
 }
 
-// For saving compact OSM
+static void print_node (uint64_t node_id) {
+    Node node = nodes[node_id];
+    printf("  node %ld (%.6f, %.6f) ", node_id, get_lat(&node.coord), get_lon(&node.coord));
+    print_tags(nodes[node_id].tags);
+    printf("\n");
+}
+
+static void print_way (int64_t way_id) {
+    printf("way %ld ", way_id);
+    print_tags(ways[way_id].tags);
+    printf("\n");
+}
+
+/* 
+  Fields and functions for saving compact binary OSM. 
+  This is comparable in size to PBF if you zlib it in blocks, but much simpler. 
+*/
 FILE *ofile;
 int32_t last_x, last_y;
 int64_t last_node_id, last_way_id;
@@ -444,19 +458,6 @@ static void save_way (int64_t way_id) {
     last_way_id = way_id;
 }
 
-static void print_node (uint64_t node_id) {
-    Node node = nodes[node_id];
-    printf("  node %ld (%.6f, %.6f) ", node_id, get_lat(&node.coord), get_lon(&node.coord));
-    print_tags(nodes[node_id].tags);
-    printf("\n");
-}
-
-static void print_way (int64_t way_id) {
-    printf("way %ld ", way_id);
-    print_tags(ways[way_id].tags);
-    printf("\n");
-}
-
 int main (int argc, const char * argv[]) {
 
     if (argc != 3 && argc != 6) usage();
@@ -476,16 +477,12 @@ int main (int argc, const char * argv[]) {
         osm_callbacks_t callbacks;
         callbacks.way = &handle_way;
         callbacks.node = &handle_node;
-        for (int i=0; i<REF_HISTOGRAM_BINS; i++) 
-            node_ref_histogram[i] = 0;
         tag_file = open_file("tags");
         // all elements without tags will point to index 0, which contains the tag list terminator.
         fputc(INT8_MAX, tag_file); 
         scan_pbf(filename, &callbacks); // we could just pass the callbacks by value
         fclose(tag_file);
         fillFactor();
-        for (int i=0; i<REF_HISTOGRAM_BINS; i++) 
-            printf("%2d refs: %d\n", i, node_ref_histogram[i]);
         printf("loaded %ld nodes and %ld ways total.\n", nodes_loaded, ways_loaded);
         return EXIT_SUCCESS;    
     } else if (argc == 6) {
@@ -510,6 +507,7 @@ int main (int argc, const char * argv[]) {
         uint32_t max_ybin = bin(cmax.y);
         FILE *pbf_file = open_file("out.pbf");
         write_pbf_begin(pbf_file);
+        /* Make two passes, first outputting all nodes, then all ways. FIXME Intersection nodes are repeated. */
         for (int stage = 0; stage < 2; stage++) {
             for (uint32_t x = min_xbin; x <= max_xbin; x++) {
                 for (uint32_t y = min_ybin; y <= max_ybin; y++) {
@@ -524,7 +522,8 @@ int main (int argc, const char * argv[]) {
                             if (way_id <= 0) break;
                             Way way = ways[way_id];
                             if (stage == 1) {
-                                write_pbf_way(way_id, &(node_refs[way.node_ref_offset]), &(tags[way.tags]));
+                                write_pbf_way(way_id, &(node_refs[way.node_ref_offset]), 
+                                    &(tags[way.tags]));
                             } else if (stage == 0) {
                                 /* Output all nodes in this way. */
                                 uint32_t nr = way.node_ref_offset;
@@ -536,8 +535,8 @@ int main (int argc, const char * argv[]) {
                                         more = false;
                                     }
                                     Node node = nodes[node_id];
-                                    write_pbf_node(node_id, get_lat(&(node.coord)), get_lon(&(node.coord)), 
-                                        (int8_t *) &(tags[node.tags]));
+                                    write_pbf_node(node_id, get_lat(&(node.coord)), 
+                                        get_lon(&(node.coord)), (int8_t *) &(tags[node.tags]));
                                 }
                             }
                         }
@@ -546,10 +545,13 @@ int main (int argc, const char * argv[]) {
                     }
                 }
             }
+            /* Write out any buffered nodes or ways before beginning the next PBF writing stage. */
+            write_pbf_flush();
         }
-        write_pbf_flush();
         fclose(pbf_file);
-    } else usage();
+    } 
+    /* If neither load nor query mode was matched, tell the user how to call the program. */
+    else usage();
 
 }
 
