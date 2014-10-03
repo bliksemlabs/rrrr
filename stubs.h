@@ -6,6 +6,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "rrrr_types.h"
+
 #define SEC_TO_RTIME(x) ((x) >> 2)
 #define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
 #define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
@@ -78,7 +80,6 @@ struct router_t {
 
 #include "router_request.h"
 
-bool tdata_load_mmap(tdata_t *tdata, char* filename);
 void tdata_close_mmap(tdata_t *tdata);
 
 bool router_setup(router_t *router, tdata_t *tdata);
