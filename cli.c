@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "stubs.h"
+#include "router_request.h"
 
 #define OUTPUT_LEN 8000
 
