@@ -16,3 +16,10 @@ bool router_route(router_t *router, router_request_t *req) { return true; }
 
 /* return: number of characters written */
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) { return 0; }
+
+void memset32(uint32_t *s, uint32_t u, size_t n) {
+    uint32_t i;
+    for (i = 0; i < n; i++) {
+        s[i] = u;
+    }
+}
