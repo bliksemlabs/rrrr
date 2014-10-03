@@ -3,7 +3,6 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
-#include "portable.h"
 #include "config.h"
 
 #ifdef RRRR_FEATURE_REALTIME_ALERTS
@@ -11,6 +10,7 @@
 #include "tdata_realtime_alerts.h"
 #include "radixtree.h"
 #include "gtfs-realtime.pb-c.h"
+#include "rrrr_types.h"
 
 #include <stdio.h>
 #include <unistd.h>
