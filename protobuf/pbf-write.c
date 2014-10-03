@@ -230,17 +230,17 @@ void write_pbf_flush() {
 // TODO a function that gets a pointer to the next available way struct (avoid copying)
 // TODO clearly there can be only one file at a time, just make that a static variable
 
-/* Return the number of tags loaded. Save pointers to the string table index arrays in the last two params. */
-static size_t load_tags(int8_t *coded_tags, /*OUT*/ uint32_t **keys, /*OUT*/ uint32_t **vals) {
+/* Return the number of tags loaded. Save string table indexes into the arrays in the last two params. */
+static size_t load_tags(uint8_t *coded_tags, /*OUT*/ uint32_t **keys, /*OUT*/ uint32_t **vals) {
 
     /* First count tags. */
     size_t n_tags = 0;
     char *t = (char*) coded_tags;
-    while (*t != INT8_MAX) { // FIXME maybe there should be a simpler "count tags" function
+    while (*t != INT8_MAX) { 
         KeyVal kv;
         t += decode_tag(t, &kv);
         n_tags++;
-    }
+    } // FIXME there should be a simpler "count tags" function, or we should prefix the list with a varint length.
 
     /* Then copy string table indexes of keys and values into a subsection of the kv buffer. */
     uint32_t *kbuf = kv_alloc(n_tags);
@@ -264,7 +264,7 @@ static size_t load_tags(int8_t *coded_tags, /*OUT*/ uint32_t **keys, /*OUT*/ uin
 
 
 /* PUBLIC Write one way in a buffered fashion, writing out a blob as needed (every 8k objects). */
-void write_pbf_way(uint64_t way_id, int64_t *refs, char *coded_tags) {
+void write_pbf_way(uint64_t way_id, int64_t *refs, uint8_t *coded_tags) {
 
     /* 
       We must copy the refs list, and cannot use it directly: 
@@ -295,7 +295,7 @@ void write_pbf_way(uint64_t way_id, int64_t *refs, char *coded_tags) {
     way->n_refs = n_refs;
 
     /* Load Tags */
-    size_t n_tags = load_tags((int8_t*)coded_tags, &(way->keys), &(way->vals));
+    size_t n_tags = load_tags(coded_tags, &(way->keys), &(way->vals));
     way->n_keys = n_tags;
     way->n_vals = n_tags;
 
@@ -307,7 +307,7 @@ void write_pbf_way(uint64_t way_id, int64_t *refs, char *coded_tags) {
 }
 
 /* PUBLIC Write one node in a buffered fashion, writing out a blob as needed (every 8k objects). */
-void write_pbf_node(uint64_t node_id, double lat, double lon, int8_t *coded_tags) {
+void write_pbf_node(uint64_t node_id, double lat, double lon, uint8_t *coded_tags) {
 
     OSMPBF__Node *node = &(node_block[node_block_count]);
     osmpbf__node__init(node);
