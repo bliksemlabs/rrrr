@@ -188,12 +188,11 @@ void *map_file(const char *name, uint32_t subfile, size_t size) {
     return base;
 }
 
-/* Open a buffered read/write FILE in the database directory, performing some checks. */
-// pull out filename logic into another function
+/* Open a buffered append FILE in the database directory, performing some checks. */
 FILE *open_file(const char *name, uint8_t subfile) {
     make_path (name, subfile);
-    printf("Opening file '%s' as read/write stream.\n", path_buf);
-    FILE *file = fopen(path_buf, "w+");
+    printf("Opening file '%s' as append stream.\n", path_buf);
+    FILE *file = fopen(path_buf, "a"); // Creates if file does not exist.
     if (file == NULL) die("Could not open file for output.");
     return file;
 }
@@ -276,18 +275,31 @@ static uint32_t subfile_for_id(int64_t osmid, int entity_type) {
     return subfile;
 }
 
-static TagSubfile *tag_file_for_id(int64_t osmid, int entity_type) {
+static FILE *tag_file_for_id(int64_t osmid, int entity_type) {
     uint32_t subfile = subfile_for_id (osmid, entity_type);
     if (subfile >= MAX_SUBFILES) die ("Need more subfiles than expected.");
     TagSubfile *ts = tag_subfiles + subfile;
     if (ts->file == NULL) {
-        // Lazy-map a subfile when needed.
+        // Lazy-open a subfile for append when needed.
+        // Note that this will blow up if you do it after the file has been mapped 
+        // because it will already be the max size and cannot be appended to.
         ts->file = open_file("tags", subfile);
-        ts->data = map_file("tags", subfile, UINT32_MAX); // all files are 4GB sparse maps
         // All elements without tags will point to index 0, which contains the tag list terminator.
         fputc(INT8_MAX, ts->file); 
     }
-    return ts;
+    return ts->file;
+}
+
+/* TODO we really shouldn't allow mapping and append stream for the same file at once. */
+static uint8_t *tag_data_for_id(int64_t osmid, int entity_type) {
+    uint32_t subfile = subfile_for_id (osmid, entity_type);
+    if (subfile >= MAX_SUBFILES) die ("Need more subfiles than expected.");
+    TagSubfile *ts = &(tag_subfiles[subfile]);
+    if (ts->data == NULL) {
+        // Lazy-map a subfile when needed.
+        ts->data = map_file("tags", subfile, UINT32_MAX); // all files are 4GB sparse maps
+    }
+    return ts->data;
 }
 
 /* 
@@ -351,7 +363,7 @@ static void handle_node (OSMPBF__Node *node, ProtobufCBinaryData *string_table) 
     double lat = node->lat * 0.0000001;
     double lon = node->lon * 0.0000001;
     to_coord(&(nodes[node->id].coord), lat, lon);
-    FILE *tag_file = tag_file_for_id(node->id, NODE)->file;
+    FILE *tag_file = tag_file_for_id(node->id, NODE);
     nodes[node->id].tags = write_tags (node->keys, node->vals, node->n_keys, string_table, tag_file);
     nodes_loaded++;
     if (nodes_loaded % 1000000 == 0)
@@ -404,7 +416,7 @@ static void handle_way (OSMPBF__Way *way, ProtobufCBinaryData *string_table) {
     if (nfree != -1) (wb->refs[WAY_BLOCK_SIZE - 1])++; 
     ways_loaded++;
     /* Save tags to compacted tag array, and record the index where that tag list begins. */
-    FILE *tag_file = tag_file_for_id(way->id, WAY)->file;
+    FILE *tag_file = tag_file_for_id(way->id, WAY);
     ways[way->id].tags = write_tags(way->keys, way->vals, way->n_keys, string_table, tag_file);
     if (ways_loaded % 1000000 == 0) {
         printf("loaded %ldM ways\n", ways_loaded / 1000000);
@@ -568,6 +580,7 @@ int main (int argc, const char * argv[]) {
         uint32_t max_xbin = bin(cmax.x);
         uint32_t min_ybin = bin(cmin.y);
         uint32_t max_ybin = bin(cmax.y);
+
         FILE *pbf_file = open_file("out.pbf", 0);
         write_pbf_begin(pbf_file);
 
@@ -586,7 +599,7 @@ int main (int argc, const char * argv[]) {
                             if (way_id <= 0) break;
                             Way way = ways[way_id];
                             if (stage == WAY) {
-                                uint8_t *tags = tag_file_for_id(way_id, WAY)->data;
+                                uint8_t *tags = tag_data_for_id(way_id, WAY);
                                 write_pbf_way(way_id, &(node_refs[way.node_ref_offset]), &(tags[way.tags]));
                             } else if (stage == NODE) {
                                 /* Output all nodes in this way. */
@@ -600,7 +613,7 @@ int main (int argc, const char * argv[]) {
                                         more = false;
                                     }
                                     Node node = nodes[node_id];
-                                    uint8_t *tags = tag_file_for_id(node_id, NODE)->data;
+                                    uint8_t *tags = tag_data_for_id(node_id, NODE);
                                     write_pbf_node(node_id, get_lat(&(node.coord)), 
                                         get_lon(&(node.coord)), &(tags[node.tags]));
                                 }
