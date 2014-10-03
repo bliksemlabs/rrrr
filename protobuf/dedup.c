@@ -62,7 +62,12 @@ void Dedup_clear() {
 }
 
 void Dedup_init() {
-    Dedup_clear();
+    for (int i = 0; i < SIZE; ++i) {
+        entries[i].key = NULL;
+        entries[i].next = NULL;
+    }
+    inverse = NULL;
+    n = 0;
 }
 
 void Dedup_print() {
