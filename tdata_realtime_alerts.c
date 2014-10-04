@@ -48,7 +48,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             if (informed_entity->route_id) {
                 uint32_t route_index = rxt_find (tdata->routeid_index, informed_entity->route_id);
                 if (route_index == RADIX_TREE_NONE) {
-                     printf ("    route id was not found in the radix tree.\n");
+                     fprintf (stderr, "    route id was not found in the radix tree.\n");
                 }
                 memcpy (informed_entity->route_id, &route_index, sizeof(route_index));
             }
@@ -56,7 +56,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             if (informed_entity->stop_id) {
                 uint32_t stop_index = rxt_find (tdata->stopid_index, informed_entity->stop_id);
                 if (stop_index == RADIX_TREE_NONE) {
-                     printf ("    stop id was not found in the radix tree.\n");
+                     fprintf (stderr, "    stop id was not found in the radix tree.\n");
                 }
                 memcpy (informed_entity->stop_id, &stop_index, sizeof(stop_index));
             }
@@ -64,7 +64,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             if (informed_entity->trip && informed_entity->trip->trip_id) {
                 uint32_t trip_index = rxt_find (tdata->tripid_index, informed_entity->trip->trip_id);
                 if (trip_index == RADIX_TREE_NONE) {
-                    printf ("    trip id was not found in the radix tree.\n");
+                    fprintf (stderr, "    trip id was not found in the radix tree.\n");
                 }
                 memcpy (informed_entity->trip->trip_id, &trip_index, sizeof(trip_index));
             }

@@ -263,9 +263,7 @@ trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index);
 
 bool tdata_check_coherent (tdata_t *tdata);
 
-#ifdef RRRR_REALTIME_EXPANDED
-
-bool tdata_load_dynamic(char* filename, tdata_t *td);
+bool tdata_load_dynamic(tdata_t *td, char* filename);
 
 void tdata_close_dynamic(tdata_t *td);
 
@@ -283,15 +281,13 @@ void tdata_close_dynamic(tdata_t *td);
     td->storage = (char*) malloc (RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width * sizeof(char)); \
     read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char))
 
-#endif
-
 #define load_mmap(b, storage, type) \
     td->n_##storage = header->n_##storage; \
-    td->storage = (type *) (b + header->loc_##storage)
+    td->storage = (type *) (((char *) b) + header->loc_##storage)
 
 #define load_mmap_string(b, storage) \
     td->n_##storage = header->n_##storage; \
-    td->storage##_width = *((uint32_t *) (b + header->loc_##storage)); \
-    td->storage = (char*) (b + header->loc_##storage + sizeof(uint32_t))
+    td->storage##_width = *((uint32_t *) (((char *) b) + header->loc_##storage)); \
+    td->storage = (char*) (((char *) b) + header->loc_##storage + sizeof(uint32_t))
 
 #endif /* _TDATA_H */
