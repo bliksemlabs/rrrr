@@ -8,7 +8,6 @@
 #include "config.h"
 #include "geometry.h"
 #include "rrrr_types.h"
-/*#include "util.h"*/
 
 #ifdef RRRR_REALTIME
 #include "gtfs-realtime.pb-c.h"
@@ -176,7 +175,7 @@ struct tdata {
     RadixTree *routeid_index;
     RadixTree *stopid_index;
     RadixTree *tripid_index;
-    #ifdef RRRR_REALTIME_EXPANDED
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     stoptime_t **trip_stoptimes;
     uint32_t *trip_routes;
     list_t **rt_stop_routes;
