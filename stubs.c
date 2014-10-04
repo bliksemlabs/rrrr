@@ -23,3 +23,5 @@ void memset32(uint32_t *s, uint32_t u, size_t n) {
         s[i] = u;
     }
 }
+
+char *btimetext(rtime_t rt, char *buf) { return ""; }

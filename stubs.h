@@ -91,6 +91,7 @@ bool router_route(router_t *router, router_request_t *req);
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen);
 
 void memset32(uint32_t *s, uint32_t u, size_t n);
+char * strcasestr(const char *s, const char *find);
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm);
 uint32_t rrrrandom(uint32_t limit);
 
