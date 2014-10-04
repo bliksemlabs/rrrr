@@ -9,19 +9,35 @@
 */
 typedef uint16_t rtime_t;
 
-#ifdef RRRR_FEATURE_REALTIME_EXPANDED
 typedef struct list list_t;
 struct list {
     void *list;
     uint32_t size;
     uint32_t len;
 };
-#endif
 
 #ifndef _LP64
     #define ZU "%u"
 #else
     #define ZU "%lu"
 #endif
+
+#define SEC_TO_RTIME(x) ((x) >> 2)
+#define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
+#define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
+
+#define SEC_IN_ONE_MINUTE (60)
+#define SEC_IN_ONE_HOUR   (60 * SEC_IN_ONE_MINUTE)
+#define SEC_IN_ONE_DAY    (24 * SEC_IN_ONE_HOUR)
+#define SEC_IN_TWO_DAYS   (2 * SEC_IN_ONE_DAY)
+#define SEC_IN_THREE_DAYS (3 * SEC_IN_ONE_DAY)
+#define RTIME_ONE_DAY     (SEC_TO_RTIME(SEC_IN_ONE_DAY))
+#define RTIME_TWO_DAYS    (SEC_TO_RTIME(SEC_IN_TWO_DAYS))
+#define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
+
+#define UNREACHED UINT16_MAX
+#define NONE      (UINT32_MAX)
+#define WALK      (UINT32_MAX - 1)
+#define ONBOARD   (UINT32_MAX - 2)
 
 #endif /* _RRRR_TYPES */

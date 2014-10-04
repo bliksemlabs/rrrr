@@ -8,24 +8,6 @@
 
 #include "rrrr_types.h"
 
-#define SEC_TO_RTIME(x) ((x) >> 2)
-#define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
-#define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
-
-#define SEC_IN_ONE_MINUTE (60)
-#define SEC_IN_ONE_HOUR   (60 * SEC_IN_ONE_MINUTE)
-#define SEC_IN_ONE_DAY    (24 * SEC_IN_ONE_HOUR)
-#define SEC_IN_TWO_DAYS   (2 * SEC_IN_ONE_DAY)
-#define SEC_IN_THREE_DAYS (3 * SEC_IN_ONE_DAY)
-#define RTIME_ONE_DAY     (SEC_TO_RTIME(SEC_IN_ONE_DAY))
-#define RTIME_TWO_DAYS    (SEC_TO_RTIME(SEC_IN_TWO_DAYS))
-#define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
-
-#define UNREACHED UINT16_MAX
-#define NONE      (UINT32_MAX)
-#define WALK      (UINT32_MAX - 1)
-#define ONBOARD   (UINT32_MAX - 2)
-
 #ifdef HAVE_LOCALTIME_R
     #define rrrr_localtime_r(a, b) localtime_r(a, b)
 #elif HAVE_LOCALTIME_S
@@ -101,6 +83,8 @@ char *btimetext(rtime_t t, char *buf);
 #ifdef RRRR_FEATURE_AGENCY_FILTER
 uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index);
 #endif
+
+rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm);
 
 #endif
 

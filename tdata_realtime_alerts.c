@@ -92,20 +92,20 @@ void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, char *filename) {
     if (stat(filename, &st) == -1) {
         fprintf(stderr, "Could not stat GTFS_RT input file %s.\n",
                         filename);
-        goto clean_fd;
+        goto fail_clean_fd;
     }
 
     buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) {
         fprintf(stderr, "Could not map GTFS-RT input file %s.\n",
                         filename);
-        goto clean_fd;
+        goto fail_clean_fd;
     }
 
     tdata_apply_gtfsrt_alerts (tdata, buf, st.st_size);
     munmap (buf, st.st_size);
 
-clean_fd:
+fail_clean_fd:
     close (fd);
 }
 

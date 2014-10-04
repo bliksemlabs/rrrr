@@ -25,3 +25,5 @@ void memset32(uint32_t *s, uint32_t u, size_t n) {
 }
 
 char *btimetext(rtime_t rt, char *buf) { return ""; }
+
+rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) { return 0; }
