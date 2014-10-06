@@ -137,7 +137,7 @@ static void explore_route (struct state *state, uint32_t route_idx, uint32_t sto
     P printf ("    exploring route %s %s [%d] toward X from stop %s [%d]\n",
         tdata_shortname_for_route (&tdata, route_idx),  tdata_headsign_for_route (&tdata, route_idx),
         route_idx, tdata_stop_name_for_index (&tdata, stop_idx), stop_idx);
-    route_t route = tdata.routes[route_idx];
+    rrrr_route_t route = tdata.routes[route_idx];
     uint32_t *route_stops = tdata_stops_for_route (&tdata, route_idx);
     struct stats *stats0;
     bool onboard = false;
@@ -239,7 +239,7 @@ void compute_route_stats () {
     /* Many trips encountered are exact duplicates (TimeDemandTypes). */
     /* Actually we probably need separate departures stats for relativizing. */
     for (uint32_t r = 0; r < tdata.n_routes; ++r) {
-        route_t route = tdata.routes[r];
+        rrrr_route_t route = tdata.routes[r];
         for (int s = 0; s < route.n_stops; ++s) {
             stats_init (&(route_stats[route_first_index + s]));
         }

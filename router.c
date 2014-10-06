@@ -240,7 +240,7 @@ static void dump_results(router_t *router) {
 void dump_trips(router_t *router) {
     uint32_t n_routes = router->tdata->n_routes;
     for (uint32_t ridx = 0; ridx < n_routes; ++ridx) {
-        route_t route = router->tdata->routes[ridx];
+        rrrr_route_t route = router->tdata->routes[ridx];
         char (*trip_ids)[router->tdata->trip_id_width] = (void*)
             tdata_trip_ids_for_route(router->tdata, ridx);
         calendar_t *trip_masks = tdata_trip_masks_for_route(router->tdata, ridx);
@@ -256,7 +256,7 @@ void dump_trips(router_t *router) {
 
 /* Find a suitable trip to board at the given time and stop.
    Returns the trip index within the route. */
-uint32_t find_departure(route_t *route, stoptime_t (*stop_times)[route->n_stops]) {
+uint32_t find_departure(rrrr_route_t *route, stoptime_t (*stop_times)[route->n_stops]) {
     return NONE;
 }
 
@@ -389,7 +389,7 @@ bool router_route(router_t *router, router_request_t *req) {
           We discover the previous stop and flag only the selected route for exploration in round 0. This would
           interfere with search reversal, but reversal is meaningless/useless in on-board depart trips anyway.
         */
-        route_t  route = router->tdata->routes[req->start_trip_route];
+        rrrr_route_t  route = router->tdata->routes[req->start_trip_route];
         trip_t   *trip = tdata_trips_for_route (router->tdata, req->start_trip_route) + req->start_trip_trip;
         uint32_t *route_stops   = tdata_stops_for_route(router->tdata, req->start_trip_route);
         uint32_t prev_stop      = NONE;
@@ -469,7 +469,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
     for (uint32_t route_idx  = bitset_next_set_bit (router->updated_routes, 0);
                     route_idx != BITSET_NONE;
                     route_idx  = bitset_next_set_bit (router->updated_routes, route_idx + 1)) {
-        route_t route = router->tdata->routes[route_idx]; // really, 'trip' should be a trip_t to follow this same convention, and trip_idx should be its index
+        rrrr_route_t route = router->tdata->routes[route_idx]; // really, 'trip' should be a trip_t to follow this same convention, and trip_idx should be its index
 
         #ifdef FEATURE_AGENCY_FILTER
         if (req->agency != AGENCY_UNFILTERED && req->agency != route.agency_index) continue;
