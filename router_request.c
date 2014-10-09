@@ -323,3 +323,43 @@ void router_request_dump(router_t *router, router_request_t *req) {
     }
 }
 
+time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    time_t seconds;
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+
+    while (day_mask >>= 1) cal_day++;
+
+    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
+    rrrr_localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
+
+time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    time_t seconds;
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+
+    while (day_mask >>= 1) cal_day++;
+
+    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) + RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
+    rrrr_localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
+
+/* Check the given request against the characteristics of the router that will be used.
+ * Indexes larger than array lengths for the given router, signed values less than zero, etc.
+ * can and will cause segfaults and present security risks.
+ *
+ * We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
+ */
+bool range_check(struct router_request *req, router_t *router) {
+    if (req->time < 0)                       return false;
+    if (req->walk_speed < 0.1)               return false;
+    if (req->from >= router->tdata->n_stops) return false;
+    if (req->to   >= router->tdata->n_stops) return false;
+    return true;
+}
+
