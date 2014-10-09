@@ -6,24 +6,7 @@
 #ifndef _GEOMETRY_H
 #define _GEOMETRY_H
 
-#include <stdint.h>
-#include <math.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-typedef struct latlon latlon_t;
-struct latlon {
-    float lat;
-    float lon;
-};
-
-typedef struct coord coord_t;
-struct coord {
-    int32_t x;
-    int32_t y;
-};
+#include "rrrr_types.h"
 
 void coord_from_latlon (coord_t*, latlon_t*);
 

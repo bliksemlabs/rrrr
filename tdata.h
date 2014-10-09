@@ -17,8 +17,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-typedef uint32_t calendar_t;
-
 typedef struct stop stop_t;
 struct stop {
     uint32_t stop_routes_offset;
