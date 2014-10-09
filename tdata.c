@@ -551,3 +551,15 @@ void tdata_dump(tdata_t *td) {
         tdata_dump_route(td, i, NONE);
     }
 }
+
+char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
+    switch (stop_index) {
+    case NONE :
+        return "NONE";
+    case ONBOARD :
+        return "ONBOARD";
+    default :
+        return td->stop_desc + (td->stop_desc_width * stop_index);
+    }
+}
+

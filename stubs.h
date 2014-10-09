@@ -41,5 +41,7 @@ uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index);
 
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm);
 
+void printBits(size_t const size, void const * const ptr);
+
 #endif
 

@@ -264,6 +264,8 @@ bool tdata_load_dynamic(tdata_t *td, char* filename);
 
 void tdata_close_dynamic(tdata_t *td);
 
+char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
+
 
 #define load_dynamic(fd, storage, type) \
     td->n_##storage = header->n_##storage; \
