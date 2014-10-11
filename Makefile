@@ -1,5 +1,6 @@
 all:
 	protoc-c --c_out=. gtfs-realtime.proto
+	gcc -c -Wall -ansi -pedantic util.c
 	gcc -c -Wall -ansi -pedantic list.c
 	gcc -c -Wall -ansi -pedantic bitset.c
 	gcc -c -Wall -ansi -pedantic geometry.c
@@ -14,3 +15,4 @@ all:
 	gcc -c -Wall -ansi -pedantic router_dump.c
 	gcc -c -Wall -ansi -pedantic router_result.c
 	gcc -o cli -Wall -ansi -pedantic cli.c stubs.c
+	gcc -o cli -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c

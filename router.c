@@ -6,7 +6,7 @@
 /* router.c : the main routing algorithm */
 #include "router.h" /* first to ensure it works alone */
 
-#include "stubs.h"
+#include "util.h"
 #include "config.h"
 #include "tdata.h"
 #include "bitset.h"

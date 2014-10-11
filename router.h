@@ -91,7 +91,5 @@ bool router_route(router_t*, router_request_t*);
 
 void router_round(router_t *router, router_request_t *req, uint8_t round);
 
-uint32_t transfer_distance (tdata_t *d, uint32_t stop_index_from, uint32_t stop_index_to);
-
 #endif /* _ROUTER_H */
 

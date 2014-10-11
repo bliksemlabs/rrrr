@@ -297,6 +297,47 @@ bool tdata_load_dynamic(tdata_t *td, char *filename) {
     return true;
 }
 
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
+void tdata_alloc_expanded(tdata_t *td) {
+    uint32_t i_route;
+    td->trip_stoptimes = (stoptime_t **) calloc(td->n_trips, sizeof(stoptime_t *));
+    td->trip_routes = (uint32_t *) malloc(td->n_trips * sizeof(uint32_t));
+    for (i_route = 0; i_route < td->n_routes; ++i_route) {
+        uint32_t i_trip;
+        for (i_trip = 0; i_trip < td->routes[i_route].n_trips; ++i_trip) {
+            td->trip_routes[td->routes[i_route].trip_ids_offset + i_trip] = i_route;
+        }
+    }
+
+    td->rt_stop_routes = (list_t **) calloc(td->n_stops, sizeof(list_t *));
+}
+
+void tdata_free_expanded(tdata_t *td) {
+    free (td->trip_routes);
+
+    {
+        uint32_t i_trip;
+        for (i_trip = 0; i_trip < td->n_trips; ++i_trip) {
+            free (td->trip_stoptimes[i_trip]);
+        }
+
+        free (td->trip_stoptimes);
+    }
+
+    {
+        uint32_t i_stop;
+        for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
+            if (td->rt_stop_routes[i_stop]) {
+                free (td->rt_stop_routes[i_stop]->list);
+            }
+        }
+
+        free (td->rt_stop_routes);
+    }
+}
+#endif
+
+
 /* Map an input file into memory and reconstruct pointers to its contents. */
 bool tdata_load_mmap(tdata_t *td, char *filename) {
     struct stat st;

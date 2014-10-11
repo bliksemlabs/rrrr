@@ -17,5 +17,6 @@ bool router_request_reverse(router_t *router, router_request_t *req);
 void router_request_dump(router_t *router, router_request_t *req);
 time_t router_request_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 time_t router_request_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
+bool range_check(router_request_t *req, tdata_t *router);
 
 #endif
