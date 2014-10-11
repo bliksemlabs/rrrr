@@ -130,17 +130,6 @@ char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_inde
     return td->productcategories + (td->productcategories_width * productcategory_index);
 }
 
-char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
-    switch (stop_index) {
-    case NONE :
-        return "NONE";
-    case ONBOARD :
-        return "ONBOARD";
-    default :
-        return td->stop_names + td->stop_nameidx[stop_index];
-    }
-}
-
 char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :
@@ -152,10 +141,10 @@ char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index) {
     }
 }
 
-uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_desc, uint32_t stop_index_offset) {
+uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t stop_index_offset) {
     uint32_t stop_index;
     for (stop_index = stop_index_offset; stop_index < td->n_stops; ++stop_index) {
-        if (strcasestr(td->stop_names + td->stop_nameidx[stop_index], stop_desc)) {
+        if (strcasestr(td->stop_names + td->stop_nameidx[stop_index], stop_name)) {
             return stop_index;
         }
     }
@@ -552,14 +541,45 @@ void tdata_dump(tdata_t *td) {
     }
 }
 
-char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index) {
+char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :
         return "NONE";
     case ONBOARD :
         return "ONBOARD";
     default :
-        return td->stop_desc + (td->stop_desc_width * stop_index);
+        return td->stop_names + td->stop_nameidx[stop_index];
     }
 }
 
+/* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
+rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from != stop_index_to) {
+        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
+        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
+        for ( ; t < tN ; ++t) {
+            if (tdata->transfer_target_stops[t] == stop_index_to) {
+                uint32_t distance_meters = tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
+                return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
+            }
+        }
+    } else {
+        return 0;
+    }
+    return UNREACHED;
+}
+
+uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from != stop_index_to) {
+        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
+        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
+        for ( ; t < tN ; ++t) {
+            if (tdata->transfer_target_stops[t] == stop_index_to) {
+                return tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
+            }
+        }
+    } else {
+        return 0;
+    }
+    return UNREACHED;
+}

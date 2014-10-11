@@ -83,6 +83,8 @@ struct router {
 
 bool router_setup(router_t*, tdata_t*);
 
+void router_reset(router_t *router);
+
 void router_teardown(router_t*);
 
 bool router_route(router_t*, router_request_t*);

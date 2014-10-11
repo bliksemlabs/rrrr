@@ -266,6 +266,11 @@ void tdata_close_dynamic(tdata_t *td);
 
 char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
 
+rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to);
+
+uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to);
+
+char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
 
 #define load_dynamic(fd, storage, type) \
     td->n_##storage = header->n_##storage; \

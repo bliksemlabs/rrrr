@@ -63,7 +63,7 @@ void dump_results(router_t *router) {
         /* filter out stops which will not be reached */
         if (! stop_is_reached(router, i_stop)) continue;
 
-        stop_id = tdata_stop_desc_for_index (router->tdata, i_stop);
+        stop_id = tdata_stop_name_for_index (router->tdata, i_stop);
         printf(id_fmt, stop_id);
         printf(" [%6d]", i_stop);
         for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
