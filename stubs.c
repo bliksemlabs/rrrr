@@ -34,37 +34,3 @@ char *btimetext(rtime_t rt, char *buf) { return ""; }
 
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) { return 0; }
 
-
-/*
-  Check the given request against the characteristics of the router that will be used.
-  Indexes larger than array lengths for the given router, signed values less than zero, etc.
-  can and will cause segfaults and present security risks.
-
-  We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
-*/
-bool range_check(struct router_request *req, struct router *router) {
-    uint32_t n_stops = router->tdata->n_stops;
-    if (req->time < 0)         return false;
-    if (req->walk_speed < 0.1) return false;
-    if (req->from >= n_stops)  return false;
-    if (req->to >= n_stops)    return false;
-    return true;
-}
-
-/* assumes little endian http://stackoverflow.com/a/3974138/778449
- * size in bytes
- */
-void printBits(size_t const size, void const * const ptr) {
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
-    for (i = size-1; i>= 0; i--) {
-        for (j=7; j>=0; j--) {
-            byte = b[i] & (1<<j);
-            byte >>= j;
-            printf("%u", byte);
-        }
-    }
-    puts("");
-}
-

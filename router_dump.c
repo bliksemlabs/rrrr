@@ -1,8 +1,8 @@
+#include "config.h"
 #include "router_dump.h"
 #include "router.h"
-#include "stubs.h"
+#include "util.h"
 #include "tdata.h"
-#include "config.h"
 
 #include <stdio.h>
 

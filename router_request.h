@@ -3,7 +3,7 @@
 
 #include "rrrr_types.h"
 #include "router.h"
-#include "stubs.h"
+#include "util.h"
 #include "config.h"
 
 time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out);

@@ -1,6 +1,7 @@
 #include "rrrr_types.h"
 #include "router_result.h"
 #include <stdio.h>
+#include <string.h>
 
 /* Reverse the times and stops in a leg. Used for creating arrive-by itineraries. */
 void leg_swap (leg_t *leg) {

@@ -71,13 +71,14 @@ void printBits(size_t const size, void const * const ptr) {
     puts("");
 }
 
-/*
-  Converts the given epoch time to in internal RRRR router time.
-  If epochtime is within the first day of 1970 it is interpreted as seconds since midnight
-  on the current day. If epochtime is 0, the current time and date are used.
-  The intermediate struct tm will be copied to the location pointed to by *stm, unless stm is null.
-  The date should be range checked in the router, where we can see the validity of the tdata file.
-*/
+/* Converts the given epoch time to in internal RRRR router time.
+ * If epochtime is within the first day of 1970 it is interpreted as seconds
+ * since midnight on the current day. If epochtime is 0, the current time and
+ * date are used.
+ * The intermediate struct tm will be copied to the location pointed to
+ * by *stm, unless stm is null. The date should be range checked in the router,
+ * where we can see the validity of the tdata file.
+ */
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     struct tm ltm;
     uint32_t seconds;
@@ -112,8 +113,11 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     rtime += RTIME_ONE_DAY;
     #if 0
     printf ("epoch time is %ld \n", epochtime);
-    printf ("epoch time is %s", ctime(&epochtime)); /* ctime and asctime include newlines */
+
+    /* ctime and asctime include newlines */
+    printf ("epoch time is %s", ctime(&epochtime));
     printf ("ltm is %s", asctime(&ltm));
+
     printf ("seconds is %d \n", seconds);
     printf ("rtime is %d \n", rtime);
     #endif

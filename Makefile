@@ -16,3 +16,8 @@ all:
 	gcc -c -Wall -ansi -pedantic router_result.c
 	gcc -o cli -Wall -ansi -pedantic cli.c stubs.c
 	gcc -o cli -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c
+
+clean:
+	rm *.o gtfs-realtime.pb-c.c gtfs-realtime.pb-c.h
+
+

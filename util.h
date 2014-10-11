@@ -1,6 +1,7 @@
 #include "rrrr_types.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <stddef.h>
 #include <time.h>
 
@@ -31,3 +32,4 @@ void memset32(uint32_t *s, uint32_t u, size_t n);
 uint32_t rrrrandom(uint32_t limit);
 void printBits(size_t const size, void const * const ptr);
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out);
+char *btimetext(rtime_t rt, char *buf);

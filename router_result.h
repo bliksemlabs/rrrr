@@ -1,9 +1,10 @@
 #ifndef _ROUTER_RESULT_H
 #define _ROUTER_RESULT_H
 
-#include "stubs.h"
 #include "config.h"
+#include "util.h"
 #include "rrrr_types.h"
+#include "router.h"
 
 /* A leg represents one ride or walking transfer. */
 typedef struct leg leg_t;
