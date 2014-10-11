@@ -1,11 +1,17 @@
 # backups / work in progress
 *~
+*.swp
+
+# protobuf
+gtfs-realtime.pb-c.c
+gtfs-realtime.pb-c.h
 
 # make and build files
 *.o
 *.pyc
 *.d
 *.gtfsdb
+*.dat
 *.zip
 qa/*/tmp
 
