@@ -119,12 +119,11 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
             ltm.tm_isdst = -1;
             epochtime = mktime(&ltm);
 
-            if (epochtime >= tdata->calendar_start_time) {
-                cal_day = (epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
-                if (cal_day > 31 ) {
-                    printf("WARNING: the operational day is 32 further than our calendar!\n");
-                    continue;
-                }
+            cal_day = (epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
+
+            if (epochtime >= tdata->calendar_start_time && cal_day > 31 ) {
+                printf("WARNING: the operational day is 32 further than our calendar!\n");
+                continue;
             }
 
             if (rt_trip->schedule_relationship == TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__CANCELED) {
@@ -363,40 +362,49 @@ fail_clean_fd:
     close (fd);
 }
 
-
-void tdata_alloc_expanded(tdata_t *td) {
-    uint32_t i_route_index, i_trip_index;
+bool tdata_alloc_expanded(tdata_t *td) {
+    uint32_t i_route;
     td->trip_stoptimes = (stoptime_t **) calloc(td->n_trips, sizeof(stoptime_t *));
     td->trip_routes = (uint32_t *) malloc(td->n_trips * sizeof(uint32_t));
-    for (i_route_index = 0; i_route_index < td->n_routes; ++i_route_index) {
-        for (i_trip_index = 0; i_trip_index < td->routes[i_route_index].n_trips; ++i_trip_index) {
-            td->trip_routes[td->routes[i_route_index].trip_ids_offset + i_trip_index] = i_route_index;
+
+    if (!td->trip_stoptimes || !td->trip_routes) return false;
+
+    for (i_route = 0; i_route < td->n_routes; ++i_route) {
+        uint32_t i_trip;
+        for (i_trip = 0; i_trip < td->routes[i_route].n_trips; ++i_trip) {
+            td->trip_routes[td->routes[i_route].trip_ids_offset + i_trip] = i_route;
         }
     }
 
     td->rt_stop_routes = (list_t **) calloc(td->n_stops, sizeof(list_t *));
+    if (!td->rt_stop_routes) return false;
+
+    return true;
 }
 
 void tdata_free_expanded(tdata_t *td) {
-    uint32_t i_stop_index, i_trip_index;
-
     free (td->trip_routes);
 
-    for (i_trip_index = 0; i_trip_index < td->n_trips; ++i_trip_index) {
-        free (td->trip_stoptimes[i_trip_index]);
-    }
-
-    free (td->trip_stoptimes);
-
-    for (i_stop_index = 0; i_stop_index < td->n_stops; ++i_stop_index) {
-        if (td->rt_stop_routes[i_stop_index]) {
-            free (td->rt_stop_routes[i_stop_index]->list);
+    {
+        uint32_t i_trip;
+        for (i_trip = 0; i_trip < td->n_trips; ++i_trip) {
+            free (td->trip_stoptimes[i_trip]);
         }
+
+        free (td->trip_stoptimes);
     }
 
-    free (td->rt_stop_routes);
-}
+    {
+        uint32_t i_stop;
+        for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
+            if (td->rt_stop_routes[i_stop]) {
+                free (td->rt_stop_routes[i_stop]->list);
+            }
+        }
 
+        free (td->rt_stop_routes);
+    }
+}
 
 void tdata_apply_gtfsrt_time (TransitRealtime__TripUpdate__StopTimeUpdate *update, stoptime_t *stoptime) {
     if (update->arrival) {

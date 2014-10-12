@@ -22,6 +22,7 @@
 #include "tdata.h"
 #include "router_request.h"
 
+bool tdata_load_mmap(tdata_t *tdata, char* filename);
 void tdata_close_mmap(tdata_t *tdata);
 
 /* return: number of characters written */

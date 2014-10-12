@@ -14,7 +14,7 @@ void tdata_apply_gtfsrt_file (tdata_t *td, char *filename);
 
 void tdata_clear_gtfsrt (tdata_t *td);
 
-void tdata_alloc_expanded (tdata_t *td);
+bool tdata_alloc_expanded (tdata_t *td);
 
 void tdata_free_expanded (tdata_t *td);
 

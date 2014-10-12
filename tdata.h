@@ -184,9 +184,9 @@ struct tdata {
     #endif
 };
 
-bool tdata_load_mmap(tdata_t *td, char* filename);
+bool tdata_load(tdata_t *td, char *filename);
 
-void tdata_close_mmap(tdata_t *td);
+void tdata_close(tdata_t *td);
 
 void tdata_dump(tdata_t *td);
 
@@ -260,10 +260,6 @@ trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index);
 
 bool tdata_check_coherent (tdata_t *tdata);
 
-bool tdata_load_dynamic(tdata_t *td, char* filename);
-
-void tdata_close_dynamic(tdata_t *td);
-
 char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
 
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to);
@@ -271,27 +267,5 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_
 uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to);
 
 char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
-
-#define load_dynamic(fd, storage, type) \
-    td->n_##storage = header->n_##storage; \
-    td->storage = (type*) malloc (RRRR_DYNAMIC_SLACK * (td->n_##storage + 1) * sizeof(type)); \
-    lseek (fd, header->loc_##storage, SEEK_SET); \
-    read (fd, td->storage, (td->n_##storage + 1) * sizeof(type))
-
-#define load_dynamic_string(fd, storage) \
-    td->n_##storage = header->n_##storage; \
-    lseek (fd, header->loc_##storage, SEEK_SET); \
-    read (fd, &td->storage##_width, sizeof(uint32_t)); \
-    td->storage = (char*) malloc (RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width * sizeof(char)); \
-    read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char))
-
-#define load_mmap(b, storage, type) \
-    td->n_##storage = header->n_##storage; \
-    td->storage = (type *) (((char *) b) + header->loc_##storage)
-
-#define load_mmap_string(b, storage) \
-    td->n_##storage = header->n_##storage; \
-    td->storage##_width = *((uint32_t *) (((char *) b) + header->loc_##storage)); \
-    td->storage = (char*) (((char *) b) + header->loc_##storage + sizeof(uint32_t))
 
 #endif /* _TDATA_H */

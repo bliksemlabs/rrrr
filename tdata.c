@@ -1,9 +1,13 @@
-/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+/* Copyright 2013 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
 
 /* tdata.c : handles memory mapped data file containing transit timetable etc. */
 
 /* top, make sure it works alone */
 #include "tdata.h"
+#include "tdata_io_v3.h"
 #include "tdata_validation.h"
 #include "tdata_realtime.h"
 
@@ -22,68 +26,6 @@
 #include "config.h"
 #include "bitset.h"
 #include "stubs.h"
-
-/* file-visible struct */
-typedef struct tdata_header tdata_header_t;
-struct tdata_header {
-    /* Contents must read "TTABLEV3" */
-    char version_string[8];
-    uint64_t calendar_start_time;
-    calendar_t dst_active;
-    uint32_t n_stops;
-    uint32_t n_stop_attributes;
-    uint32_t n_stop_coords;
-    uint32_t n_routes;
-    uint32_t n_route_stops;
-    uint32_t n_route_stop_attributes;
-    uint32_t n_stop_times;
-    uint32_t n_trips;
-    uint32_t n_stop_routes;
-    uint32_t n_transfer_target_stops;
-    uint32_t n_transfer_dist_meters;
-    uint32_t n_trip_active;
-    uint32_t n_route_active;
-    uint32_t n_platformcodes;
-    /* length of the object in bytes */
-    uint32_t n_stop_names;
-    uint32_t n_stop_nameidx;
-    uint32_t n_agency_ids;
-    uint32_t n_agency_names;
-    uint32_t n_agency_urls;
-
-    /* length of the object in bytes */
-    uint32_t n_headsigns;
-    uint32_t n_route_shortnames;
-    uint32_t n_productcategories;
-    uint32_t n_route_ids;
-    uint32_t n_stop_ids;
-    uint32_t n_trip_ids;
-    uint32_t loc_stops;
-    uint32_t loc_stop_attributes;
-    uint32_t loc_stop_coords;
-    uint32_t loc_routes;
-    uint32_t loc_route_stops;
-    uint32_t loc_route_stop_attributes;
-    uint32_t loc_stop_times;
-    uint32_t loc_trips;
-    uint32_t loc_stop_routes;
-    uint32_t loc_transfer_target_stops;
-    uint32_t loc_transfer_dist_meters;
-    uint32_t loc_trip_active;
-    uint32_t loc_route_active;
-    uint32_t loc_platformcodes;
-    uint32_t loc_stop_names;
-    uint32_t loc_stop_nameidx;
-    uint32_t loc_agency_ids;
-    uint32_t loc_agency_names;
-    uint32_t loc_agency_urls;
-    uint32_t loc_headsigns;
-    uint32_t loc_route_shortnames;
-    uint32_t loc_productcategories;
-    uint32_t loc_route_ids;
-    uint32_t loc_stop_ids;
-    uint32_t loc_trip_ids;
-};
 
 char *tdata_route_id_for_index(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
@@ -236,231 +178,27 @@ bool tdata_check_coherent (tdata_t *tdata) {
              tdata_validation_symmetric_transfers(tdata) == 0);
 }
 
-bool tdata_load_dynamic(tdata_t *td, char *filename) {
-    tdata_header_t h;
-    tdata_header_t *header = &h;
-
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) {
-        fprintf(stderr, "The input file %s could not be found.\n", filename);
-        return false;
-    }
-
-    read (fd, header, sizeof(*header));
-
-    td->base = NULL;
-    td->size = 0;
-
-    if( strncmp("TTABLEV3", header->version_string, 8) ) {
-        fprintf(stderr, "The input file %s does not appear to be a timetable or is of the wrong version.\n", filename);
-        return false;
-    }
-
-    td->calendar_start_time = header->calendar_start_time;
-    td->dst_active = header->dst_active;
-
-    load_dynamic (fd, stops, stop_t);
-    load_dynamic (fd, stop_attributes, uint8_t);
-    load_dynamic (fd, stop_coords, latlon_t);
-    load_dynamic (fd, routes, route_t);
-    load_dynamic (fd, route_stops, uint32_t);
-    load_dynamic (fd, route_stop_attributes, uint8_t);
-    load_dynamic (fd, stop_times, stoptime_t);
-    load_dynamic (fd, trips, trip_t);
-    load_dynamic (fd, stop_routes, uint32_t);
-    load_dynamic (fd, transfer_target_stops, uint32_t);
-    load_dynamic (fd, transfer_dist_meters, uint8_t);
-    load_dynamic (fd, trip_active, calendar_t);
-    load_dynamic (fd, route_active, calendar_t);
-    load_dynamic (fd, headsigns, char);
-    load_dynamic (fd, stop_names, char);
-    load_dynamic (fd, stop_nameidx, uint32_t);
-
-    load_dynamic_string (fd, platformcodes);
-    load_dynamic_string (fd, stop_ids);
-    load_dynamic_string (fd, trip_ids);
-    load_dynamic_string (fd, agency_ids);
-    load_dynamic_string (fd, agency_names);
-    load_dynamic_string (fd, agency_urls);
-    load_dynamic_string (fd, route_shortnames);
-    load_dynamic_string (fd, route_ids);
-    load_dynamic_string (fd, productcategories);
+bool tdata_load(tdata_t *td, char *filename) {
+    if ( !tdata_io_v3_load (td, filename)) return false;
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    tdata_alloc_expanded(td);
+    if ( !tdata_alloc_expanded (td)) return false;
     #endif
 
     #ifdef RRRR_FEATURE_REALTIME_ALERTS
     td->alerts = NULL;
     #endif
 
-    return true;
+    /* This is probably a bit slow and is not strictly necessary,
+     * but does page in all the timetable entries.
+     */
+    return tdata_check_coherent(td);
 }
 
-#ifdef RRRR_FEATURE_REALTIME_EXPANDED
-void tdata_alloc_expanded(tdata_t *td) {
-    uint32_t i_route;
-    td->trip_stoptimes = (stoptime_t **) calloc(td->n_trips, sizeof(stoptime_t *));
-    td->trip_routes = (uint32_t *) malloc(td->n_trips * sizeof(uint32_t));
-    for (i_route = 0; i_route < td->n_routes; ++i_route) {
-        uint32_t i_trip;
-        for (i_trip = 0; i_trip < td->routes[i_route].n_trips; ++i_trip) {
-            td->trip_routes[td->routes[i_route].trip_ids_offset + i_trip] = i_route;
-        }
-    }
-
-    td->rt_stop_routes = (list_t **) calloc(td->n_stops, sizeof(list_t *));
-}
-
-void tdata_free_expanded(tdata_t *td) {
-    free (td->trip_routes);
-
-    {
-        uint32_t i_trip;
-        for (i_trip = 0; i_trip < td->n_trips; ++i_trip) {
-            free (td->trip_stoptimes[i_trip]);
-        }
-
-        free (td->trip_stoptimes);
-    }
-
-    {
-        uint32_t i_stop;
-        for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
-            if (td->rt_stop_routes[i_stop]) {
-                free (td->rt_stop_routes[i_stop]->list);
-            }
-        }
-
-        free (td->rt_stop_routes);
-    }
-}
-#endif
-
-
-/* Map an input file into memory and reconstruct pointers to its contents. */
-bool tdata_load_mmap(tdata_t *td, char *filename) {
-    struct stat st;
-    tdata_header_t *header;
-    int fd;
-
-    fd = open(filename, O_RDWR);
-    if (fd == -1) {
-        fprintf(stderr, "The input file %s could not be found.\n", filename);
-        return false;
-    }
-
-    if (stat(filename, &st) == -1) {
-        fprintf(stderr, "The input file %s could not be stat.\n", filename);
-        goto fail_close_fd;
-    }
-
-    td->base = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    td->size = st.st_size;
-    if (td->base == MAP_FAILED) {
-        fprintf(stderr, "The input file %s could not be mapped.\n", filename);
-        goto fail_close_fd;
-    }
-
-    header = (tdata_header_t *) td->base;
-    if( strncmp("TTABLEV3", header->version_string, 8) ) {
-        fprintf(stderr, "The input file %s does not appear to be a timetable or is of the wrong version.\n", filename);
-        goto fail_munmap_base;
-    }
-
-    td->calendar_start_time = header->calendar_start_time;
-    td->dst_active = header->dst_active;
-
-    load_mmap (td->base, stops, stop_t);
-    load_mmap (td->base, stop_attributes, uint8_t);
-    load_mmap (td->base, stop_coords, latlon_t);
-    load_mmap (td->base, routes, route_t);
-    load_mmap (td->base, route_stops, uint32_t);
-    load_mmap (td->base, route_stop_attributes, uint8_t);
-    load_mmap (td->base, stop_times, stoptime_t);
-    load_mmap (td->base, trips, trip_t);
-    load_mmap (td->base, stop_routes, uint32_t);
-    load_mmap (td->base, transfer_target_stops, uint32_t);
-    load_mmap (td->base, transfer_dist_meters, uint8_t);
-    load_mmap (td->base, trip_active, calendar_t);
-    load_mmap (td->base, route_active, calendar_t);
-    load_mmap (td->base, headsigns, char);
-    load_mmap (td->base, stop_names, char);
-    load_mmap (td->base, stop_nameidx, uint32_t);
-
-    load_mmap_string (td->base, platformcodes);
-    load_mmap_string (td->base, stop_ids);
-    load_mmap_string (td->base, trip_ids);
-    load_mmap_string (td->base, agency_ids);
-    load_mmap_string (td->base, agency_names);
-    load_mmap_string (td->base, agency_urls);
-    load_mmap_string (td->base, route_shortnames);
-    load_mmap_string (td->base, route_ids);
-    load_mmap_string (td->base, productcategories);
-
+void tdata_close(tdata_t *td) {
+    tdata_io_v3_close (td);
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    tdata_alloc_expanded(td);
-    #endif
-
-    #ifdef RRRR_FEATURE_REALTIME_ALERTS
-    td->alerts = NULL;
-    #endif
-
-    /* This is probably a bit slow and is not strictly necessary, but does page in all the timetable entries. */
-    tdata_check_coherent(td);
-    #ifdef DEBUG
-    tdata_dump(td);
-    #endif
-
-    return true;
-
-fail_munmap_base:
-    munmap(td->base, td->size);
-
-fail_close_fd:
-    close(fd);
-
-    return false;
-}
-
-void tdata_close_dynamic(tdata_t *td) {
-    free (td->stops);
-    free (td->stop_attributes);
-    free (td->stop_coords);
-    free (td->routes);
-    free (td->route_stops);
-    free (td->route_stop_attributes);
-    free (td->stop_times);
-    free (td->trips);
-    free (td->stop_routes);
-    free (td->transfer_target_stops);
-    free (td->transfer_dist_meters);
-    free (td->trip_active);
-    free (td->route_active);
-    free (td->headsigns);
-    free (td->stop_names);
-    free (td->stop_nameidx);
-
-    free (td->platformcodes);
-    free (td->stop_ids);
-    free (td->trip_ids);
-    free (td->agency_ids);
-    free (td->agency_names);
-    free (td->agency_urls);
-    free (td->route_shortnames);
-    free (td->route_ids);
-    free (td->productcategories);
-
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    tdata_free_expanded(td);
-    #endif
-}
-
-void tdata_close_mmap(tdata_t *td) {
-    munmap(td->base, td->size);
-
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    tdata_free_expanded(td);
+    tdata_free_expanded (td);
     #endif
 }
 
