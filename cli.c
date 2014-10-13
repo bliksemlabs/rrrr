@@ -110,6 +110,7 @@ int main (int argc, char *argv[]) {
                         req.from = (uint32_t) strtol(&argv[i][11], NULL, 10);
                     } else
                     if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
+                        /* TODO: check return value */
                         strtolatlon(&argv[i][12], &req.from_latlon);
                     }
                     break;
@@ -130,6 +131,7 @@ int main (int argc, char *argv[]) {
                         req.to = (uint32_t) strtol(&argv[i][9], NULL, 10);
                     } else
                     if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
+                        /* TODO: check return value */
                         strtolatlon(&argv[i][12], &req.to_latlon);
                     }
                     break;
@@ -142,6 +144,7 @@ int main (int argc, char *argv[]) {
                         req.via = (uint32_t) strtol(&argv[i][6], NULL, 10);
                     } else
                     if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
+                        /* TODO: check return value */
                         strtolatlon(&argv[i][13], &req.via_latlon);
                     }
                     break;
