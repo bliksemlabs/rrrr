@@ -17,7 +17,7 @@ all:
 	gcc -c -Wall -ansi -pedantic router_dump.c
 	gcc -c -Wall -ansi -pedantic router_result.c
 	gcc -o cli -Wall -ansi -pedantic cli.c stubs.c
-	gcc -lm -lprotobuf-c -o cli -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c
+	gcc -ggdb -O0 -lm -lprotobuf-c -o cli -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c
 
 clean:
 	rm *.o gtfs-realtime.pb-c.c gtfs-realtime.pb-c.h

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "rrrr_types.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "rrrr_types.h"
+#include <time.h>
 
 /* buffer should always be at least 13 characters long,
  * including terminating null
@@ -124,3 +125,26 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     return rtime;
 }
 
+#ifdef _XOPEN_SOURCE
+time_t strtoepoch (char *time) {
+    struct tm ltm;
+    memset (&ltm, 0, sizeof(struct tm));
+    strptime (time, "%Y-%m-%dT%H:%M:%S", &ltm);
+    ltm.tm_isdst = -1;
+    return mktime(&ltm);
+}
+#else
+time_t strtoepoch (char *time) {
+    char *endptr;
+    struct tm ltm;
+    memset (&ltm, 0, sizeof(struct tm));
+    ltm.tm_year = strtol(time, &endptr, 10) - 1900;
+    ltm.tm_mon  = strtol(&endptr[1], &endptr, 10) - 1;
+    ltm.tm_mday = strtol(&endptr[1], &endptr, 10);
+    ltm.tm_hour = strtol(&endptr[1], &endptr, 10);
+    ltm.tm_min  = strtol(&endptr[1], &endptr, 10);
+    ltm.tm_sec  = strtol(&endptr[1], &endptr, 10);
+    ltm.tm_isdst = -1;
+    return mktime(&ltm);
+}
+#endif

@@ -8,6 +8,7 @@
 #include "config.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Mean of Earth's equatorial and meridional circumferences. */
 #define EARTH_CIRCUMFERENCE 40041438.5
@@ -139,5 +140,15 @@ void latlon_dump (latlon_t *latlon) {
 
 void coord_dump (coord_t *coord) {
     printf("coordinate x=%d y=%d \n", coord->x, coord->y);
+}
+
+bool strtolatlon (char *latlon, latlon_t *result) {
+    char *endptr;
+    result->lat = (float) strtod(latlon, &endptr);
+    if (endptr && endptr[1]) {
+        result->lon = (float) strtod(&endptr[1], NULL);
+        return true;
+    }
+    return false;
 }
 

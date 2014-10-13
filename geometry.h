@@ -26,4 +26,6 @@ void latlon_from_coord (latlon_t*, coord_t*);
 
 void coord_dump (coord_t*);
 
+bool strtolatlon (char *latlon, latlon_t *result);
+
 #endif /* _GEOMETRY_H */

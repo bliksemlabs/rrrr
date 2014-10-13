@@ -18,40 +18,6 @@ struct cli_arguments {
     bool verbose;
 };
 
-#ifdef _XOPEN_SOURCE
-time_t strtoepoch (char *time) {
-    struct tm ltm;
-    memset (&ltm, 0, sizeof(struct tm));
-    strptime (time, "%Y-%m-%dT%H:%M:%S", &ltm);
-    ltm.tm_isdst = -1;
-    return mktime(&ltm);
-}
-#else
-time_t strtoepoch (char *time) {
-    char *endptr;
-    struct tm ltm;
-    memset (&ltm, 0, sizeof(struct tm));
-    ltm.tm_year = strtol(time, &endptr, 10) - 1900;
-    ltm.tm_mon  = strtol(&endptr[1], &endptr, 10) - 1;
-    ltm.tm_mday = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_hour = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_min  = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_sec  = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_isdst = -1;
-    return mktime(&ltm);
-}
-#endif
-
-latlon_t strtolatlon (char *latlon) {
-    latlon_t result;
-    char *endptr;
-    result.lat = (float) strtod(latlon, &endptr);
-    if (endptr && endptr[1]) {
-        result.lon = (float) strtod(&endptr[1], NULL);
-    }
-    return result;
-}
-
 int main (int argc, char *argv[]) {
     /* our return value */
     int status = EXIT_SUCCESS;
@@ -144,7 +110,7 @@ int main (int argc, char *argv[]) {
                         req.from = (uint32_t) strtol(&argv[i][11], NULL, 10);
                     } else
                     if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
-                        req.from_latlon = strtolatlon(&argv[i][12]);
+                        strtolatlon(&argv[i][12], &req.from_latlon);
                     }
                     break;
 
@@ -164,7 +130,7 @@ int main (int argc, char *argv[]) {
                         req.to = (uint32_t) strtol(&argv[i][9], NULL, 10);
                     } else
                     if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
-                        req.to_latlon = strtolatlon(&argv[i][12]);
+                        strtolatlon(&argv[i][12], &req.to_latlon);
                     }
                     break;
 
@@ -176,7 +142,7 @@ int main (int argc, char *argv[]) {
                         req.via = (uint32_t) strtol(&argv[i][6], NULL, 10);
                     } else
                     if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
-                        req.via_latlon = strtolatlon(&argv[i][13]);
+                        strtolatlon(&argv[i][13], &req.via_latlon);
                     }
                     break;
 

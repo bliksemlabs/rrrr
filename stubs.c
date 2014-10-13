@@ -23,3 +23,6 @@ char *btimetext(rtime_t rt, char *buf) { return ""; }
 
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) { return 0; }
 
+time_t strtoepoch (char *time) { return 0; }
+
+bool strtolatlon (char *latlon, latlon_t *result) { return result; }
