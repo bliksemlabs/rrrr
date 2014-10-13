@@ -314,11 +314,11 @@ int main (int argc, char *argv[]) {
      * our memory allocation and deallocation.
      */
 
-#ifndef DEBUG
-    goto fast_exit;
-#endif
-
 clean_exit:
+    #ifndef DEBUG
+    goto fast_exit;
+    #endif
+
     /* Unmap the memory and/or deallocate the memory on the heap */
     tdata_close (&tdata);
 
