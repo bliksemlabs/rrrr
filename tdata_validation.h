@@ -11,5 +11,6 @@
 int tdata_validation_coordinates(tdata_t *tdata);
 int tdata_validation_increasing_times(tdata_t *tdata);
 int tdata_validation_symmetric_transfers(tdata_t *tdata);
+bool tdata_validation_check_coherent (tdata_t *tdata);
 
 #endif /* _TDATA_VALIDATION_H */

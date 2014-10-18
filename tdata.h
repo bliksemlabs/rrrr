@@ -258,8 +258,6 @@ stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint32_t tr
 /* Get a pointer to the array of trip structs for this route. */
 trip_t *tdata_trips_for_route(tdata_t *td, uint32_t route_index);
 
-bool tdata_check_coherent (tdata_t *tdata);
-
 char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
 
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to);

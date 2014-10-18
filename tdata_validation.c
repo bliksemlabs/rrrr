@@ -117,11 +117,22 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
                     break;
                 }
             }
-            if ( ! found_reverse) printf ("transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
+            if ( ! found_reverse) {
+                printf ("transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
+                return -1;
+            }
         }
     }
     printf ("checked %d transfers for symmetry.\n", n_transfers_checked);
 
-    return -1;
+    return 0;
+}
+
+bool tdata_validation_check_coherent (tdata_t *tdata) {
+    printf ("checking tdata coherency...\n");
+
+    return  (tdata_validation_coordinates(tdata) == 0 &&
+             tdata_validation_increasing_times(tdata) == 0 &&
+             tdata_validation_symmetric_transfers(tdata) == 0);
 }
 

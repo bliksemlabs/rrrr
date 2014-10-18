@@ -25,19 +25,6 @@ void router_state_dump (router_state_t *state) {
     else printf ("%d\n", state->back_route);
 }
 
-bool stop_is_reached(router_t *router, uint32_t stop_index) {
-    uint8_t i_round;
-    bool ret_reached = false;
-
-    for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
-        if (router->states[i_round * router->tdata->n_stops + stop_index].walk_time != UNREACHED) {
-            ret_reached = true;
-            break;
-        }
-    }
-    return ret_reached;
-}
-
 void dump_results(router_t *router) {
     uint32_t i_round, i_stop;
     #if 0
@@ -61,7 +48,7 @@ void dump_results(router_t *router) {
         char time[13], walk_time[13];
 
         /* filter out stops which will not be reached */
-        if (! stop_is_reached(router, i_stop)) continue;
+        if (router->best_time[i_stop] == UNREACHED) continue;
 
         stop_id = tdata_stop_name_for_index (router->tdata, i_stop);
         printf(id_fmt, stop_id);

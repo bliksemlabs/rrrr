@@ -7,7 +7,7 @@ bool tdata_load(tdata_t *tdata, char* filename) { return true; }
 void tdata_close(tdata_t *tdata) {}
 
 void router_request_initialize(router_request_t *router) {}
-void router_request_dump(router_t *router, router_request_t *req) {}
+void router_request_dump(router_request_t *req, tdata_t *tdata) {}
 void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {}
 bool router_request_reverse(router_t *router, router_request_t *req) { return true; }
 

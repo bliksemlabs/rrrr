@@ -170,14 +170,6 @@ char *tdata_agency_url_for_route(tdata_t *td, uint32_t route_index) {
     return td->agency_urls + (td->agency_urls_width * (td->routes)[route_index].agency_index);
 }
 
-bool tdata_check_coherent (tdata_t *tdata) {
-    printf ("checking tdata coherency...\n");
-
-    return  (tdata_validation_coordinates(tdata) == 0 &&
-             tdata_validation_increasing_times(tdata) == 0 &&
-             tdata_validation_symmetric_transfers(tdata) == 0);
-}
-
 bool tdata_load(tdata_t *td, char *filename) {
     if ( !tdata_io_v3_load (td, filename)) return false;
 
@@ -192,7 +184,7 @@ bool tdata_load(tdata_t *td, char *filename) {
     /* This is probably a bit slow and is not strictly necessary,
      * but does page in all the timetable entries.
      */
-    return tdata_check_coherent(td);
+    return tdata_validation_check_coherent(td);
 }
 
 void tdata_close(tdata_t *td) {

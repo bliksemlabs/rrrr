@@ -119,12 +119,14 @@ void router_result_to_plan (struct plan *plan, router_t *router, router_request_
     itin = plan->itineraries;
     /* Loop over the rounds to get ending states of itineraries using different numbers of vehicles */
     for (i_transfer = 0; i_transfer < RRRR_DEFAULT_MAX_ROUNDS; ++i_transfer) {
-        router_state_t *state = router->states + (i_transfer * router->tdata->n_stops);
+        /* Work backward from the target to the origin */
+        router_state_t *state;
         leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward trips */
+        uint32_t stop = router->target; /* Work backward from the target to the origin */
         int8_t j_transfer; /* signed int because we will be decreasing */
 
-        /* Work backward from the target to the origin */
-        uint32_t stop = (req->arrive_by ? req->from : req->to);
+        state = router->states + (i_transfer * router->tdata->n_stops) + stop;
+
         /* skip rounds that were not reached */
         if (state->walk_time == UNREACHED) continue;
         itin->n_rides = i_transfer + 1;
@@ -143,7 +145,7 @@ void router_result_to_plan (struct plan *plan, router_t *router, router_request_
             }
 
             /* Walk phase */
-            walk = router->states + stop;
+            walk = state + stop;
             if (walk->walk_time == UNREACHED) {
                 printf ("ERROR: stop %d was unreached by walking.\n", stop);
                 break;
@@ -152,7 +154,7 @@ void router_result_to_plan (struct plan *plan, router_t *router, router_request_
             stop = walk->walk_from;  /* follow the chain of states backward */
 
             /* Ride phase */
-            ride = router->states + stop;
+            ride = state + stop;
             if (ride->time == UNREACHED) {
                 printf ("ERROR: stop %d was unreached by riding.\n", stop);
                 break;

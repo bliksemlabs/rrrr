@@ -86,7 +86,7 @@ int main (int argc, char *argv[]) {
 
     {
         int i;
-        for (i = 1; i < (argc - 1); i++) {
+        for (i = 1; i < argc; i++) {
             if (argv[i + 0][0] == '-' && argv[i + 0][1] == '-') {
                 /* all arguments will be in the form --argument= */
 
@@ -123,6 +123,7 @@ int main (int argc, char *argv[]) {
 
                 case 'r':
                     if (strcmp(argv[i], "--randomize") == 0) {
+                        router_request_randomize (&req, &tdata);
                     }
                     break;
 
@@ -214,7 +215,7 @@ int main (int argc, char *argv[]) {
     /* To debug the router, we render an intermediate result */
     if (cli_args.verbose) {
         char result_buf[OUTPUT_LEN];
-        router_request_dump (&router, &req);
+        router_request_dump (&req, &tdata);
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         puts(result_buf);
     }
@@ -249,12 +250,21 @@ int main (int argc, char *argv[]) {
         for (i = 0; i < n_reversals; ++i) {
             if ( ! router_request_reverse (&router, &req)) {
                 /* if the reversal fails we must exit */
+                status = EXIT_FAILURE;
                 goto clean_exit;
             }
+
+            router_reset (&router);
+
+            if ( ! router_route (&router, &req)) {
+                status = EXIT_FAILURE;
+                goto clean_exit;
+            }
+
             if (cli_args.verbose) {
                 char result_buf[OUTPUT_LEN];
                 puts ("Repeated search with reversed request: \n");
-                router_request_dump (&router, &req);
+                router_request_dump (&req, &tdata);
                 router_result_dump (&router, &req, result_buf, OUTPUT_LEN);
                 puts (result_buf);
             }

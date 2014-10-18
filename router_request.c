@@ -283,13 +283,13 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
 
 /* router_request_dump prints the current request structure to the screen */
 
-void router_request_dump(router_t *router, router_request_t *req) {
-    char *from_stop_id = tdata_stop_name_for_index(router->tdata, req->from);
-    char *to_stop_id   = tdata_stop_name_for_index(router->tdata, req->to);
+void router_request_dump(router_request_t *req, tdata_t *tdata) {
+    char *from_stop_id = tdata_stop_name_for_index(tdata, req->from);
+    char *to_stop_id   = tdata_stop_name_for_index(tdata, req->to);
     char time[32], time_cutoff[32], date[11];
     struct tm ltm;
 
-    router_request_to_date (req, router->tdata, &ltm);
+    router_request_to_date (req, tdata, &ltm);
     strftime(date, 11, "%Y-%m-%d", &ltm);
 
     btimetext(req->time, time);
