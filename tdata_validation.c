@@ -22,7 +22,10 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
 
         if ((rsa[0] & rsa_alighting) == rsa_alighting ||
             (rsa[route->n_stops - 1] & rsa_boarding) == rsa_boarding) {
-            fprintf(stderr, "Route index %d has:\n%s%s", i_route,
+            fprintf(stderr, "Route index %d %s %s %s has:\n%s%s", i_route,
+              tdata_agency_name_for_route(tdata, i_route),
+              tdata_shortname_for_route(tdata, i_route),
+              tdata_headsign_for_route(tdata, i_route),
               ((rsa[0] & rsa_alighting) == rsa_alighting ?
                 "  alighting on the first stop\n" : ""),
 
