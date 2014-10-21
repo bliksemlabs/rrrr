@@ -878,12 +878,19 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                    tdata_stop_name_for_index (router->tdata, stop));
             #endif
 
-            /* When currently on a vehicle, skip stops when
-             * alighting is not allowed at the route-point.
-             */
             if (trip != NONE &&
+                /* When currently on a vehicle, skip stops where
+                 * alighting is not allowed at the route-point.
+                 */
                 ((!forboarding && req->arrive_by) ||
                  (!foralighting && !req->arrive_by))) {
+                continue;
+            }else if (trip == NONE &&
+                /* When looking to board a vehicle, skip stops where
+                 * boarding is not allowed at the route-point.
+                 */
+                ((!forboarding && !req->arrive_by) || 
+                 (!foralighting && req->arrive_by))){
                 continue;
             }
 
@@ -942,14 +949,6 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 rtime_t  best_time = req->arrive_by ? 0 : UINT16_MAX;
                 serviceday_t *best_serviceday = NULL;
                 serviceday_t *serviceday;
-
-                /* Do not try to board a vehicle when it is not allowed
-                 * at this route point.
-                 */
-                if ((!forboarding && !req->arrive_by) ||
-                    (!foralighting && req->arrive_by)) {
-                    continue;
-                }
 
                 #ifdef RRRR_INFO
                 printf ("    attempting boarding at stop %d\n", stop);
