@@ -6,7 +6,20 @@
 #ifndef _GEOMETRY_H
 #define _GEOMETRY_H
 
-#include "rrrr_types.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef struct coord coord_t;
+struct coord {
+    int32_t x;
+    int32_t y;
+};
+
+typedef struct latlon latlon_t;
+struct latlon {
+    float lat;
+    float lon;
+};
 
 void coord_from_latlon (coord_t*, latlon_t*);
 

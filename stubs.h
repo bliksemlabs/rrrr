@@ -35,6 +35,8 @@ uint32_t rrrrandom(uint32_t limit);
 char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
 char *btimetext(rtime_t t, char *buf);
 
+void router_request_randomize (router_request_t *req, tdata_t *tdata);
+
 #ifdef RRRR_FEATURE_AGENCY_FILTER
 uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index);
 #endif

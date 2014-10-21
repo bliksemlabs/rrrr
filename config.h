@@ -28,4 +28,6 @@
 
 #define RRRR_DYNAMIC_SLACK 1.0f
 
+#define RRRR_WALK_COMP 1.2
+
 #endif

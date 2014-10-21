@@ -26,3 +26,5 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *localtm) { return 0; }
 time_t strtoepoch (char *time) { return 0; }
 
 bool strtolatlon (char *latlon, latlon_t *result) { return result; }
+
+void router_request_randomize (router_request_t *req, tdata_t *tdata) { }

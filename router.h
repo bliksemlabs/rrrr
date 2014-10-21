@@ -3,16 +3,17 @@
 #ifndef _ROUTER_H
 #define _ROUTER_H
 
+#include "config.h"
+#include "router.h"
+
 #include "rrrr_types.h"
+#include "tdata.h"
+#include "bitset.h"
+#include "hashgrid.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
-#include "tdata.h"
-#include "bitset.h"
-#include "hashgrid.h"
-/* #include "util.h" */
-#include "config.h"
 
 /* When associated with a stop index,
  * a router_state_t describes a leg of an itinerary.

@@ -3,9 +3,10 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
-#include "geometry.h"
-
 #include "config.h"
+#include "geometry.h"
+#include "rrrr_types.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

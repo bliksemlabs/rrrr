@@ -2,6 +2,7 @@
 #define _RRRR_TYPES_H
 
 #include "config.h"
+#include "hashgrid.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -12,11 +13,12 @@
 #endif
 
 /* 2^16 / 60 / 60 is 18.2 hours at one-second resolution.
- * By right-shifting times one bit, we get 36.4 hours (over 1.5 days) at 2 second resolution.
- * By right-shifting times two bits, we get 72.8 hours (over 3 days) at 4 second resolution.
- * Three days is just enough to model yesterday, today, and tomorrow for overnight searches,
- * and can also represent the longest rail journeys in Europe.
-*/
+ * By right-shifting times one bit, we get 36.4 hours (over 1.5 days)
+ * at 2 second resolution. By right-shifting times two bits, we get
+ * 72.8 hours (over 3 days) at 4 second resolution. Three days is just enough
+ * to model yesterday, today, and tomorrow for overnight searches, and can
+ * also represent the longest rail journeys in Europe.
+ */
 typedef uint16_t rtime_t;
 
 typedef uint32_t calendar_t;
@@ -26,18 +28,6 @@ typedef struct service_day {
     calendar_t mask;
     bool     apply_realtime;
 } serviceday_t;
-
-typedef struct latlon latlon_t;
-struct latlon {
-    float lat;
-    float lon;
-};
-
-typedef struct coord coord_t;
-struct coord {
-    int32_t x;
-    int32_t y;
-};
 
 typedef struct list list_t;
 struct list {
@@ -82,12 +72,15 @@ typedef struct router_request router_request_t;
 struct router_request {
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
+    HashGridResult from_hg_result;
 
     /* actual destination in wgs84 presented to the planner */
     latlon_t to_latlon;
+    HashGridResult to_hg_result;
 
     /* actual intermediate in wgs84 presented to the planner */
     latlon_t via_latlon;
+    HashGridResult via_hg_result;
 
     /* (nearest) start stop index from the users perspective */
     uint32_t from;
@@ -103,9 +96,6 @@ struct router_request {
 
     /* onboard departure, trip offset within the route */
     uint32_t onboard_trip_offset;
-
-    /* the largest number of transfers to allow in the result */
-    uint32_t max_transfers;
 
     /* TODO comment on banning */
     uint32_t banned_route[RRRR_MAX_BANNED_ROUTES];
@@ -133,6 +123,9 @@ struct router_request {
     /* Filter the routes by the operating agency */
     uint16_t agency;
 #endif
+
+    /* the largest number of transfers to allow in the result */
+    uint8_t max_transfers;
 
     /* select the requested modes by a bitfield */
     uint8_t mode;
