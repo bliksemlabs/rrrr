@@ -80,6 +80,19 @@ struct router {
      */
 };
 
+struct route_cache {
+    route_t *this_route;
+    uint32_t *route_stops;
+    uint8_t  *route_stop_attributes;
+    trip_t   *route_trips;
+    calendar_t *trip_masks;
+    uint32_t route_index;
+    bool route_overlap;
+};
+
+typedef struct route_cache route_cache_t;
+
+
 /* FUNCTION PROTOTYPES */
 
 bool router_setup(router_t*, tdata_t*);

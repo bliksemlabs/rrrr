@@ -795,24 +795,22 @@ bool router_route(router_t *router, router_request_t *req) {
     return true;
 }
 
-void search_trips (router_t *router, router_request_t *req,
-                   uint32_t route_index, uint32_t route_stop_offset,
+void search_trips (router_t *router, router_request_t *req, route_cache_t *cache,
+                   uint32_t route_stop_offset,
                    serviceday_t *serviceday, rtime_t prev_time,
-                   trip_t *route_trips, calendar_t *trip_masks,
                    serviceday_t **best_serviceday,
                    uint32_t *best_trip, rtime_t *best_time) {
 
-    route_t *this_route = &(router->tdata->routes[route_index]);
     uint32_t i_trip_offset;
 
     for (i_trip_offset = 0;
-            i_trip_offset < this_route->n_trips;
+            i_trip_offset < cache->this_route->n_trips;
             ++i_trip_offset) {
         uint32_t i_banned_trip;
         rtime_t time;
 
         #ifdef RRRR_DEBUG
-        printBits(4, & (trip_masks[i_trip_offset]));
+        printBits(4, & (cache->trip_masks[i_trip_offset]));
         printBits(4, & (serviceday->mask));
         printf("\n");
         #endif
@@ -821,23 +819,23 @@ void search_trips (router_t *router, router_request_t *req,
         for (i_banned_trip = 0;
              i_banned_trip < req->n_banned_trips;
              ++i_banned_trip) {
-            if ( req->banned_trip_route[i_banned_trip]  == route_index &&
+            if ( req->banned_trip_route[i_banned_trip]  == cache->route_index &&
                  req->banned_trip_offset[i_banned_trip] == i_trip_offset) continue;
         }
 
         /* skip this trip if it is not running on
          * the current service day
          */
-        if ( ! (serviceday->mask & trip_masks[i_trip_offset])) continue;
+        if ( ! (serviceday->mask & cache->trip_masks[i_trip_offset])) continue;
         /* skip this trip if it doesn't have all our
          * required attributes
          */
-        if ( ! ((req->trip_attributes & route_trips[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
+        if ( ! ((req->trip_attributes & cache->route_trips[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
 
         /* consider the arrival or departure time on
          * the current service day
          */
-        time = tdata_stoptime (router->tdata, serviceday, route_index, i_trip_offset, route_stop_offset, req->arrive_by);
+        time = tdata_stoptime (router->tdata, serviceday, cache->route_index, i_trip_offset, route_stop_offset, req->arrive_by);
 
         #ifdef RRRR_TRIP
         printf("    board option %d at %s \n", i_trip_offset, "");
@@ -877,21 +875,32 @@ bool write_state(router_t *router, router_request_t *req,
     this_state->back_route_stop   = board_route_stop;
     this_state->route_stop        = route_stop_offset;
 
-    if (req->arrive_by) {
-        if (board_time < time) {
-            fprintf (stderr, "board time non-decreasing\n");
-            return false;
-        }
-    } else {
-        if (board_time > time) {
-            fprintf (stderr, "board time non-increasing\n");
-            return false;
-        }
+    if (req->arrive_by && board_time < time) {
+        fprintf (stderr, "board time non-decreasing\n");
+        return false;
+    } else if (!req->arrive_by && board_time > time) {
+        fprintf (stderr, "board time non-increasing\n");
+        return false;
     }
 
     return true;
 }
 
+
+void fill_route_cache(router_t *router, uint32_t route_index, struct route_cache *cache) {
+    cache->this_route    = &(router->tdata->routes[route_index]);
+
+    /* For each stop in this route, its global stop index. */
+    cache->route_stops   = tdata_stops_for_route(router->tdata, route_index);
+    cache->route_stop_attributes = tdata_stop_attributes_for_route(router->tdata, route_index);
+
+    cache->route_index = route_index;
+
+    /* if trips during two servicedays, overlap */
+    cache->route_overlap = cache->this_route->min_time < cache->this_route->max_time - RTIME_ONE_DAY;
+    cache->route_trips   = tdata_trips_for_route(router->tdata, route_index);
+    cache->trip_masks    = tdata_trip_masks_for_route(router->tdata, route_index);
+}
 
 void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
@@ -906,20 +915,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
          i_route != BITSET_NONE;
          i_route  = bitset_next_set_bit (router->updated_routes, i_route + 1)) {
 
-        route_t *this_route = &(router->tdata->routes[i_route]);
+        route_cache_t cache;
 
-        #ifdef FEATURE_AGENCY_FILTER
-        if (req->agency != AGENCY_UNFILTERED && req->agency != route.agency_index) continue;
-        #endif
-
-        bool route_overlap = this_route->min_time < this_route->max_time - RTIME_ONE_DAY;
-        /* For each stop in this route, its global stop index. */
-        uint32_t *route_stops = tdata_stops_for_route(router->tdata, i_route);
-        uint8_t  *route_stop_attributes = tdata_stop_attributes_for_route(router->tdata, i_route);
-
-        /* TODO use to avoid calculating at every stop */
-        trip_t   *route_trips = tdata_trips_for_route(router->tdata, i_route);
-        calendar_t *trip_masks  = tdata_trip_masks_for_route(router->tdata, i_route);
         /* trip index within the route. NONE means not yet boarded. */
         uint32_t      trip = NONE;
 
@@ -947,6 +944,13 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         int32_t i_route_stop;
 
+        #ifdef FEATURE_AGENCY_FILTER
+        if (req->agency != AGENCY_UNFILTERED && req->agency != route.agency_index) continue;
+        #endif
+
+        fill_route_cache (router, i_route, &cache);
+
+
         #if 0
         if (route_overlap) printf ("min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
         printf ("route %d has min_time %d and max_time %d. \n", i_route, route.min_time, route.max_time);
@@ -957,18 +961,18 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         #endif
 
 
-        for (i_route_stop = (req->arrive_by ? this_route->n_stops - 1 : 0);
+        for (i_route_stop = (req->arrive_by ? cache.this_route->n_stops - 1 : 0);
                 req->arrive_by ? i_route_stop >= 0 :
-                i_route_stop < this_route->n_stops;
+                i_route_stop < cache.this_route->n_stops;
                 req->arrive_by ? --i_route_stop :
                 ++i_route_stop ) {
 
             uint32_t i_banned_stop_hard;
-            uint32_t stop = route_stops[i_route_stop];
+            uint32_t stop = cache.route_stops[i_route_stop];
             rtime_t prev_time;
             bool attempt_board = false;
-            bool forboarding = (route_stop_attributes[i_route_stop] & rsa_boarding);
-            bool foralighting = (route_stop_attributes[i_route_stop] & rsa_alighting);
+            bool forboarding = (cache.route_stop_attributes[i_route_stop] & rsa_boarding);
+            bool foralighting = (cache.route_stop_attributes[i_route_stop] & rsa_alighting);
 
             #ifdef RRRR_INFO
             printf("    stop %2d [%d] %s %s\n", i_route_stop, stop,
@@ -1065,16 +1069,16 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     /* Check that this route still has any trips
                      * running on this day.
                      */
-                    if (req->arrive_by ? prev_time < serviceday->midnight + this_route->min_time
-                                       : prev_time > serviceday->midnight + this_route->max_time) continue;
+                    if (req->arrive_by ? prev_time < serviceday->midnight + cache.this_route->min_time
+                                       : prev_time > serviceday->midnight + cache.this_route->max_time) continue;
 
                     /* Check whether there's any chance of improvement by
                      * scanning additional days. Note that day list is
                      * reversed for arrive-by searches.
                      */
-                    if (best_trip != NONE && ! route_overlap) break;
+                    if (best_trip != NONE && ! cache.route_overlap) break;
 
-                    search_trips (router, req, i_route, i_route_stop, serviceday, prev_time, route_trips, trip_masks, &best_serviceday, &best_trip, &best_time);
+                    search_trips (router, req, &cache, i_route_stop, serviceday, prev_time, &best_serviceday, &best_trip, &best_time);
                 }  /*  end for (service days: yesterday, today, tomorrow) */
 
                 if (best_trip != NONE) {
