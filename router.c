@@ -849,16 +849,12 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         int32_t i_route_stop;
 
-        /*
+        #if 0
         if (route_overlap) printf ("min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
         printf ("route %d has min_time %d and max_time %d. \n", i_route, route.min_time, route.max_time);
         printf ("  actual first time: %d \n", tdata_depart(router->tdata, i_route, 0, 0));
         printf ("  actual last time:  %d \n", tdata_arrive(router->tdata, i_route, route.n_trips - 1, route.n_stops - 1));
-        */
-        #ifdef RRRR_INFO
         printf("  route %d: %s;%s\n", i_route, tdata_shortname_for_route(router->tdata, i_route),tdata_headsign_for_route(router->tdata, i_route));
-        #endif
-        #ifdef RRRR_TRIP
         tdata_dump_route(router->tdata, i_route, NONE);
         #endif
 
@@ -870,14 +866,26 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                                               ++i_route_stop ) {
 
             uint32_t i_banned_stop_hard;
-
             uint32_t stop = route_stops[i_route_stop];
             rtime_t prev_time;
             bool attempt_board = false;
+            bool forboarding = (route_stop_attributes[i_route_stop] & rsa_boarding);
+            bool foralighting = (route_stop_attributes[i_route_stop] & rsa_alighting);
+
             #ifdef RRRR_INFO
             printf("    stop %2d [%d] %s %s\n", i_route_stop, stop,
-                timetext(router->best_time[stop]), tdata_stop_name_for_index (router->tdata, stop));
+                   timetext(router->best_time[stop]),
+                   tdata_stop_name_for_index (router->tdata, stop));
             #endif
+
+            /* When currently on a vehicle, skip stops when
+             * boarding or alighting is not allowed.
+             */
+            if (trip != NONE &&
+                ((!forboarding && req->arrive_by) ||
+                 (!foralighting && !req->arrive_by))) {
+                continue;
+            }
 
             /* If a stop in in banned_stop_hard, we do not want to transit
              * through this stationwe reset the current trip to NONE and skip
@@ -893,12 +901,14 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 }
             }
 
-            /*
-                If we are not already on a trip, or if we might be able to board a better trip on
-                this route at this location, indicate that we want to search for a trip.
-            */
+            /* If we are not already on a trip, or if we might be able to board
+             * a better trip on this route at this location, indicate that we
+             * want to search for a trip.
+             */
             prev_time = router->states[last_round * router->tdata->n_stops + stop].walk_time;
-            if (prev_time != UNREACHED) {  /*  Only board at placed that have been reached. */
+
+            /* Only board at placed that have been reached. */
+            if (prev_time != UNREACHED) {
                 if (trip == NONE || req->via == stop) {
                     attempt_board = true;
                 } else if (trip != NONE && req->via != NONE && req->via == board_stop) {
@@ -918,24 +928,28 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 }
             }
 
-            if (!(route_stop_attributes[i_route_stop] & rsa_boarding))  /* Boarding not allowed */
-                if (req->arrive_by ? trip != NONE : attempt_board)  /* and we're attempting to board */
-                    continue;  /* Boarding not allowed and attemping to board */
-            if (!(route_stop_attributes[i_route_stop] & rsa_alighting))  /* Alighting not allowed */
-                if (req->arrive_by ? attempt_board : trip != NONE)  /* and we're seeking to alight */
-                    continue;  /* Alighting not allowed and attemping to alight */
+            /* If we have not yet boarded a trip on this route, see if we can
+             * board one.  Also handle the case where we hit a stop with an
+             * existing better arrival time. */
 
-            /* If we have not yet boarded a trip on this route, see if we can board one.
-                Also handle the case where we hit a stop with an existing better arrival time. */
-             /*  TODO: check if this is the last stop -- no point boarding there or marking routes */
             if (attempt_board) {
-                /* Scan all trips to find the soonest trip that can be boarded, if any.
-                    Real-time updates can ruin FIFO ordering of trips within routes.
-                    Scanning through the whole list of trips reduces speed by ~20 percent over binary search. */
+                /* Scan all trips to find the soonest trip that can be boarded,
+                 * if any. Real-time updates can ruin FIFO ordering of trips
+                 * within routes. Scanning through the whole list of trips
+                 * reduces speed by ~20 percent over binary search.
+                 */
                 uint32_t best_trip = NONE;
                 rtime_t  best_time = req->arrive_by ? 0 : UINT16_MAX;
                 serviceday_t *best_serviceday = NULL;
                 serviceday_t *serviceday;
+
+                /* Do not try to board a vehicle when it is not allowed
+                 * at this route point.
+                 */
+                if ((!forboarding && req->arrive_by) ||
+                    (!foralighting && !req->arrive_by)) {
+                    continue;
+                }
 
                 #ifdef RRRR_INFO
                 printf ("    attempting boarding at stop %d\n", stop);
@@ -944,19 +958,29 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 tdata_dump_route(router->tdata, i_route, NONE);
                 #endif
 
-                /* Search trips within days. The loop nesting could also be inverted. */
-                for (serviceday = router->servicedays; serviceday <= router->servicedays + 2; ++serviceday) {
+                /* Search trips within days.
+                 * The loop nesting could also be inverted.
+                 */
+                for (serviceday = router->servicedays;
+                     serviceday <= router->servicedays + 2;
+                     ++serviceday) {
                     uint32_t i_trip_offset;
 
-                    /* Check that this route still has any trips running on this day. */
+                    /* Check that this route still has any trips
+                     * running on this day.
+                     */
                     if (req->arrive_by ? prev_time < serviceday->midnight + this_route->min_time
                                        : prev_time > serviceday->midnight + this_route->max_time) continue;
 
-                    /* Check whether there's any chance of improvement by scanning additional days. */
-                    /* Note that day list is reversed for arrive-by searches. */
+                    /* Check whether there's any chance of improvement by
+                     * scanning additional days. Note that day list is
+                     * reversed for arrive-by searches.
+                     */
                     if (best_trip != NONE && ! route_overlap) break;
 
-                    for (i_trip_offset = 0; i_trip_offset < this_route->n_trips; ++i_trip_offset) {
+                    for (i_trip_offset = 0;
+                         i_trip_offset < this_route->n_trips;
+                         ++i_trip_offset) {
                         uint32_t i_banned_trip;
                         rtime_t time;
 
@@ -967,21 +991,30 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         #endif
 
                         /* skip this trip if it is banned */
-                        for (i_banned_trip = 0; i_banned_trip < req->n_banned_trips; i_banned_trip++)
+                        for (i_banned_trip = 0;
+                             i_banned_trip < req->n_banned_trips;
+                             ++i_banned_trip)
                             if ( req->banned_trip_route[i_banned_trip]  == i_route &&
                                  req->banned_trip_offset[i_banned_trip] == i_trip_offset) continue;
 
-                        /* skip this trip if it is not running on the current service day */
+                        /* skip this trip if it is not running on
+                         * the current service day
+                         */
                         if ( ! (serviceday->mask & trip_masks[i_trip_offset])) continue;
-                        /* skip this trip if it doesn't have all our required attributes */
+                        /* skip this trip if it doesn't have all our
+                         * required attributes
+                         */
                         if ( ! ((req->trip_attributes & route_trips[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
 
-                        /* consider the arrival or departure time on the current service day */
+                        /* consider the arrival or departure time on
+                         * the current service day
+                         */
                         time = tdata_stoptime (router->tdata, serviceday, i_route, i_trip_offset, i_route_stop, req->arrive_by);
 
                         #ifdef RRRR_TRIP
                         printf("    board option %d at %s \n", i_trip_offset, "");
                         #endif
+
                         if (time == UNREACHED) continue;  /*  rtime overflow due to long overnight trips on day 2 */
                         /* Mark trip for boarding if it improves on the last round's post-walk time at this stop.
                          * Note: we should /not/ be comparing to the current best known time at this stop, because
