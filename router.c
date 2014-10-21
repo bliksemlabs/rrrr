@@ -879,7 +879,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             #endif
 
             /* When currently on a vehicle, skip stops when
-             * boarding or alighting is not allowed.
+             * alighting is not allowed at the route-point.
              */
             if (trip != NONE &&
                 ((!forboarding && req->arrive_by) ||
@@ -946,8 +946,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 /* Do not try to board a vehicle when it is not allowed
                  * at this route point.
                  */
-                if ((!forboarding && req->arrive_by) ||
-                    (!foralighting && !req->arrive_by)) {
+                if ((!forboarding && !req->arrive_by) || (!foralighting && req->arrive_by)){
                     continue;
                 }
 
