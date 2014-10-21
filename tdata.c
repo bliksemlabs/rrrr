@@ -85,8 +85,11 @@ char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index) {
 
 uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t stop_index_offset) {
     uint32_t stop_index;
-    for (stop_index = stop_index_offset; stop_index < td->n_stops; ++stop_index) {
-        if (strcasestr(td->stop_names + td->stop_nameidx[stop_index], stop_name)) {
+    for (stop_index = stop_index_offset;
+         stop_index < td->n_stops;
+         ++stop_index) {
+        if (strcasestr(td->stop_names + td->stop_nameidx[stop_index],
+                       stop_name)) {
             return stop_index;
         }
     }
@@ -95,8 +98,11 @@ uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t stop_
 
 uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t stop_index_offset) {
     uint32_t stop_index;
-    for (stop_index = stop_index_offset; stop_index < td->n_stops; ++stop_index) {
-        if (strcasestr(td->stop_ids + (td->stop_ids_width * stop_index), stop_id)) {
+    for (stop_index = stop_index_offset;
+         stop_index < td->n_stops;
+         ++stop_index) {
+        if (strcasestr(td->stop_ids + (td->stop_ids_width * stop_index),
+                       stop_id)) {
             return stop_index;
         }
     }
@@ -107,8 +113,11 @@ uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t stop_inde
 
 uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t route_index_offset) {
     uint32_t route_index;
-    for (route_index = route_index_offset; route_index < td->n_routes; route_index++) {
-        if (strcasestr(td->route_ids + (td->route_ids_width * route_index), route_id)) {
+    for (route_index = route_index_offset;
+         route_index < td->n_routes;
+         ++route_index) {
+        if (strcasestr(td->route_ids + (td->route_ids_width * route_index),
+                       route_id)) {
             return route_index;
         }
     }
@@ -145,8 +154,11 @@ char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) {
 
 uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t agency_index_offset) {
     uint32_t agency_index;
-    for (agency_index = agency_index_offset; agency_index < td->n_agency_names; agency_index++) {
-        if (strcasestr(td->agency_names + (td->agency_names_width * agency_index), agency_name)) {
+    for (agency_index = agency_index_offset;
+         agency_index < td->n_agency_names;
+         ++agency_index) {
+        if (strcasestr(td->agency_names + (td->agency_names_width * agency_index),
+                       agency_name)) {
             return agency_index;
         }
     }
@@ -231,7 +243,10 @@ void tdata_dump_route(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
         tdata_headsign_for_route(td, route_index),
         route_index, route.n_stops, route.n_trips);
 
-    for (ti = (trip_index == NONE ? 0 : trip_index); ti < (trip_index == NONE ? route.n_trips : trip_index + 1); ++ti) {
+    for (ti = (trip_index == NONE ? 0 : trip_index);
+         ti < (trip_index == NONE ? route.n_trips :
+                                    trip_index + 1);
+         ++ti) {
         stoptime_t *times = tdata_timedemand_type(td, route_index, ti);
         /* TODO should this really be a 2D array ?
         stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_index, ti); */
