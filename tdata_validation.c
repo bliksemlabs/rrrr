@@ -27,7 +27,7 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
                 "  alighting on the first stop\n" : ""),
 
               ((rsa[route->n_stops - 1] & rsa_boarding) == rsa_boarding ?
-                "  alighting on the last stop\n" : ""));
+                "  boarding on the last stop\n" : ""));
 
             ret_invalid--;
         }
