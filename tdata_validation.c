@@ -8,6 +8,39 @@
 
 #include <stdio.h>
 
+/* Validate that the first routestop have won't alighting set and
+ * the last routestop won't allow boarding.
+ */
+int tdata_validation_boarding_alighting(tdata_t *tdata) {
+    int32_t ret_invalid = 0;
+    uint32_t i_route;
+
+    for (i_route = 0; i_route < tdata->n_routes; ++i_route) {
+        route_t *route = &(tdata->routes[i_route]);
+        uint8_t *rsa = tdata->route_stop_attributes +
+                       route->route_stops_offset;
+
+        if ((rsa[0] & rsa_alighting) == rsa_alighting ||
+            (rsa[route->n_stops - 1] & rsa_boarding) == rsa_boarding) {
+            fprintf(stderr, "Route index %d has:\n%s%s", i_route,
+              ((rsa[0] & rsa_alighting) == rsa_alighting ?
+                "  alighting on the first stop\n" : ""),
+
+              ((rsa[route->n_stops - 1] & rsa_boarding) == rsa_boarding ?
+                "  alighting on the last stop\n" : ""));
+
+            ret_invalid--;
+        }
+
+        if (ret_invalid < -10) {
+            fprintf(stderr, "Too many boarding/alighting problems.\n");
+            break;
+        }
+    }
+
+    return ret_invalid;
+}
+
 /* Check that all lat/lon look like valid coordinates.
  * If validation fails the number of invalid coordinates are return
  * as negative value.
@@ -22,7 +55,7 @@ int tdata_validation_coordinates(tdata_t *tdata) {
     float min_lon = -180.0;
     float max_lon = +180.0;
 
-    int ret_invalid = 0;
+    int32_t ret_invalid = 0;
 
     uint32_t stop_index;
     for (stop_index = 0; stop_index < tdata->n_stops; ++stop_index) {
@@ -56,14 +89,14 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             for (stop_index = 0; stop_index < route.n_stops; ++stop_index) {
                 stoptime_t *st = tdata->stop_times + trip.stop_times_offset
                                                    + stop_index;
-                if (stop_index == 0 && st->arrival != 0) printf ("timedemand type begins at %d,%d not 0.\n", st->arrival, st->departure);
-                if (st->departure < st->arrival) printf ("departure before arrival at route %d, trip %d, stop %d.\n", route_index, trip_index, stop_index);
+                if (stop_index == 0 && st->arrival != 0) fprintf (stderr, "timedemand type begins at %d,%d not 0.\n", st->arrival, st->departure);
+                if (st->departure < st->arrival) fprintf (stderr, "departure before arrival at route %d, trip %d, stop %d.\n", route_index, trip_index, stop_index);
 
                 if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
                         #if 0
-                        printf ("negative travel time arriving at route %d, trip %d, stop %d.\n", r, t, s);
-                        printf ("(%d, %d) -> (%d, %d)\n", prev_st->arrival, prev_st->departure, st->arrival, st->departure);
+                        fprintf (stderr, "negative travel time arriving at route %d, trip %d, stop %d.\n", r, t, s);
+                        fprintf (stderr, "(%d, %d) -> (%d, %d)\n", prev_st->arrival, prev_st->departure, st->arrival, st->departure);
                         #endif
                         n_nonincreasing_trips += 1;
                     } /* there are also lots of 0 travel times... */
@@ -72,8 +105,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             }
         }
         if (n_nonincreasing_trips > 0) {
-            printf ("route %d has %d trips with negative travel times\n",
-                    route_index, n_nonincreasing_trips);
+            fprintf (stderr, "route %d has %d trips with negative travel times\n",
+                             route_index, n_nonincreasing_trips);
             ret_nonincreasing -= n_nonincreasing_trips;
         }
     }
@@ -101,7 +134,7 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
             uint32_t uN = tdata->stops[stop_index_to + 1].transfers_offset;
             bool found_reverse = false;
 
-            if (stop_index_to == stop_index_from) printf ("loop transfer from/to stop %d.\n", stop_index_from);
+            if (stop_index_to == stop_index_from) fprintf (stderr, "loop transfer from/to stop %d.\n", stop_index_from);
 
             for ( ; u < uN ; ++u) {
                 n_transfers_checked += 1;
@@ -109,29 +142,30 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
                     /* this is the same transfer in reverse */
                     uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
                     if (reverse_distance != forward_distance) {
-                        printf ("transfer from %d to %d is not symmetric. "
-                                "forward distance is %d, reverse distance is %d.\n",
-                                stop_index_from, stop_index_to, forward_distance, reverse_distance);
+                        fprintf (stderr, "transfer from %d to %d is not symmetric. "
+                                         "forward distance is %d, reverse distance is %d.\n",
+                                         stop_index_from, stop_index_to, forward_distance, reverse_distance);
                     }
                     found_reverse = true;
                     break;
                 }
             }
             if ( ! found_reverse) {
-                printf ("transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
+                fprintf (stderr, "transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
                 return -1;
             }
         }
     }
-    printf ("checked %d transfers for symmetry.\n", n_transfers_checked);
+    fprintf (stderr, "checked %d transfers for symmetry.\n", n_transfers_checked);
 
     return 0;
 }
 
 bool tdata_validation_check_coherent (tdata_t *tdata) {
-    printf ("checking tdata coherency...\n");
+    fprintf (stderr, "checking tdata coherency...\n");
 
-    return  (tdata_validation_coordinates(tdata) == 0 &&
+    return  (tdata_validation_boarding_alighting(tdata) == 0 &&
+             tdata_validation_coordinates(tdata) == 0 &&
              tdata_validation_increasing_times(tdata) == 0 &&
              tdata_validation_symmetric_transfers(tdata) == 0);
 }
