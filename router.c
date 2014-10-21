@@ -946,7 +946,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 /* Do not try to board a vehicle when it is not allowed
                  * at this route point.
                  */
-                if ((!forboarding && !req->arrive_by) || (!foralighting && req->arrive_by)){
+                if ((!forboarding && !req->arrive_by) ||
+                    (!foralighting && req->arrive_by)) {
                     continue;
                 }
 
