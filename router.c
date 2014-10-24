@@ -148,23 +148,28 @@ bool initialize_servicedays (router_t *router, router_request_t *req) {
 
 
 
-/* TODO? flag_routes_for_stops all at once after doing transfers? this would
- * require another stops bitset for transfer target stops.
+/* TODO? flag_routes_for_stops all at once after doing transfers?
+ * this would require another stops bitset for transfer target stops.
  */
+
 /* Given a stop index, mark all routes that serve it as updated. */
-void flag_routes_for_stop (router_t *router, router_request_t *req, uint32_t stop_index) {
+void flag_routes_for_stop (router_t *router, router_request_t *req,
+                           uint32_t stop_index) {
     uint32_t *routes;
     uint32_t i_route;
     uint32_t n_routes = tdata_routes_for_stop (router->tdata, stop_index, &routes);
     for (i_route = 0; i_route < n_routes; ++i_route) {
-        calendar_t route_active_flags = router->tdata->route_active[routes[i_route]];
+        calendar_t route_active_flags;
+
         #ifdef RRRR_INFO
         printf ("  flagging route %d at stop %d\n", routes[i_route], stop_index);
         #endif
 
+        route_active_flags = router->tdata->route_active[routes[i_route]];
+
         /* CHECK that there are any trips running on this route
          * (another bitfield)
-         * printf("route flags %d", route_active_flags);
+         * fprintf(stderr, "route flags %d", route_active_flags);
          * printBits(4, &route_active_flags);
          */
 
@@ -175,7 +180,7 @@ void flag_routes_for_stop (router_t *router, router_request_t *req, uint32_t sto
             (req->mode & router->tdata->routes[routes[i_route]].attributes) > 0) {
            bitset_set (router->updated_routes, routes[i_route]);
            #ifdef RRRR_INFO
-           printf ("  route running\n");
+           fprintf (stderr, "  route running\n");
            #endif
         }
     }
@@ -188,13 +193,13 @@ void flag_routes_for_stop (router_t *router, router_request_t *req, uint32_t sto
         n_routes = router->tdata->rt_stop_routes[stop_index]->len;
         for (i_route = 0; i_route < n_routes; ++i_route) {
             #ifdef RRRR_INFO
-            printf ("  flagging changed route %d at stop %d\n", routes[i_route], stop_index);
+            fprintf (stderr, "  flagging changed route %d at stop %d\n", routes[i_route], stop_index);
             #endif
             /* extra routes should only be applied on the current day */
             if ((req->mode & router->tdata->routes[routes[i_route]].attributes) > 0) {
                 bitset_set (router->updated_routes, routes[i_route]);
                 #ifdef RRRR_INFO
-                printf ("  route running\n");
+                fprintf (stderr, "  route running\n");
                 #endif
             }
         }
@@ -293,19 +298,25 @@ void apply_transfers (router_t *router, router_request_t *req,
          * the state_from->time, because the best time may have been updated
          * by a transfer.
          */
-        #if 0
+        #if RRRR_DEBUG
         if (time_from != router->best_time[stop_index_from]) {
-            printf ("ERROR: time at stop %d in round %d is not the same as its best time. \n", stop_index_from, round);
-            printf ("    from time %s \n", timetext(time_from));
-            printf ("    walk time %s \n", timetext(state_from->walk_time));
-            printf ("    best time %s \n", timetext(router->best_time[stop_index_from]));
+            fprintf (stderr, "ERROR: time at stop %d in round %d " \
+                             "is not the same as its best time. \n",
+                    stop_index_from, round);
+            fprintf (stderr, "    from time %s \n",
+                     timetext(time_from));
+            fprintf (stderr, "    walk time %s \n",
+                     timetext(state_from->walk_time));
+            fprintf (stderr, "    best time %s \n",
+                     timetext(router->best_time[stop_index_from]));
             continue;
         }
         #endif
         #ifdef RRRR_INFO
-        printf ("  applying transfer at %d (%s) \n", stop_index_from,
-                tdata_stop_name_for_index(router->tdata, stop_index_from));
+        fprintf (stderr, "  applying transfer at %d (%s) \n", stop_index_from,
+                 tdata_stop_name_for_index(router->tdata, stop_index_from));
         #endif
+
         /* First apply a transfer from the stop to itself,
          * if case that's the best way.
          */
@@ -330,7 +341,8 @@ void apply_transfers (router_t *router, router_request_t *req,
              * rounded not truncated, in a uint8_t
              */
             uint32_t dist_meters = router->tdata->transfer_dist_meters[tr] << 4;
-            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters / req->walk_speed + req->walk_slack));
+            rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters /
+                                            req->walk_speed + req->walk_slack));
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
             /* Avoid reserved values including UNREACHED */
@@ -339,14 +351,21 @@ void apply_transfers (router_t *router, router_request_t *req,
              * this happens normally on overnight routing but should
              * be avoided rather than caught.
              */
-            if (req->arrive_by ? time_to > time_from : time_to < time_from) continue;
+            if (req->arrive_by ? time_to > time_from :
+                                 time_to < time_from) continue;
+
             #ifdef RRRR_INFO
-            printf ("    target %d %s (%s) \n", stop_index_to,
-                                                timetext(router->best_time[stop_index_to]),
-                                                tdata_stop_name_for_index(router->tdata, stop_index_to));
-            printf ("    transfer time   %s\n", timetext(transfer_duration));
-            printf ("    transfer result %s\n", timetext(time_to));
+            fprintf (stderr, "    target %d %s (%s) \n",
+                     stop_index_to, timetext(router->best_time[stop_index_to]),
+                     tdata_stop_name_for_index(router->tdata, stop_index_to));
+
+            fprintf (stderr, "    transfer time   %s\n",
+                     timetext(transfer_duration));
+
+            fprintf (stderr, "    transfer result %s\n",
+                     timetext(time_to));
             #endif
+
             /* TODO verify state_to->walk_time versus
              *             router->best_time[stop_index_to] */
             if (router->best_time[stop_index_to] == UNREACHED ||
@@ -355,7 +374,8 @@ void apply_transfers (router_t *router, router_request_t *req,
 
                 router_state_t *state_to = states + stop_index_to;
                 #ifdef RRRR_INFO
-                printf ("      setting %d to %s\n", stop_index_to, timetext(time_to));
+                fprintf (stderr, "      setting %d to %s\n",
+                         stop_index_to, timetext(time_to));
                 #endif
                 state_to->walk_time = time_to;
                 state_to->walk_from = stop_index_from;
@@ -636,14 +656,16 @@ bool initialize_origin_latlon (router_t *router, router_request_t *req) {
         if (req->to_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
-            HashGrid_query (&router->hg, &req->to_hg_result, coord, req->walk_max_distance);
+            HashGrid_query (&router->hg, &req->to_hg_result,
+                            coord, req->walk_max_distance);
         }
         return latlon_best_stop_index (router, req, &req->to_hg_result);
     } else {
         if (req->from_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
-            HashGrid_query (&router->hg, &req->from_hg_result, coord, req->walk_max_distance);
+            HashGrid_query (&router->hg, &req->from_hg_result,
+                            coord, req->walk_max_distance);
         }
         return latlon_best_stop_index (router, req, &req->from_hg_result);
     }
@@ -721,7 +743,8 @@ bool initialize_origin (router_t *router, router_request_t *req) {
             return initialize_origin_onboard (router, req);
 
         } else {
-            fprintf (stderr, "An arrive-by search does not make any sense if you are starting on-board.\n");
+            fprintf (stderr, "An arrive-by search does not make any" \
+                             "sense if you are starting on-board.\n");
             return false;
         }
     } else {
@@ -815,8 +838,10 @@ void search_trips_within_days (router_t *router, router_request_t *req,
         /* Check that this route still has any trips
          * running on this day.
          */
-        if (req->arrive_by ? prev_time < serviceday->midnight + cache->this_route->min_time
-                           : prev_time > serviceday->midnight + cache->this_route->max_time) continue;
+        if (req->arrive_by ? prev_time < serviceday->midnight +
+                                         cache->this_route->min_time
+                           : prev_time > serviceday->midnight +
+                                         cache->this_route->max_time) continue;
 
         /* Check whether there's any chance of improvement by
          * scanning additional days. Note that day list is
@@ -840,35 +865,39 @@ void search_trips_within_days (router_t *router, router_request_t *req,
             for (i_banned_trip = 0;
                 i_banned_trip < req->n_banned_trips;
                 ++i_banned_trip) {
-                if ( req->banned_trip_route[i_banned_trip]  == cache->route_index &&
-                    req->banned_trip_offset[i_banned_trip] == i_trip_offset) continue;
+                if ( req->banned_trip_route[i_banned_trip] == cache->route_index &&
+                     req->banned_trip_offset[i_banned_trip] == i_trip_offset) continue;
             }
 
             /* skip this trip if it is not running on
-            * the current service day
-            */
+             * the current service day
+             */
             if ( ! (serviceday->mask & cache->trip_masks[i_trip_offset])) continue;
             /* skip this trip if it doesn't have all our
-            * required attributes
-            */
+             * required attributes
+             */
             if ( ! ((req->trip_attributes & cache->route_trips[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
 
             /* consider the arrival or departure time on
-            * the current service day
-            */
+             * the current service day
+             */
             time = tdata_stoptime (router->tdata, serviceday, cache->route_index, i_trip_offset, route_stop_offset, req->arrive_by);
 
             #ifdef RRRR_TRIP
             printf("    board option %d at %s \n", i_trip_offset, "");
             #endif
 
-            if (time == UNREACHED) continue;  /*  rtime overflow due to long overnight trips on day 2 */
-            /* Mark trip for boarding if it improves on the last round's post-walk time at this stop.
-            * Note: we should /not/ be comparing to the current best known time at this stop, because
-            * it may have been updated in this round by another trip (in the pre-walk transit phase).
-            */
+            /* rtime overflow due to long overnight trips on day 2 */
+            if (time == UNREACHED) continue;
+
+            /* Mark trip for boarding if it improves on the last round's
+             * post-walk time at this stop. Note: we should /not/ be comparing
+             * to the current best known time at this stop, because it may have
+             * been updated in this round by another trip (in the pre-walk
+             * transit phase).
+             */
             if (req->arrive_by ? time <= prev_time && time > *best_time
-                            : time >= prev_time && time < *best_time) {
+                               : time >= prev_time && time < *best_time) {
                 *best_trip = i_trip_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
@@ -880,7 +909,8 @@ void search_trips_within_days (router_t *router, router_request_t *req,
 bool write_state(router_t *router, router_request_t *req,
                  uint8_t round, uint32_t route_index, uint32_t trip_offset,
                  uint32_t stop_index, uint32_t route_stop_offset, rtime_t time,
-                 uint32_t board_stop, uint32_t board_route_stop, rtime_t board_time) {
+                 uint32_t board_stop, uint32_t board_route_stop,
+                 rtime_t board_time) {
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
 
@@ -1042,15 +1072,19 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             if (prev_time != UNREACHED) {
                 if (trip == NONE || req->via == stop) {
                     attempt_board = true;
-                } else if (trip != NONE && req->via != NONE && req->via == board_stop) {
+                } else if (trip != NONE && req->via != NONE &&
+                                           req->via == board_stop) {
                     attempt_board = false;
                 } else {
-                    /*  removed xfer slack for simplicity */
-                    /*  is this repetitively triggering re-boarding searches along a single route? */
+                    /* removed xfer slack for simplicity */
+                    /* TODO: is this repetitively triggering re-boarding
+                     * searches along a single route?
+                     */
                     rtime_t trip_time = tdata_stoptime (router->tdata, board_serviceday, i_route, trip, i_route_stop, req->arrive_by);
-                    if (trip_time == UNREACHED) attempt_board = false;
-                    else if (req->arrive_by ? prev_time > trip_time
-                            : prev_time < trip_time) {
+                    if (trip_time == UNREACHED) {
+                        attempt_board = false;
+                    } else if (req->arrive_by ? prev_time > trip_time
+                                              : prev_time < trip_time) {
                         attempt_board = true;
                         #ifdef RRRR_INFO
                         printf ("    [reboarding here] trip = %s\n", timetext(trip_time));
@@ -1080,8 +1114,9 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 tdata_dump_route(router->tdata, i_route, NONE);
                 #endif
 
-                search_trips_within_days (router, req, &cache, i_route_stop, prev_time,
-                                          &best_serviceday, &best_trip, &best_time);
+                search_trips_within_days (router, req, &cache, i_route_stop,
+                                          prev_time, &best_serviceday,
+                                          &best_trip, &best_time);
 
                 if (best_trip != NONE) {
                     #ifdef RRRR_INFO
@@ -1103,20 +1138,31 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     #endif
                 }
                 continue;  /*  to the next stop in the route */
-            } else if (trip != NONE) {  /*  We have already boarded a trip along this route. */
-                rtime_t time = tdata_stoptime (router->tdata, board_serviceday, i_route, trip, i_route_stop, !req->arrive_by);
-                if (time == UNREACHED) continue;  /*  overflow due to long overnight trips on day 2 */
+
+            /*  We have already boarded a trip along this route. */
+            } else if (trip != NONE) {
+                rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
+                                               i_route, trip, i_route_stop,
+                                               !req->arrive_by);
+
+                /* overflow due to long overnight trips on day 2 */
+                if (time == UNREACHED) continue;
+
                 #ifdef RRRR_TRIP
                 printf("    on board trip %d considering time %s \n", trip, timetext(time));
                 #endif
-                 /*  Target pruning, sec. 3.1 of RAPTOR paper. */
+
+                /* Target pruning, section 3.1 of RAPTOR paper. */
                 if ((router->best_time[router->target] != UNREACHED) &&
                     (req->arrive_by ? time < router->best_time[router->target]
                                     : time > router->best_time[router->target])) {
                     #ifdef RRRR_TRIP
                     printf("    (target pruning)\n");
                     #endif
-                     /*  We cannot break out of this route entirely, because re-boarding may occur at a later stop. */
+
+                    /* We cannot break out of this route entirely,
+                     * because re-boarding may occur at a later stop.
+                     */
                     continue;
                 }
                 if ((req->time_cutoff != UNREACHED) &&
@@ -1124,27 +1170,43 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                                     : time > req->time_cutoff)) {
                     continue;
                 }
-                 /*  Do we need best_time at all? yes, because the best time may not have been found in the previous round. */
-                #if 0
-                bool improved = (router->best_time[stop] == UNREACHED) ||
-                                (req->arrive_by ? time > router->best_time[stop]
-                                                : time < router->best_time[stop]);
-                #endif
+
+                /* Do we need best_time at all?
+                 * Yes, because the best time may not have been found in the
+                 * previous round.
+                 */
                 if (!((router->best_time[stop] == UNREACHED) ||
                        (req->arrive_by ? time > router->best_time[stop]
                                        : time < router->best_time[stop]))) {
                     #ifdef RRRR_INFO
                     printf("    (no improvement)\n");
                     #endif
-                    continue;  /*  the current trip does not improve on the best time at this stop */
+
+                    /* the current trip does not improve on the best time
+                     * at this stop
+                     */
+                    continue;
                 }
                 if (time > RTIME_THREE_DAYS) {
-                    /* Reserve all time past three days for special values like UNREACHED. */
-                } else if (req->arrive_by ? time > req->time : time < req->time) {
-                    /* Wrapping/overflow. This happens due to overnight trips on day 2. Prune them. */
-                     /*  printf("ERROR: setting state to time before start time. route %d trip %d stop %d \n", i_route, trip, stop); */
+                    /* Reserve all time past three days for
+                     * special values like UNREACHED.
+                     */
+                } else if (req->arrive_by ? time > req->time :
+                                            time < req->time) {
+
+                    /* Wrapping/overflow. This happens due to overnight
+                     * trips on day 2. Prune them.
+                     */
+
+                    #ifdef RRRR_DEBUG
+                    fprintf(stderr, "ERROR: setting state to time before" \
+                                    "start time. route %d trip %d stop %d \n",
+                                    i_route, trip, stop);
+                    #endif
                 } else {
-                    write_state(router, req, round, i_route, trip, stop, i_route_stop, time, board_stop, board_time, board_route_stop);
+                    write_state(router, req, round, i_route, trip, stop,
+                                i_route_stop, time,
+                                board_stop, board_time, board_route_stop);
 
                     /*  mark stop for next round. */
                     bitset_set(router->updated_stops, stop);
@@ -1152,20 +1214,29 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             }
         }  /*  end for (stop) */
     }  /*  end for (route) */
-     /*  Remove the banned stops from the bitset, so no transfers will happen there. */
+
+    /* Remove the banned stops from the bitset,
+     * so no transfers will happen there.
+     */
     unflag_banned_stops(router, req);
-    /* Also updates the list of routes for next round based on stops that were touched in this round. */
+
+    /* Also updates the list of routes for next round
+     * based on stops that were touched in this round.
+     */
     apply_transfers(router, req, round, true);
-     /*  exit(0); */
-    /* Initialize the stops in round 1 that were used as starting points for round 0. */
-     /*  TODO: also must be done for the hashgrid */
-     /*  if (round == 0) initialize_transfers (router, 1, router->origin); */
+
+    /* Initialize the stops in round 1 that were used as
+     * starting points for round 0.
+     */
+    /*  TODO: also must be done for the hashgrid */
+    /*  if (round == 0) initialize_transfers (router, 1, router->origin); */
     if (round == 0) initialize_transfers_full (router, 1);
 
      /*  TODO add arrival hashgrid timings */
 
-    /* dump_results(router);  DEBUG */
-
+    #ifdef RRRR_DEBUG
+    dump_results(router);
+    #endif
 }
 
 
