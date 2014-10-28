@@ -62,13 +62,13 @@ int rxt_edge_count (struct rxt_edge *e) {
 
 void rxt_edge_print (struct rxt_edge *e) {
     if (e == NULL) return;
-    printf ("\nedge [%p]\n", (void *) e);
+    fprintf (stderr, "\nedge [%p]\n", (void *) e);
     /* variable width string format character */
-    printf ("prefix '%.*s'\n", RADIX_TREE_PREFIX_SIZE, e->prefix);
-    printf ("length %d\n", edge_prefix_length(e));
-    printf ("value  %d\n", e->value);
-    printf ("next   %p\n", (void *) e->next);
-    printf ("child  %p\n", (void *) e->child);
+    fprintf (stderr, "prefix '%.*s'\n", RADIX_TREE_PREFIX_SIZE, e->prefix);
+    fprintf (stderr, "length %d\n", edge_prefix_length(e));
+    fprintf (stderr, "value  %d\n", e->value);
+    fprintf (stderr, "next   %p\n", (void *) e->next);
+    fprintf (stderr, "child  %p\n", (void *) e->child);
     rxt_edge_print(e->next);
     rxt_edge_print(e->child);
 }
@@ -271,9 +271,9 @@ void rxt_compress (struct rxt_edge *root) {
             uint32_t i;
             char *c0, *c1;
 
-            printf ("compressing %.*s and %.*s.\n",
-                    RADIX_TREE_PREFIX_SIZE, e->prefix,
-                    RADIX_TREE_PREFIX_SIZE, e->child->prefix);
+            fprintf (stderr, "compressing %.*s and %.*s.\n",
+                             RADIX_TREE_PREFIX_SIZE, e->prefix,
+                             RADIX_TREE_PREFIX_SIZE, e->child->prefix);
             c0 = e->prefix + l0;
             c1 = e->child->prefix;
 
@@ -316,7 +316,7 @@ RadixTree *rxt_load_strings_from_file (char *filename) {
     s = strings;
     idx = 0;
     root = rxt_new ();
-    printf ("Indexing strings...\n");
+    fprintf (stderr, "Indexing strings...\n");
     while (s < strings_end) {
         rxt_insert (root, s, idx);
         while(*(s++) != '\0') { }
@@ -327,9 +327,10 @@ clean_fd:
     close(fd);
     /*
     rxt_compress (root);
-    printf ("total number of edges: %d\n", edge_count(root));
-    printf ("size of one edge: %ld\n", sizeof(struct rxt_edge));
-    printf ("total size of all edges: %ld\n", edge_count(root) * sizeof(struct rxt_edge));
+    fprintf (stderr, "total number of edges: %d\n", edge_count(root));
+    fprintf (stderr, "size of one edge: %ld\n", sizeof(struct rxt_edge));
+    fprintf (stderr, "total size of all edges: %ld\n",
+                     edge_count(root) * sizeof(struct rxt_edge));
     */
     return root;
 }
@@ -339,18 +340,22 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     char *strings_end = strings + (width * length);
     char *s = strings;
     uint32_t idx = 0;
-    printf ("Indexing strings...\n");
+    #ifdef RRRR_DEBUG
+    fprintf (stderr, "Indexing strings...\n");
+    #endif
     while (s < strings_end) {
         rxt_insert (root, s, idx);
         s += width;
         idx += 1;
     }
-    /*
+
+    #if 0
     rxt_compress (root);
-    printf ("total number of edges: %d\n", edge_count(root));
-    printf ("size of one edge: %ld\n", sizeof(struct rxt_edge));
-    printf ("total size of all edges: %ld\n", edge_count(root) * sizeof(struct rxt_edge));
-    */
+    fprintf (stderr, "total number of edges: %d\n", edge_count(root));
+    fprintf (stderr, "size of one edge: %ld\n", sizeof(struct rxt_edge));
+    fprintf (stderr, "total size of all edges: %ld\n",
+                     edge_count(root) * sizeof(struct rxt_edge));
+    #endif
     return root;
 }
 

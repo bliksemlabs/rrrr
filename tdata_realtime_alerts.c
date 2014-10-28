@@ -28,7 +28,9 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
         return;
     }
 
-    printf("Received feed message with " ZU " entities.\n", msg->n_entity);
+    fprintf(stderr, "Received feed message with " ZU " entities.\n",
+                    msg->n_entity);
+
     for (e = 0; e < msg->n_entity; ++e) {
         size_t ie;
         TransitRealtime__FeedEntity *entity;

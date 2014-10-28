@@ -136,11 +136,11 @@ void latlon_from_coord (latlon_t *latlon, coord_t *coord) {
 }
 
 void latlon_dump (latlon_t *latlon) {
-    printf("latlon lat=%f lon=%f \n", latlon->lat, latlon->lon);
+    fprintf(stderr, "latlon lat=%f lon=%f \n", latlon->lat, latlon->lon);
 }
 
 void coord_dump (coord_t *coord) {
-    printf("coordinate x=%d y=%d \n", coord->x, coord->y);
+    fprintf(stderr, "coordinate x=%d y=%d \n", coord->x, coord->y);
 }
 
 bool strtolatlon (char *latlon, latlon_t *result) {

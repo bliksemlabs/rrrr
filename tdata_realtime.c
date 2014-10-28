@@ -73,7 +73,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
         rt_entity = msg->entity[e];
         if (rt_entity == NULL) goto cleanup;
 
-        /* printf("  entity %d has id %s\n", e, entity->id); */
+        /* fprintf(stderr, "  entity %d has id %s\n", e, entity->id); */
         rt_trip_update = rt_entity->trip_update;
         if (rt_trip_update) {
             TransitRealtime__TripDescriptor *rt_trip = rt_trip_update->trip;
@@ -122,7 +122,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
             cal_day = (epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
 
             if (epochtime >= tdata->calendar_start_time && cal_day > 31 ) {
-                printf("WARNING: the operational day is 32 further than our calendar!\n");
+                fprintf(stderr, "WARNING: the operational day is 32 further than our calendar!\n");
                 continue;
             }
 
@@ -169,7 +169,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
                         uint32_t route_index;
 
                         uint16_t rs = 0;
-                        printf ("WARNING: this is a changed route!\n");
+                        fprintf (stderr, "WARNING: this is a changed route!\n");
 
                         /* The idea is to fork a trip to a new route, based on the trip_id find if the trip_id already exists */
                         trip_id_new = (char *) alloca (tdata->trip_ids_width * sizeof(char));
@@ -184,7 +184,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
                             if (route_new->n_stops != n_stops) {
                                 uint32_t i_stop_index;
 
-                                printf ("WARNING: this is a changed route being CHANGED again!\n");
+                                fprintf (stderr, "WARNING: this is a changed route being CHANGED again!\n");
                                 tdata->trip_stoptimes[route_new->trip_ids_offset] = (stoptime_t *) realloc(tdata->trip_stoptimes[route_new->trip_ids_offset], n_stops * sizeof(stoptime_t));
                                 for (i_stop_index = route_new->n_stops; i_stop_index < n_stops; ++i_stop_index) {
                                     tdata->route_stops[route_new->route_stops_offset + i_stop_index] = NONE;

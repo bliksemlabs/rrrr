@@ -65,7 +65,7 @@ int tdata_validation_coordinates(tdata_t *tdata) {
         latlon_t ll = tdata->stop_coords[stop_index];
         if (ll.lat < min_lat || ll.lat > max_lat ||
             ll.lon < min_lon || ll.lon > max_lon) {
-            printf ("stop lat/lon out of range: lat=%f, lon=%f \n",
+            fprintf (stderr, "stop lat/lon out of range: lat=%f, lon=%f \n",
                                                 ll.lat, ll.lon);
             ret_invalid--;
         }
@@ -92,8 +92,17 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             for (stop_index = 0; stop_index < route.n_stops; ++stop_index) {
                 stoptime_t *st = tdata->stop_times + trip.stop_times_offset
                                                    + stop_index;
-                if (stop_index == 0 && st->arrival != 0) fprintf (stderr, "timedemand type begins at %d,%d not 0.\n", st->arrival, st->departure);
-                if (st->departure < st->arrival) fprintf (stderr, "departure before arrival at route %d, trip %d, stop %d.\n", route_index, trip_index, stop_index);
+                if (stop_index == 0 && st->arrival != 0) {
+                    fprintf (stderr,
+                             "timedemand type begins at %d,%d not 0.\n",
+                             st->arrival, st->departure);
+                }
+
+                if (st->departure < st->arrival) {
+                    fprintf (stderr, "departure before arrival at " \
+                                     "route %d, trip %d, stop %d.\n",
+                                     route_index, trip_index, stop_index);
+                }
 
                 if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
@@ -108,7 +117,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             }
         }
         if (n_nonincreasing_trips > 0) {
-            fprintf (stderr, "route %d has %d trips with negative travel times\n",
+            fprintf (stderr, "route %d has %d trips with" \
+                             "negative travel times\n",
                              route_index, n_nonincreasing_trips);
             ret_nonincreasing -= n_nonincreasing_trips;
         }
@@ -122,7 +132,9 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     int n_transfers_checked = 0;
     uint32_t stop_index_from;
-    for (stop_index_from = 0; stop_index_from < tdata->n_stops; ++stop_index_from) {
+    for (stop_index_from = 0;
+         stop_index_from < tdata->n_stops;
+         ++stop_index_from) {
 
         /* Iterate over all transfers going out of this stop */
         uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
@@ -137,7 +149,10 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
             uint32_t uN = tdata->stops[stop_index_to + 1].transfers_offset;
             bool found_reverse = false;
 
-            if (stop_index_to == stop_index_from) fprintf (stderr, "loop transfer from/to stop %d.\n", stop_index_from);
+            if (stop_index_to == stop_index_from) {
+                fprintf (stderr, "loop transfer from/to stop %d.\n",
+                                 stop_index_from);
+            }
 
             for ( ; u < uN ; ++u) {
                 n_transfers_checked += 1;
@@ -145,21 +160,29 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
                     /* this is the same transfer in reverse */
                     uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
                     if (reverse_distance != forward_distance) {
-                        fprintf (stderr, "transfer from %d to %d is not symmetric. "
-                                         "forward distance is %d, reverse distance is %d.\n",
-                                         stop_index_from, stop_index_to, forward_distance, reverse_distance);
+                        fprintf (stderr, "transfer from %d to %d is "
+                                         "not symmetric. "
+                                         "forward distance is %d, "
+                                         "reverse distance is %d.\n",
+                                         stop_index_from,
+                                         stop_index_to,
+                                         forward_distance,
+                                         reverse_distance);
                     }
                     found_reverse = true;
                     break;
                 }
             }
             if ( ! found_reverse) {
-                fprintf (stderr, "transfer from %d to %d does not have an equivalent reverse transfer.\n", stop_index_from, stop_index_to);
+                fprintf (stderr, "transfer from %d to %d does not have "
+                                 "an equivalent reverse transfer.\n",
+                                 stop_index_from, stop_index_to);
                 return -1;
             }
         }
     }
-    fprintf (stderr, "checked %d transfers for symmetry.\n", n_transfers_checked);
+    fprintf (stderr, "checked %d transfers for symmetry.\n",
+                     n_transfers_checked);
 
     return 0;
 }

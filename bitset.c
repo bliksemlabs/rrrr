@@ -11,23 +11,27 @@
 #include <string.h>
 #include <stdbool.h>
 
-/* Initialize a pre-allocated bitset struct, allocating memory for the uint64s holding the bits. */
+/* Initialize a pre-allocated bitset struct,
+ * allocating memory for the uint64s holding the bits.
+ */
 static void bitset_init(BitSet *self, uint32_t capacity) {
     self->capacity = capacity;
     /* round upwards */
     self->nchunks = (capacity + 63) / 64;
     self->chunks = (uint64_t *) calloc(self->nchunks, sizeof(uint64_t));
     if (self->chunks == NULL) {
-        printf("bitset chunk allocation failure.");
+        fprintf(stderr, "bitset chunk allocation failure.");
         exit(1);
     }
 }
 
-/* Allocate a new bitset of the specified capacity, and return a pointer to the BitSet struct. */
+/* Allocate a new bitset of the specified capacity,
+ * and return a pointer to the BitSet struct.
+ */
 BitSet *bitset_new(uint32_t capacity) {
     BitSet *bs = (BitSet *) malloc(sizeof(BitSet));
     if (bs == NULL) {
-        printf("bitset allocation failure.");
+        fprintf(stderr, "bitset allocation failure.");
         exit(1);
     }
     bitset_init(bs, capacity);
@@ -36,7 +40,8 @@ BitSet *bitset_new(uint32_t capacity) {
 
 static void index_check(BitSet *self, uint32_t index) {
     if (index >= self->capacity) {
-        printf("bitset index %d out of range [0, %d)\n", index, self->capacity);
+        fprintf(stderr, "bitset index %d out of range [0, %d)\n",
+                        index, self->capacity);
         exit(1);
    }
 }
@@ -74,8 +79,8 @@ void bitset_dump(BitSet *self) {
     uint32_t i;
     for (i = 0; i < self->capacity; ++i)
         if (bitset_get(self, i))
-            printf("%d ", i);
-    printf("\n\n");
+            fprintf(stderr, "%d ", i);
+    fprintf(stderr, "\n\n");
 }
 
 uint32_t bitset_enumerate(BitSet *self) {
@@ -85,7 +90,7 @@ uint32_t bitset_enumerate(BitSet *self) {
          elem != BITSET_NONE;
          elem = bitset_next_set_bit(self, elem + 1)) {
         #if 0
-        printf ("%d ", elem);
+        fprintf (stderr, "%d ", elem);
         #endif
         total += elem;
     }
@@ -121,7 +126,9 @@ uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
             /* 1ull */
             mask = ((uint64_t) 1);
             ++chunk;
-            /* spin forward to next chunk containing a set bit, if no set bit was found */
+            /* spin forward to next chunk containing a set bit,
+             * if no set bit was found
+             */
             while ( ! *chunk ) {
                 ++chunk;
                 index += 64;

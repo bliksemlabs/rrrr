@@ -8,21 +8,21 @@
 
 void router_state_dump (router_state_t *state) {
     char walk_time[13], time[13], board_time[13];
-    printf ("-- Router State --\n"
-            "walk time:    %s\n"
-            "walk from:    %d\n"
-            "time:         %s\n"
-            "board time:   %s\n"
-            "back route:   ",
-            btimetext(state->walk_time, walk_time),
-            state->walk_from,
-            btimetext(state->time, time),
-            btimetext(state->board_time, board_time)
-            );
+    fprintf (stderr, "-- Router State --\n"
+                     "walk time:    %s\n"
+                     "walk from:    %d\n"
+                     "time:         %s\n"
+                     "board time:   %s\n"
+                     "back route:   ",
+                     btimetext(state->walk_time, walk_time),
+                     state->walk_from,
+                     btimetext(state->time, time),
+                     btimetext(state->board_time, board_time)
+                     );
 
     /* TODO */
-    if (state->back_route == NONE) printf ("NONE\n");
-    else printf ("%d\n", state->back_route);
+    if (state->back_route == NONE) fprintf (stderr, "NONE\n");
+    else fprintf (stderr, "%d\n", state->back_route);
 }
 
 void dump_results(router_t *router) {
@@ -34,14 +34,14 @@ void dump_results(router_t *router) {
     char *id_fmt = "%30.30s";
     #endif
 
-    printf("\nRouter states:\n");
-    printf(id_fmt, "Stop name");
-    printf(" [sindex]");
+    fprintf(stderr, "\nRouter states:\n");
+    fprintf(stderr, id_fmt, "Stop name");
+    fprintf(stderr, " [sindex]");
 
     for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
-        printf("  round %d   walk %d", i_round, i_round);
+        fprintf(stderr, "  round %d   walk %d", i_round, i_round);
     }
-    printf("\n");
+    fprintf(stderr, "\n");
 
     for (i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
         char *stop_id;
@@ -51,16 +51,16 @@ void dump_results(router_t *router) {
         if (router->best_time[i_stop] == UNREACHED) continue;
 
         stop_id = tdata_stop_name_for_index (router->tdata, i_stop);
-        printf(id_fmt, stop_id);
-        printf(" [%6d]", i_stop);
+        fprintf(stderr, id_fmt, stop_id);
+        fprintf(stderr, " [%6d]", i_stop);
         for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
-            printf(" %8s %8s",
+            fprintf(stderr, " %8s %8s",
                 btimetext(router->states[i_round * router->tdata->n_stops + i_stop].time, time),
                 btimetext(router->states[i_round * router->tdata->n_stops + i_stop].walk_time, walk_time));
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
-    printf("\n");
+    fprintf(stderr, "\n");
 }
 
 #if 0
@@ -85,21 +85,23 @@ void dump_trips(router_t *router) {
 
 void day_mask_dump (uint32_t mask) {
     uint8_t i_bit;
-    printf ("day mask: ");
+    fprintf (stderr, "day mask: ");
     printBits (4, &mask);
-    printf ("bits set: ");
+    fprintf (stderr, "bits set: ");
 
     for (i_bit = 0; i_bit < 32; ++i_bit)
         if (mask & (1 << i_bit))
-            printf ("%d ", i_bit);
+            fprintf (stderr, "%d ", i_bit);
 
-    printf ("\n");
+    fprintf (stderr, "\n");
 }
 
 void service_day_dump (struct service_day *sd) {
     char midnight[13];
-    printf ("service day\nmidnight: %s \n", btimetext(sd->midnight, midnight));
+    fprintf (stderr, "service day\nmidnight: %s \n",
+                      btimetext(sd->midnight, midnight));
+
     day_mask_dump (sd->mask);
-    printf ("real-time: %s \n\n", sd->apply_realtime ? "YES" : "NO");
+    fprintf (stderr, "real-time: %s \n\n", sd->apply_realtime ? "YES" : "NO");
 }
 

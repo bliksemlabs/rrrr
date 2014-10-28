@@ -84,7 +84,7 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     #if 0
     char etime[32];
     strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
-    printf ("epoch time: %s [%ld]\n", etime, epochtime);
+    fprintf (stderr, "epoch time: %s [%ld]\n", etime, epochtime);
     router_request_initialize (req);
     #endif
     struct tm origin_tm;
@@ -99,7 +99,8 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
          * 28 is a multiple of 7, so we always wrap up to the same day of the week
          */
         cal_day %= 28;
-        printf ("calendar day out of range. wrapping to %d, which is on the same day of the week.\n", cal_day);
+        fprintf (stderr, "calendar day out of range. wrapping to %d, "
+                         "which is on the same day of the week.\n", cal_day);
         req->calendar_wrapped = true;
     }
     req->day_mask = 1 << cal_day;
@@ -195,7 +196,9 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
 
         HashGridResult_reset(hg_result);
 
-        I printf ("Reversal - Hashgrid results:\n");
+        #if RRRR_DEBUG
+        fprintf (stderr, "Reversal - Hashgrid results:\n");
+        #endif
 
         stop_index = HashGridResult_next_filtered(hg_result, &distance);
 
@@ -221,7 +224,12 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
 
             }
 
-            I printf ("%d %s %s (%.0fm) %d %d\n", stop_index, tdata_stop_id_for_index(router->tdata, stop_index), tdata_stop_name_for_index(router->tdata, stop_index), distance, router->best_time[stop_index], extra_walktime);
+            #ifdef RRRR_DEBUG
+            fprintf (stderr, "%d %s %s (%.0fm) %d %d\n", stop_index,
+                     tdata_stop_id_for_index(router->tdata, stop_index),
+                     tdata_stop_name_for_index(router->tdata, stop_index),
+                     distance, router->best_time[stop_index], extra_walktime);
+            #endif
 
             /* get the next potential start stop */
             stop_index = HashGridResult_next_filtered(hg_result, &distance);
@@ -262,9 +270,10 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     if (round == NONE) return false;
 
     req->time_cutoff = req->time;
-    req->time = router->states[round * router->tdata->n_stops + best_stop_index].walk_time;
+    req->time = router->states[round * router->tdata->n_stops +
+                               best_stop_index].walk_time;
     #if 0
-    printf ("State present at round %d \n", round);
+    fprintf (stderr, "State present at round %d \n", round);
     router_state_dump (&(states[round][stop]));
     #endif
     req->max_transfers = round;
@@ -275,9 +284,10 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     #endif
     return true;
 
-    /* Eigenlijk zou in de counter clockwise stap een walkleg niet naar de target moeten gaan,
-     * maar naar de de fictieve arrival / departure halte. Zou mooi zijn om een punt te introduceren
-     * die dat faciliteert, dan zou je op dat punt een apply_hashgrid kunnen doen, ipv apply_transfers.
+    /* Eigenlijk zou in de counter clockwise stap een walkleg niet naar de
+     * target moeten gaan, maar naar de de fictieve arrival / departure halte.
+     * Zou mooi zijn om een punt te introduceren die dat faciliteert, dan zou
+     * je op dat punt een apply_hashgrid kunnen doen, ipv apply_transfers.
      */
 }
 
@@ -295,18 +305,19 @@ void router_request_dump(router_request_t *req, tdata_t *tdata) {
     btimetext(req->time, time);
     btimetext(req->time_cutoff, time_cutoff);
     printf("-- Router Request --\n"
-           "from:  %s [%d]\n"
-           "to:    %s [%d]\n"
-           "date:  %s\n"
-           "time:  %s [%d]\n"
-           "speed: %f m/sec\n"
-           "arrive-by: %s\n"
-           "max xfers: %d\n"
-           "max time:  %s\n"
-           "mode: ",
-           from_stop_id, req->from, to_stop_id, req->to, date, time,
-           req->time, req->walk_speed,
-           (req->arrive_by ? "true" : "false"), req->max_transfers, time_cutoff);
+            "from:  %s [%d]\n"
+            "to:    %s [%d]\n"
+            "date:  %s\n"
+            "time:  %s [%d]\n"
+            "speed: %f m/sec\n"
+            "arrive-by: %s\n"
+            "max xfers: %d\n"
+            "max time:  %s\n"
+            "mode: ",
+            from_stop_id, req->from, to_stop_id, req->to, date, time,
+            req->time, req->walk_speed,
+            (req->arrive_by ? "true" : "false"),
+            req->max_transfers, time_cutoff);
 
     if (req->mode == m_all) {
         printf("transit\n");

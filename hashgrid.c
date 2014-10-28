@@ -13,7 +13,8 @@
 #include <stdbool.h>
 #include <math.h> /* be sure to link with math library (-lm) */
 
-/* TODO: benchmark the conversion from variable length arrays to [y * grid_dims + x]
+/* TODO: benchmark the conversion from variable length arrays
+ * to [y * grid_dims + x]
  * evaluate if precomputing y might be more efficient.
  */
 
@@ -22,17 +23,20 @@
  * void *(*items)[10]
  */
 
-/* treat as unsigned to get 0-wrapping right? use only powers of 2 and bitshifting/masking to bin?
+/* treat as unsigned to get 0-wrapping right? use only powers of 2 and
+ * bitshifting/masking to bin?
  * ints are a circle coming back around to 0 after -1,
- * masking only the last B bits should wrap perfectly at both 0 and +180 degrees (except that the internal coords are projected).
- * adding brad coords with overflow should also work, but you have to make sure overflow is happening (-fwrapv?)
+ * masking only the last B bits should wrap perfectly at
+ * both 0 and +180 degrees (except that the internal coords are projected).
+ * adding brad coords with overflow should also work,
+ * but you have to make sure overflow is happening (-fwrapv?)
  */
 
 uint32_t xbin (HashGrid *hg, coord_t *coord) {
     uint32_t x = abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
-    #ifdef DEBUG
-    printf("binning x coord %d, bin is %d \n", coord->x, x);
+    #ifdef RRRR_DEBUG
+    fprintf(stderr, "binning x coord %d, bin is %d \n", coord->x, x);
     #endif
     return x;
 }
@@ -41,7 +45,7 @@ uint32_t ybin (HashGrid *hg, coord_t *coord) {
     uint32_t y = abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
     #ifdef DEBUG
-    printf("binning y coord %d, bin is %d \n", coord->y, y);
+    fprintf(stderr, "binning y coord %d, bin is %d \n", coord->y, y);
     #endif
     return y;
 }
@@ -106,14 +110,15 @@ uint32_t HashGridResult_next (HashGridResult *r) {
     return ret_item;
 }
 
-/* Pre-filter the results, removing most false positives using a bounding box. This will only work if
- * the initial coordinate list is still available (was not freed or did not go out of scope). We
- * could also return a boolean to indicate whether there is a result, and have an out-parameter
- * for the index.
+/* Pre-filter the results, removing most false positives using a bounding box.
+ * This will only work if the initial coordinate list is still available (was
+ * not freed or did not go out of scope). We could also return a boolean to
+ * indicate whether there is a result, and have an out-parameter for the index.
  *
- * The hashgrid can provide many false positives, but no false negatives (what is the term?).
- * A bounding box or the squared distance can both be used to filter points.
- * Note that most false positives are quite far away so a bounding box is effective.
+ * The hashgrid can provide many false positives, but no false negatives
+ * (what is the term?). A bounding box or the squared distance can both be
+ * used to filter points. Note that most false positives are quite far away
+ * so a bounding box is effective.
  */
 uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
     uint32_t item;
@@ -121,15 +126,17 @@ uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance) {
         coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
-        #ifdef DEBUG
-        printf ("%f,%f\n", latlon.lat, latlon.lon);
+        #ifdef RRRR_DEBUG
+        fprintf (stderr, "%f,%f\n", latlon.lat, latlon.lon);
         #endif
         if (coord->x > r->min.x && coord->x < r->max.x &&
             coord->y > r->min.y && coord->y < r->max.y) {
-            /* item's coordinate is within bounding box, calculate actual distance */
+            /* item's coordinate is within bounding box,
+             * calculate actual distance
+             */
             *distance = coord_distance_meters (&(r->coord), coord);
-            #ifdef DEBUG
-            printf ("%d,%d,%f\n", coord->x, coord->y, *distance);
+            #ifdef RRRR_DEBUG
+            fprintf (stderr, "%d,%d,%f\n", coord->x, coord->y, *distance);
             #endif
             if (*distance < r->radius_meters) {
                 return item;
@@ -147,12 +154,14 @@ uint32_t HashGridResult_closest (HashGridResult *r) {
         coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
-        #ifdef DEBUG
-        printf ("%f,%f\n", latlon.lat, latlon.lon);
+        #ifdef RRRR_DEBUG
+        fprintf (stderr, "%f,%f\n", latlon.lat, latlon.lon);
         #endif
         if (coord->x > r->min.x && coord->x < r->max.x &&
             coord->y > r->min.y && coord->y < r->max.y) {
-            /* false positives filtered, item's coordinate is within bounding box */
+            /* false positives filtered,
+             * item's coordinate is within bounding box
+             */
             double distance = coord_distance_meters (&(r->coord), coord);
             if (distance < best_distance) {
                 best_item = item;
@@ -163,7 +172,8 @@ uint32_t HashGridResult_closest (HashGridResult *r) {
     return best_item;
 }
 
-void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items) {
+void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters,
+                    coord_t *coords, uint32_t n_items) {
     /* Initialize all struct members. */
     hg->grid_dim = grid_dim;
     hg->coords = coords;
@@ -191,9 +201,11 @@ void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coo
         uint32_t i_coord;
         for (i_coord = 0; i_coord < n_items; ++i_coord) {
             #ifdef DEBUG
-            fprintf(stderr, "binning coordinate x=%d y=%d \n", (coords + i_coord)->x, (coords + i_coord)->y);
+            fprintf(stderr, "binning coordinate x=%d y=%d \n",
+                            (coords + i_coord)->x, (coords + i_coord)->y);
             #endif
-            hg->counts[ybin(hg, coords + i_coord) * grid_dim + xbin(hg, coords + i_coord)] += 1;
+            hg->counts[ybin(hg, coords + i_coord) * grid_dim +
+                                xbin(hg, coords + i_coord)] += 1;
         }
     }
 
@@ -233,34 +245,34 @@ void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coo
 void HashGrid_dump (HashGrid* hg) {
     uint32_t total, y;
 
-    printf ("Hash Grid %dx%d \n", hg->grid_dim, hg->grid_dim);
-    printf ("bin size: %f meters \n", hg->bin_size_meters);
-    printf ("number of items: %d \n", hg->n_items);
+    fprintf (stderr, "Hash Grid %dx%d \n", hg->grid_dim, hg->grid_dim);
+    fprintf (stderr, "bin size: %f meters \n", hg->bin_size_meters);
+    fprintf (stderr, "number of items: %d \n", hg->n_items);
 
     /* Grid of counts */
     total = 0;
     for (y = 0; y < hg->grid_dim; ++y) {
         uint32_t x;
         for (x = 0; x < hg->grid_dim; ++x) {
-            printf ("%2d ", hg->counts[y * hg->grid_dim + x]);
+            fprintf (stderr, "%2d ", hg->counts[y * hg->grid_dim + x]);
             total += hg->counts[y * hg->grid_dim + x];
         }
-        printf ("\n");
+        fprintf (stderr, "\n");
     }
-    printf ("total of all counts: %d", total);
+    fprintf (stderr, "total of all counts: %d", total);
     /* Bins */
     for (y = 0; y < hg->grid_dim; ++y) {
         uint32_t x;
         for (x = 0; x < hg->grid_dim; ++x) {
             uint32_t i;
-            printf ("Bin [%02d][%02d] ", y, x);
+            fprintf (stderr, "Bin [%02d][%02d] ", y, x);
             for (i = 0; i < hg->counts[y * hg->grid_dim + x]; ++i) {
-                printf ("%d ", hg->bins[y * hg->grid_dim + x][i]);
+                fprintf (stderr, "%d ", hg->bins[y * hg->grid_dim + x][i]);
             }
-            printf ("\n");
+            fprintf (stderr, "\n");
         }
     }
-    printf ("\n");
+    fprintf (stderr, "\n");
 }
 
 void HashGrid_teardown(HashGrid *hg) {

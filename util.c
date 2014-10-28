@@ -79,7 +79,7 @@ void printBits(size_t const size, void const * const ptr) {
         for (j = 7; j >= 0; j--) {
             byte = b[i] & (1 << j);
             byte >>= j;
-            printf("%u", byte);
+            fprintf(stderr, "%u", byte);
         }
     }
     puts("");
@@ -126,14 +126,14 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     /* shift rtime to day 1. day 0 is yesterday. */
     rtime += RTIME_ONE_DAY;
     #if 0
-    printf ("epoch time is %ld \n", epochtime);
+    fprintf (stderr, "epoch time is %ld \n", epochtime);
 
     /* ctime and asctime include newlines */
-    printf ("epoch time is %s", ctime(&epochtime));
-    printf ("ltm is %s", asctime(&ltm));
+    fprintf (stderr, "epoch time is %s", ctime(&epochtime));
+    fprintf (stderr, "ltm is %s", asctime(&ltm));
 
-    printf ("seconds is %d \n", seconds);
-    printf ("rtime is %d \n", rtime);
+    fprintf (stderr, "seconds is %d \n", seconds);
+    fprintf (stderr, "rtime is %d \n", rtime);
     #endif
     return rtime;
 }
