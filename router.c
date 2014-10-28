@@ -309,15 +309,17 @@ void apply_transfers (router_t *router, router_request_t *req,
          */
         #if RRRR_DEBUG
         if (time_from != router->best_time[stop_index_from]) {
+            char buf[13];
+
             fprintf (stderr, "ERROR: time at stop %d in round %d " \
                              "is not the same as its best time. \n",
                     stop_index_from, round);
             fprintf (stderr, "    from time %s \n",
-                     timetext(time_from));
+                     btimetext(time_from, buf));
             fprintf (stderr, "    walk time %s \n",
-                     timetext(state_from->walk_time));
+                     btimetext(state_from->walk_time, buf));
             fprintf (stderr, "    best time %s \n",
-                     timetext(router->best_time[stop_index_from]));
+                     btimetext(router->best_time[stop_index_from], buf));
             continue;
         }
         #endif
@@ -364,15 +366,19 @@ void apply_transfers (router_t *router, router_request_t *req,
                                  time_to < time_from) continue;
 
             #ifdef RRRR_INFO
-            fprintf (stderr, "    target %d %s (%s) \n",
-                     stop_index_to, timetext(router->best_time[stop_index_to]),
-                     tdata_stop_name_for_index(router->tdata, stop_index_to));
+            {
+                char buf[13];
+                fprintf (stderr, "    target %d %s (%s) \n",
+                  stop_index_to,
+                  btimetext(router->best_time[stop_index_to], buf),
+                  tdata_stop_name_for_index(router->tdata, stop_index_to));
 
-            fprintf (stderr, "    transfer time   %s\n",
-                     timetext(transfer_duration));
+                fprintf (stderr, "    transfer time   %s\n",
+                        btimetext(transfer_duration, buf));
 
-            fprintf (stderr, "    transfer result %s\n",
-                     timetext(time_to));
+                fprintf (stderr, "    transfer result %s\n",
+                        btimetext(time_to, buf));
+            }
             #endif
 
             /* TODO verify state_to->walk_time versus
@@ -383,8 +389,9 @@ void apply_transfers (router_t *router, router_request_t *req,
 
                 router_state_t *state_to = states + stop_index_to;
                 #ifdef RRRR_INFO
+                char buf[13];
                 fprintf (stderr, "      setting %d to %s\n",
-                         stop_index_to, timetext(time_to));
+                         stop_index_to, btimetext(time_to, buf));
                 #endif
                 state_to->walk_time = time_to;
                 state_to->walk_from = stop_index_from;
@@ -924,7 +931,10 @@ bool write_state(router_t *router, router_request_t *req,
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
 
     #ifdef RRRR_INFO
-    fprintf(stderr, "    setting stop to %s \n", timetext(time));
+    {
+        char buf[13];
+        fprintf(stderr, "    setting stop to %s \n", btimetext(time, buf));
+    }
     #endif
 
     router->best_time[stop_index] = time;
@@ -1036,8 +1046,9 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             bool foralighting = (cache.route_stop_attributes[i_route_stop] & rsa_alighting);
 
             #ifdef RRRR_INFO
+            char buf[13];
             fprintf(stderr, "    stop %2d [%d] %s %s\n", i_route_stop, stop,
-                            timetext(router->best_time[stop]),
+                            btimetext(router->best_time[stop], buf),
                             tdata_stop_name_for_index (router->tdata, stop));
             #endif
 
@@ -1094,11 +1105,12 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         attempt_board = false;
                     } else if (req->arrive_by ? prev_time > trip_time
                                               : prev_time < trip_time) {
-                        attempt_board = true;
                         #ifdef RRRR_INFO
+                        char buf[13];
                         fprintf (stderr, "    [reboarding here] trip = %s\n",
-                                         timetext(trip_time));
+                                         btimetext(trip_time, buf));
                         #endif
+                        attempt_board = true;
                     }
                 }
             }
@@ -1130,8 +1142,9 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
                 if (best_trip != NONE) {
                     #ifdef RRRR_INFO
+                    char buf[13];
                     fprintf(stderr, "    boarding trip %d at %s \n",
-                                    best_trip, timetext(best_time));
+                                    best_trip, btimetext(best_time, buf));
                     #endif
                     if ((req->arrive_by ? best_time > req->time : best_time < req->time) && req->from != ONBOARD) {
                         fprintf(stderr, "ERROR: boarded before start time, "
