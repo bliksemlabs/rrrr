@@ -9,6 +9,7 @@
 #define _HASHGRID_H
 
 #include "geometry.h"
+#include "config.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -63,7 +64,6 @@ typedef struct HashGridResult {
 
 void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items);
 
-void HashGrid_dump (HashGrid*);
 
 void HashGrid_query (HashGrid*, HashGridResult*, coord_t, double radius_meters);
 
@@ -74,5 +74,9 @@ void HashGridResult_reset (HashGridResult*);
 uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance);
 
 uint32_t HashGridResult_closest (HashGridResult *r);
+
+#ifdef RRRR_DEBUG
+void HashGrid_dump (HashGrid*);
+#endif
 
 #endif /* _HASHGRID_H */

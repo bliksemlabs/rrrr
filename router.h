@@ -68,13 +68,20 @@ struct router {
     /* Used to track which routes might have changed during each round */
     BitSet *updated_routes;
 
+#ifdef RRRR_BANNED_ROUTES_BITMASK
+    /* Used to bann routes and in the final clockwise search optimise */
+    BitSet *banned_routes;
+#endif
+
     uint32_t origin;
     uint32_t target;
 
     calendar_t day_mask;
     serviceday_t servicedays[3];
 
+#ifdef RRRR_FEATURE_LATLON
     HashGrid hg;
+#endif
     /* TODO: We should move more routing state in here,
      * like round and sub-scratch pointers.
      */

@@ -20,14 +20,14 @@
     td->n_##storage = header->n_##storage; \
     td->storage = (type*) malloc (RRRR_DYNAMIC_SLACK * (td->n_##storage + 1) * sizeof(type)); \
     lseek (fd, header->loc_##storage, SEEK_SET); \
-    if (read (fd, td->storage, (td->n_##storage + 1) * sizeof(type)) != (td->n_##storage + 1) * sizeof(type)) return false;
+    if (read (fd, td->storage, (td->n_##storage + 1) * sizeof(type)) != (ssize_t) ((td->n_##storage + 1) * sizeof(type))) return false;
 
 #define load_dynamic_string(fd, storage) \
     td->n_##storage = header->n_##storage; \
     lseek (fd, header->loc_##storage, SEEK_SET); \
     if (read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) return false; \
     td->storage = (char*) malloc (RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width * sizeof(char)); \
-    if (read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char)) != (td->n_##storage * td->storage##_width * sizeof(char))) return false;
+    if (read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char)) != (ssize_t) (td->n_##storage * td->storage##_width * sizeof(char))) return false;
 
 bool tdata_io_v3_load(tdata_t *td, char *filename) {
     tdata_header_t h;

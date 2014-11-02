@@ -27,7 +27,7 @@ struct leg {
     /* end time */
     rtime_t  t1;
 
-    #ifdef RRRR_REALTIME
+    #ifdef RRRR_FEATURE_REALTIME
     /* start delay */
     int16_t d0;
 
@@ -54,7 +54,7 @@ struct plan {
 };
 
 
-void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req);
+bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req);
 
 /* return num of chars written */
 uint32_t router_result_dump(router_t*, router_request_t*, char *buf, uint32_t buflen);

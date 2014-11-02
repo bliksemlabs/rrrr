@@ -32,7 +32,7 @@
  * but you have to make sure overflow is happening (-fwrapv?)
  */
 
-uint32_t xbin (HashGrid *hg, coord_t *coord) {
+static uint32_t xbin (HashGrid *hg, coord_t *coord) {
     uint32_t x = abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
     #ifdef RRRR_DEBUG
@@ -41,7 +41,7 @@ uint32_t xbin (HashGrid *hg, coord_t *coord) {
     return x;
 }
 
-uint32_t ybin (HashGrid *hg, coord_t *coord) {
+static uint32_t ybin (HashGrid *hg, coord_t *coord) {
     uint32_t y = abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
     #ifdef DEBUG
@@ -242,6 +242,17 @@ void HashGrid_init (HashGrid *hg, uint32_t grid_dim, double bin_size_meters,
     }
 }
 
+
+void HashGrid_teardown(HashGrid *hg) {
+    /* Free up dynamically allocated arrays.
+     * Individual bins do not need to be freed separately from items.
+     */
+    free (hg->counts);
+    free (hg->bins);
+    free (hg->items);
+}
+
+#ifdef RRRR_DEBUG
 void HashGrid_dump (HashGrid* hg) {
     uint32_t total, y;
 
@@ -274,13 +285,4 @@ void HashGrid_dump (HashGrid* hg) {
     }
     fprintf (stderr, "\n");
 }
-
-void HashGrid_teardown(HashGrid *hg) {
-    /* Free up dynamically allocated arrays.
-     * Individual bins do not need to be freed separately from items.
-     */
-    free (hg->counts);
-    free (hg->bins);
-    free (hg->items);
-}
-
+#endif

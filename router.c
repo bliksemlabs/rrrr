@@ -21,7 +21,9 @@
 #include <stdint.h>
 #include <math.h>
 
-bool router_setup_hashgrid(router_t *router) {
+
+#ifdef RRRR_FEATURE_LATLON
+static bool router_setup_hashgrid(router_t *router) {
     coord_t *coords;
     uint32_t i_stop;
 
@@ -37,6 +39,7 @@ bool router_setup_hashgrid(router_t *router) {
 
     return true;
 }
+#endif
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     srand(time(NULL));
@@ -45,17 +48,25 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     router->states = (router_state_t *) malloc(sizeof(router_state_t) *
                                                (tdata->n_stops *
                                                 RRRR_DEFAULT_MAX_ROUNDS));
-    router->updated_stops = bitset_new(tdata->n_stops);
+    router->updated_stops  = bitset_new(tdata->n_stops);
     router->updated_routes = bitset_new(tdata->n_routes);
+    router->banned_routes  = bitset_new(tdata->n_routes);
     if ( ! (router->best_time &&
             router->states &&
             router->updated_stops &&
-            router->updated_routes)) {
+            router->updated_routes &&
+            router->banned_routes
+           )
+       ) {
         fprintf(stderr, "failed to allocate router scratch space");
         return false;
     }
 
+#ifdef RRRR_FEATURE_LATLON
     return router_setup_hashgrid (router);
+#else
+    return true;
+#endif
 }
 
 void router_teardown(router_t *router) {
@@ -63,8 +74,11 @@ void router_teardown(router_t *router) {
     free(router->states);
     bitset_destroy(router->updated_stops);
     bitset_destroy(router->updated_routes);
+    bitset_destroy(router->banned_routes);
 
+#ifdef RRRR_FEATURE_LATLON
     HashGrid_teardown (&router->hg);
+#endif
 }
 
 void router_reset(router_t *router) {
@@ -76,6 +90,8 @@ void router_reset(router_t *router) {
     router->origin = NONE;
     router->target = NONE;
 
+    bitset_black(router->banned_routes);
+
     /* The best times to arrive at a stop scratch space is initialised with
      * UNREACHED. This allows to compare for a lesser time candidate in the
      * search.
@@ -83,7 +99,7 @@ void router_reset(router_t *router) {
     memset_rtime(router->best_time, UNREACHED, router->tdata->n_stops);
 }
 
-bool initialize_states (router_t *router) {
+static bool initialize_states (router_t *router) {
     uint8_t i;
 
     for (i = 0; i < (RRRR_DEFAULT_MAX_ROUNDS * router->tdata->n_stops); ++i) {
@@ -99,7 +115,7 @@ bool initialize_states (router_t *router) {
  * searches). Note that yesterday's bit flag will be 0 if today is the
  * first day of the calendar.
  */
-bool initialize_servicedays (router_t *router, router_request_t *req) {
+static bool initialize_servicedays (router_t *router, router_request_t *req) {
     /* One bit for the calendar day on which realtime data should be
      * applied (applying only on the true current calendar day)
      */
@@ -157,8 +173,8 @@ bool initialize_servicedays (router_t *router, router_request_t *req) {
  */
 
 /* Given a stop index, mark all routes that serve it as updated. */
-void flag_routes_for_stop (router_t *router, router_request_t *req,
-                           uint32_t stop_index) {
+static void flag_routes_for_stop (router_t *router, router_request_t *req,
+                                  uint32_t stop_index) {
     uint32_t *routes;
     uint32_t i_route;
     uint32_t n_routes = tdata_routes_for_stop (router->tdata, stop_index,
@@ -215,7 +231,13 @@ void flag_routes_for_stop (router_t *router, router_request_t *req,
     #endif
 }
 
-void unflag_banned_routes (router_t *router, router_request_t *req) {
+#ifdef RRRR_BANNED_ROUTES_BITMASK
+static void unflag_banned_routes (router_t *router, router_request_t *req) {
+    UNUSED (req);
+    bitset_mask_and (router->updated_routes, router->banned_routes);
+}
+#else
+static void unflag_banned_routes (router_t *router, router_request_t *req) {
     uint32_t i_banned_route;
      for (i_banned_route = 0;
           i_banned_route < req->n_banned_routes;
@@ -224,8 +246,9 @@ void unflag_banned_routes (router_t *router, router_request_t *req) {
                        req->banned_route[i_banned_route]);
      }
 }
+#endif
 
-void unflag_banned_stops (router_t *router, router_request_t *req) {
+static void unflag_banned_stops (router_t *router, router_request_t *req) {
     uint32_t i_banned_stop;
     for (i_banned_stop = 0;
          i_banned_stop < req->n_banned_stops;
@@ -235,30 +258,7 @@ void unflag_banned_stops (router_t *router, router_request_t *req) {
     }
 }
 
-/* Because the first round begins with so few reached stops, the initial state
- * doesn't get its own full array of states. Instead we reuse one of the later
- * rounds (round 1) for the initial state. This means we need to reset the
- * walks in round 1 back to UNREACHED before using them in routing. Rather
- * than iterating over all of them, we only initialize the stops that can be
- * reached by transfers.
- * Alternatively we could instead initialize walks to UNREACHED at the
- * beginning of the transfer calculation function.
- * We should not however reset the best times for those stops reached from the
- * initial stop on foot. This will prevent finding circuitous itineraries that
- * return to them.
- */
-void initialize_transfers (router_t *router,
-                           uint32_t round, uint32_t stop_index_from) {
-    router_state_t *states = router->states + (round * router->tdata->n_stops);
-    uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
-    uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
-    states[stop_index_from].walk_time = UNREACHED;
-    for ( ; t < tN ; ++t) {
-        uint32_t stop_index_to = router->tdata->transfer_target_stops[t];
-        states[stop_index_to].walk_time = UNREACHED;
-    }
-}
-
+#ifdef RRRR_FEATURE_LATLON
 /* Because the first round begins with so few reached stops, the initial state
  * doesn't get its own full array of states
  * Instead we reuse one of the later rounds (round 1) for the initial state.
@@ -273,7 +273,32 @@ void initialize_transfers_full (router_t *router, uint32_t round) {
         states[i_stop].walk_time = UNREACHED;
     }
 }
+#else
 
+/* Because the first round begins with so few reached stops, the initial state
+ * doesn't get its own full array of states. Instead we reuse one of the later
+ * rounds (round 1) for the initial state. This means we need to reset the
+ * walks in round 1 back to UNREACHED before using them in routing. Rather
+ * than iterating over all of them, we only initialize the stops that can be
+ * reached by transfers.
+ * Alternatively we could instead initialize walks to UNREACHED at the
+ * beginning of the transfer calculation function.
+ * We should not however reset the best times for those stops reached from the
+ * initial stop on foot. This will prevent finding circuitous itineraries that
+ * return to them.
+ */
+static void initialize_transfers (router_t *router,
+                                  uint32_t round, uint32_t stop_index_from) {
+    router_state_t *states = router->states + (round * router->tdata->n_stops);
+    uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
+    uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
+    states[stop_index_from].walk_time = UNREACHED;
+    for ( ; t < tN ; ++t) {
+        uint32_t stop_index_to = router->tdata->transfer_target_stops[t];
+        states[stop_index_to].walk_time = UNREACHED;
+    }
+}
+#endif
 
 /* For each updated stop and each destination of a transfer from an updated
  * stop, set the associated routes as updated. The routes bitset is cleared
@@ -475,7 +500,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 }
 
 bool tdata_next (router_t *router, router_request_t *req,
-                 uint32_t route_index, uint32_t trip_offset, rtime_t time,
+                 uint32_t route_index, uint32_t trip_offset, rtime_t qtime,
                  uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
 
     uint32_t *route_stops = tdata_stops_for_route(router->tdata, route_index);
@@ -492,7 +517,7 @@ bool tdata_next (router_t *router, router_request_t *req,
                                        route_index, trip_offset, i_route_stop, false);
 
         /* Find stop immediately after the given time on the given trip. */
-        if (req->arrive_by ? time > req->time : time < req->time) {
+        if (req->arrive_by ? time > qtime : time < qtime) {
             if (*ret_stop_time == UNREACHED ||
                 (req->arrive_by ? time < *ret_stop_time :
                                   time > *ret_stop_time)) {
@@ -505,7 +530,7 @@ bool tdata_next (router_t *router, router_request_t *req,
     return (*ret_stop_index != NONE);
 }
 
-bool initialize_origin_onboard (router_t *router, router_request_t *req) {
+static bool initialize_origin_onboard (router_t *router, router_request_t *req) {
     /* We cannot expand the start trip into the temporary round (1)
      * during initialization because we may be able to reach the
      * destination on that starting trip.
@@ -546,7 +571,7 @@ bool initialize_origin_onboard (router_t *router, router_request_t *req) {
     return false;
 }
 
-bool initialize_origin_index (router_t *router, router_request_t *req) {
+static bool initialize_origin_index (router_t *router, router_request_t *req) {
     uint32_t i_state;
 
     router->origin = (req->arrive_by ? req->to : req->from);
@@ -587,13 +612,15 @@ bool initialize_origin_index (router_t *router, router_request_t *req) {
     return true;
 }
 
-bool initialize_target_index (router_t *router, router_request_t *req) {
+static bool initialize_target_index (router_t *router, router_request_t *req) {
     router->target = (req->arrive_by ? req->from : req->to);
 
     return (router->target != NONE);
 }
 
-bool latlon_best_stop_index(router_t *router, router_request_t *req, HashGridResult *hg_result) {
+#ifdef RRRR_FEATURE_LATLON
+static bool latlon_best_stop_index(router_t *router, router_request_t *req,
+                                   HashGridResult *hg_result) {
     double distance, best_distance = INFINITY;
     uint32_t stop_index, best_stop_index = NONE;
 
@@ -666,8 +693,10 @@ bool latlon_best_stop_index(router_t *router, router_request_t *req, HashGridRes
 
     return true;
 }
+#endif
 
-bool initialize_origin_latlon (router_t *router, router_request_t *req) {
+#ifdef RRRR_FEATURE_LATLON
+static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
         if (req->to_hg_result.hg == NULL) {
             coord_t coord;
@@ -689,7 +718,7 @@ bool initialize_origin_latlon (router_t *router, router_request_t *req) {
     return false;
 }
 
-bool initialize_target_latlon (router_t *router, router_request_t *req) {
+static bool initialize_target_latlon (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
         if (req->from_hg_result.hg == NULL) {
             coord_t coord;
@@ -712,8 +741,9 @@ bool initialize_target_latlon (router_t *router, router_request_t *req) {
 
     return (router->target != NONE);
 }
+#endif
 
-bool initialize_origin (router_t *router, router_request_t *req) {
+static bool initialize_origin (router_t *router, router_request_t *req) {
     /* In this function we are setting up all initial required elements of the
      * routing engine we also infer what the requestee wants to do, the
      * following use cases can be observed:
@@ -764,30 +794,55 @@ bool initialize_origin (router_t *router, router_request_t *req) {
             return false;
         }
     } else {
+        #ifdef RRRR_FEATURE_LATLON
         /* In the first two searches the LATLON search will find the best
          * values for req->to and req->from the final interation have both
          * set to the walk optimum. For the geographic optimisation to start
          * a latlon must be set and the stop_index must be set to NONE.
          */
         if (req->to == NONE || req->from == NONE) {
+            if (req->from_latlon.lat == 0.0 && req->from_latlon.lon == 0.0 &&
+                req->to_latlon.lat   == 0.0 && req->to_latlon.lon   == 0.0) {
+
+                fprintf (stderr, "Neither stop stopindices or coordinates "
+                                 "were set in the origin.\n");
+
+                return false;
+            }
             /* a lat/lon must have been provided */
             return initialize_origin_latlon (router, req);
-        } else {
+        } else
+        #endif
+        {
             /* search the origin based on a provided index */
             return initialize_origin_index (router, req);
         }
     }
 }
 
-bool initialize_target (router_t *router, router_request_t *req) {
+static bool initialize_target (router_t *router, router_request_t *req) {
     /* In the first two searches the LATLON search will find the best
      * values for req->to and req->from the final interation have both
      * set to the walk optimum. For the geographic optimisation to start
      * a latlon must be set and the stop_index must be set to NONE.
+     *
+     * In initialize_origin we have already asured that either a latlon
+     * or a index is set.
      */
+    #ifdef RRRR_FEATURE_LATLON
     if (req->to == NONE || req->from == NONE) {
+        if (req->from_latlon.lat == 0.0 && req->from_latlon.lon == 0.0 &&
+            req->to_latlon.lat   == 0.0 && req->to_latlon.lon   == 0.0) {
+
+            fprintf (stderr, "Neither stop stopindices or coordinates "
+                             "were set in the origin.\n");
+            return false;
+        }
+
         return initialize_target_latlon (router, req);
-    } else {
+    } else
+    #endif
+    {
         return initialize_target_index (router, req);
     }
 }
@@ -834,11 +889,12 @@ bool router_route(router_t *router, router_request_t *req) {
     return true;
 }
 
-void search_trips_within_days (router_t *router, router_request_t *req,
-                               route_cache_t *cache,
-                               uint32_t route_stop_offset, rtime_t prev_time,
-                               serviceday_t **best_serviceday,
-                               uint32_t *best_trip, rtime_t *best_time) {
+static void search_trips_within_days (router_t *router, router_request_t *req,
+                                      route_cache_t *cache,
+                                      uint32_t route_stop_offset,
+                                      rtime_t prev_time,
+                                      serviceday_t **best_serviceday,
+                                      uint32_t *best_trip, rtime_t *best_time) {
 
     serviceday_t *serviceday;
 
@@ -958,8 +1014,16 @@ bool write_state(router_t *router, router_request_t *req,
 }
 
 
-void fill_route_cache(router_t *router, uint32_t route_index, struct route_cache *cache) {
+static bool fill_route_cache(router_t *router, router_request_t *req,
+                             uint32_t route_index, struct route_cache *cache) {
     cache->this_route    = &(router->tdata->routes[route_index]);
+
+    #ifdef FEATURE_AGENCY_FILTER
+    if (req->agency != AGENCY_UNFILTERED &&
+        req->agency != route->agency_index) return false;
+    #else
+    UNUSED (req);
+    #endif
 
     /* For each stop in this route, its global stop index. */
     cache->route_stops   = tdata_stops_for_route(router->tdata, route_index);
@@ -971,6 +1035,8 @@ void fill_route_cache(router_t *router, uint32_t route_index, struct route_cache
     cache->route_overlap = cache->this_route->min_time < cache->this_route->max_time - RTIME_ONE_DAY;
     cache->route_trips   = tdata_trips_for_route(router->tdata, route_index);
     cache->trip_masks    = tdata_trip_masks_for_route(router->tdata, route_index);
+
+    return true;
 }
 
 void router_round(router_t *router, router_request_t *req, uint8_t round) {
@@ -1015,12 +1081,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         int32_t i_route_stop;
 
-        #ifdef FEATURE_AGENCY_FILTER
-        if (req->agency != AGENCY_UNFILTERED && req->agency != route.agency_index) continue;
-        #endif
-
-        fill_route_cache (router, i_route, &cache);
-
+        if (!fill_route_cache (router, req, i_route, &cache)) continue;
 
         #if 0
         if (route_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
@@ -1086,7 +1147,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
              * a better trip on this route at this location, indicate that we
              * want to search for a trip.
              */
-            prev_time = router->states[last_round * router->tdata->n_stops + stop].walk_time;
+            prev_time = router->states[last_round * router->tdata->n_stops +
+                                                              stop].walk_time;
 
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
@@ -1100,7 +1162,11 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     /* TODO: is this repetitively triggering re-boarding
                      * searches along a single route?
                      */
-                    rtime_t trip_time = tdata_stoptime (router->tdata, board_serviceday, i_route, trip, i_route_stop, req->arrive_by);
+                    rtime_t trip_time = tdata_stoptime (router->tdata,
+                                                        board_serviceday,
+                                                        i_route, trip,
+                                                        i_route_stop,
+                                                        req->arrive_by);
                     if (trip_time == UNREACHED) {
                         attempt_board = false;
                     } else if (req->arrive_by ? prev_time > trip_time
@@ -1146,7 +1212,9 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     fprintf(stderr, "    boarding trip %d at %s \n",
                                     best_trip, btimetext(best_time, buf));
                     #endif
-                    if ((req->arrive_by ? best_time > req->time : best_time < req->time) && req->from != ONBOARD) {
+                    if ((req->arrive_by ? best_time > req->time :
+                                          best_time < req->time) &&
+                        req->from != ONBOARD) {
                         fprintf(stderr, "ERROR: boarded before start time, "
                                         "trip %d stop %d \n", best_trip, stop);
                     } else {
@@ -1232,7 +1300,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 } else {
                     write_state(router, req, round, i_route, trip, stop,
                                 i_route_stop, time,
-                                board_stop, board_time, board_route_stop);
+                                board_stop, board_route_stop, board_time);
 
                     /*  mark stop for next round. */
                     bitset_set(router->updated_stops, stop);
@@ -1255,8 +1323,13 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
      * starting points for round 0.
      */
     /*  TODO: also must be done for the hashgrid */
-    /*  if (round == 0) initialize_transfers (router, 1, router->origin); */
-    if (round == 0) initialize_transfers_full (router, 1);
+    if (round == 0) {
+        #ifdef RRRR_FEATURE_LATLON
+        initialize_transfers_full (router, 1);
+        #else
+        initialize_transfers (router, 1, router->origin);
+        #endif
+    }
 
      /*  TODO add arrival hashgrid timings */
 
@@ -1264,5 +1337,3 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
     dump_results(router);
     #endif
 }
-
-

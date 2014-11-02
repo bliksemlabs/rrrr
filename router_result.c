@@ -4,7 +4,7 @@
 #include <string.h>
 
 /* Reverse the times and stops in a leg. Used for creating arrive-by itineraries. */
-void leg_swap (leg_t *leg) {
+static void leg_swap (leg_t *leg) {
     struct leg temp = *leg;
     leg->s0 = temp.s1;
     leg->s1 = temp.s0;
@@ -15,7 +15,7 @@ void leg_swap (leg_t *leg) {
 /* Checks charateristics that should be the same for all trip plans produced by this router:
    All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc.
    Returns true if any of the checks fail, false if no problems are detected. */
-bool check_plan_invariants (plan_t *plan) {
+static bool check_plan_invariants (plan_t *plan) {
     uint8_t i_itinerary;
     bool fail = false;
     itinerary_t *prev_itin = NULL;
@@ -55,12 +55,12 @@ bool check_plan_invariants (plan_t *plan) {
             }
             /* Check that the itinerary respects the depart after or arrive-by criterion */
             /* finish when rtimes are in requests
-            if (plan->req.arrive_by) {
-                if (itin->legs[itin->n_legs - 1].s1 > plan->req.time)...
-            } else {
-                if (itin->legs[0].s0 < plan->req.time)...
-            }
-            */
+               if (plan->req.arrive_by) {
+               if (itin->legs[itin->n_legs - 1].s1 > plan->req.time)...
+               } else {
+               if (itin->legs[0].s0 < plan->req.time)...
+               }
+               */
             /* All itineraries are composed of ride-walk pairs, prefixed by a single walk leg. */
             if (itin->n_legs % 2 != 1) {
                 fprintf(stderr, "itinerary has an inexplicable (even) number of legs: %d\n", itin->n_legs);
@@ -91,14 +91,14 @@ bool check_plan_invariants (plan_t *plan) {
                     }
                     if (leg->route == WALK && leg->t0 != prev_leg->t1) {
                         /* This will fail unless reversal is being performed */
-                        #if 0
+#if 0
                         fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
                         fail = true;
-                        #endif
+#endif
                     }
                     if (leg->t0 < prev_leg->t1) {
                         fprintf(stderr, "itin %d: non-increasing times between legs %d and %d: %d, %d\n",
-                                        i_itinerary, i_leg - 1, i_leg, prev_leg->t1, leg->t0);
+                                i_itinerary, i_leg - 1, i_leg, prev_leg->t1, leg->t0);
                         fail = true;
                     }
                 }
@@ -109,7 +109,7 @@ bool check_plan_invariants (plan_t *plan) {
     return fail;
 }
 
-void router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
+bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     itinerary_t *itin;
     uint8_t i_transfer;
     /* Router states are a 2D array of stride n_stops */
@@ -181,7 +181,7 @@ void router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->route = ride->back_route;
             l->trip  = ride->back_trip;
 
-            #ifdef RRRR_FEATURE_REALTIME
+            #if 0 /* RRRR_FEATURE_REALTIME */
             {
                 route_t *route = router->tdata->routes + ride->back_route;
                 trip_t *trip = router->tdata->trips + trip_index;
@@ -197,6 +197,9 @@ void router_result_to_plan (struct plan *plan, router_t *router, router_request_
                     l->d1 = 0;
                 }
             }
+            #else
+            l->d0 = 0.0;
+            l->d1 = 0.0;
             #endif
 
             if (req->arrive_by) leg_swap (l);
@@ -232,10 +235,10 @@ void router_result_to_plan (struct plan *plan, router_t *router, router_request_
         plan->n_itineraries += 1;
         itin += 1;
     }
-    check_plan_invariants (plan);
+    return check_plan_invariants (plan);
 }
 
-char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
     leg_t *leg;
 
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
@@ -327,7 +330,7 @@ char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, ch
         */
 
         if (b > b_end) {
-            printf ("buffer overflow\n");
+            fprintf (stderr, "buffer overflow\n");
             return b;
             /* exit(2); */
         }
@@ -367,7 +370,10 @@ uint32_t plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req, char *
 */
 uint32_t router_result_dump(router_t *router, router_request_t *req, char *buf, uint32_t buflen) {
     plan_t plan;
-    router_result_to_plan (&plan, router, req);
+    if (!router_result_to_plan (&plan, router, req)) {
+        return 0;
+    }
+
     /* plan_render_json (&plan, router->tdata, req); */
     return plan_render (&plan, router->tdata, req, buf, buflen);
 }

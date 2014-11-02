@@ -73,6 +73,13 @@ void router_request_initialize(router_request_t *req) {
     req->onboard_trip_offset = NONE;
     req->intermediatestops = false;
 
+    #ifdef RRRR_FEATURE_LATLON
+    req->from_latlon.lat = 0.0;
+    req->from_latlon.lon = 0.0;
+    req->to_latlon.lat = 0.0;
+    req->to_latlon.lon = 0.0;
+    #endif
+
     #ifdef RRRR_FEATURE_AGENCY_FILTER
     req->agency = AGENCY_UNFILTERED;
     #endif
@@ -367,7 +374,6 @@ time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
  * We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
  */
 bool range_check(router_request_t *req, tdata_t *tdata) {
-    if (req->time < 0)               return false;
     if (req->walk_speed < 0.1)       return false;
     if (req->from >= tdata->n_stops) return false;
     if (req->to   >= tdata->n_stops) return false;

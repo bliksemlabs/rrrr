@@ -40,37 +40,14 @@ RadixTree *rxt_new () {
     return rxt_edge_new();
 }
 
-static int edge_prefix_length (struct rxt_edge *e) {
-    int n = 0;
+static uint32_t edge_prefix_length (struct rxt_edge *e) {
+    uint32_t n = 0;
     char *c = e->prefix;
     while (*c != '\0' && n < RADIX_TREE_PREFIX_SIZE) {
         ++n;
         ++c;
     }
     return n;
-}
-
-int rxt_edge_count (struct rxt_edge *e) {
-    int n = 0;
-    if (e != NULL) {
-        n += 1;
-        n += rxt_edge_count(e->child);
-        n += rxt_edge_count(e->next);
-    }
-    return n;
-}
-
-void rxt_edge_print (struct rxt_edge *e) {
-    if (e == NULL) return;
-    fprintf (stderr, "\nedge [%p]\n", (void *) e);
-    /* variable width string format character */
-    fprintf (stderr, "prefix '%.*s'\n", RADIX_TREE_PREFIX_SIZE, e->prefix);
-    fprintf (stderr, "length %d\n", edge_prefix_length(e));
-    fprintf (stderr, "value  %d\n", e->value);
-    fprintf (stderr, "next   %p\n", (void *) e->next);
-    fprintf (stderr, "child  %p\n", (void *) e->child);
-    rxt_edge_print(e->next);
-    rxt_edge_print(e->child);
 }
 
 /* Insert a string-to-int mapping into the prefix tree.
@@ -251,10 +228,12 @@ uint32_t rxt_find (struct rxt_edge *root, const char *key) {
     /* Ran out of edges to traverse, no match was found. */
 }
 
-/* returns a compacted copy of the tree */
+#if 0
+/* TODO: returns a compacted copy of the tree */
 struct node *compact (struct rxt_edge *root) {
     return NULL;
 }
+#endif
 
 /* Compresses paths in place. Not well tested,
  * and only seems to remove a few edges from 600k when using numbers.
@@ -264,8 +243,8 @@ void rxt_compress (struct rxt_edge *root) {
     if (e == NULL) return;
     while (e->child != NULL &&
            e->child->next == NULL && e->value == RADIX_TREE_NONE) {
-        int l0 = edge_prefix_length(e);
-        int l1 = edge_prefix_length(e->child);
+        uint32_t l0 = edge_prefix_length(e);
+        uint32_t l1 = edge_prefix_length(e->child);
         if (l0 + l1 <= RADIX_TREE_PREFIX_SIZE) {
             struct rxt_edge *new_child;
             uint32_t i;
@@ -359,3 +338,27 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     return root;
 }
 
+#if RRRR_DEBUG
+uint32_t rxt_edge_count (struct rxt_edge *e) {
+    uint32_t n = 0;
+    if (e != NULL) {
+        n += 1;
+        n += rxt_edge_count(e->child);
+        n += rxt_edge_count(e->next);
+    }
+    return n;
+}
+
+void rxt_edge_print (struct rxt_edge *e) {
+    if (e == NULL) return;
+    fprintf (stderr, "\nedge [%p]\n", (void *) e);
+    /* variable width string format character */
+    fprintf (stderr, "prefix '%.*s'\n", RADIX_TREE_PREFIX_SIZE, e->prefix);
+    fprintf (stderr, "length %d\n", edge_prefix_length(e));
+    fprintf (stderr, "value  %d\n", e->value);
+    fprintf (stderr, "next   %p\n", (void *) e->next);
+    fprintf (stderr, "child  %p\n", (void *) e->child);
+    rxt_edge_print(e->next);
+    rxt_edge_print(e->child);
+}
+#endif

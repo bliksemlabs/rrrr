@@ -27,6 +27,7 @@
 }
 #endif
 
+#define UNUSED(expr) (void)(expr)
 
 void memset32(uint32_t *s, uint32_t u, size_t n);
 void memset_rtime(rtime_t *s, rtime_t u, size_t n);

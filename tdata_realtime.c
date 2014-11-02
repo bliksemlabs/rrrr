@@ -35,6 +35,7 @@ uint16_t tdata_route_new(tdata_t *tdata, char *trip_id, uint16_t n_stops, uint16
     new->attributes = attributes;
     new->agency_index = agency_index;
     new->productcategory_index = productcategory_index;
+    new->shortname_index = shortname_index;
 
     rxt_insert(tdata->routeid_index, trip_id, tdata->n_routes);
 
@@ -81,8 +82,8 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
             trip_t *trip;
             struct tm ltm;
             uint32_t trip_index;
-            uint32_t cal_day;
             time_t epochtime;
+            int16_t cal_day;
             char buf[9];
 
 
@@ -121,7 +122,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
 
             cal_day = (epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
 
-            if (epochtime >= tdata->calendar_start_time && cal_day > 31 ) {
+            if (cal_day < 0 || cal_day > 31 ) {
                 fprintf(stderr, "WARNING: the operational day is 32 further than our calendar!\n");
                 continue;
             }

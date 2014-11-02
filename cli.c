@@ -43,7 +43,8 @@ int main (int argc, char *argv[]) {
     if (argc < 3) {
         fprintf(stderr, "Usage:\n%s timetable.dat\n" \
                         "[ --verbose ] [ --randomize ]\n" \
-                        "[ --arrive=YYYY-MM-DDTHH:MM:SS | --depart=YYYY-MM-DDTHH:MM:SS ]\n" \
+                        "[ --arrive=YYYY-MM-DDTHH:MM:SS | " \
+                          "--depart=YYYY-MM-DDTHH:MM:SS ]\n" \
                         "[ --from-idx=idx | --from-latlon=Y,X ]\n" \
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n" \
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n" \
@@ -93,14 +94,16 @@ int main (int argc, char *argv[]) {
                 switch (argv[i][2]) {
                 case 'a':
                     if (strncmp(argv[i], "--arrive=", 9) == 0) {
-                        router_request_from_epoch (&req, &tdata, strtoepoch(&argv[i][9]));
+                        router_request_from_epoch (&req, &tdata,
+                                                   strtoepoch(&argv[i][9]));
                         req.arrive_by = true;
                     }
                     break;
 
                 case 'd':
                     if (strncmp(argv[i], "--depart=", 9) == 0) {
-                        router_request_from_epoch (&req, &tdata, strtoepoch(&argv[i][9]));
+                        router_request_from_epoch (&req, &tdata,
+                                                   strtoepoch(&argv[i][9]));
                         req.arrive_by = false;
                     }
                     break;
@@ -108,11 +111,13 @@ int main (int argc, char *argv[]) {
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
                         req.from = (uint32_t) strtol(&argv[i][11], NULL, 10);
-                    } else
-                    if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
+                    }
+                    #ifdef RRRR_FEATURE_LATLON
+                    else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][12], &req.from_latlon);
                     }
+                    #endif
                     break;
 
                 case 'g':
@@ -130,31 +135,35 @@ int main (int argc, char *argv[]) {
                 case 't':
                     if (strncmp(argv[i], "--to-idx=", 9) == 0) {
                         req.to = (uint32_t) strtol(&argv[i][9], NULL, 10);
-                    } else
-                    if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
+                    }
+                    #ifdef RRRR_FEATURE_LATLON
+                    else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][12], &req.to_latlon);
                     }
+                    #endif
                     break;
 
                 case 'v':
                     if (strcmp(argv[i], "--verbose") == 0) {
                         cli_args.verbose = true;
-                    } else
-                    if (strncmp(argv[i], "--via=", 6) == 0) {
+                    }
+                    else if (strncmp(argv[i], "--via=", 6) == 0) {
                         req.via = (uint32_t) strtol(&argv[i][6], NULL, 10);
-                    } else
-                    if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
+                    }
+                    #ifdef RRRR_FEATURE_LATLON
+                    else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][13], &req.via_latlon);
                     }
+                    #endif
                     break;
 
                 case 'w':
                     if (strncmp(argv[i], "--walk-speed=", 13) == 0) {
                         req.walk_speed = (float) strtod(&argv[i][13], NULL);
-                    } else
-                    if (strncmp(argv[i], "--walk-slack=", 13) == 0) {
+                    }
+                    else if (strncmp(argv[i], "--walk-slack=", 13) == 0) {
                         req.walk_slack = (float) strtod(&argv[i][13], NULL);
                     }
                     break;
@@ -294,7 +303,7 @@ int main (int argc, char *argv[]) {
      */
 
 clean_exit:
-    #ifndef DEBUG
+    #ifndef RRRR_DEBUG
     goto fast_exit;
     #endif
 
@@ -303,6 +312,10 @@ clean_exit:
 
     /* Deallocate the scratchspace of the router */
     router_teardown (&router);
+
+    #ifdef RRRR_DEBUG
+    goto fast_exit; /* kills the unused label warning */
+    #endif
 
 fast_exit:
     exit(status);

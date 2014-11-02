@@ -9,7 +9,7 @@
 #include "geometry.h"
 #include "rrrr_types.h"
 
-#ifdef RRRR_REALTIME
+#ifdef RRRR_FEATURE_REALTIME
 #include "gtfs-realtime.pb-c.h"
 #include "radixtree.h"
 #endif
@@ -169,7 +169,7 @@ struct tdata {
     char *stop_ids;
     uint32_t trip_ids_width;
     char *trip_ids;
-    #ifdef RRRR_REALTIME
+    #ifdef RRRR_FEATURE_REALTIME
     RadixTree *routeid_index;
     RadixTree *stopid_index;
     RadixTree *tripid_index;

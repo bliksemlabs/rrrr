@@ -52,10 +52,10 @@ bool rxt_insert (struct rxt_edge *root, const char *key, uint32_t value);
 
 uint32_t rxt_find (struct rxt_edge *root, const char *key);
 
-/* Debug functions */
-
-int rxt_edge_count (struct rxt_edge *e);
+#ifdef RRRR_DEBUG
+uint32_t rxt_edge_count (struct rxt_edge *e);
 
 void rxt_edge_print (struct rxt_edge *e);
+#endif
 
 #endif /* _RADIXTREE_H */
