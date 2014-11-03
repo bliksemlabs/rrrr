@@ -698,6 +698,11 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
 #ifdef RRRR_FEATURE_LATLON
 static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
+        if (req->to_latlon.lat == 0.0 &&
+            req->to_latlon.lon == 0.0) {
+            return false;
+        }
+
         if (req->to_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
@@ -706,6 +711,11 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
         }
         return latlon_best_stop_index (router, req, &req->to_hg_result);
     } else {
+        if (req->from_latlon.lat == 0.0 &&
+            req->from_latlon.lon == 0.0) {
+            return false;
+        }
+
         if (req->from_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
@@ -720,6 +730,11 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
 
 static bool initialize_target_latlon (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
+        if (req->from_latlon.lat == 0.0 &&
+            req->from_latlon.lon == 0.0) {
+            return false;
+        }
+
         if (req->from_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
@@ -729,6 +744,11 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
         HashGridResult_reset (&req->from_hg_result);
         router->target = HashGridResult_closest (&req->from_hg_result);
     } else {
+        if (req->to_latlon.lat == 0.0 &&
+            req->to_latlon.lon == 0.0) {
+            return false;
+        }
+
         if (req->to_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
@@ -801,15 +821,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
          * a latlon must be set and the stop_index must be set to NONE.
          */
         if (req->to == NONE || req->from == NONE) {
-            if (req->from_latlon.lat == 0.0 && req->from_latlon.lon == 0.0 &&
-                req->to_latlon.lat   == 0.0 && req->to_latlon.lon   == 0.0) {
-
-                fprintf (stderr, "Neither stop stopindices or coordinates "
-                                 "were set in the origin.\n");
-
-                return false;
-            }
-            /* a lat/lon must have been provided */
+            /* search the target based on latlon */
             return initialize_origin_latlon (router, req);
         } else
         #endif
@@ -825,24 +837,15 @@ static bool initialize_target (router_t *router, router_request_t *req) {
      * values for req->to and req->from the final interation have both
      * set to the walk optimum. For the geographic optimisation to start
      * a latlon must be set and the stop_index must be set to NONE.
-     *
-     * In initialize_origin we have already asured that either a latlon
-     * or a index is set.
      */
     #ifdef RRRR_FEATURE_LATLON
     if (req->to == NONE || req->from == NONE) {
-        if (req->from_latlon.lat == 0.0 && req->from_latlon.lon == 0.0 &&
-            req->to_latlon.lat   == 0.0 && req->to_latlon.lon   == 0.0) {
-
-            fprintf (stderr, "Neither stop stopindices or coordinates "
-                             "were set in the origin.\n");
-            return false;
-        }
-
+        /* search the target based on latlon */
         return initialize_target_latlon (router, req);
     } else
     #endif
     {
+        /* search the origin based on a provided index */
         return initialize_target_index (router, req);
     }
 }

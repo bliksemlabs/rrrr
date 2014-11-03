@@ -15,7 +15,9 @@ time_t router_request_to_epoch (router_request_t *req, tdata_t *tdata, struct tm
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) + RTIME_TO_SEC(req->time - RTIME_ONE_DAY) - ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
+    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) +
+              RTIME_TO_SEC(req->time - RTIME_ONE_DAY) -
+              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
 
     rrrr_localtime_r (&seconds, tm_out);
 
@@ -34,7 +36,8 @@ time_t router_request_to_date (router_request_t *req, tdata_t *tdata, struct tm 
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) - ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
+    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) -
+              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
 
     rrrr_localtime_r (&seconds, tm_out);
 
@@ -374,9 +377,9 @@ time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
  * We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
  */
 bool range_check(router_request_t *req, tdata_t *tdata) {
-    if (req->walk_speed < 0.1)       return false;
-    if (req->from >= tdata->n_stops) return false;
-    if (req->to   >= tdata->n_stops) return false;
-    return true;
+    return !(req->walk_speed < 0.1 ||
+             req->from >= tdata->n_stops ||
+             req->to   >= tdata->n_stops
+            );
 }
 
