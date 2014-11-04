@@ -230,6 +230,50 @@ trip_t *tdata_trips_for_route (tdata_t *td, uint32_t route_index) {
     return td->trips + td->routes[route_index].trip_ids_offset;
 }
 
+char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
+    switch (stop_index) {
+    case NONE :
+        return "NONE";
+    case ONBOARD :
+        return "ONBOARD";
+    default :
+        return td->stop_names + td->stop_nameidx[stop_index];
+    }
+}
+
+/* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
+rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from != stop_index_to) {
+        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
+        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
+        for ( ; t < tN ; ++t) {
+            if (tdata->transfer_target_stops[t] == stop_index_to) {
+                uint32_t distance_meters = tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
+                return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
+            }
+        }
+    } else {
+        return 0;
+    }
+    return UNREACHED;
+}
+
+uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to) {
+    if (stop_index_from != stop_index_to) {
+        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
+        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
+        for ( ; t < tN ; ++t) {
+            if (tdata->transfer_target_stops[t] == stop_index_to) {
+                return tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
+            }
+        }
+    } else {
+        return 0;
+    }
+    return UNREACHED;
+}
+
+#ifdef RRRR_DEBUG
 void tdata_dump_route(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
     uint32_t ti, si;
     uint32_t *stops = tdata_stops_for_route(td, route_index);
@@ -326,46 +370,4 @@ void tdata_dump(tdata_t *td) {
         tdata_dump_route(td, i, NONE);
     }
 }
-
-char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
-    switch (stop_index) {
-    case NONE :
-        return "NONE";
-    case ONBOARD :
-        return "ONBOARD";
-    default :
-        return td->stop_names + td->stop_nameidx[stop_index];
-    }
-}
-
-/* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
-rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to) {
-    if (stop_index_from != stop_index_to) {
-        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
-        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
-        for ( ; t < tN ; ++t) {
-            if (tdata->transfer_target_stops[t] == stop_index_to) {
-                uint32_t distance_meters = tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
-                return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
-            }
-        }
-    } else {
-        return 0;
-    }
-    return UNREACHED;
-}
-
-uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to) {
-    if (stop_index_from != stop_index_to) {
-        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
-        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
-        for ( ; t < tN ; ++t) {
-            if (tdata->transfer_target_stops[t] == stop_index_to) {
-                return tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
-            }
-        }
-    } else {
-        return 0;
-    }
-    return UNREACHED;
-}
+#endif

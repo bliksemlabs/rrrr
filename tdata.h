@@ -177,6 +177,8 @@ struct tdata {
     stoptime_t **trip_stoptimes;
     uint32_t *trip_routes;
     list_t **rt_stop_routes;
+    calendar_t *trip_active_orig;
+    calendar_t *route_active_orig;
     #endif
     #ifdef RRRR_FEATURE_REALTIME_ALERTS
     TransitRealtime__FeedMessage *alerts;

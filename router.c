@@ -1023,7 +1023,7 @@ static bool fill_route_cache(router_t *router, router_request_t *req,
 
     #ifdef FEATURE_AGENCY_FILTER
     if (req->agency != AGENCY_UNFILTERED &&
-        req->agency != route->agency_index) return false;
+        req->agency != cache->this_route->agency_index) return false;
     #else
     UNUSED (req);
     #endif

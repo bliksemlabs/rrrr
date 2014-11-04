@@ -206,7 +206,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
 
         HashGridResult_reset(hg_result);
 
-        #if RRRR_DEBUG
+        #ifdef RRRR_DEBUG
         fprintf (stderr, "Reversal - Hashgrid results:\n");
         #endif
 
@@ -288,8 +288,9 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     #endif
     req->max_transfers = round;
     req->arrive_by = !(req->arrive_by);
-    #if 0
-    router_request_dump(router, req);
+    #ifdef RRRR_DEBUG
+    router_request_dump(req, router->tdata);
+    range_check(req, router->tdata);
     /* TODO: range-check the resulting request here? */
     #endif
     return true;
@@ -301,6 +302,48 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
      */
 }
 
+time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    time_t seconds;
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+
+    while (day_mask >>= 1) cal_day++;
+
+    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
+    rrrr_localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
+
+time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+    time_t seconds;
+    uint32_t day_mask = req->day_mask;
+    uint8_t cal_day = 0;
+
+    while (day_mask >>= 1) cal_day++;
+
+    seconds = tdata->calendar_start_time +
+              (cal_day * SEC_IN_ONE_DAY) +
+              RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
+    rrrr_localtime_r(&seconds, tm_out);
+
+    return seconds;
+}
+
+/* Check the given request against the characteristics of the router that will be used.
+ * Indexes larger than array lengths for the given router, signed values less than zero, etc.
+ * can and will cause segfaults and present security risks.
+ *
+ * We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
+ */
+bool range_check(router_request_t *req, tdata_t *tdata) {
+    return !(req->walk_speed < 0.1 ||
+             req->from >= tdata->n_stops ||
+             req->to   >= tdata->n_stops
+            );
+}
+
+#ifdef RRRR_DEBUG
 /* router_request_dump prints the current request structure to the screen */
 
 void router_request_dump(router_request_t *req, tdata_t *tdata) {
@@ -343,43 +386,4 @@ void router_request_dump(router_request_t *req, tdata_t *tdata) {
          printf("\b\n");
     }
 }
-
-time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
-    time_t seconds;
-    uint32_t day_mask = req->day_mask;
-    uint8_t cal_day = 0;
-
-    while (day_mask >>= 1) cal_day++;
-
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
-    rrrr_localtime_r(&seconds, tm_out);
-
-    return seconds;
-}
-
-time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
-    time_t seconds;
-    uint32_t day_mask = req->day_mask;
-    uint8_t cal_day = 0;
-
-    while (day_mask >>= 1) cal_day++;
-
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) + RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
-    rrrr_localtime_r(&seconds, tm_out);
-
-    return seconds;
-}
-
-/* Check the given request against the characteristics of the router that will be used.
- * Indexes larger than array lengths for the given router, signed values less than zero, etc.
- * can and will cause segfaults and present security risks.
- *
- * We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
- */
-bool range_check(router_request_t *req, tdata_t *tdata) {
-    return !(req->walk_speed < 0.1 ||
-             req->from >= tdata->n_stops ||
-             req->to   >= tdata->n_stops
-            );
-}
-
+#endif

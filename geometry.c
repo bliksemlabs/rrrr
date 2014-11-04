@@ -102,7 +102,7 @@ void coord_from_latlon (coord_t *coord, latlon_t *latlon) {
 double coord_distance_ersatz (coord_t *c1, coord_t *c2) {
     double dx = c2->x - c1->x;
     double dy = c2->y - c1->y;
-    return dx * dx + dy * dy;
+    return (dx * dx) + (dy * dy);
 }
 
 /* Returns the equivalent ersatz distance for a given number of meters,
@@ -116,7 +116,7 @@ double ersatz_from_distance (double meters) {
 double coord_distance_meters (coord_t *c1, coord_t *c2) {
     double dxm = coord_diff_meters(c1->x, c2->x);
     double dym = coord_diff_meters(c1->y, c2->y);
-    return sqrt(dxm * dxm + dym * dym);
+    return sqrt((dxm * dxm) + (dym * dym));
 }
 
 double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2) {
@@ -135,14 +135,6 @@ void latlon_from_coord (latlon_t *latlon, coord_t *coord) {
     latlon->lon = coord->x * 180.0 / INT32_MAX / xscale_at_y (coord->y);
 }
 
-void latlon_dump (latlon_t *latlon) {
-    fprintf(stderr, "latlon lat=%f lon=%f \n", latlon->lat, latlon->lon);
-}
-
-void coord_dump (coord_t *coord) {
-    fprintf(stderr, "coordinate x=%d y=%d \n", coord->x, coord->y);
-}
-
 bool strtolatlon (char *latlon, latlon_t *result) {
     char *endptr;
     result->lat = (float) strtod(latlon, &endptr);
@@ -153,3 +145,12 @@ bool strtolatlon (char *latlon, latlon_t *result) {
     return false;
 }
 
+#ifdef RRRR_DEBUG
+void latlon_dump (latlon_t *latlon) {
+    fprintf(stderr, "latlon lat=%f lon=%f \n", latlon->lat, latlon->lon);
+}
+
+void coord_dump (coord_t *coord) {
+    fprintf(stderr, "coordinate x=%d y=%d \n", coord->x, coord->y);
+}
+#endif

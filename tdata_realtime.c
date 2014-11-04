@@ -23,10 +23,80 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-uint16_t tdata_route_new(tdata_t *tdata, char *trip_id, uint16_t n_stops, uint16_t n_trips, uint16_t attributes, uint32_t headsign_offset, uint16_t agency_index, uint16_t shortname_index, uint16_t productcategory_index) {
-    route_t *new = &tdata->routes[tdata->n_routes];
+
+/* rt_stop_routes store the delta to the planned stop_routes */
+static void tdata_rt_stop_routes_append (tdata_t *tdata,
+                                         uint32_t stop_index,
+                                         uint32_t route_index) {
+    uint32_t i;
+
+    if (tdata->rt_stop_routes[stop_index]) {
+        for (i = 0; i < tdata->rt_stop_routes[stop_index]->len; ++i) {
+            if (((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[i] == route_index) return;
+        }
+    } else {
+        tdata->rt_stop_routes[stop_index] = (list_t *) calloc(1, sizeof(list_t));
+    }
+
+    if (tdata->rt_stop_routes[stop_index]->len == tdata->rt_stop_routes[stop_index]->size) {
+        tdata->rt_stop_routes[stop_index]->list = realloc(tdata->rt_stop_routes[stop_index]->list, (tdata->rt_stop_routes[stop_index]->size + 8) * sizeof(uint32_t));
+        tdata->rt_stop_routes[stop_index]->size += 8;
+    }
+
+    ((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[tdata->rt_stop_routes[stop_index]->len++] = route_index;
+}
+
+static void tdata_rt_stop_routes_remove (tdata_t *tdata,
+                                         uint32_t stop_index,
+                                         uint32_t route_index) {
+    uint32_t i;
+    for (i = 0; i < tdata->rt_stop_routes[stop_index]->len; ++i) {
+        if (((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[i] == route_index) {
+            tdata->rt_stop_routes[stop_index]->len--;
+            ((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[i] = ((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[tdata->rt_stop_routes[stop_index]->len];
+            return;
+        }
+    }
+}
+
+static void tdata_apply_gtfsrt_time (TransitRealtime__TripUpdate__StopTimeUpdate *update,
+                                     stoptime_t *stoptime) {
+    if (update->arrival) {
+        if (update->arrival->has_time) {
+            stoptime->arrival  = epoch_to_rtime ((time_t) update->arrival->time, NULL) - RTIME_ONE_DAY;
+        } else if (update->arrival->has_delay) {
+            stoptime->arrival += SEC_TO_RTIME(update->arrival->delay);
+        }
+    }
+
+    /* not mutually exclusive */
+    if (update->departure) {
+        if (update->departure->has_time) {
+            stoptime->departure  = epoch_to_rtime ((time_t) update->departure->time, NULL) - RTIME_ONE_DAY;
+        } else if (update->departure->has_delay) {
+            stoptime->departure += SEC_TO_RTIME(update->departure->delay);
+        }
+    }
+}
+
+static void tdata_realtime_free_trip_index (tdata_t *tdata, uint32_t trip_index) {
+    if (tdata->trip_stoptimes[trip_index]) {
+        free(tdata->trip_stoptimes[trip_index]);
+        tdata->trip_stoptimes[trip_index] = NULL;
+        /* TODO: also free a forked route and the reference to it */
+        /* TODO: restore original validity */
+    }
+}
+
+static uint16_t tdata_route_new(tdata_t *tdata, char *trip_id,
+                                uint16_t n_stops, uint16_t n_trips,
+                                uint16_t attributes, uint32_t headsign_offset,
+                                uint16_t agency_index, uint16_t shortname_index,
+                                uint16_t productcategory_index) {
+    route_t *new;
     uint32_t i_stop_index;
 
+    new = &tdata->routes[tdata->n_routes];
     new->route_stops_offset = tdata->n_route_stops;
     new->trip_ids_offset = tdata->n_trips;
     new->headsign_offset = headsign_offset;
@@ -48,12 +118,70 @@ uint16_t tdata_route_new(tdata_t *tdata, char *trip_id, uint16_t n_stops, uint16
     tdata->n_trip_active += n_trips;
     tdata->n_route_active++;
 
-    for (i_stop_index = 0; i_stop_index < n_stops; ++i_stop_index) {
+    for (i_stop_index = 0;
+         i_stop_index < n_stops;
+         ++i_stop_index) {
         tdata->route_stops[new->route_stops_offset + i_stop_index] = NONE;
     }
 
     return tdata->n_routes++;
 }
+
+/* PUBLIC INTERFACES */
+
+bool tdata_alloc_expanded(tdata_t *td) {
+    uint32_t i_route;
+    td->trip_stoptimes = (stoptime_t **) calloc(td->n_trips, sizeof(stoptime_t *));
+    td->trip_routes = (uint32_t *) malloc(td->n_trips * sizeof(uint32_t));
+
+    if (!td->trip_stoptimes || !td->trip_routes) return false;
+
+    for (i_route = 0; i_route < td->n_routes; ++i_route) {
+        uint32_t i_trip;
+        for (i_trip = 0; i_trip < td->routes[i_route].n_trips; ++i_trip) {
+            td->trip_routes[td->routes[i_route].trip_ids_offset + i_trip] = i_route;
+        }
+    }
+
+    td->rt_stop_routes = (list_t **) calloc(td->n_stops, sizeof(list_t *));
+    td->trip_active_orig = (calendar_t *) malloc(td->n_trips * sizeof(calendar_t));
+    td->route_active_orig = (calendar_t *) malloc(td->n_trips * sizeof(calendar_t));
+    memcpy (td->trip_active_orig, td->trip_active, td->n_trips * sizeof(calendar_t));
+    memcpy (td->route_active_orig, td->route_active, td->n_trips * sizeof(calendar_t));
+
+    if (!td->rt_stop_routes) return false;
+
+    return true;
+}
+
+void tdata_free_expanded(tdata_t *td) {
+    free (td->trip_routes);
+
+    {
+        uint32_t i_trip;
+        for (i_trip = 0; i_trip < td->n_trips; ++i_trip) {
+            free (td->trip_stoptimes[i_trip]);
+        }
+
+        free (td->trip_stoptimes);
+    }
+
+    {
+        uint32_t i_stop;
+        for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
+            if (td->rt_stop_routes[i_stop]) {
+                free (td->rt_stop_routes[i_stop]->list);
+            }
+        }
+
+        free (td->rt_stop_routes);
+    }
+
+    free (td->trip_active_orig);
+    free (td->route_active_orig);
+}
+
+
 
 /* Decodes the GTFS-RT message of lenth len in buffer buf, extracting vehicle position messages
  * and using the delay extension (1003) to update RRRR's per-trip delay information.
@@ -326,33 +454,31 @@ cleanup:
     transit_realtime__feed_message__free_unpacked (msg, NULL);
 }
 
-void tdata_clear_gtfsrt (tdata_t *tdata) {
-    uint32_t i_trip_index;
-    for (i_trip_index = 0; i_trip_index < tdata->n_trips; ++i_trip_index) {
-        tdata_realtime_free_trip_index (tdata, i_trip_index);
-        /* TODO: we don't restore the original trip_active */
-    }
-}
-
 void tdata_apply_gtfsrt_file (tdata_t *tdata, char *filename) {
     struct stat st;
     int fd;
     uint8_t *buf;
 
     fd = open(filename, O_RDONLY);
-    if (fd == -1) fprintf(stderr, "Could not find GTFS_RT input file %s.\n",
-                                  filename);
+    if (fd == -1) {
+        fprintf(stderr,
+                "Could not find GTFS_RT input file %s.\n",
+                filename);
+        return;
+    }
 
     if (stat(filename, &st) == -1) {
-        fprintf(stderr, "Could not stat GTFS_RT input file %s.\n",
-                        filename);
+        fprintf(stderr,
+                "Could not stat GTFS_RT input file %s.\n",
+                filename);
         goto fail_clean_fd;
     }
 
     buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) {
-        fprintf(stderr, "Could not map GTFS-RT input file %s.\n",
-                        filename);
+        fprintf(stderr,
+                "Could not map GTFS-RT input file %s.\n",
+                filename);
         goto fail_clean_fd;
     }
 
@@ -363,108 +489,15 @@ fail_clean_fd:
     close (fd);
 }
 
-bool tdata_alloc_expanded(tdata_t *td) {
-    uint32_t i_route;
-    td->trip_stoptimes = (stoptime_t **) calloc(td->n_trips, sizeof(stoptime_t *));
-    td->trip_routes = (uint32_t *) malloc(td->n_trips * sizeof(uint32_t));
-
-    if (!td->trip_stoptimes || !td->trip_routes) return false;
-
-    for (i_route = 0; i_route < td->n_routes; ++i_route) {
-        uint32_t i_trip;
-        for (i_trip = 0; i_trip < td->routes[i_route].n_trips; ++i_trip) {
-            td->trip_routes[td->routes[i_route].trip_ids_offset + i_trip] = i_route;
-        }
+void tdata_clear_gtfsrt (tdata_t *tdata) {
+    uint32_t i_trip_index;
+    for (i_trip_index = 0;
+         i_trip_index < tdata->n_trips;
+         ++i_trip_index) {
+        tdata_realtime_free_trip_index (tdata, i_trip_index);
     }
-
-    td->rt_stop_routes = (list_t **) calloc(td->n_stops, sizeof(list_t *));
-    if (!td->rt_stop_routes) return false;
-
-    return true;
-}
-
-void tdata_free_expanded(tdata_t *td) {
-    free (td->trip_routes);
-
-    {
-        uint32_t i_trip;
-        for (i_trip = 0; i_trip < td->n_trips; ++i_trip) {
-            free (td->trip_stoptimes[i_trip]);
-        }
-
-        free (td->trip_stoptimes);
-    }
-
-    {
-        uint32_t i_stop;
-        for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
-            if (td->rt_stop_routes[i_stop]) {
-                free (td->rt_stop_routes[i_stop]->list);
-            }
-        }
-
-        free (td->rt_stop_routes);
-    }
-}
-
-void tdata_apply_gtfsrt_time (TransitRealtime__TripUpdate__StopTimeUpdate *update, stoptime_t *stoptime) {
-    if (update->arrival) {
-        if (update->arrival->has_time) {
-            stoptime->arrival  = epoch_to_rtime ((time_t) update->arrival->time, NULL) - RTIME_ONE_DAY;
-        } else if (update->arrival->has_delay) {
-            stoptime->arrival += SEC_TO_RTIME(update->arrival->delay);
-        }
-    }
-
-    if (update->departure) {
-        if (update->departure->has_time) {
-            stoptime->departure  = epoch_to_rtime ((time_t) update->departure->time, NULL) - RTIME_ONE_DAY;
-        } else if (update->departure->has_delay) {
-            stoptime->departure += SEC_TO_RTIME(update->departure->delay);
-        }
-    }
-}
-
-void tdata_realtime_free_trip_index (tdata_t *tdata, uint32_t trip_index) {
-    if (tdata->trip_stoptimes[trip_index]) {
-        free(tdata->trip_stoptimes[trip_index]);
-        tdata->trip_stoptimes[trip_index] = NULL;
-        /* TODO: also free a forked route and the reference to it */
-        /* TODO: restore original validity */
-    }
-}
-
-/* rt_stop_routes store the delta to the planned stop_routes */
-void tdata_rt_stop_routes_append (tdata_t *tdata,
-                                  uint32_t stop_index, uint32_t route_index) {
-    uint32_t i;
-
-    if (tdata->rt_stop_routes[stop_index]) {
-        for (i = 0; i < tdata->rt_stop_routes[stop_index]->len; ++i) {
-            if (((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[i] == route_index) return;
-        }
-    } else {
-        tdata->rt_stop_routes[stop_index] = (list_t *) calloc(1, sizeof(list_t));
-    }
-
-    if (tdata->rt_stop_routes[stop_index]->len == tdata->rt_stop_routes[stop_index]->size) {
-        tdata->rt_stop_routes[stop_index]->list = realloc(tdata->rt_stop_routes[stop_index]->list, (tdata->rt_stop_routes[stop_index]->size + 8) * sizeof(uint32_t));
-        tdata->rt_stop_routes[stop_index]->size += 8;
-    }
-
-    ((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[tdata->rt_stop_routes[stop_index]->len++] = route_index;
-}
-
-void tdata_rt_stop_routes_remove (tdata_t *tdata,
-                                  uint32_t stop_index, uint32_t route_index) {
-    uint32_t i;
-    for (i = 0; i < tdata->rt_stop_routes[stop_index]->len; ++i) {
-        if (((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[i] == route_index) {
-            tdata->rt_stop_routes[stop_index]->len--;
-            ((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[i] = ((uint32_t *) tdata->rt_stop_routes[stop_index]->list)[tdata->rt_stop_routes[stop_index]->len];
-            return;
-        }
-    }
+    memcpy (tdata->trip_active,  tdata->trip_active_orig,  tdata->n_trips * sizeof(calendar_t));
+    memcpy (tdata->route_active, tdata->route_active_orig, tdata->n_trips * sizeof(calendar_t));
 }
 
 #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
