@@ -343,7 +343,6 @@ bool range_check(router_request_t *req, tdata_t *tdata) {
             );
 }
 
-#ifdef RRRR_DEBUG
 /* router_request_dump prints the current request structure to the screen */
 
 void router_request_dump(router_request_t *req, tdata_t *tdata) {
@@ -386,4 +385,3 @@ void router_request_dump(router_request_t *req, tdata_t *tdata) {
          printf("\b\n");
     }
 }
-#endif

@@ -10,11 +10,28 @@
 #include "stubs.h"
 #include "router_request.h"
 
+#ifdef RRRR_FEATURE_REALTIME
+
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
+#include "tdata_realtime_alerts.h"
+#endif
+
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
+#include "tdata_realtime.h"
+#endif
+
+#endif
+
 #define OUTPUT_LEN 8000
 
 typedef struct cli_arguments cli_arguments_t;
 struct cli_arguments {
+    #ifdef RRRR_FEATURE_REALTIME_ALERTS
+    char *gtfsrt_alerts_filename;
+    #endif
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     char *gtfsrt_filename;
+    #endif
     bool verbose;
 };
 
@@ -41,14 +58,21 @@ int main (int argc, char *argv[]) {
      * * * * * * * * * * * * * * * * * * * * * */
 
     if (argc < 3) {
-        fprintf(stderr, "Usage:\n%s timetable.dat\n" \
-                        "[ --verbose ] [ --randomize ]\n" \
-                        "[ --arrive=YYYY-MM-DDTHH:MM:SS | " \
-                          "--depart=YYYY-MM-DDTHH:MM:SS ]\n" \
-                        "[ --from-idx=idx | --from-latlon=Y,X ]\n" \
-                        "[ --via-idx=idx  | --via-latlon=Y,X ]\n" \
-                        "[ --to-idx=idx   | --to-latlon=Y,X ]\n" \
+        fprintf(stderr, "Usage:\n%s timetable.dat\n"
+                        "[ --verbose ] [ --randomize ]\n"
+                        "[ --arrive=YYYY-MM-DDTHH:MM:SS | "
+                          "--depart=YYYY-MM-DDTHH:MM:SS ]\n"
+                        "[ --from-idx=idx | --from-latlon=Y,X ]\n"
+                        "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
+                        "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
+#ifdef RRRR_FEATURE_REALTIME
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
+                        "[ --gtfsrt-alerts=filename.pb ]\n"
+#endif
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
                         "[ --gtfsrt=filename.pb ]\n"
+#endif
+#endif
                         , argv[0]);
     }
 
@@ -120,11 +144,20 @@ int main (int argc, char *argv[]) {
                     #endif
                     break;
 
+                #ifdef RRRR_FEATURE_REALTIME
                 case 'g':
+                    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
                     if (strncmp(argv[i], "--gtfsrt=", 9) == 0) {
                         cli_args.gtfsrt_filename = &argv[i][9];
                     }
+                    #endif
+                    #ifdef RRRR_FEATURE_REALTIME_ALERTS
+                    if (strncmp(argv[i], "--gtfsrt-alerts=", 16) == 0) {
+                        cli_args.gtfsrt_alerts_filename = &argv[i][16];
+                    }
+                    #endif
                     break;
+                #endif
 
                 case 'r':
                     if (strcmp(argv[i], "--randomize") == 0) {
@@ -172,6 +205,29 @@ int main (int argc, char *argv[]) {
         }
     }
 
+    /* */
+
+    #ifdef RRRR_FEATURE_REALTIME
+    if (cli_args.gtfsrt_filename != NULL ||
+        cli_args.gtfsrt_alerts_filename != NULL) {
+
+        tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
+        tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
+        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_routes);
+
+        #ifdef RRRR_FEATURE_REALTIME_ALERTS
+        if (cli_args.gtfsrt_alerts_filename != NULL) {
+            tdata_apply_gtfsrt_alerts_file (&tdata, cli_args.gtfsrt_alerts_filename);
+        }
+        #endif
+        #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+        if (cli_args.gtfsrt_filename != NULL) {
+            tdata_apply_gtfsrt_file (&tdata, cli_args.gtfsrt_filename);
+        }
+        #endif
+    }
+    #endif
+
     /* The internal time representation uses a resolution of 4 seconds per
      * time unit. This allows to store up to 3 days in 16 bits. When a user
      * specified a clockwise search departing after 12:00:03, this would
@@ -183,7 +239,7 @@ int main (int argc, char *argv[]) {
     }
     req.time_rounded = false;
 
-    /* * * * * * * * * * * * * * * * * *
+   /* * * * * * * * * * * * * * * * * *
      * PHASE ONE: INITIALISE THE ROUTER
      *
      * * * * * * * * * * * * * * * * * */

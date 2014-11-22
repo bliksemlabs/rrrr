@@ -62,23 +62,6 @@ uint32_t rrrrandom(uint32_t limit) {
     return (uint32_t) (limit * (rand() / (RAND_MAX + 1.0)));
 }
 
-/* assumes little endian http://stackoverflow.com/a/3974138/778449
- * size in bytes
- */
-void printBits(size_t const size, void const * const ptr) {
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
-    for (i = size - 1; i >= 0; i--) {
-        for (j = 7; j >= 0; j--) {
-            byte = b[i] & (1 << j);
-            byte >>= j;
-            fprintf(stderr, "%u", byte);
-        }
-    }
-    puts("");
-}
-
 /* Converts the given epoch time to in internal RRRR router time.
  * If epochtime is within the first day of 1970 it is interpreted as seconds
  * since midnight on the current day. If epochtime is 0, the current time and
@@ -153,5 +136,24 @@ time_t strtoepoch (char *time) {
     ltm.tm_sec  = strtol(&endptr[1], &endptr, 10);
     ltm.tm_isdst = -1;
     return mktime(&ltm);
+}
+#endif
+
+#ifdef RRRR_DEBUG
+/* assumes little endian http://stackoverflow.com/a/3974138/778449
+ * size in bytes
+ */
+void printBits(size_t const size, void const * const ptr) {
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    for (i = size - 1; i >= 0; i--) {
+        for (j = 7; j >= 0; j--) {
+            byte = b[i] & (1 << j);
+            byte >>= j;
+            fprintf(stderr, "%u", byte);
+        }
+    }
+    puts("");
 }
 #endif

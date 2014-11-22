@@ -83,6 +83,7 @@ void dump_trips(router_t *router) {
 }
 #endif
 
+#ifdef RRRR_DEBUG
 void day_mask_dump (uint32_t mask) {
     uint8_t i_bit;
     fprintf (stderr, "day mask: ");
@@ -104,4 +105,4 @@ void service_day_dump (struct service_day *sd) {
     day_mask_dump (sd->mask);
     fprintf (stderr, "real-time: %s \n\n", sd->apply_realtime ? "YES" : "NO");
 }
-
+#endif
