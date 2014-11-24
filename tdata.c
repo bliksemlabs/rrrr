@@ -9,7 +9,10 @@
 #include "tdata.h"
 #include "tdata_io_v3.h"
 #include "tdata_validation.h"
-#include "tdata_realtime.h"
+
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
+#include "tdata_realtime_expanded.h"
+#endif
 
 #include <fcntl.h>
 #include <sys/mman.h>

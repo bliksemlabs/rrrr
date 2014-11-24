@@ -7,7 +7,7 @@
 
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 
-#include "tdata_realtime.h"
+#include "tdata_realtime_expanded.h"
 #include "radixtree.h"
 #include "gtfs-realtime.pb-c.h"
 #include "rrrr_types.h"

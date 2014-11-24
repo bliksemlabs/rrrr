@@ -17,7 +17,7 @@
 #endif
 
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-#include "tdata_realtime.h"
+#include "tdata_realtime_expanded.h"
 #endif
 
 #endif
