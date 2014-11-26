@@ -107,7 +107,9 @@ int main (int argc, char *argv[]) {
 
     /* initialise the cli settings */
     cli_args.verbose = false;
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
     cli_args.gtfsrt_filename = NULL;
+#endif
 
     {
         int i;

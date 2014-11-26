@@ -181,7 +181,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->route = ride->back_route;
             l->trip  = ride->back_trip;
 
-            #if 0 /* RRRR_FEATURE_REALTIME */
+            #ifdef RRRR_FEATURE_REALTIME /* RRRR_FEATURE_REALTIME */
             {
                 route_t *route = router->tdata->routes + ride->back_route;
                 trip_t *trip = router->tdata->trips + trip_index;
@@ -197,9 +197,6 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                     l->d1 = 0;
                 }
             }
-            #else
-            l->d0 = 0.0;
-            l->d1 = 0.0;
             #endif
 
             if (req->arrive_by) leg_swap (l);
@@ -250,7 +247,9 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
         char *agency_name, *short_name, *headsign, *productcategory, *leg_mode = NULL,  *alert_msg = NULL;
         char *s0_id = tdata_stop_name_for_index(tdata, leg->s0);
         char *s1_id = tdata_stop_name_for_index(tdata, leg->s1);
+#ifdef RRRR_FEATURE_REALTIME
         float d0, d1;
+#endif
 
         btimetext(leg->t0, ct0);
         btimetext(leg->t1, ct1);
@@ -262,8 +261,10 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             short_name = "walk";
             headsign = "walk";
             productcategory = "";
+#ifdef RRRR_FEATURE_REALTIME
             d0 = 0.0;
             d1 = 0.0;
+#endif
 
             /* Skip uninformative legs that just tell you to stay in the same place. if (leg->s0 == leg->s1) continue; */
             if (leg->s0 == ONBOARD) continue;
@@ -274,8 +275,10 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             short_name = tdata_shortname_for_route (tdata, leg->route);
             headsign = tdata_headsign_for_route (tdata, leg->route);
             productcategory = tdata_productcategory_for_route (tdata, leg->route);
+#ifdef RRRR_FEATURE_REALTIME
             d0 = leg->d0 / 60.0;
             d1 = leg->d1 / 60.0;
+#endif
 
             if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
             if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
@@ -286,6 +289,8 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
             if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
             leg_mode = "INVALID";
+
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
 
             if (leg->route != WALK && tdata->alerts) {
                 size_t i_entity;
@@ -316,13 +321,24 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
                     }
                 }
             }
+            #endif
         }
 
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
+#ifdef RRRR_FEATURE_REALTIME
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
         b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
             leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
                         (alert_msg ? alert_msg : ""));
+#else
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id);
+#endif
+#else
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %s;%s;%s;%s;%s;%s;%s\n",
+            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, ct1, agency_name, short_name, headsign, productcategory, s0_id, s1_id);
+#endif
 
         /* EXAMPLE
         polyline_for_leg (tdata, leg);
