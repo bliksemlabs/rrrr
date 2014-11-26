@@ -444,7 +444,7 @@ bool tdata_alloc_expanded(tdata_t *td) {
 void tdata_free_expanded(tdata_t *td) {
     free (td->trip_routes);
 
-    {
+    if (td->trip_stoptimes) {
         uint32_t i_trip;
         for (i_trip = 0; i_trip < td->n_trips; ++i_trip) {
             free (td->trip_stoptimes[i_trip]);
@@ -453,7 +453,7 @@ void tdata_free_expanded(tdata_t *td) {
         free (td->trip_stoptimes);
     }
 
-    {
+    if (td->rt_stop_routes) {
         uint32_t i_stop;
         for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
             if (td->rt_stop_routes[i_stop]) {

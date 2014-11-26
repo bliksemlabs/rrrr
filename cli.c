@@ -51,6 +51,10 @@ int main (int argc, char *argv[]) {
     /* the router structure, should not be manually changed */
     router_t router;
 
+    /* initialise the structs so we can always trust NULL values */
+    memset (&tdata,    0, sizeof(tdata_t));
+    memset (&router,   0, sizeof(router_t));
+    memset (&cli_args, 0, sizeof(cli_args));
 
     /* * * * * * * * * * * * * * * * * * * * * *
      * PHASE ZERO: HANDLE COMMANDLINE ARGUMENTS
@@ -105,9 +109,6 @@ int main (int argc, char *argv[]) {
     /* initialise the random function */
     srand(time(NULL));
 
-    /* initialise the cli settings */
-    cli_args.verbose = false;
-    cli_args.gtfsrt_filename = NULL;
 
     {
         int i;

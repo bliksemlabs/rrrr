@@ -42,6 +42,8 @@ BitSet *bitset_new(uint32_t capacity) {
  * internally for the bit fields.
  */
 void bitset_destroy(BitSet *self) {
+    if (!self) return;
+
     free(self->chunks);
     free(self);
 }
