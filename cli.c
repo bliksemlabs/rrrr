@@ -360,7 +360,7 @@ int main (int argc, char *argv[]) {
      */
 
 clean_exit:
-    #ifndef RRRR_DEBUG
+    #ifndef RRRR_VALGRIND
     goto fast_exit;
     #endif
 
@@ -376,7 +376,7 @@ clean_exit:
     /* Unmap the memory and/or deallocate the memory on the heap */
     tdata_close (&tdata);
 
-    #ifdef RRRR_DEBUG
+    #ifdef RRRR_VALGRIND
     goto fast_exit; /* kills the unused label warning */
     #endif
 
