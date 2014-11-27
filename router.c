@@ -100,7 +100,7 @@ void router_reset(router_t *router) {
 }
 
 static bool initialize_states (router_t *router) {
-    uint8_t i;
+    uint64_t i;
 
     for (i = 0; i < (RRRR_DEFAULT_MAX_ROUNDS * router->tdata->n_stops); ++i) {
         router->states[i].time = UNREACHED;
