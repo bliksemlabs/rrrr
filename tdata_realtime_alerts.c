@@ -143,5 +143,5 @@ void tdata_clear_gtfsrt_alerts (tdata_t *tdata) {
     }
 }
 #else
-void tdata_gtfsrt_alert_not_available() {}
+void tdata_gtfsrt_alerts_not_available() {}
 #endif /* RRRR_FEATURE_REALTIME_ALERTS */
