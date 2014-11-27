@@ -301,9 +301,9 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
                         for (i_informed_entity = 0; i_informed_entity < alert->n_informed_entity; ++i_informed_entity) {
                             TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[i_informed_entity];
 
-                            if ( ( (!informed_entity->route_id) || (memcmp(informed_entity->route_id, &leg->route, sizeof(leg->route)) == 0 ) ) &&
-                                ( (!informed_entity->stop_id)  || (memcmp(informed_entity->stop_id, &leg->s0, sizeof(leg->s0)) == 0 ) ) &&
-                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || (memcmp(informed_entity->trip->trip_id, &leg->trip, sizeof(leg->trip)) == 0 ) )
+                            if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->route) ) &&
+                                ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->s0) ) &&
+                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->trip ) )
                                 /* TODO: need to have rtime_to_date  for informed_entity->trip->start_date */
                                 /* TODO: need to have rtime_to_epoch for informed_entity->active_period */
                             ) {

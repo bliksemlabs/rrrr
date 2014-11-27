@@ -62,11 +62,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                /* TODO: hier moeten we de POINTER overschrijven die is wel minimaal 4 breed
-                 * vraag in dan alleen of het goed gaat met free van het object
-                 */
-                /* TODO: this only works for a route_id >= sizeof(route_index) */
-                memcpy (informed_entity->route_id, &route_index, sizeof(route_index));
+                *(informed_entity->route_id) = route_index;
             }
 
             if (informed_entity->stop_id) {
@@ -79,8 +75,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                /* TODO: this only works for a stop_id >= sizeof(stop_index) */
-                memcpy (informed_entity->stop_id, &stop_index, sizeof(stop_index));
+                *(informed_entity->stop_id) = stop_index;
             }
 
             if (informed_entity->trip && informed_entity->trip->trip_id) {
@@ -93,12 +88,15 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                /* TODO: this only works for a trip_id >= sizeof(trip_index) */
-                memcpy (informed_entity->trip->trip_id, &trip_index, sizeof(trip_index));
+                *(informed_entity->trip->trip_id) = trip_index;
             }
         }
     }
 
+    /* clean up the existing alerts */
+    tdata_clear_gtfsrt_alerts (tdata);
+
+    /* assign the new alerts */
     tdata->alerts = msg;
     return;
 
