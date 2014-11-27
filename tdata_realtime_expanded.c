@@ -434,7 +434,7 @@ bool tdata_alloc_expanded(tdata_t *td) {
             td->n_trips * sizeof(calendar_t));
 
     memcpy (td->route_active_orig, td->route_active,
-            td->n_trips * sizeof(calendar_t));
+            td->n_routes * sizeof(calendar_t));
 
     if (!td->rt_stop_routes) return false;
 
