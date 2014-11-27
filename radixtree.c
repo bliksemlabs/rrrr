@@ -338,6 +338,19 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     return root;
 }
 
+static void rxt_edge_free (struct rxt_edge *e) {
+    if (e == NULL) return;
+
+    rxt_edge_free (e->next);
+    rxt_edge_free (e->child);
+
+    free(e);
+}
+
+void rxt_destroy (RadixTree *root) {
+    rxt_edge_free (root);
+}
+
 #if RRRR_DEBUG
 uint32_t rxt_edge_count (struct rxt_edge *e) {
     uint32_t n = 0;

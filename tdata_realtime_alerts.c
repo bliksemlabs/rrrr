@@ -62,7 +62,11 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                *(informed_entity->route_id) = route_index;
+                /* TODO: hier moeten we de POINTER overschrijven die is wel minimaal 4 breed
+                 * vraag in dan alleen of het goed gaat met free van het object
+                 */
+                /* TODO: this only works for a route_id >= sizeof(route_index) */
+                memcpy (informed_entity->route_id, &route_index, sizeof(route_index));
             }
 
             if (informed_entity->stop_id) {
@@ -75,7 +79,8 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                *(informed_entity->stop_id) = stop_index;
+                /* TODO: this only works for a stop_id >= sizeof(stop_index) */
+                memcpy (informed_entity->stop_id, &stop_index, sizeof(stop_index));
             }
 
             if (informed_entity->trip && informed_entity->trip->trip_id) {
@@ -88,7 +93,8 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                *(informed_entity->trip->trip_id) = trip_index;
+                /* TODO: this only works for a trip_id >= sizeof(trip_index) */
+                memcpy (informed_entity->trip->trip_id, &trip_index, sizeof(trip_index));
             }
         }
     }
@@ -136,5 +142,6 @@ void tdata_clear_gtfsrt_alerts (tdata_t *tdata) {
         tdata->alerts = NULL;
     }
 }
-
+#else
+void tdata_gtfsrt_alert_not_available() {}
 #endif /* RRRR_FEATURE_REALTIME_ALERTS */

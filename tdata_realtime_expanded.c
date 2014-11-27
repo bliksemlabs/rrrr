@@ -637,4 +637,6 @@ void tdata_clear_gtfsrt (tdata_t *tdata) {
             tdata->n_trips * sizeof(calendar_t));
 }
 
+#else
+   void tdata_gtfsrt_not_available() {}
 #endif /* RRRR_FEATURE_REALTIME_EXPANDED */

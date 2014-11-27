@@ -48,6 +48,8 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
 
 RadixTree *rxt_new ();
 
+void rxt_destroy (RadixTree *root);
+
 bool rxt_insert (struct rxt_edge *root, const char *key, uint32_t value);
 
 uint32_t rxt_find (struct rxt_edge *root, const char *key);

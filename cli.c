@@ -344,7 +344,7 @@ int main (int argc, char *argv[]) {
 
     /* Output only final result in non-verbose mode */
     if ( ! cli_args.verbose) {
-        char result_buf[OUTPUT_LEN];
+        char result_buf[OUTPUT_LEN] = "";
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
         puts (result_buf);
     }
@@ -364,11 +364,17 @@ clean_exit:
     goto fast_exit;
     #endif
 
-    /* Unmap the memory and/or deallocate the memory on the heap */
-    tdata_close (&tdata);
-
     /* Deallocate the scratchspace of the router */
     router_teardown (&router);
+
+    #ifdef RRRR_FEATURE_REALTIME
+    if (tdata.stopid_index)  rxt_destroy (tdata.stopid_index);
+    if (tdata.tripid_index)  rxt_destroy (tdata.tripid_index);
+    if (tdata.routeid_index) rxt_destroy (tdata.routeid_index);
+    #endif
+
+    /* Unmap the memory and/or deallocate the memory on the heap */
+    tdata_close (&tdata);
 
     #ifdef RRRR_DEBUG
     goto fast_exit; /* kills the unused label warning */

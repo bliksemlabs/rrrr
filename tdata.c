@@ -10,6 +10,9 @@
 #include "tdata_io_v3.h"
 #include "tdata_validation.h"
 
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
+#include "tdata_realtime_alerts.h"
+#endif
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 #include "tdata_realtime_expanded.h"
 #endif
@@ -203,10 +206,14 @@ bool tdata_load(tdata_t *td, char *filename) {
 }
 
 void tdata_close(tdata_t *td) {
-    tdata_io_v3_close (td);
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     tdata_free_expanded (td);
     #endif
+    #ifdef RRRR_FEATURE_REALTIME_ALERTS
+    tdata_clear_gtfsrt_alerts (td);
+    #endif
+
+    tdata_io_v3_close (td);
 }
 
 uint32_t *tdata_stops_for_route(tdata_t *td, uint32_t route) {
