@@ -99,7 +99,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                 }
 
                 if (st->departure < st->arrival) {
-                    fprintf (stderr, "departure before arrival at " \
+                    fprintf (stderr, "departure before arrival at "
                                      "route %d, trip %d, stop %d.\n",
                                      route_index, trip_index, stop_index);
                 }
@@ -117,7 +117,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             }
         }
         if (n_nonincreasing_trips > 0) {
-            fprintf (stderr, "route %d has %d trips with" \
+            fprintf (stderr, "route %d has %d trips with "
                              "negative travel times\n",
                              route_index, n_nonincreasing_trips);
             ret_nonincreasing -= n_nonincreasing_trips;
