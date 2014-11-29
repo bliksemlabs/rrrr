@@ -88,32 +88,55 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
         int n_nonincreasing_trips = 0;
         for (trip_index = 0; trip_index < route.n_trips; ++trip_index) {
             trip_t trip = trips[trip_index];
-            stoptime_t *prev_st = NULL;
+            stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
+            stoptime_t *prev_st;
             for (stop_index = 0; stop_index < route.n_stops; ++stop_index) {
-                stoptime_t *st = tdata->stop_times + trip.stop_times_offset
-                                                   + stop_index;
                 if (stop_index == 0 && st->arrival != 0) {
                     fprintf (stderr,
                              "timedemand type begins at %d,%d not 0.\n",
                              st->arrival, st->departure);
+                    #ifndef RRRR_DEBUG
+                    return -1;
+                    #endif
                 }
 
                 if (st->departure < st->arrival) {
                     fprintf (stderr, "departure before arrival at "
                                      "route %d, trip %d, stop %d.\n",
                                      route_index, trip_index, stop_index);
+                    #ifndef RRRR_DEBUG
+                    return -1;
+                    #endif
                 }
 
-                if (prev_st != NULL) {
+                if (stop_index > 0) {
                     if (st->arrival < prev_st->departure) {
+                        fprintf (stderr, "negative travel time arriving at "
+                                         "route %d, trip %d, stop %d.\n",
+                                         route_index, trip_index, stop_index);
                         #if 0
-                        fprintf (stderr, "negative travel time arriving at route %d, trip %d, stop %d.\n", r, t, s);
-                        fprintf (stderr, "(%d, %d) -> (%d, %d)\n", prev_st->arrival, prev_st->departure, st->arrival, st->departure);
+                        fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
+                                         prev_st->arrival, prev_st->departure,
+                                         st->arrival, st->departure);
                         #endif
                         n_nonincreasing_trips += 1;
-                    } /* there are also lots of 0 travel times... */
+
+                        #ifndef RRRR_DEBUG
+                        return -1;
+                        #endif
+                    } else if (st->arrival == prev_st->departure) {
+                        fprintf (stderr, "last departure equals arrival at "
+                                         "route %d, trip %d, stop %d.\n",
+                                         route_index, trip_index, stop_index);
+
+                        n_nonincreasing_trips += 1;
+
+                        #ifndef RRRR_DEBUG
+                        return -1;
+                        #endif
+                    }
                 }
-                prev_st = st;
+                prev_st = st++;
             }
         }
         if (n_nonincreasing_trips > 0) {
