@@ -545,7 +545,10 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
                 #ifdef RRRR_DEBUG
                 fprintf(stderr, "WARNING: the operational day is 32 further than our calendar!\n");
                 #endif
+
+                #ifndef RRRR_FAKE_REALTIME
                 continue;
+                #endif
             }
 
             if (rt_trip->schedule_relationship ==

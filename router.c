@@ -128,7 +128,7 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
     /*  Fake realtime_mask if we are QA testing. */
     #ifdef RRRR_FAKE_REALTIME
-    realtime_mask = 1;
+    realtime_mask = ~((calendar_t) 0);
     #endif
 
     yesterday.midnight = 0;
@@ -448,7 +448,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
     /* This code is only required if want realtime support in
      * the journey planner
      */
-    #ifdef RRRR_REALTIME_EXPANDED
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 
     /* given that we are at a serviceday the realtime scope applies to */
     if (serviceday->apply_realtime) {
@@ -470,7 +470,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
             time = trip->begin_time;
         }
     } else
-    #endif /* RRRR_REALTIME_EXPANDED */
+    #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
     {
         trip_t *trip = tdata_trips_for_route (tdata, i_route) + trip_offset;
         trip_times = &tdata->stop_times[trip->stop_times_offset];
