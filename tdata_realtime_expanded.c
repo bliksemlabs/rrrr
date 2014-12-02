@@ -535,7 +535,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
             buf[6] = '\0';
             ltm.tm_mon  = strtol(&buf[4], NULL, 10) - 1;
             buf[4] = '\0';
-            ltm.tm_mon  = strtol(&buf[0], NULL, 10) - 1900;
+            ltm.tm_year = strtol(&buf[0], NULL, 10) - 1900;
             ltm.tm_isdst = -1;
             epochtime = mktime(&ltm);
 
