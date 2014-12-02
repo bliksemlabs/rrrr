@@ -28,7 +28,7 @@ all:
 	gcc -c -Wextra -Wall -ansi -pedantic router.c
 	gcc -c -Wextra -Wall -ansi -pedantic router_result.c
 	# gcc -o cli -Wextra -Wall -ansi -pedantic cli.c stubs.c
-	gcc -lm -lprotobuf-c -o cli -Wextra -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c
+	gcc -lm -lprotobuf-c -o cli -Wextra -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_alerts.c tdata_realtime_expanded.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c
 
 clean:
 	rm *.o gtfs-realtime.pb-c.c gtfs-realtime.pb-c.h
