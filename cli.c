@@ -30,7 +30,7 @@ struct cli_arguments {
     char *gtfsrt_alerts_filename;
     #endif
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    char *gtfsrt_filename;
+    char *gtfsrt_tripupdates_filename;
     #endif
     uint32_t repeat;
     bool verbose;
@@ -75,7 +75,7 @@ int main (int argc, char *argv[]) {
                         "[ --gtfsrt-alerts=filename.pb ]\n"
 #endif
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-                        "[ --gtfsrt=filename.pb ]\n"
+                        "[ --gtfsrt-tripupdates=filename.pb ]\n"
 #endif
 #endif
                         "[ --repeat=n ]\n"
@@ -150,8 +150,8 @@ int main (int argc, char *argv[]) {
                 #ifdef RRRR_FEATURE_REALTIME
                 case 'g':
                     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-                    if (strncmp(argv[i], "--gtfsrt=", 9) == 0) {
-                        cli_args.gtfsrt_filename = &argv[i][9];
+                    if (strncmp(argv[i], "--gtfsrt-tripupdates=", 21) == 0) {
+                        cli_args.gtfsrt_tripupdates_filename = &argv[i][21];
                     }
                     #endif
                     #ifdef RRRR_FEATURE_REALTIME_ALERTS
@@ -214,8 +214,8 @@ int main (int argc, char *argv[]) {
     /* */
 
     #ifdef RRRR_FEATURE_REALTIME
-    if (cli_args.gtfsrt_filename != NULL ||
-        cli_args.gtfsrt_alerts_filename != NULL) {
+    if (cli_args.gtfsrt_alerts_filename != NULL ||
+        cli_args.gtfsrt_tripupdates_filename != NULL) {
 
         tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
         tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
@@ -227,8 +227,8 @@ int main (int argc, char *argv[]) {
         }
         #endif
         #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-        if (cli_args.gtfsrt_filename != NULL) {
-            tdata_apply_gtfsrt_file (&tdata, cli_args.gtfsrt_filename);
+        if (cli_args.gtfsrt_tripupdates_filename != NULL) {
+            tdata_apply_gtfsrt_tripupdates_file (&tdata, cli_args.gtfsrt_tripupdates_filename);
         }
         #endif
     }

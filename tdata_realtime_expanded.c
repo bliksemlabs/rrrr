@@ -321,7 +321,7 @@ static void tdata_realtime_route_type (TransitRealtime__TripUpdate *rt_trip_upda
     }
 }
 
-static void tdata_realtime_apply_data (tdata_t *tdata, uint32_t trip_index, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_index, TransitRealtime__TripUpdate *rt_trip_update) {
     TransitRealtime__TripUpdate__StopTimeUpdate *rt_stop_time_update_prev = NULL;
     TransitRealtime__TripUpdate__StopTimeUpdate *rt_stop_time_update;
     route_t *route;
@@ -474,7 +474,7 @@ void tdata_free_expanded(tdata_t *td) {
  * position messages and using the delay extension (1003) to update RRRR's
  * per-trip delay information.
  */
-void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
+void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
     size_t e;
     TransitRealtime__FeedMessage *msg;
     msg = transit_realtime__feed_message__unpack (NULL, len, buf);
@@ -588,7 +588,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, uint8_t *buf, size_t len) {
                         tdata_realtime_changed_route (tdata, trip_index, cal_day, n_stops, rt_trip_update);
 
                     } else {
-                        tdata_realtime_apply_data (tdata, trip_index, rt_trip_update);
+                        tdata_realtime_apply_tripupdates (tdata, trip_index, rt_trip_update);
 
                     }
                 }
@@ -600,7 +600,7 @@ cleanup:
     transit_realtime__feed_message__free_unpacked (msg, NULL);
 }
 
-void tdata_apply_gtfsrt_file (tdata_t *tdata, char *filename) {
+void tdata_apply_gtfsrt_tripupdates_file (tdata_t *tdata, char *filename) {
     struct stat st;
     int fd;
     uint8_t *buf;
@@ -622,7 +622,7 @@ void tdata_apply_gtfsrt_file (tdata_t *tdata, char *filename) {
         goto fail_clean_fd;
     }
 
-    tdata_apply_gtfsrt (tdata, buf, st.st_size);
+    tdata_apply_gtfsrt_tripupdates (tdata, buf, st.st_size);
     munmap (buf, st.st_size);
 
 fail_clean_fd:
