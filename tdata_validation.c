@@ -111,9 +111,15 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (stop_index > 0) {
                     if (st->arrival < prev_st->departure) {
+                        char *trip_id = "";
+                        if (tdata->trip_ids) {
+                            trip_id = tdata->trip_ids + (trip_index * tdata->trip_ids_width);
+                        }
+
                         fprintf (stderr, "negative travel time arriving at "
-                                         "route %d, trip %d, stop %d.\n",
-                                         route_index, trip_index, stop_index);
+                                         "route %d, trip %d (%s), stop %d.\n",
+                                         route_index, trip_index,
+                                         trip_id, stop_index);
                         #if 0
                         fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
                                          prev_st->arrival, prev_st->departure,
@@ -125,6 +131,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         return -1;
                         #endif
                     } else if (st->arrival == prev_st->departure) {
+                        #if 0
                         fprintf (stderr, "last departure equals arrival at "
                                          "route %d, trip %d, stop %d.\n",
                                          route_index, trip_index, stop_index);
@@ -133,6 +140,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                         #ifndef RRRR_DEBUG
                         return -1;
+                        #endif
                         #endif
                     }
                 }
