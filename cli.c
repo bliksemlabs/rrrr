@@ -78,6 +78,7 @@ int main (int argc, char *argv[]) {
                         "[ --gtfsrt=filename.pb ]\n"
 #endif
 #endif
+                        "[ --repeat=n ]\n"
                         , argv[0]);
     }
 
