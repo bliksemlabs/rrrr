@@ -32,6 +32,7 @@ struct cli_arguments {
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     char *gtfsrt_filename;
     #endif
+    uint32_t repeat;
     bool verbose;
 };
 
@@ -164,6 +165,9 @@ int main (int argc, char *argv[]) {
                     if (strcmp(argv[i], "--randomize") == 0) {
                         router_request_randomize (&req, &tdata);
                     }
+                    else if (strncmp(argv[i], "--repeat=", 9) == 0) {
+                        cli_args.repeat = (uint32_t) strtol(&argv[i][9], NULL, 10);
+                    }
                     break;
 
                 case 't':
@@ -262,6 +266,7 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
+plan:
     /* While the scratch space remains allocated, each new search may require
      * reinitialisation of this memory.
      */
@@ -346,6 +351,13 @@ int main (int argc, char *argv[]) {
     if ( ! cli_args.verbose) {
         char result_buf[OUTPUT_LEN] = "";
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
+
+        /* For benchmarking: repeat the search up to n time */
+        if (cli_args.repeat > 0) {
+            cli_args.repeat--;
+            goto plan;
+        }
+
         puts (result_buf);
     }
 
