@@ -124,11 +124,11 @@ static uint16_t tdata_route_new(tdata_t *tdata, char *trip_ids,
                                 uint16_t agency_index, uint16_t shortname_index,
                                 uint16_t productcategory_index) {
     route_t *new;
-    uint32_t i_stop;
-    uint32_t i_trip;
     uint32_t route_stop_offset = tdata->n_route_stops;
     uint32_t stop_times_offset = tdata->n_stop_times;
     uint32_t trip_index        = tdata->n_trips;
+    uint16_t i_stop;
+    uint16_t i_trip;
 
     new = &tdata->routes[tdata->n_routes];
 
@@ -153,6 +153,10 @@ static uint16_t tdata_route_new(tdata_t *tdata, char *trip_ids,
         tdata->stop_times[stop_times_offset].arrival   = UNREACHED;
         tdata->stop_times[stop_times_offset].departure = UNREACHED;
         stop_times_offset++;
+
+        /* Initialise the realtime stoptimes */
+        tdata->trip_stoptimes[trip_index][i_stop].arrival   = UNREACHED;
+        tdata->trip_stoptimes[trip_index][i_stop].departure = UNREACHED;
     }
 
     /* append the allocated trip_ids to the array */
@@ -223,7 +227,7 @@ void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t route_index, uint32_
     tdata->route_stop_attributes[route_stops_offset] = rsa_boarding;
 }
 
-static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, int16_t cal_day, uint32_t n_stops, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, int16_t cal_day, uint16_t n_stops, TransitRealtime__TripUpdate *rt_trip_update) {
     TransitRealtime__TripDescriptor *rt_trip = rt_trip_update->trip;
     route_t *route_new = NULL;
     char *trip_id_new;
@@ -252,6 +256,8 @@ static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, i
             fprintf (stderr, "WARNING: this is changed trip %s being CHANGED again!\n", trip_id_new);
             #endif
             tdata->trip_stoptimes[route_new->trip_ids_offset] = (stoptime_t *) realloc(tdata->trip_stoptimes[route_new->trip_ids_offset], n_stops * sizeof(stoptime_t));
+
+            /* Only initialises if the length of the list increased */
             for (i_stop_index = route_new->n_stops;
                  i_stop_index < n_stops;
                  ++i_stop_index) {
@@ -301,7 +307,7 @@ static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, i
 
 }
 
-static void tdata_realtime_route_type (TransitRealtime__TripUpdate *rt_trip_update, uint32_t *n_stops, bool *changed_route, bool *nodata_route) {
+static void tdata_realtime_route_type (TransitRealtime__TripUpdate *rt_trip_update, uint16_t *n_stops, bool *changed_route, bool *nodata_route) {
     size_t i_stu;
     *n_stops = 0;
     *changed_route = false;
@@ -562,7 +568,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
                 tdata->trip_active[trip_index] |=  (1 << cal_day);
 
                 if (rt_trip_update->n_stop_time_update) {
-                    uint32_t n_stops;
+                    uint16_t n_stops;
                     bool changed_route;
                     bool nodata_route;
 
