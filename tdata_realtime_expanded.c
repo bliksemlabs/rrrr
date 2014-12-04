@@ -142,7 +142,6 @@ static uint16_t tdata_route_new(tdata_t *tdata, char *trip_ids,
     new->productcategory_index = productcategory_index;
     new->shortname_index = shortname_index;
 
-    tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(n_stops * sizeof(stoptime_t));
     tdata->trips[trip_index].stop_times_offset = stop_times_offset;
 
     for (i_stop = 0; i_stop < n_stops; ++i_stop) {
@@ -154,9 +153,6 @@ static uint16_t tdata_route_new(tdata_t *tdata, char *trip_ids,
         tdata->stop_times[stop_times_offset].departure = UNREACHED;
         stop_times_offset++;
 
-        /* Initialise the realtime stoptimes */
-        tdata->trip_stoptimes[trip_index][i_stop].arrival   = UNREACHED;
-        tdata->trip_stoptimes[trip_index][i_stop].departure = UNREACHED;
     }
 
     /* append the allocated trip_ids to the array */
@@ -165,6 +161,14 @@ static uint16_t tdata_route_new(tdata_t *tdata, char *trip_ids,
 
     /* add the last route index to the lookup table */
     for (i_trip = 0; i_trip < n_trips; ++i_trip) {
+        tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(n_stops * sizeof(stoptime_t));
+
+        for (i_stop = 0; i_stop < n_stops; ++i_stop) {
+            /* Initialise the realtime stoptimes */
+            tdata->trip_stoptimes[trip_index][i_stop].arrival   = UNREACHED;
+            tdata->trip_stoptimes[trip_index][i_stop].departure = UNREACHED;
+        }
+
         tdata->trips[trip_index].begin_time = UNREACHED;
         tdata->trip_routes[trip_index] = tdata->n_routes;
         trip_index++;
@@ -233,6 +237,9 @@ static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, i
     char *trip_id_new;
     uint32_t route_index;
 
+    /* Don't ever continue if we found that n_stops == 0. */
+    if (n_stops == 0) return;
+
     #ifdef RRRR_DEBUG
     fprintf (stderr, "WARNING: this is a changed route!\n");
     #endif
@@ -270,6 +277,7 @@ static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, i
     if (route_new == NULL) {
         route_t *route = tdata->routes + tdata->trip_routes[trip_index];
         trip_t  *trip = tdata->trips + trip_index;
+        uint16_t i_trips;
 
         /* remove the planned trip from the operating day */
         tdata->trip_active[trip_index] &= ~(1 << cal_day);
@@ -292,9 +300,15 @@ static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, i
          */
         trip_index = route_new->trip_ids_offset;
 
-        tdata->trips[trip_index].trip_attributes = trip->trip_attributes;
-        tdata->route_active[trip_index] |= (1 << cal_day);
-        tdata->trip_active[trip_index] |= (1 << cal_day);
+        for (i_trips = 0; i_trips < 1; ++i_trips) {
+            tdata->trips[trip_index].trip_attributes = trip->trip_attributes;
+            tdata->route_active[trip_index] |= (1 << cal_day);
+            tdata->trip_active[trip_index] |= (1 << cal_day);
+            trip_index++;
+        }
+
+        /* Restore the first trip_index again */
+        trip_index = route_new->trip_ids_offset;
     }
 
     tdata_apply_stop_time_update (tdata, route_index, trip_index, rt_trip_update);
@@ -302,7 +316,7 @@ static void tdata_realtime_changed_route (tdata_t *tdata, uint32_t trip_index, i
     /* being blissfully naive, a route having only one trip,
      * will have the same start and end time as its trip
      */
-    route_new->min_time = tdata->trip_stoptimes[trip_index][0].arrival;
+    route_new->min_time = tdata->trip_stoptimes[route_new->trip_ids_offset][0].arrival;
     route_new->max_time = tdata->trip_stoptimes[trip_index][route_new->n_stops - 1].departure;
 
 }
@@ -340,8 +354,8 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_inde
     trip = tdata->trips + trip_index;
 
     /* Normal case: at least one SCHEDULED or some NO_DATA
-        * stops have been observed
-        */
+     * stops have been observed
+     */
     if (tdata->trip_stoptimes[trip_index] == NULL) {
         /* If the expanded timetable does not contain an entry yet, we are creating one */
         tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(route->n_stops * sizeof(stoptime_t));
@@ -574,6 +588,8 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
                     tdata_realtime_route_type (rt_trip_update,  &n_stops, &changed_route, &nodata_route);
 
+                    /* Don't ever continue if we found that n_stops == 0. */
+                    if (n_stops == 0) continue;
 
                     /* This entire route doesn't have any data */
                     if (nodata_route) {
