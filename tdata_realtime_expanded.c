@@ -325,7 +325,7 @@ static void tdata_realtime_route_type (TransitRealtime__TripUpdate *rt_trip_upda
     size_t i_stu;
     *n_stops = 0;
     *changed_route = false;
-    *nodata_route = false;
+    *nodata_route = true;
 
     for (i_stu = 0;
          i_stu < rt_trip_update->n_stop_time_update;
@@ -588,11 +588,10 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
                     tdata_realtime_route_type (rt_trip_update,  &n_stops, &changed_route, &nodata_route);
 
-                    /* Don't ever continue if we found that n_stops == 0. */
-                    if (n_stops == 0) continue;
-
-                    /* This entire route doesn't have any data */
-                    if (nodata_route) {
+                    /* Don't ever continue if we found that n_stops == 0,
+                     * this entire route doesn't have any data.
+                     */
+                    if (nodata_route || n_stops == 0) {
                         /* If data previously was available, we should fall
                          * back to the schedule
                          */
