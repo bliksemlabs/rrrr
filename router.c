@@ -1138,8 +1138,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
              * and forces a re-board afterwards.
              */
             for (i_banned_stop_hard = 0;
-                    i_banned_stop_hard < req->n_banned_stops_hard;
-                    i_banned_stop_hard++) {
+                 i_banned_stop_hard < req->n_banned_stops_hard;
+                 i_banned_stop_hard++) {
                 if (stop == req->banned_stop_hard[i_banned_stop_hard]) {
                     trip = NONE;
                     continue;
