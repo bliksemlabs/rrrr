@@ -125,9 +125,10 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                                          prev_st->arrival, prev_st->departure,
                                          st->arrival, st->departure);
                         #endif
-                        n_nonincreasing_trips += 1;
 
-                        #ifndef RRRR_DEBUG
+                        #ifdef RRRR_DEBUG
+                        n_nonincreasing_trips += 1;
+                        #else
                         return -1;
                         #endif
                     } else if (st->arrival == prev_st->departure) {
@@ -136,9 +137,9 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                                          "route %d, trip %d, stop %d.\n",
                                          route_index, trip_index, stop_index);
 
+                        #ifdef RRRR_DEBUG
                         n_nonincreasing_trips += 1;
-
-                        #ifndef RRRR_DEBUG
+                        #else
                         return -1;
                         #endif
                         #endif

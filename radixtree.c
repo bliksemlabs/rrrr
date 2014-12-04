@@ -272,10 +272,10 @@ void rxt_compress (struct rxt_edge *root) {
 
 RadixTree *rxt_load_strings_from_file (char *filename) {
     RadixTree *root = NULL;
-    struct stat st;
-    int fd = open(filename, O_RDONLY);
-    uint32_t idx;
     char *strings, *strings_end, *s;
+    struct stat st;
+    uint32_t idx;
+    int fd;
 
     fd = open(filename, O_RDONLY);
     if (fd == -1) die("could not find input file.");
