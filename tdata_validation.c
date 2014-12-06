@@ -51,12 +51,12 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
 int tdata_validation_coordinates(tdata_t *tdata) {
 
     /* farther south than Ushuaia, Argentina */
-    float min_lat = -55.0;
+    float min_lat = -55.0f;
 
     /* farther north than Tromsø and Murmansk */
-    float max_lat = +70.0;
-    float min_lon = -180.0;
-    float max_lon = +180.0;
+    float max_lat = +70.0f;
+    float min_lon = -180.0f;
+    float max_lon = +180.0f;
 
     int32_t ret_invalid = 0;
 
