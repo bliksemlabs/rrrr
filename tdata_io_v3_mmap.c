@@ -30,7 +30,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     tdata_header_t *header;
     int fd;
 
-    fd = open(filename, O_RDWR);
+    fd = open(filename, O_RDONLY);
     if (fd == -1) {
         fprintf(stderr, "The input file %s could not be found.\n", filename);
         return false;
@@ -41,7 +41,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
         goto fail_close_fd;
     }
 
-    td->base = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    td->base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     td->size = st.st_size;
     if (td->base == MAP_FAILED) {
         fprintf(stderr, "The input file %s could not be mapped.\n", filename);
