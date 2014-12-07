@@ -89,7 +89,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
         for (trip_index = 0; trip_index < route.n_trips; ++trip_index) {
             trip_t trip = trips[trip_index];
             stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
-            stoptime_t *prev_st;
+            stoptime_t *prev_st = NULL;
             for (stop_index = 0; stop_index < route.n_stops; ++stop_index) {
                 if (stop_index == 0 && st->arrival != 0) {
                     fprintf (stderr,
@@ -109,7 +109,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                     #endif
                 }
 
-                if (stop_index > 0) {
+                if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
                         char *trip_id = "";
                         if (tdata->trip_ids) {
