@@ -70,10 +70,12 @@ bool bitset_get(BitSet *self, uint32_t index);
  */
 uint32_t bitset_next_set_bit(BitSet*, uint32_t index);
 
+#ifdef RRRR_DEBUG
 /* Print a string-representation of this bitset to STDERR */
 void bitset_dump(BitSet *self);
 /* Return an enumeration of all the indices set in the BitSet */
 uint32_t bitset_enumerate(BitSet *self);
+#endif /* RRRR_DEBUG */
 
 #endif /* _BITSET_H */
 
