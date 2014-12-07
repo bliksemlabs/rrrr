@@ -30,5 +30,6 @@ addons:
       name: "bliksemlabs/rrrr"
       description: "RRRR rapid real-time routing"
     notification_email: coverity@bliksemlabs.org
-    build_command: "make valgrind"
+    build_command_prepend: "rm -r build; mkdir build; cd build"
+    build_command: "cmake .."
     branch_pattern: ansi
