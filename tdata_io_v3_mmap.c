@@ -3,9 +3,12 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
+#include "config.h"
+
+#ifdef RRRR_TDATA_IO_MMAP
+
 #include "tdata_io_v3.h"
 #include "tdata.h"
-#include "config.h"
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -98,3 +101,7 @@ fail_close_fd:
 void tdata_io_v3_close(tdata_t *td) {
     munmap(td->base, td->size);
 }
+
+#else
+void tdata_io_v3_mmap_not_available();
+#endif /* RRRR_TDATA_IO_MMAP */
