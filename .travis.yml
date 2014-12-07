@@ -16,3 +16,18 @@ before_script:
 script:
   - make
   - cd tests; ctest .
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "sInCQux5fHnN+3Ai4t1SaKjarjbw7trh52lP2SzJz/Oja/nD6vLbPpEV0sdkavQzT98DXaVOYnhagmXmXEK6xnbh6R1+Rl0x0LRWxbALBQf+vM6QbX9PWwIF42RgwNdI5d/9WupyGazPi7l5TU9My1uocvxtFcFs32pPhQ0lqmk="
+
+addons:
+  coverity_scan:
+    project:
+      name: "bliksemlabs/rrrr"
+      description: "RRRR rapid real-time routing"
+    notification_email: coverity@bliksemlabs.org
+    build_command: "make valgrind"
+    branch_pattern: ansi
