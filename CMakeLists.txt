@@ -64,6 +64,6 @@ set(SOURCE_FILES
 link_libraries(m)
 link_libraries(protobuf-c)
 
-add_executable(ansi ${SOURCE_FILES})
+add_executable(cli ${SOURCE_FILES})
 
 add_subdirectory(tests)
