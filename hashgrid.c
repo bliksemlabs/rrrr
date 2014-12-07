@@ -33,7 +33,7 @@
  */
 
 static uint32_t xbin (HashGrid *hg, coord_t *coord) {
-    uint32_t x = abs(coord->x / (hg->bin_size.x));
+    uint32_t x = (uint32_t) abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
     #ifdef RRRR_DEBUG
     fprintf(stderr, "binning x coord %d, bin is %d \n", coord->x, x);
@@ -42,7 +42,7 @@ static uint32_t xbin (HashGrid *hg, coord_t *coord) {
 }
 
 static uint32_t ybin (HashGrid *hg, coord_t *coord) {
-    uint32_t y = abs(coord->y / (hg->bin_size.y));
+    uint32_t y = (uint32_t) abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
     #ifdef DEBUG
     fprintf(stderr, "binning y coord %d, bin is %d \n", coord->y, y);
