@@ -42,7 +42,6 @@ static bool router_setup_hashgrid(router_t *router) {
 #endif
 
 bool router_setup(router_t *router, tdata_t *tdata) {
-    srand(time(NULL));
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
     router->states = (router_state_t *) malloc(sizeof(router_state_t) *
@@ -127,7 +126,7 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
     #ifdef RRRR_FAKE_REALTIME
     realtime_mask = ~((calendar_t) 0);
     #else
-    realtime_mask = 1 << ((time(NULL) - router->tdata->calendar_start_time) /
+    realtime_mask = ((calendar_t) 1) << ((time(NULL) - router->tdata->calendar_start_time) /
                                          SEC_IN_ONE_DAY);
     #endif
 
@@ -211,7 +210,6 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     if (router->servicedays[1].apply_realtime &&
         router->tdata->rt_stop_routes[stop_index]) {
-        uint32_t i_route;
         routes = router->tdata->rt_stop_routes[stop_index]->list;
         n_routes = router->tdata->rt_stop_routes[stop_index]->len;
         for (i_route = 0; i_route < n_routes; ++i_route) {
@@ -879,7 +877,8 @@ bool router_route(router_t *router, router_request_t *req) {
     }
 
     /* apply upper bounds (speeds up second and third reversed searches) */
-    n_rounds = req->max_transfers + 1;
+    n_rounds = req->max_transfers;
+    n_rounds++;
     if (n_rounds > RRRR_DEFAULT_MAX_ROUNDS) {
         n_rounds = RRRR_DEFAULT_MAX_ROUNDS;
     }
@@ -894,7 +893,7 @@ bool router_route(router_t *router, router_request_t *req) {
 
 static void search_trips_within_days (router_t *router, router_request_t *req,
                                       route_cache_t *cache,
-                                      uint32_t route_stop_offset,
+                                      uint16_t route_stop_offset,
                                       rtime_t prev_time,
                                       serviceday_t **best_serviceday,
                                       uint32_t *best_trip, rtime_t *best_time) {
@@ -983,8 +982,8 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
 
 bool write_state(router_t *router, router_request_t *req,
                  uint8_t round, uint32_t route_index, uint32_t trip_offset,
-                 uint32_t stop_index, uint32_t route_stop_offset, rtime_t time,
-                 uint32_t board_stop, uint32_t board_route_stop,
+                 uint32_t stop_index, uint16_t route_stop_offset, rtime_t time,
+                 uint32_t board_stop, uint16_t board_route_stop,
                  rtime_t board_time) {
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
@@ -1045,7 +1044,7 @@ static bool fill_route_cache(router_t *router, router_request_t *req,
 void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
     uint32_t i_route;
-    uint8_t last_round = (round == 0) ? 1 : round - 1;
+    uint8_t last_round = (uint8_t) ((round == 0) ? 1 : round - 1);
 
     #ifdef RRRR_INFO
     fprintf(stderr, "round %d\n", round);
@@ -1064,7 +1063,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         uint32_t      board_stop = 0;
 
         /* route stop index where that trip was boarded */
-        uint32_t      board_route_stop = 0;
+        uint16_t      board_route_stop = 0;
 
         /* time when that trip was boarded */
         rtime_t       board_time = 0;
@@ -1168,7 +1167,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     rtime_t trip_time = tdata_stoptime (router->tdata,
                                                         board_serviceday,
                                                         i_route, trip,
-                                                        i_route_stop,
+                                                        (uint16_t) i_route_stop,
                                                         req->arrive_by);
                     if (trip_time == UNREACHED) {
                         attempt_board = false;
@@ -1183,7 +1182,6 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     }
                 }
             }
-
             /* If we have not yet boarded a trip on this route, see if we can
              * board one.  Also handle the case where we hit a stop with an
              * existing better arrival time. */
@@ -1195,7 +1193,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                  * reduces speed by ~20 percent over binary search.
                  */
                 uint32_t best_trip = NONE;
-                rtime_t  best_time = req->arrive_by ? 0 : UINT16_MAX;
+                rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UINT16_MAX);
                 serviceday_t *best_serviceday = NULL;
 
                 #ifdef RRRR_INFO
@@ -1205,7 +1203,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 tdata_dump_route(router->tdata, i_route, NONE);
                 #endif
 
-                search_trips_within_days (router, req, &cache, i_route_stop,
+                search_trips_within_days (router, req, &cache, (uint16_t) i_route_stop,
                                           prev_time, &best_serviceday,
                                           &best_trip, &best_time);
 
@@ -1224,7 +1222,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
                         board_stop = stop;
-                        board_route_stop = i_route_stop;
+                        board_route_stop = (uint16_t) i_route_stop;
                         board_serviceday = best_serviceday;
                         trip = best_trip;
                     }
@@ -1238,7 +1236,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             /*  We have already boarded a trip along this route. */
             } else if (trip != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
-                                               i_route, trip, i_route_stop,
+                                               i_route, trip, (uint16_t) i_route_stop,
                                                !req->arrive_by);
 
                 /* overflow due to long overnight trips on day 2 */
@@ -1302,7 +1300,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     #endif
                 } else {
                     write_state(router, req, round, i_route, trip, stop,
-                                i_route_stop, time,
+                                (uint16_t) i_route_stop, time,
                                 board_stop, board_route_stop, board_time);
 
                     /*  mark stop for next round. */
