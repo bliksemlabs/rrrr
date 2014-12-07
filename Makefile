@@ -10,6 +10,14 @@ valgrind:
 prod:
 	$(CC) -DRRRR_BITSET_128 -DNDEBUG -O3 -Wextra -Wall -std=c99 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c
 
+ioscli:
+	$(CC) -isysroot /var/sdks/Latest.sdk -DRRRR_TDATA_IO_MMAP -DRRRR_BITSET_64 -DNDEBUG -O2 -Wextra -Wall -std=c99 -lm -o cli router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_io_v3_mmap.c radixtree.c geometry.c hashgrid.c cli.c
+
+ios:
+	$(CC) -isysroot /var/sdks/Latest.sdk -DRRRR_TDATA_IO_MMAP -DRRRR_BITSET_64 -DNDEBUG -O2 -Wextra -Wall -std=c99 -c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_io_v3_mmap.c radixtree.c geometry.c hashgrid.c
+	libtool -static -o ../librrrr.a router.o tdata.o tdata_validation.o bitset.o router_request.o router_result.o util.o tdata_io_v3_mmap.o radixtree.o geometry.o hashgrid.o
+
+
 all:
 	protoc-c --c_out=. gtfs-realtime.proto
 	$(CC) -c -Wextra -Wall -ansi -pedantic util.c
