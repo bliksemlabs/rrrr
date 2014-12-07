@@ -4,6 +4,25 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -ansi -pedantic")
 
+SET(PROTO_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/gtfs-realtime.proto
+)
+
+SET(PROTO_HDRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/gtfs-realtime.pb-c.h
+)
+
+SET(PROTO_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/gtfs-realtime.pb-c.c
+)
+
+add_custom_command(OUTPUT ${PROTO_HDRS} ${PROTO_SRCS}
+    COMMAND protoc-c ARGS ${PROTO_FILES} -I ${CMAKE_CURRENT_SOURCE_DIR}
+    --c_out=${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/." VERBATIM
+    DEPENDS ${PROTO_FILES})
+
+
 set(SOURCE_FILES
     bitset.c
     bitset.h
