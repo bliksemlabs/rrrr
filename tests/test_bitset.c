@@ -23,7 +23,6 @@ START_TEST (test_bitset)
                 ck_assert(!bitset_get(bs, i));
             }
         }
-
         ck_assert(bitset_get(bs, 0));
         ck_assert(!bitset_get(bs, 1));
         ck_assert_int_eq(2, bitset_next_set_bit(bs, 1));
@@ -42,6 +41,29 @@ START_TEST (test_bitset)
         for (i = 0; i < 50000; ++i){
             ck_assert(!bitset_get(bs, i));
         }
+
+        //Test flipping all bits on
+        bitset_black(bs);
+        for (i = 0; i < 50000; ++i){
+            ck_assert(bitset_get(bs, i));
+        }
+
+        //Test clearing all bits
+        bitset_clear(bs);
+        ck_assert_int_eq(BITSET_NONE,bitset_next_set_bit(bs, 0));
+
+        //Test unset
+        bitset_black(bs);
+        for (i = 0; i < 50000; i += 2)
+            bitset_unset(bs, i);
+
+        ck_assert(!bitset_get(bs, 0));
+        ck_assert(bitset_get(bs, 1));
+        ck_assert_int_eq(1, bitset_next_set_bit(bs, 1));
+        ck_assert_int_eq(3, bitset_next_set_bit(bs, 2));
+        ck_assert_int_eq(BITSET_NONE, bitset_next_set_bit(bs, 50000));
+        ck_assert_int_eq(BITSET_NONE, bitset_next_set_bit(bs, 50001));
+
         bitset_destroy(bs);
         bitset_destroy(bs_inv);
     }
