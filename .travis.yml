@@ -30,6 +30,6 @@ addons:
       name: "bliksemlabs/rrrr"
       description: "RRRR rapid real-time routing"
     notification_email: coverity@bliksemlabs.org
-    build_command_prepend: "rm -r build; mkdir build; cd build"
-    build_command: "cmake .."
+    build_command_prepend: "rm -r build; mkdir build; cd build ; cmake .."
+    build_command: "make"
     branch_pattern: ansi
