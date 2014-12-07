@@ -51,12 +51,12 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
 int tdata_validation_coordinates(tdata_t *tdata) {
 
     /* farther south than Ushuaia, Argentina */
-    float min_lat = -55.0;
+    float min_lat = -55.0f;
 
     /* farther north than Tromsø and Murmansk */
-    float max_lat = +70.0;
-    float min_lon = -180.0;
-    float max_lon = +180.0;
+    float max_lat = +70.0f;
+    float min_lon = -180.0f;
+    float max_lon = +180.0f;
 
     int32_t ret_invalid = 0;
 
@@ -89,7 +89,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
         for (trip_index = 0; trip_index < route.n_trips; ++trip_index) {
             trip_t trip = trips[trip_index];
             stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
-            stoptime_t *prev_st;
+            stoptime_t *prev_st = NULL;
             for (stop_index = 0; stop_index < route.n_stops; ++stop_index) {
                 if (stop_index == 0 && st->arrival != 0) {
                     fprintf (stderr,
@@ -109,7 +109,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                     #endif
                 }
 
-                if (stop_index > 0) {
+                if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
                         char *trip_id = "";
                         if (tdata->trip_ids) {

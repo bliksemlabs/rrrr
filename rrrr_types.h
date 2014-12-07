@@ -182,7 +182,7 @@ struct router_request {
     #define ZU "%lu"
 #endif
 
-#define SEC_TO_RTIME(x) ((x) >> 2)
+#define SEC_TO_RTIME(x) (rtime_t) ((x) >> 2)
 #define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
 #define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
 

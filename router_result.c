@@ -274,8 +274,8 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             headsign = tdata_headsign_for_route (tdata, leg->route);
             productcategory = tdata_productcategory_for_route (tdata, leg->route);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-            d0 = leg->d0 / 60.0;
-            d1 = leg->d1 / 60.0;
+            d0 = leg->d0 / 60.0f;
+            d1 = leg->d1 / 60.0f;
             #endif
 
             if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else

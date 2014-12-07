@@ -118,7 +118,7 @@ static void tdata_realtime_free_trip_index (tdata_t *tdata, uint32_t trip_index)
  * will contain.
  */
 
-static uint16_t tdata_route_new(tdata_t *tdata, char *trip_ids,
+static uint32_t tdata_route_new(tdata_t *tdata, char *trip_ids,
                                 uint16_t n_stops, uint16_t n_trips,
                                 uint16_t attributes, uint32_t headsign_offset,
                                 uint16_t agency_index, uint16_t shortname_index,
@@ -372,11 +372,14 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_inde
 
     rs = 0;
     for (i_stu = 0; i_stu < rt_trip_update->n_stop_time_update; ++i_stu) {
-        TransitRealtime__TripUpdate__StopTimeUpdate *rt_stop_time_update = rt_trip_update->stop_time_update[i_stu];
-
-        char *stop_id = rt_stop_time_update->stop_id;
-        uint32_t stop_index = rxt_find (tdata->stopid_index, stop_id);
         uint32_t *route_stops = tdata->route_stops + route->route_stops_offset;
+        char *stop_id;
+        uint32_t stop_index;
+
+        rt_stop_time_update = rt_trip_update->stop_time_update[i_stu];
+        stop_id = rt_stop_time_update->stop_id;
+        stop_index = rxt_find (tdata->stopid_index, stop_id);
+
 
         if (route_stops[rs] == stop_index) {
             if (rt_stop_time_update->schedule_relationship == TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SCHEDULED) {

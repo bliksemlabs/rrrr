@@ -303,8 +303,12 @@ int main (int argc, char *argv[]) {
                         req.walk_speed = (float) strtod(&argv[i][13], NULL);
                     }
                     else if (strncmp(argv[i], "--walk-slack=", 13) == 0) {
-                        req.walk_slack = (float) strtod(&argv[i][13], NULL);
+                        req.walk_slack = (uint8_t) strtod(&argv[i][13], NULL);
                     }
+                    break;
+
+                default:
+                    fprintf(stderr, "Unknown option: %s\n", argv[i]);
                     break;
                 }
             }

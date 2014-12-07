@@ -3,9 +3,12 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
+#include "config.h"
+
+#ifdef RRRR_TDATA_IO_DYNAMIC
+
 #include "tdata_io_v3.h"
 #include "tdata.h"
-#include "config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -110,3 +113,7 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->route_ids);
     free (td->productcategories);
 }
+
+#else
+void tdata_io_v3_dynamic_not_available();
+#endif /* RRRR_TDATA_IO_DYNAMIC */

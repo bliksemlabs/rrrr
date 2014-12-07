@@ -109,7 +109,7 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     uint32_t cal_day;
 
     req->time = epoch_to_rtime (epochtime, &origin_tm);
-    req->time_rounded = (origin_tm.tm_sec % 4);
+    req->time_rounded = ((origin_tm.tm_sec % 4) > 0);
     /* TODO not DST-proof, use noons */
     cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
     if (cal_day > 31 ) {
@@ -121,7 +121,7 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
                          "which is on the same day of the week.\n", cal_day);
         req->calendar_wrapped = true;
     }
-    req->day_mask = 1 << cal_day;
+    req->day_mask = ((calendar_t) 1) << cal_day;
 }
 
 /* router_request_randomize creates a completely filled in, working request.
@@ -196,9 +196,9 @@ void router_request_next(router_request_t *req, rtime_t inc) {
  * Returns a boolean value indicating whether the request was successfully reversed.
  */
 bool router_request_reverse(router_t *router, router_request_t *req) {
-    uint32_t round = NONE;
     uint32_t best_stop_index = NONE;
     uint32_t max_transfers = req->max_transfers;
+    uint8_t round = UINT8_MAX;
     /* Variable Array Length implementation for states[round][stop_index]
      * router_state_t (*states)[router->tdata->n_stops] = (router_state_t(*)[]) (router->states);
      */
@@ -212,7 +212,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         HashGridResult *hg_result;
         uint32_t stop_index;
         double distance;
-        rtime_t best_time = (req->arrive_by ? 0 : UNREACHED);
+        rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
         if (req->arrive_by) {
             hg_result = &req->from_hg_result;
@@ -280,7 +280,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
 
     {
         /* find the solution with the most transfers and the earliest arrival */
-        uint32_t r;
+        uint8_t r;
         for (r = 0; r <= max_transfers; ++r) {
             if (router->states[r * router->tdata->n_stops + best_stop_index].walk_time != UNREACHED) {
                 round = r;
@@ -293,7 +293,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     }
 
     /* In the case that no solution was found, the request will remain unchanged. */
-    if (round == NONE) return false;
+    if (round == UINT8_MAX) return false;
 
     req->time_cutoff = req->time;
     req->time = router->states[round * router->tdata->n_stops +

@@ -131,8 +131,8 @@ double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2) {
 }
 
 void latlon_from_coord (latlon_t *latlon, coord_t *coord) {
-    latlon->lat = coord->y * 180.0 / INT32_MAX ;
-    latlon->lon = coord->x * 180.0 / INT32_MAX / xscale_at_y (coord->y);
+    latlon->lat = coord->y * 180.0f / INT32_MAX ;
+    latlon->lon = coord->x * 180.0f / INT32_MAX / xscale_at_y (coord->y);
 }
 
 bool strtolatlon (char *latlon, latlon_t *result) {

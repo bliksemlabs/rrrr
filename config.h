@@ -39,4 +39,8 @@
 #undef RRRR_BANNED_ROUTES_BITMASK
 #endif
 
+#if !defined(RRRR_TDATA_IO_MMAP) && !defined(RRRR_TDATA_IO_DYNAMIC)
+#define RRRR_TDATA_IO_DYNAMIC 1
+#endif
+
 #endif
