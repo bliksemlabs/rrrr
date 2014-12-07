@@ -29,15 +29,47 @@
 
 typedef struct cli_arguments cli_arguments_t;
 struct cli_arguments {
-    #ifdef RRRR_FEATURE_REALTIME_ALERTS
     char *gtfsrt_alerts_filename;
-    #endif
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     char *gtfsrt_tripupdates_filename;
-    #endif
     uint32_t repeat;
     bool verbose;
 };
+
+#if RRRR_MAX_BANNED_ROUTES > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
+static void set_add (uint32_t *set,
+                     uint8_t  *length, uint8_t max_length,
+                     uint32_t value) {
+    uint8_t i;
+
+    if (*length >= max_length) return;
+
+    for (i = 0; i < *length; ++i) {
+        if (set[i] == value) return;
+    }
+
+    set[*length] = value;
+    (*length)++;
+}
+#endif
+
+#if RRRR_MAX_BANNED_TRIPS > 0
+static void set2_add (uint32_t *set1, uint16_t *set2,
+                      uint8_t  *length, uint8_t max_length,
+                      uint32_t value1, uint16_t value2) {
+    uint8_t i;
+
+    if (*length >= max_length) return;
+
+    for (i = 0; i < *length; ++i) {
+        if (set1[i] == value1 &&
+            set2[i] == value2) return;
+    }
+
+    set1[*length] = value1;
+    set2[*length] = value2;
+    (*length)++;
+}
+#endif
 
 int main (int argc, char *argv[]) {
     /* our return value */
@@ -73,13 +105,23 @@ int main (int argc, char *argv[]) {
                         "[ --from-idx=idx | --from-latlon=Y,X ]\n"
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
-#ifdef RRRR_FEATURE_REALTIME
-#ifdef RRRR_FEATURE_REALTIME_ALERTS
+#if RRRR_MAX_BANNED_ROUTES > 0
+                        "[ --banned-route-idx=idx ]\n"
+#endif
+#if RRRR_MAX_BANNED_STOPS > 0
+                        "[ --banned-stop-idx=idx ]\n"
+#endif
+#if RRRR_MAX_BANNED_STOP_HARD > 0
+                        "[ --banned-stop-hard-idx=idx ]\n"
+#endif
+#if RRRR_MAX_BANNED_TRIPS > 0
+                        "[ --banned-trip-offset=route_idx,trip_offset ]\n"
+#endif
+#if RRRR_FEATURE_REALTIME_ALERTS == 1
                         "[ --gtfsrt-alerts=filename.pb ]\n"
 #endif
-#ifdef RRRR_FEATURE_REALTIME_EXPANDED
+#if RRRR_FEATURE_REALTIME_EXPANDED == 1
                         "[ --gtfsrt-tripupdates=filename.pb ]\n"
-#endif
 #endif
                         "[ --repeat=n ]\n"
                         , argv[0]);
@@ -182,6 +224,61 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][12], &req.to_latlon);
+                    }
+                    #endif
+                    break;
+
+                case 'b':
+                    if (false) {}
+                    #if RRRR_MAX_BANNED_ROUTES > 0
+                    else
+                    if (strncmp(argv[i], "--banned-route-idx=", 19) == 0) {
+                        set_add(req.banned_routes,
+                                &req.n_banned_routes,
+                                RRRR_MAX_BANNED_ROUTES,
+                                (uint32_t) strtol(&argv[i][19], NULL, 10));
+                    }
+                    #endif
+                    #if RRRR_MAX_BANNED_STOPS > 0
+                    else
+                    if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
+                        uint32_t stop_idx = (uint32_t) strtol(&argv[i][19], NULL, 10);
+                        if (stop_idx < tdata.n_stops) {
+                            set_add(req.banned_stops,
+                                    &req.n_banned_stops,
+                                    RRRR_MAX_BANNED_STOPS,
+                                    stop_idx);
+                        }
+                    }
+                    #endif
+                    #if RRRR_MAX_BANNED_STOPS_HARD > 0
+                    else
+                    if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
+                        uint32_t stop_idx = (uint32_t) strtol(&argv[i][23], NULL, 10);
+                        if (stop_idx < tdata.n_stops) {
+                            set_add(req.banned_stops_hard,
+                                    &req.n_banned_stops_hard,
+                                    RRRR_MAX_BANNED_STOPS_HARD,
+                                    stop_idx);
+                        }
+                    }
+                    #endif
+                    #if RRRR_MAX_BANNED_TRIPS > 0
+                    else
+                    if (strncmp(argv[i], "--banned-trip-offset=", 21) == 0) {
+                        char *endptr;
+                        uint32_t route_idx;
+
+                        route_idx = (uint32_t) strtol(&argv[i][21], &endptr, 10);
+                        if (route_idx < tdata.n_routes && endptr[0] == ',') {
+                            uint16_t trip_offset = strtol(++endptr, NULL, 10);
+                            if (trip_offset < tdata.routes[route_idx].n_trips) {
+                                set2_add(req.banned_trips_route, req.banned_trips_offset,
+                                         &req.n_banned_trips,
+                                         RRRR_MAX_BANNED_TRIPS,
+                                         route_idx, trip_offset);
+                            }
+                        }
                     }
                     #endif
                     break;

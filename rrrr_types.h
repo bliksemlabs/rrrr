@@ -99,11 +99,19 @@ struct router_request {
     uint32_t onboard_trip_offset;
 
     /* TODO comment on banning */
-    uint32_t banned_route[RRRR_MAX_BANNED_ROUTES];
-    uint32_t banned_stop[RRRR_MAX_BANNED_STOPS];
-    uint32_t banned_stop_hard[RRRR_MAX_BANNED_STOPS];
-    uint32_t banned_trip_route[RRRR_MAX_BANNED_TRIPS];
-    uint32_t banned_trip_offset[RRRR_MAX_BANNED_TRIPS];
+    #if RRRR_MAX_BANNED_ROUTES > 0
+    uint32_t banned_routes[RRRR_MAX_BANNED_ROUTES];
+    #endif
+    #if RRRR_MAX_BANNED_STOPS > 0
+    uint32_t banned_stops[RRRR_MAX_BANNED_STOPS];
+    #endif
+    #if RRRR_MAX_BANNED_STOPS_HARD > 0
+    uint32_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
+    #endif
+    #if RRRR_MAX_BANNED_TRIPS > 0
+    uint32_t banned_trips_route[RRRR_MAX_BANNED_TRIPS];
+    uint16_t banned_trips_offset[RRRR_MAX_BANNED_TRIPS];
+    #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */
     calendar_t day_mask;
@@ -138,10 +146,18 @@ struct router_request {
     uint8_t trip_attributes;
 
     /* TODO comment on banning */
+    #if RRRR_MAX_BANNED_ROUTES > 0
     uint8_t n_banned_routes;
+    #endif
+    #if RRRR_MAX_BANNED_STOPS > 0
     uint8_t n_banned_stops;
+    #endif
+    #if RRRR_MAX_BANNED_STOPS_HARD > 0
     uint8_t n_banned_stops_hard;
+    #endif
+    #if RRRR_MAX_BANNED_TRIPS > 0
     uint8_t n_banned_trips;
+    #endif
 
     /* restrict the output to specific optimisation flags */
     uint8_t optimise;

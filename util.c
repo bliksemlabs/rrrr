@@ -44,6 +44,13 @@ char *btimetext(rtime_t rt, char *buf) {
     return buf;
 }
 
+void memset16(uint16_t *s, uint16_t u, size_t n) {
+    uint16_t i;
+    for (i = 0; i < n; i++) {
+        s[i] = u;
+    }
+}
+
 void memset32(uint32_t *s, uint32_t u, size_t n) {
     uint32_t i;
     for (i = 0; i < n; i++) {

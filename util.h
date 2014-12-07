@@ -29,6 +29,7 @@
 
 #define UNUSED(expr) (void)(expr)
 
+void memset16(uint16_t *s, uint16_t u, size_t n);
 void memset32(uint32_t *s, uint32_t u, size_t n);
 void memset_rtime(rtime_t *s, rtime_t u, size_t n);
 uint32_t rrrrandom(uint32_t limit);

@@ -50,12 +50,18 @@ bool router_setup(router_t *router, tdata_t *tdata) {
                                                 RRRR_DEFAULT_MAX_ROUNDS));
     router->updated_stops  = bitset_new(tdata->n_stops);
     router->updated_routes = bitset_new(tdata->n_routes);
+
+#if RRRR_BANNED_ROUTES_BITMASK == 1
     router->banned_routes  = bitset_new(tdata->n_routes);
-    if ( ! (router->best_time &&
-            router->states &&
-            router->updated_stops &&
-            router->updated_routes &&
-            router->banned_routes
+#endif
+
+    if ( ! (router->best_time
+            && router->states
+            && router->updated_stops
+            && router->updated_routes
+#if RRRR_BANNED_ROUTES_BITMASK == 1
+            && router->banned_routes
+#endif
            )
        ) {
         fprintf(stderr, "failed to allocate router scratch space");
@@ -74,7 +80,10 @@ void router_teardown(router_t *router) {
     free(router->states);
     bitset_destroy(router->updated_stops);
     bitset_destroy(router->updated_routes);
+
+#if RRRR_BANNED_ROUTES_BITMASK == 1
     bitset_destroy(router->banned_routes);
+#endif
 
 #ifdef RRRR_FEATURE_LATLON
     HashGrid_teardown (&router->hg);
@@ -89,8 +98,6 @@ void router_reset(router_t *router) {
      */
     router->origin = NONE;
     router->target = NONE;
-
-    bitset_black(router->banned_routes);
 
     /* The best times to arrive at a stop scratch space is initialised with
      * UNREACHED. This allows to compare for a lesser time candidate in the
@@ -231,10 +238,25 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
     #endif
 }
 
-#ifdef RRRR_BANNED_ROUTES_BITMASK
+#if RRRR_MAX_BANNED_ROUTES > 0
+#if RRRR_BANNED_ROUTES_BITMASK == 1
 static void unflag_banned_routes (router_t *router, router_request_t *req) {
-    UNUSED (req);
+    if (req->n_banned_routes == 0) return;
+
     bitset_mask_and (router->updated_routes, router->banned_routes);
+}
+
+static void initialize_banned_routes (router_t *router, router_request_t *req) {
+    uint32_t i_banned_route;
+
+    bitset_black(router->banned_routes);
+
+    for (i_banned_route = 0;
+          i_banned_route < req->n_banned_routes;
+          ++i_banned_route) {
+         bitset_unset (router->banned_routes,
+                       req->banned_routes[i_banned_route]);
+    }
 }
 #else
 static void unflag_banned_routes (router_t *router, router_request_t *req) {
@@ -243,20 +265,45 @@ static void unflag_banned_routes (router_t *router, router_request_t *req) {
           i_banned_route < req->n_banned_routes;
           ++i_banned_route) {
          bitset_unset (router->updated_routes,
-                       req->banned_route[i_banned_route]);
+                       req->banned_routes[i_banned_route]);
      }
 }
 #endif
+#endif
 
+#if RRRR_MAX_BANNED_STOPS > 0
 static void unflag_banned_stops (router_t *router, router_request_t *req) {
     uint32_t i_banned_stop;
     for (i_banned_stop = 0;
          i_banned_stop < req->n_banned_stops;
          ++i_banned_stop) {
         bitset_unset (router->updated_stops,
-                      req->banned_stop[i_banned_stop]);
+                      req->banned_stops[i_banned_stop]);
     }
 }
+#endif
+
+#if RRRR_MAX_BANNED_STOPS > 0 || RRRR_BAX_BANNED_STOPS_HARD > 0
+static bool set_in (uint32_t *set, uint8_t length, uint32_t value) {
+    uint8_t i;
+    for (i = 0; i < length; ++i) {
+        if (set[i] == value) return true;
+    }
+    return false;
+}
+#endif
+
+#if RRRR_MAX_BANNED_TRIPS > 0
+static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
+                     uint32_t value1, uint16_t value2) {
+    uint8_t i;
+    for (i = 0; i < length; ++i) {
+        if (set1[i] == value1 &&
+            set2[i] == value2) return true;
+    }
+    return false;
+}
+#endif
 
 #ifdef RRRR_FEATURE_LATLON
 /* Because the first round begins with so few reached stops, the initial state
@@ -364,7 +411,9 @@ void apply_transfers (router_t *router, router_request_t *req,
             state_from->walk_from = stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
             flag_routes_for_stop (router, req, stop_index_from);
+            #if RRRR_MAX_BANNED_ROUTES > 0
             unflag_banned_routes (router, req);
+            #endif
         }
 
         if (transfer) {
@@ -422,7 +471,9 @@ void apply_transfers (router_t *router, router_request_t *req,
                 state_to->walk_from = stop_index_from;
                 router->best_time[stop_index_to] = time_to;
                 flag_routes_for_stop (router, req, stop_index_to);
+                #if RRRR_MAX_BANNED_ROUTES > 0
                 unflag_banned_routes (router, req);
+                #endif
             }
         }
         }
@@ -628,7 +679,7 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
     stop_index = HashGridResult_next_filtered(hg_result, &distance);
 
     while (stop_index != HASHGRID_NONE) {
-        uint32_t i, i_state;
+        uint32_t i_state;
         rtime_t extra_walktime;
 
         /* TODO: this is terrible. For each result we explicitly remove if it
@@ -637,15 +688,17 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
          * Sadly that might not give us an accurate best_stop_index.
          */
 
+        #if RRRR_MAX_BANNED_STOP > 0
         /* if a stop is banned, we should not act upon it here */
-        for (i = 0; i < req->n_banned_stops; ++i) {
-            if (req->banned_stop[i] == stop_index) continue;
-        }
+        if (set_in (req->banned_stops, req->n_banned_stops,
+                    stop_index)) continue;
+        #endif
 
+        #if RRRR_MAX_BANNED_STOP_HARD > 0
         /* if a stop is banned hard, we should not act upon it here */
-        for (i = 0; i < req->n_banned_stops_hard; ++i) {
-            if (req->banned_stop_hard[i] == stop_index) continue;
-        }
+        if (set_in (req->banned_stops_hard, req->n_banned_stops_hard,
+                    stop_index)) continue;
+        #endif
 
         i_state = router->tdata->n_stops + stop_index;
         extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
@@ -866,6 +919,13 @@ bool router_route(router_t *router, router_request_t *req) {
         return false;
     }
 
+    #if RRRR_BANNED_ROUTES_BITMASK == 1
+    /* populate router->banned_routes first, as unflag_banned_routes
+     * is used via initialize_origin, apply_transfers
+     */
+    initialize_banned_routes (router, req);
+    #endif
+
     /* populate router->origin */
     if (!initialize_origin (router, req)) {
         fprintf(stderr, "Search origin could not be initialised.\n");
@@ -927,7 +987,6 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
         for (i_trip_offset = 0;
              i_trip_offset < cache->this_route->n_trips;
              ++i_trip_offset) {
-            uint32_t i_banned_trip;
             rtime_t time;
 
             #ifdef RRRR_DEBUG
@@ -936,13 +995,12 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
             fprintf(stderr, "\n");
             #endif
 
+            #if RRRR_MAX_BANNED_TRIPS > 0
             /* skip this trip if it is banned */
-            for (i_banned_trip = 0;
-                i_banned_trip < req->n_banned_trips;
-                ++i_banned_trip) {
-                if ( req->banned_trip_route[i_banned_trip] == cache->route_index &&
-                     req->banned_trip_offset[i_banned_trip] == i_trip_offset) continue;
-            }
+            if (set2_in(req->banned_trips_route, req->banned_trips_offset,
+                        req->n_banned_trips, cache->route_index,
+                        i_trip_offset)) continue;
+            #endif
 
             /* skip this trip if it is not running on
              * the current service day
@@ -1058,7 +1116,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         route_cache_t cache;
 
         /* trip index within the route. NONE means not yet boarded. */
-        uint32_t      trip = NONE;
+        uint32_t      trip_index = NONE;
 
         /* stop index where that trip was boarded */
         uint32_t      board_stop = 0;
@@ -1075,7 +1133,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         /* Iterate over stop indexes within the route. Each one corresponds to
          * a global stop index. Note that the stop times array should be
-         * accessed with [trip][route_stop] not [trip][stop].
+         * accessed with [trip_index][route_stop] not [trip_index][stop].
          *
          * The iteration variable is signed to allow ending the iteration at
          * the beginning of the route, hence we decrement to 0 and need to
@@ -1102,8 +1160,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 req->arrive_by ? --i_route_stop :
                                  ++i_route_stop ) {
 
-            uint32_t i_banned_stop_hard;
-            uint32_t stop = cache.route_stops[i_route_stop];
+            uint32_t stop_index = cache.route_stops[i_route_stop];
             rtime_t prev_time;
             bool attempt_board = false;
             bool forboarding = (cache.route_stop_attributes[i_route_stop] & rsa_boarding);
@@ -1111,19 +1168,21 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
             #ifdef RRRR_INFO
             char buf[13];
-            fprintf(stderr, "    stop %2d [%d] %s %s\n", i_route_stop, stop,
-                            btimetext(router->best_time[stop], buf),
-                            tdata_stop_name_for_index (router->tdata, stop));
+            fprintf(stderr, "    stop %2d [%d] %s %s\n", i_route_stop,
+                            stop_index,
+                            btimetext(router->best_time[stop_index], buf),
+                            tdata_stop_name_for_index (router->tdata,
+                                                       stop_index));
             #endif
 
-            if (trip != NONE &&
+            if (trip_index != NONE &&
                     /* When currently on a vehicle, skip stops where
                      * alighting is not allowed at the route-point.
                      */
                     ((!forboarding && req->arrive_by) ||
                      (!foralighting && !req->arrive_by))) {
                 continue;
-            } else if (trip == NONE &&
+            } else if (trip_index == NONE &&
                     /* When looking to board a vehicle, skip stops where
                      * boarding is not allowed at the route-point.
                      */
@@ -1132,32 +1191,31 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 continue;
             }
 
-            /* If a stop in in banned_stop_hard, we do not want to transit
+            #if RRRR_MAX_BANNED_STOPS_HARD > 0
+            /* If a stop in in banned_stops_hard, we do not want to transit
              * through this stationwe reset the current trip to NONE and skip
              * the currect stop. This effectively splits the route in two,
              * and forces a re-board afterwards.
              */
-            for (i_banned_stop_hard = 0;
-                 i_banned_stop_hard < req->n_banned_stops_hard;
-                 i_banned_stop_hard++) {
-                if (stop == req->banned_stop_hard[i_banned_stop_hard]) {
-                    trip = NONE;
-                    continue;
-                }
+            if (set_in (req->banned_stops_hard, req->n_banned_stops_hard,
+                        stop_index)) {
+                trip_index = NONE;
+                continue;
             }
+            #endif
 
             /* If we are not already on a trip, or if we might be able to board
              * a better trip on this route at this location, indicate that we
              * want to search for a trip.
              */
             prev_time = router->states[last_round * router->tdata->n_stops +
-                                                              stop].walk_time;
+                                                    stop_index].walk_time;
 
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
-                if (trip == NONE || req->via == stop) {
+                if (trip_index == NONE || req->via == stop_index) {
                     attempt_board = true;
-                } else if (trip != NONE && req->via != NONE &&
+                } else if (trip_index != NONE && req->via != NONE &&
                                            req->via == board_stop) {
                     attempt_board = false;
                 } else {
@@ -1167,7 +1225,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                      */
                     rtime_t trip_time = tdata_stoptime (router->tdata,
                                                         board_serviceday,
-                                                        i_route, trip,
+                                                        i_route, trip_index,
                                                         i_route_stop,
                                                         req->arrive_by);
                     if (trip_time == UNREACHED) {
@@ -1199,7 +1257,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 serviceday_t *best_serviceday = NULL;
 
                 #ifdef RRRR_INFO
-                fprintf (stderr, "    attempting boarding at stop %d\n", stop);
+                fprintf (stderr, "    attempting boarding at stop %d\n",
+                                 stop_index);
                 #endif
                 #ifdef RRRR_TDATA
                 tdata_dump_route(router->tdata, i_route, NONE);
@@ -1219,14 +1278,15 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                                           best_time < req->time) &&
                         req->from != ONBOARD) {
                         fprintf(stderr, "ERROR: boarded before start time, "
-                                        "trip %d stop %d \n", best_trip, stop);
+                                        "trip %d stop %d \n",
+                                        best_trip, stop_index);
                     } else {
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
-                        board_stop = stop;
+                        board_stop = stop_index;
                         board_route_stop = i_route_stop;
                         board_serviceday = best_serviceday;
-                        trip = best_trip;
+                        trip_index = best_trip;
                     }
                 } else {
                     #ifdef RRRR_TRIP
@@ -1236,9 +1296,10 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 continue;  /*  to the next stop in the route */
 
             /*  We have already boarded a trip along this route. */
-            } else if (trip != NONE) {
+            } else if (trip_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
-                                               i_route, trip, i_route_stop,
+                                               i_route, trip_index,
+                                               i_route_stop,
                                                !req->arrive_by);
 
                 /* overflow due to long overnight trips on day 2 */
@@ -1246,7 +1307,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
                 #ifdef RRRR_TRIP
                 fprintf(stderr, "    on board trip %d considering time %s \n",
-                                trip, timetext(time));
+                                trip_index, timetext(time));
                 #endif
 
                 /* Target pruning, section 3.1 of RAPTOR paper. */
@@ -1272,9 +1333,9 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                  * Yes, because the best time may not have been found in the
                  * previous round.
                  */
-                if (!((router->best_time[stop] == UNREACHED) ||
-                       (req->arrive_by ? time > router->best_time[stop]
-                                       : time < router->best_time[stop]))) {
+                if (!((router->best_time[stop_index] == UNREACHED) ||
+                       (req->arrive_by ? time > router->best_time[stop_index]
+                                       : time < router->best_time[stop_index]))) {
                     #ifdef RRRR_INFO
                     fprintf(stderr, "    (no improvement)\n");
                     #endif
@@ -1298,24 +1359,26 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     #ifdef RRRR_DEBUG
                     fprintf(stderr, "ERROR: setting state to time before" \
                                     "start time. route %d trip %d stop %d \n",
-                                    i_route, trip, stop);
+                                    i_route, trip_index, stop_index);
                     #endif
                 } else {
-                    write_state(router, req, round, i_route, trip, stop,
-                                i_route_stop, time,
+                    write_state(router, req, round, i_route, trip_index,
+                                stop_index, i_route_stop, time,
                                 board_stop, board_route_stop, board_time);
 
                     /*  mark stop for next round. */
-                    bitset_set(router->updated_stops, stop);
+                    bitset_set(router->updated_stops, stop_index);
                 }
             }
-        }  /*  end for (stop) */
+        }  /*  end for (stop_index) */
     }  /*  end for (route) */
 
+    #if RRRR_MAX_BANNED_STOPS > 0
     /* Remove the banned stops from the bitset,
      * so no transfers will happen there.
      */
     unflag_banned_stops(router, req);
+    #endif
 
     /* Also updates the list of routes for next round
      * based on stops that were touched in this round.
