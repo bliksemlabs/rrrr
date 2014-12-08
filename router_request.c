@@ -135,9 +135,9 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->via = NONE;
     req->time_cutoff = UNREACHED;
     /* 0 or 1 */
-    req->arrive_by = rrrrandom(2);
+    req->arrive_by = (bool) rrrrandom(2);
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
-    req->day_mask = 1 << rrrrandom(32);
+    req->day_mask = ((calendar_t) 1) << rrrrandom(32);
     req->mode = m_all;
     req->trip_attributes = ta_none;
     req->optimise = o_all;
@@ -208,7 +208,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     #ifdef RRRR_FEATURE_LATLON
-    if ((!req->arrive_by ? req->to == NONE : req->from == NONE)) {
+    if ((req->arrive_by ? req->from == NONE : req->to == NONE)) {
         HashGridResult *hg_result;
         uint32_t stop_index;
         double distance;
