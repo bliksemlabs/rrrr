@@ -48,18 +48,18 @@ bool router_setup(router_t *router, tdata_t *tdata) {
                                                (tdata->n_stops *
                                                 RRRR_DEFAULT_MAX_ROUNDS));
     router->updated_stops  = bitset_new(tdata->n_stops);
-    router->updated_routes = bitset_new(tdata->n_journey_patterns);
+    router->updated_journey_patterns = bitset_new(tdata->n_journey_patterns);
 
-#if RRRR_BANNED_ROUTES_BITMASK == 1
-    router->banned_routes  = bitset_new(tdata->n_routes);
+#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+    router->banned_journey_patterns = bitset_new(tdata->n_journey_patterns);
 #endif
 
     if ( ! (router->best_time
             && router->states
             && router->updated_stops
-            && router->updated_routes
-#if RRRR_BANNED_ROUTES_BITMASK == 1
-            && router->banned_routes
+            && router->updated_journey_patterns
+#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+            && router->banned_journey_patterns
 #endif
            )
        ) {
@@ -78,10 +78,10 @@ void router_teardown(router_t *router) {
     free(router->best_time);
     free(router->states);
     bitset_destroy(router->updated_stops);
-    bitset_destroy(router->updated_routes);
+    bitset_destroy(router->updated_journey_patterns);
 
-#if RRRR_BANNED_ROUTES_BITMASK == 1
-    bitset_destroy(router->banned_routes);
+#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+    bitset_destroy(router->banned_journey_patterns);
 #endif
 
 #ifdef RRRR_FEATURE_LATLON
@@ -174,42 +174,42 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
 
 
-/* TODO? flag_routes_for_stops all at once after doing transfers?
+/* TODO? flag_journey_patterns_for_stop all at once after doing transfers?
  * this would require another stops bitset for transfer target stops.
  */
 
-/* Given a stop index, mark all routes that serve it as updated. */
-static void flag_routes_for_stop (router_t *router, router_request_t *req,
-                                  uint32_t stop_index) {
-    uint32_t *routes;
-    uint32_t i_route;
-    uint32_t n_routes = tdata_journey_patterns_for_stop(router->tdata, stop_index,
-            &routes);
+/* Given a stop index, mark all journey_patterns that serve it as updated. */
+static void flag_journey_patterns_for_stop(router_t *router, router_request_t *req,
+        uint32_t stop_index) {
+    uint32_t *journey_patterns;
+    uint32_t jp_index;
+    uint32_t n_journey_patterns = tdata_journey_patterns_for_stop(router->tdata, stop_index,
+            &journey_patterns);
 
-    for (i_route = 0; i_route < n_routes; ++i_route) {
-        calendar_t route_active_flags;
+    for (jp_index = 0; jp_index < n_journey_patterns; ++jp_index) {
+        calendar_t jp_active_flags;
 
         #ifdef RRRR_INFO
-        fprintf (stderr, "flagging route %d at stop %d\n",
-                         routes[i_route], stop_index);
+        fprintf (stderr, "flagging journey_pattern %d at stop %d\n",
+                         journey_patterns[jp_index], stop_index);
         #endif
 
-        route_active_flags = router->tdata->journey_pattern_active[routes[i_route]];
+        jp_active_flags = router->tdata->journey_pattern_active[journey_patterns[jp_index]];
 
-        /* CHECK that there are any trips running on this route
+        /* CHECK that there are any trips running on this journey_pattern
          * (another bitfield)
-         * fprintf(stderr, "route flags %d", route_active_flags);
-         * printBits(4, &route_active_flags);
+         * fprintf(stderr, "journey_pattern flags %d", jp_active_flags);
+         * printBits(4, &jp_active_flags);
          */
 
-        /* & router_active_flags seems to provide about 14% increase
+        /* & journey_pattern_active_flags seems to provide about 14% increase
          * in throughput
          */
-        if ((router->day_mask & route_active_flags) &&
-            (req->mode & router->tdata->journey_patterns[routes[i_route]].attributes) > 0) {
-           bitset_set (router->updated_routes, routes[i_route]);
+        if ((router->day_mask & jp_active_flags) &&
+            (req->mode & router->tdata->journey_patterns[journey_patterns[jp_index]].attributes) > 0) {
+           bitset_set (router->updated_journey_patterns, journey_patterns[jp_index]);
            #ifdef RRRR_INFO
-           fprintf (stderr, "  route running\n");
+           fprintf (stderr, "  journey_pattenr running\n");
            #endif
         }
     }
@@ -217,18 +217,18 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     if (router->servicedays[1].apply_realtime &&
         router->tdata->rt_journey_patterns_at_stop[stop_index]) {
-        routes = router->tdata->rt_journey_patterns_at_stop[stop_index]->list;
-        n_routes = router->tdata->rt_journey_patterns_at_stop[stop_index]->len;
-        for (i_route = 0; i_route < n_routes; ++i_route) {
+        journey_patterns = router->tdata->rt_journey_patterns_at_stop[stop_index]->list;
+        n_journey_patterns = router->tdata->rt_journey_patterns_at_stop[stop_index]->len;
+        for (jp_index = 0; jp_index < n_journey_patterns; ++jp_index) {
             #ifdef RRRR_INFO
-            fprintf (stderr, "  flagging changed route %d at stop %d\n",
-                             routes[i_route], stop_index);
+            fprintf (stderr, "  flagging changed journey_pattern %d at stop %d\n",
+                             journey_patterns[jp_index], stop_index);
             #endif
-            /* extra routes should only be applied on the current day */
-            if ((req->mode & router->tdata->journey_patterns[routes[i_route]].attributes) > 0) {
-                bitset_set (router->updated_routes, routes[i_route]);
+            /* extra journey_patterns should only be applied on the current day */
+            if ((req->mode & router->tdata->journey_patterns[journey_patterns[jp_index]].attributes) > 0) {
+                bitset_set (router->updated_journey_patterns, journey_patterns[jp_index]);
                 #ifdef RRRR_INFO
-                fprintf (stderr, "  route running\n");
+                fprintf (stderr, "  journey_pattern running\n");
                 #endif
             }
         }
@@ -236,34 +236,34 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
     #endif
 }
 
-#if RRRR_MAX_BANNED_ROUTES > 0
-#if RRRR_BANNED_ROUTES_BITMASK == 1
-static void unflag_banned_routes (router_t *router, router_request_t *req) {
-    if (req->n_banned_routes == 0) return;
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+static void unflag_banned_journey_patterns (router_t *router, router_request_t *req) {
+    if (req->n_banned_journey_patterns == 0) return;
 
-    bitset_mask_and (router->updated_routes, router->banned_routes);
+    bitset_mask_and (router->updated_journey_patterns, router->banned_journey_patterns);
 }
 
-static void initialize_banned_routes (router_t *router, router_request_t *req) {
-    uint32_t i_banned_route;
+static void initialize_banned_journey_patterns (router_t *router, router_request_t *req) {
+    uint32_t i_banned_jp;
 
-    bitset_black(router->banned_routes);
+    bitset_black(router->banned_journey_patterns);
 
-    for (i_banned_route = 0;
-          i_banned_route < req->n_banned_routes;
-          ++i_banned_route) {
-         bitset_unset (router->banned_routes,
-                       req->banned_routes[i_banned_route]);
+    for (i_banned_jp = 0;
+          i_banned_jp < req->n_banned_journey_patterns;
+          ++i_banned_jp) {
+         bitset_unset (router->banned_journey_patterns,
+                       req->banned_journey_patterns[i_banned_jp]);
     }
 }
 #else
-static void unflag_banned_routes (router_t *router, router_request_t *req) {
-    uint32_t i_banned_route;
-     for (i_banned_route = 0;
-          i_banned_route < req->n_banned_routes;
-          ++i_banned_route) {
-         bitset_unset (router->updated_routes,
-                       req->banned_routes[i_banned_route]);
+static void unflag_banned_journey_patterns(router_t *router, router_request_t *req) {
+    uint32_t i_banned_jp;
+     for (i_banned_jp = 0;
+          i_banned_jp < req->n_banned_journey_patterns;
+          ++i_banned_jp) {
+         bitset_unset (router->updated_journey_patterns,
+                       req->banned_journey_patterns[i_banned_jp]);
      }
 }
 #endif
@@ -346,9 +346,9 @@ static void initialize_transfers (router_t *router,
 #endif
 
 /* For each updated stop and each destination of a transfer from an updated
- * stop, set the associated routes as updated. The routes bitset is cleared
+ * stop, set the associated journey_patterns as updated. The journey_patterns bitset is cleared
  * before the operation, and the stops bitset is cleared after all transfers
- * have been computed and all routes have been set.
+ * have been computed and all journey_patterns have been set.
  * Transfer results are computed within the same round, based on arrival time
  * in the ride phase and stored in the walk time member of states.
  */
@@ -356,10 +356,10 @@ void apply_transfers (router_t *router, router_request_t *req,
                       uint32_t round, bool transfer) {
     uint32_t stop_index_from;
     router_state_t *states = router->states + (round * router->tdata->n_stops);
-    /* The transfer process will flag routes that should be explored in
+    /* The transfer process will flag journey_patterns that should be explored in
      * the next round.
      */
-    bitset_clear (router->updated_routes);
+    bitset_clear (router->updated_journey_patterns);
     for (stop_index_from  = bitset_next_set_bit (router->updated_stops, 0);
          stop_index_from != BITSET_NONE;
          stop_index_from  = bitset_next_set_bit (router->updated_stops, stop_index_from + 1)) {
@@ -408,9 +408,9 @@ void apply_transfers (router_t *router, router_request_t *req,
             state_from->walk_time = time_from;
             state_from->walk_from = stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
-            flag_routes_for_stop (router, req, stop_index_from);
-            #if RRRR_MAX_BANNED_ROUTES > 0
-            unflag_banned_routes (router, req);
+            flag_journey_patterns_for_stop(router, req, stop_index_from);
+            #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+            unflag_banned_journey_patterns(router, req);
             #endif
         }
 
@@ -468,9 +468,9 @@ void apply_transfers (router_t *router, router_request_t *req,
                 state_to->walk_time = time_to;
                 state_to->walk_from = stop_index_from;
                 router->best_time[stop_index_to] = time_to;
-                flag_routes_for_stop (router, req, stop_index_to);
-                #if RRRR_MAX_BANNED_ROUTES > 0
-                unflag_banned_routes (router, req);
+                flag_journey_patterns_for_stop(router, req, stop_index_to);
+                #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+                unflag_banned_journey_patterns(router, req);
                 #endif
             }
         }
@@ -489,7 +489,7 @@ void apply_transfers (router_t *router, router_request_t *req,
  */
 rtime_t
 tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
-                uint32_t i_route, uint32_t trip_offset, uint32_t route_stop,
+                uint32_t jp_index, uint32_t trip_offset, uint32_t journey_pattern_point,
                 bool arrive) {
     rtime_t time, time_adjusted;
     stoptime_t *trip_times;
@@ -503,7 +503,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
     if (serviceday->apply_realtime) {
 
         /* the expanded stoptimes can be found at the same row as the trip */
-        trip_times = tdata->trip_stoptimes[tdata->journey_patterns[i_route].trip_ids_offset + trip_offset];
+        trip_times = tdata->trip_stoptimes[tdata->journey_patterns[jp_index].trip_ids_offset + trip_offset];
 
         if (trip_times) {
             /* if the expanded stoptimes have been added,
@@ -514,28 +514,28 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
             /* if the expanded stoptimes have not been added,
              * or our source is not time-expanded
              */
-            trip_t *trip = tdata_trips_in_journey_pattern(tdata, i_route) + trip_offset;
+            trip_t *trip = tdata_trips_in_journey_pattern(tdata, jp_index) + trip_offset;
             trip_times = &tdata->stop_times[trip->stop_times_offset];
             time = trip->begin_time;
         }
     } else
     #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
     {
-        trip_t *trip = tdata_trips_in_journey_pattern(tdata, i_route) + trip_offset;
+        trip_t *trip = tdata_trips_in_journey_pattern(tdata, jp_index) + trip_offset;
         trip_times = &tdata->stop_times[trip->stop_times_offset];
         time = trip->begin_time;
     }
 
     if (arrive) {
-        time += trip_times[route_stop].arrival;
+        time += trip_times[journey_pattern_point].arrival;
     } else {
-        time += trip_times[route_stop].departure;
+        time += trip_times[journey_pattern_point].departure;
     }
 
     time_adjusted = time + serviceday->midnight;
 
     /*
-    printf ("boarding at stop %d, time is: %s \n", route_stop, timetext (time));
+    printf ("boarding at stop %d, time is: %s \n", journey_pattern_point, timetext (time));
     printf ("   after adjusting: %s \n", timetext (time_adjusted));
     printf ("   midnight: %d \n", serviceday->midnight);
     */
@@ -549,28 +549,28 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 }
 
 bool tdata_next (router_t *router, router_request_t *req,
-                 uint32_t route_index, uint32_t trip_offset, rtime_t qtime,
+                 uint32_t jp_index, uint32_t trip_offset, rtime_t qtime,
                  uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
 
-    uint32_t *route_stops = tdata_points_for_journey_pattern(router->tdata, route_index);
-    journey_pattern_t *route       = router->tdata->journey_patterns + route_index;
-    uint32_t i_route_stop;
+    uint32_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
+    uint32_t jpp_i;
 
     *ret_stop_index = NONE;
     *ret_stop_time = UNREACHED;
 
-    for (i_route_stop = 0; i_route_stop < route->n_stops; ++i_route_stop) {
+    for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
         /* TODO: check if the arrive = false flag works with req->arrive_by */
 
         rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
-                                       route_index, trip_offset, i_route_stop, false);
+                jp_index, trip_offset, jpp_i, false);
 
         /* Find stop immediately after the given time on the given trip. */
         if (req->arrive_by ? time > qtime : time < qtime) {
             if (*ret_stop_time == UNREACHED ||
                 (req->arrive_by ? time < *ret_stop_time :
                                   time > *ret_stop_time)) {
-                *ret_stop_index = route_stops[i_route_stop];
+                *ret_stop_index = journey_pattern_points[jpp_i];
                 *ret_stop_time = time;
             }
         }
@@ -583,7 +583,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     /* We cannot expand the start trip into the temporary round (1)
      * during initialization because we may be able to reach the
      * destination on that starting trip.
-     * We discover the previous stop and flag only the selected route
+     * We discover the previous stop and flag only the selected journey_pattern
      * for exploration in round 0. This would interfere with search
      * reversal, but reversal is meaningless/useless in on-board
      * depart trips anyway.
@@ -592,7 +592,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     rtime_t  stop_time;
 
     if (tdata_next (router, req,
-                    req->onboard_trip_route, req->onboard_trip_offset,
+                    req->onboard_trip_journey_pattern, req->onboard_journey_pattern_offset,
                     req->time, &stop_index, &stop_time) ){
         uint32_t i_state;
 
@@ -607,12 +607,12 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
         router->states[i_state].time      = stop_time;
         router->states[i_state].walk_time = stop_time;
 
-        /* When starting on board, only flag one route and
+        /* When starting on board, only flag one journey_pattern and
          * do not apply transfers, only a single walk.
          */
         bitset_clear (router->updated_stops);
-        bitset_clear (router->updated_routes);
-        bitset_set (router->updated_routes, req->onboard_trip_route);
+        bitset_clear (router->updated_journey_patterns);
+        bitset_set (router->updated_journey_patterns, req->onboard_trip_journey_pattern);
 
         return true;
     }
@@ -649,12 +649,12 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
 
     /* the rest of these should be unnecessary */
     router->states[i_state].ride_from  = NONE;
-    router->states[i_state].back_route = NONE;
+    router->states[i_state].back_journey_pattern = NONE;
     router->states[i_state].back_trip  = NONE;
     router->states[i_state].board_time = UNREACHED;
 
     /* Apply transfers to initial state,
-     * which also initializes the updated routes bitset.
+     * which also initializes the updated journey_patterns bitset.
      */
     apply_transfers(router, req, 1, true);
 
@@ -712,7 +712,7 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
 
         /*  the rest of these should be unnecessary */
         router->states[i_state].ride_from  = NONE;
-        router->states[i_state].back_route = NONE;
+        router->states[i_state].back_journey_pattern = NONE;
         router->states[i_state].back_trip  = NONE;
         router->states[i_state].board_time = UNREACHED;
 
@@ -849,11 +849,11 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      *
      * De overweging om bij een alternatieve eerdere halte uit te stappen
      * en te gaan lopen baseren op het feit dat een andere, niet dezelfde
-     * back_route wordt gebruikt
+     * back_journey_pattern wordt gebruikt
      */
 
     /* We are starting on board a trip, not at a station. */
-    if (req->onboard_trip_route != NONE && req->onboard_trip_offset != NONE) {
+    if (req->onboard_trip_journey_pattern != NONE && req->onboard_journey_pattern_offset != NONE) {
 
         /* On-board departure only makes sense for depart-after requests. */
         if (!req->arrive_by) {
@@ -917,11 +917,11 @@ bool router_route(router_t *router, router_request_t *req) {
         return false;
     }
 
-    #if RRRR_BANNED_ROUTES_BITMASK == 1
-    /* populate router->banned_routes first, as unflag_banned_routes
+    #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+    /* populate router->banned_journey_patterns first, as unflag_banned_journey_patterns
      * is used via initialize_origin, apply_transfers
      */
-    initialize_banned_routes (router, req);
+    initialize_banned_journey_patterns (router, req);
     #endif
 
     /* populate router->origin */
@@ -952,8 +952,8 @@ bool router_route(router_t *router, router_request_t *req) {
 }
 
 static void search_trips_within_days (router_t *router, router_request_t *req,
-                                      route_cache_t *cache,
-                                      uint16_t route_stop_offset,
+                                      journey_pattern_cache_t *cache,
+                                      uint16_t jpp_offset,
                                       rtime_t prev_time,
                                       serviceday_t **best_serviceday,
                                       uint32_t *best_trip, rtime_t *best_time) {
@@ -969,22 +969,22 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
 
         uint32_t i_trip_offset;
 
-        /* Check that this route still has any trips
+        /* Check that this journey_pattern still has any trips
          * running on this day.
          */
         if (req->arrive_by ? prev_time < serviceday->midnight +
-                                         cache->this_route->min_time
+                                         cache->this_jp->min_time
                            : prev_time > serviceday->midnight +
-                                         cache->this_route->max_time) continue;
+                                         cache->this_jp->max_time) continue;
 
         /* Check whether there's any chance of improvement by
          * scanning additional days. Note that day list is
          * reversed for arrive-by searches.
          */
-        if (*best_trip != NONE && ! cache->route_overlap) break;
+        if (*best_trip != NONE && ! cache->jp_overlap) break;
 
         for (i_trip_offset = 0;
-             i_trip_offset < cache->this_route->n_trips;
+             i_trip_offset < cache->this_jp->n_trips;
              ++i_trip_offset) {
             rtime_t time;
 
@@ -997,7 +997,7 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
             #if RRRR_MAX_BANNED_TRIPS > 0
             /* skip this trip if it is banned */
             if (set2_in(req->banned_trips_route, req->banned_trips_offset,
-                        req->n_banned_trips, cache->route_index,
+                        req->n_banned_trips, cache->jp_index,
                         i_trip_offset)) continue;
             #endif
 
@@ -1008,12 +1008,12 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
             /* skip this trip if it doesn't have all our
              * required attributes
              */
-            if ( ! ((req->trip_attributes & cache->route_trips[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
+            if ( ! ((req->trip_attributes & cache->trips_in_journey_pattern[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
 
             /* consider the arrival or departure time on
              * the current service day
              */
-            time = tdata_stoptime (router->tdata, serviceday, cache->route_index, i_trip_offset, route_stop_offset, req->arrive_by);
+            time = tdata_stoptime (router->tdata, serviceday, cache->jp_index, i_trip_offset, jpp_offset, req->arrive_by);
 
             #ifdef RRRR_TRIP
             fprintf(stderr, "    board option %d at %s \n", i_trip_offset, "");
@@ -1039,9 +1039,9 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
 }
 
 bool write_state(router_t *router, router_request_t *req,
-                 uint8_t round, uint32_t route_index, uint32_t trip_offset,
-                 uint32_t stop_index, uint16_t route_stop_offset, rtime_t time,
-                 uint32_t board_stop, uint16_t board_route_stop,
+                 uint8_t round, uint32_t jpp_index, uint32_t trip_offset,
+                 uint32_t stop_index, uint16_t jpp_offset, rtime_t time,
+                 uint32_t board_stop, uint16_t board_jpp_stop,
                  rtime_t board_time) {
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
@@ -1055,12 +1055,12 @@ bool write_state(router_t *router, router_request_t *req,
 
     router->best_time[stop_index] = time;
     this_state->time              = time;
-    this_state->back_route        = route_index;
+    this_state->back_journey_pattern = jpp_index;
     this_state->back_trip         = trip_offset;
     this_state->ride_from         = board_stop;
     this_state->board_time        = board_time;
-    this_state->back_route_stop   = board_route_stop;
-    this_state->route_stop        = route_stop_offset;
+    this_state->back_journey_pattern_point = board_jpp_stop;
+    this_state->journey_pattern_point = jpp_offset;
 
     if (req->arrive_by && board_time < time) {
         fprintf (stderr, "board time non-decreasing\n");
@@ -1074,9 +1074,9 @@ bool write_state(router_t *router, router_request_t *req,
 }
 
 
-static bool fill_route_cache(router_t *router, router_request_t *req,
-                             uint32_t route_index, struct route_cache *cache) {
-    cache->this_route    = &(router->tdata->journey_patterns[route_index]);
+static bool fill_jp_cache(router_t *router, router_request_t *req,
+        uint32_t jp_index, struct journey_pattern_cache *cache) {
+    cache->this_jp = &(router->tdata->journey_patterns[jp_index]);
 
     #ifdef FEATURE_AGENCY_FILTER
     if (req->agency != AGENCY_UNFILTERED &&
@@ -1086,33 +1086,33 @@ static bool fill_route_cache(router_t *router, router_request_t *req,
     #endif
 
     /* For each stop in this route, its global stop index. */
-    cache->route_stops   = tdata_points_for_journey_pattern(router->tdata, route_index);
-    cache->route_stop_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, route_index);
+    cache->journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+    cache->journey_pattern_point_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, jp_index);
 
-    cache->route_index = route_index;
+    cache->jp_index = jp_index;
 
     /* if trips during two servicedays, overlap */
-    cache->route_overlap = cache->this_route->min_time < cache->this_route->max_time - RTIME_ONE_DAY;
-    cache->route_trips   = tdata_trips_in_journey_pattern(router->tdata, route_index);
-    cache->trip_masks    = tdata_trip_masks_for_journey_pattern(router->tdata, route_index);
+    cache->jp_overlap = cache->this_jp->min_time < cache->this_jp->max_time - RTIME_ONE_DAY;
+    cache->trips_in_journey_pattern = tdata_trips_in_journey_pattern(router->tdata, jp_index);
+    cache->trip_masks    = tdata_trip_masks_for_journey_pattern(router->tdata, jp_index);
 
     return true;
 }
 
 void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
-    uint32_t i_route;
+    uint32_t jp_index;
     uint8_t last_round = (uint8_t) ((round == 0) ? 1 : round - 1);
 
     #ifdef RRRR_INFO
     fprintf(stderr, "round %d\n", round);
     #endif
-    /* Iterate over all routes which contain a stop that was updated in the last round. */
-    for (i_route  = bitset_next_set_bit (router->updated_routes, 0);
-         i_route != BITSET_NONE;
-         i_route  = bitset_next_set_bit (router->updated_routes, i_route + 1)) {
+    /* Iterate over all journey_patterns which contain a stop that was updated in the last round. */
+    for (jp_index = bitset_next_set_bit (router->updated_journey_patterns, 0);
+         jp_index != BITSET_NONE;
+         jp_index = bitset_next_set_bit (router->updated_journey_patterns, jp_index + 1)) {
 
-        route_cache_t cache;
+        journey_pattern_cache_t cache;
 
         /* trip index within the route. NONE means not yet boarded. */
         uint32_t      trip_index = NONE;
@@ -1120,8 +1120,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         /* stop index where that trip was boarded */
         uint32_t      board_stop = 0;
 
-        /* route stop index where that trip was boarded */
-        uint16_t      board_route_stop = 0;
+        /* journey_pattern_point index where that trip was boarded */
+        uint16_t      board_jpp = 0;
 
         /* time when that trip was boarded */
         rtime_t       board_time = 0;
@@ -1132,42 +1132,42 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         /* Iterate over stop indexes within the route. Each one corresponds to
          * a global stop index. Note that the stop times array should be
-         * accessed with [trip_index][route_stop] not [trip_index][stop].
+         * accessed with [trip_index][jpp_index] not [trip_index][jpp_index].
          *
          * The iteration variable is signed to allow ending the iteration at
          * the beginning of the route, hence we decrement to 0 and need to
          * test for >= 0. An unsigned variable would always be true.
          */
 
-        int32_t i_route_stop;
+        int32_t jpp_index;
 
-        if (!fill_route_cache (router, req, i_route, &cache)) continue;
+        if (!fill_jp_cache(router, req, jp_index, &cache)) continue;
 
         #if 0
-        if (route_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
-        fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", i_route, route.min_time, route.max_time);
-        fprintf (stderr, "  actual first time: %d \n", tdata_depart(router->tdata, i_route, 0, 0));
-        fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, i_route, route.n_trips - 1, route.n_stops - 1));
-        fprintf(stderr, "  route %d: %s;%s\n", i_route, tdata_shortname_for_route(router->tdata, i_route),tdata_headsign_for_route(router->tdata, i_route));
-        tdata_dump_journey_pattern(router->tdata, i_route, NONE);
+        if (cache.jp_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", cache.this_jp->min_time, cache.this_jp->max_time, cache.jp_overlap);
+        fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", jp_index, cache.this_jp->min_time, cache.this_jp->max_time);
+        fprintf (stderr, "  actual first time: %d \n", tdata_depart(router->tdata, jp_index, 0, 0));
+        fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, jp_index, cache.this_jp->n_trips - 1, cache.this_jp->n_stops - 1));
+        fprintf(stderr, "  journey_pattern %d: %s;%s\n", jp_index, tdata_shortname_for_journey_pattern(router->tdata, jp_index), tdata_headsign_for_journey_pattern(router->tdata, jp_index));
+        tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
         #endif
 
 
-        for (i_route_stop = (req->arrive_by ? cache.this_route->n_stops - 1 : 0);
-                req->arrive_by ? i_route_stop >= 0 :
-                i_route_stop < cache.this_route->n_stops;
-                req->arrive_by ? --i_route_stop :
-                                 ++i_route_stop ) {
+        for (jpp_index = (req->arrive_by ? cache.this_jp->n_stops - 1 : 0);
+                req->arrive_by ? jpp_index >= 0 :
+                jpp_index < cache.this_jp->n_stops;
+                req->arrive_by ? --jpp_index :
+                                 ++jpp_index) {
 
-            uint32_t stop_index = cache.route_stops[i_route_stop];
+            uint32_t stop_index = cache.journey_pattern_points[jpp_index];
             rtime_t prev_time;
             bool attempt_board = false;
-            bool forboarding = (cache.route_stop_attributes[i_route_stop] & rsa_boarding);
-            bool foralighting = (cache.route_stop_attributes[i_route_stop] & rsa_alighting);
+            bool forboarding = (cache.journey_pattern_point_attributes[jpp_index] & rsa_boarding);
+            bool foralighting = (cache.journey_pattern_point_attributes[jpp_index] & rsa_alighting);
 
             #ifdef RRRR_INFO
             char buf[13];
-            fprintf(stderr, "    stop %2d [%d] %s %s\n", i_route_stop,
+            fprintf(stderr, "    stop %2d [%d] %s %s\n", jpp_index,
                             stop_index,
                             btimetext(router->best_time[stop_index], buf),
                             tdata_stop_name_for_index (router->tdata,
@@ -1193,7 +1193,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             #if RRRR_MAX_BANNED_STOPS_HARD > 0
             /* If a stop in in banned_stops_hard, we do not want to transit
              * through this stationwe reset the current trip to NONE and skip
-             * the currect stop. This effectively splits the route in two,
+             * the currect stop. This effectively splits the journey_pattern in two,
              * and forces a re-board afterwards.
              */
             if (set_in (req->banned_stops_hard, req->n_banned_stops_hard,
@@ -1204,7 +1204,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             #endif
 
             /* If we are not already on a trip, or if we might be able to board
-             * a better trip on this route at this location, indicate that we
+             * a better trip on this journey_pattern at this location, indicate that we
              * want to search for a trip.
              */
             prev_time = router->states[last_round * router->tdata->n_stops +
@@ -1224,8 +1224,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                      */
                     rtime_t trip_time = tdata_stoptime (router->tdata,
                                                         board_serviceday,
-                                                        i_route, trip_index,
-                                                        (uint16_t) i_route_stop,
+                            jp_index, trip_index,
+                                                        (uint16_t) jpp_index,
                                                         req->arrive_by);
                     if (trip_time == UNREACHED) {
                         attempt_board = false;
@@ -1247,7 +1247,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             if (attempt_board) {
                 /* Scan all trips to find the soonest trip that can be boarded,
                  * if any. Real-time updates can ruin FIFO ordering of trips
-                 * within routes. Scanning through the whole list of trips
+                 * within journey_patterns. Scanning through the whole list of trips
                  * reduces speed by ~20 percent over binary search.
                  */
                 uint32_t best_trip = NONE;
@@ -1259,10 +1259,10 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                                  stop_index);
                 #endif
                 #ifdef RRRR_TDATA
-                tdata_dump_journey_pattern(router->tdata, i_route, NONE);
+                tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
                 #endif
 
-                search_trips_within_days (router, req, &cache, (uint16_t) i_route_stop,
+                search_trips_within_days (router, req, &cache, (uint16_t) jpp_index,
                                           prev_time, &best_serviceday,
                                           &best_trip, &best_time);
 
@@ -1282,7 +1282,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
                         board_stop = stop_index;
-                        board_route_stop = (uint16_t) i_route_stop;
+                        board_jpp = (uint16_t) jpp_index;
                         board_serviceday = best_serviceday;
                         trip_index = best_trip;
                     }
@@ -1291,13 +1291,13 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     fprintf(stderr, "    no suitable trip to board.\n");
                     #endif
                 }
-                continue;  /*  to the next stop in the route */
+                continue;  /*  to the next stop in the journey_pattern */
 
-            /*  We have already boarded a trip along this route. */
+            /*  We have already boarded a trip along this journey_pattern. */
             } else if (trip_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
-                                               i_route, trip_index,
-                                               (uint16_t) i_route_stop,
+                        jp_index, trip_index,
+                                               (uint16_t) jpp_index,
                                                !req->arrive_by);
 
                 /* overflow due to long overnight trips on day 2 */
@@ -1316,7 +1316,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     fprintf(stderr, "    (target pruning)\n");
                     #endif
 
-                    /* We cannot break out of this route entirely,
+                    /* We cannot break out of this journey_pattern entirely,
                      * because re-boarding may occur at a later stop.
                      */
                     continue;
@@ -1356,13 +1356,13 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
                     #ifdef RRRR_DEBUG
                     fprintf(stderr, "ERROR: setting state to time before" \
-                                    "start time. route %d trip %d stop %d \n",
-                                    i_route, trip_index, stop_index);
+                                    "start time. journey_pattern %d trip %d stop %d \n",
+                                    jp_index, trip_index, stop_index);
                     #endif
                 } else {
-                    write_state(router, req, round, i_route, trip_index,
-                                stop_index, (uint16_t) i_route_stop, time,
-                                board_stop, board_route_stop, board_time);
+                    write_state(router, req, round, jp_index, trip_index,
+                                stop_index, (uint16_t) jpp_index, time,
+                                board_stop, board_jpp, board_time);
 
                     /*  mark stop for next round. */
                     bitset_set(router->updated_stops, stop_index);
@@ -1378,7 +1378,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
     unflag_banned_stops(router, req);
     #endif
 
-    /* Also updates the list of routes for next round
+    /* Also updates the list of journey_patterns for next round
      * based on stops that were touched in this round.
      */
     apply_transfers(router, req, round, true);

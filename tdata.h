@@ -197,7 +197,7 @@ uint32_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret);
+uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **jp_ret);
 
 stoptime_t *tdata_stoptimes_for_route(tdata_t *td, uint32_t jp_index);
 

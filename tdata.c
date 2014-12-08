@@ -225,10 +225,10 @@ uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_inde
     return td->journey_pattern_point_attributes + journey_pattern.journey_pattern_point_offset;
 }
 
-uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret) {
+uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **jp_ret) {
     stop_t stop0 = td->stops[stop];
     stop_t stop1 = td->stops[stop + 1];
-    *routes_ret = td->journey_patterns_at_stop + stop0.journey_patterns_at_stop_offset;
+    *jp_ret = td->journey_patterns_at_stop + stop0.journey_patterns_at_stop_offset;
     return stop1.journey_patterns_at_stop_offset - stop0.journey_patterns_at_stop_offset;
 }
 

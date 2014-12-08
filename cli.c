@@ -35,7 +35,7 @@ struct cli_arguments {
     bool verbose;
 };
 
-#if RRRR_MAX_BANNED_ROUTES > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
 static void set_add (uint32_t *set,
                      uint8_t  *length, uint8_t max_length,
                      uint32_t value) {
@@ -105,7 +105,7 @@ int main (int argc, char *argv[]) {
                         "[ --from-idx=idx | --from-latlon=Y,X ]\n"
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
-#if RRRR_MAX_BANNED_ROUTES > 0
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-route-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_STOPS > 0
@@ -230,12 +230,12 @@ int main (int argc, char *argv[]) {
 
                 case 'b':
                     if (false) {}
-                    #if RRRR_MAX_BANNED_ROUTES > 0
+                    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                     else
                     if (strncmp(argv[i], "--banned-route-idx=", 19) == 0) {
-                        set_add(req.banned_routes,
-                                &req.n_banned_routes,
-                                RRRR_MAX_BANNED_ROUTES,
+                        set_add(req.banned_journey_patterns,
+                                &req.n_banned_journey_patterns,
+                                RRRR_MAX_BANNED_JOURNEY_PATTERNS,
                                 (uint32_t) strtol(&argv[i][19], NULL, 10));
                     }
                     #endif

@@ -21,8 +21,8 @@ void router_state_dump (router_state_t *state) {
                      );
 
     /* TODO */
-    if (state->back_route == NONE) fprintf (stderr, "NONE\n");
-    else fprintf (stderr, "%d\n", state->back_route);
+    if (state->back_journey_pattern == NONE) fprintf (stderr, "NONE\n");
+    else fprintf (stderr, "%d\n", state->back_journey_pattern);
 }
 
 void dump_results(router_t *router) {
@@ -66,16 +66,16 @@ void dump_results(router_t *router) {
 #if 0
 /* WARNING we are not currently storing trip IDs so this will segfault */
 void dump_trips(router_t *router) {
-    uint32_t i_route;
-    for (i_route = 0; i_route < router->tdata->n_routes; ++i_route) {
-        route_t *route = &(router->tdata->routes[i_route]);
-        char *trip_ids = tdata_trip_ids_for_route(router->tdata, i_route);
-        uint32_t *trip_masks = tdata_trip_masks_for_route(router->tdata, i_route);
+    uint32_t jp_index;
+    for (jp_index = 0; jp_index < router->tdata->n_journey_patterns; ++jp_index) {
+        journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
+        char *trip_ids = tdata_trip_ids_in_journey_pattern(router->tdata, jp_index);
+        uint32_t *trip_masks = tdata_trip_masks_for_journey_pattern(router->tdata, jp_index);
         uint32_t i_trip;
 
-        printf ("route %d (of %d), n trips %d, n stops %d\n", i_route, router->tdata->n_routes, route->n_trips, route->n_stops);
-        for (i_trip = 0; i_trip < route->n_trips; ++i_trip) {
-            printf ("trip index %d trip_id %s mask ", i_trip, trip_ids[i_trip * router->tdata->trip_id_width]);
+        printf ("journey_pattern %d (of %d), n trips %d, n stops %d\n", jp_index, router->tdata->n_journey_patterns, jp->n_trips, jp->n_stops);
+        for (i_trip = 0; i_trip < jp->n_trips; ++i_trip) {
+            printf ("trip index %d trip_id %s mask ", i_trip, trip_ids[i_trip * router->tdata->trip_ids_width]);
             printBits (4, & (trip_masks[i_trip]));
             printf ("\n");
         }

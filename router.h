@@ -24,17 +24,17 @@ typedef struct router_state router_state_t;
  * the back_trip_stop rather than the back_stop (global stop index):
  * a trip can pass through a stop more than once.
  */
-/* TODO rename members to ride_from, walk_from, route, trip, */
+/* TODO rename members to ride_from, walk_from, journey_pattern, trip, */
 struct router_state {
     /* The index of the previous stop in the itinerary */
     uint32_t ride_from;
-    /* The index of the route used to travel from back_stop to here, or WALK  */
-    uint32_t back_route;
+    /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
+    uint32_t back_journey_pattern;
     /* The index of the trip used to travel from back_stop */
     uint32_t back_trip;
     /* The time when this stop was reached */
     rtime_t  time;
-    /* The time at which the trip within back_route left back_stop */
+    /* The time at which the trip within back_journey_pattern left back_stop */
     rtime_t  board_time;
 
     /* Second phase footpath/transfer results */
@@ -44,8 +44,8 @@ struct router_state {
     /* The time when this stop was reached by walking (2nd phase) */
     rtime_t  walk_time;
 
-    uint16_t back_route_stop;
-    uint16_t route_stop;
+    uint16_t back_journey_pattern_point;
+    uint16_t journey_pattern_point;
 };
 
 /* Scratch space for use by the routing algorithm.
@@ -65,12 +65,12 @@ struct router {
     /* Used to track which stops improved during each round */
     BitSet *updated_stops;
 
-    /* Used to track which routes might have changed during each round */
-    BitSet *updated_routes;
+    /* Used to track which journey_patterns might have changed during each round */
+    BitSet *updated_journey_patterns;
 
-#ifdef RRRR_BANNED_ROUTES_BITMASK
-    /* Used to bann routes and in the final clockwise search optimise */
-    BitSet *banned_routes;
+#ifdef RRRR_BANNED_JOURNEY_PATTERNS_BITMASK
+    /* Used to ban journey_patterns and in the final clockwise search optimise */
+    BitSet *banned_journey_patterns;
 #endif
 
     uint32_t origin;
@@ -87,17 +87,17 @@ struct router {
      */
 };
 
-struct route_cache {
-    journey_pattern_t *this_route;
-    uint32_t *route_stops;
-    uint8_t  *route_stop_attributes;
-    trip_t   *route_trips;
+struct journey_pattern_cache {
+    journey_pattern_t *this_jp;
+    uint32_t *journey_pattern_points;
+    uint8_t  *journey_pattern_point_attributes;
+    trip_t   *trips_in_journey_pattern;
     calendar_t *trip_masks;
-    uint32_t route_index;
-    bool route_overlap;
+    uint32_t jp_index;
+    bool jp_overlap;
 };
 
-typedef struct route_cache route_cache_t;
+typedef struct journey_pattern_cache journey_pattern_cache_t;
 
 
 /* FUNCTION PROTOTYPES */

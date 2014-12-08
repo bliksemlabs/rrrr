@@ -92,15 +92,15 @@ struct router_request {
     /* preferred transfer stop index from the users perspective */
     uint32_t via;
 
-    /* onboard departure, route index from the users perspective */
-    uint32_t onboard_trip_route;
+    /* onboard departure, journey_pattern index from the users perspective */
+    uint32_t onboard_trip_journey_pattern;
 
-    /* onboard departure, trip offset within the route */
-    uint32_t onboard_trip_offset;
+    /* onboard departure, trip offset within the journey_pattern */
+    uint32_t onboard_journey_pattern_offset;
 
     /* TODO comment on banning */
-    #if RRRR_MAX_BANNED_ROUTES > 0
-    uint32_t banned_routes[RRRR_MAX_BANNED_ROUTES];
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    uint32_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     uint32_t banned_stops[RRRR_MAX_BANNED_STOPS];
@@ -146,8 +146,8 @@ struct router_request {
     uint8_t trip_attributes;
 
     /* TODO comment on banning */
-    #if RRRR_MAX_BANNED_ROUTES > 0
-    uint8_t n_banned_routes;
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    uint8_t n_banned_journey_patterns;
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     uint8_t n_banned_stops;
