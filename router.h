@@ -88,7 +88,7 @@ struct router {
 };
 
 struct route_cache {
-    route_t *this_route;
+    journey_pattern_t *this_route;
     uint32_t *route_stops;
     uint8_t  *route_stop_attributes;
     trip_t   *route_trips;

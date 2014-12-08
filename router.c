@@ -48,7 +48,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
                                                (tdata->n_stops *
                                                 RRRR_DEFAULT_MAX_ROUNDS));
     router->updated_stops  = bitset_new(tdata->n_stops);
-    router->updated_routes = bitset_new(tdata->n_routes);
+    router->updated_routes = bitset_new(tdata->n_journey_patterns);
 
 #if RRRR_BANNED_ROUTES_BITMASK == 1
     router->banned_routes  = bitset_new(tdata->n_routes);
@@ -194,7 +194,7 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
                          routes[i_route], stop_index);
         #endif
 
-        route_active_flags = router->tdata->route_active[routes[i_route]];
+        route_active_flags = router->tdata->journey_pattern_active[routes[i_route]];
 
         /* CHECK that there are any trips running on this route
          * (another bitfield)
@@ -206,7 +206,7 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
          * in throughput
          */
         if ((router->day_mask & route_active_flags) &&
-            (req->mode & router->tdata->routes[routes[i_route]].attributes) > 0) {
+            (req->mode & router->tdata->journey_patterns[routes[i_route]].attributes) > 0) {
            bitset_set (router->updated_routes, routes[i_route]);
            #ifdef RRRR_INFO
            fprintf (stderr, "  route running\n");
@@ -216,16 +216,16 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     if (router->servicedays[1].apply_realtime &&
-        router->tdata->rt_stop_routes[stop_index]) {
-        routes = router->tdata->rt_stop_routes[stop_index]->list;
-        n_routes = router->tdata->rt_stop_routes[stop_index]->len;
+        router->tdata->rt_journey_patterns_at_stop[stop_index]) {
+        routes = router->tdata->rt_journey_patterns_at_stop[stop_index]->list;
+        n_routes = router->tdata->rt_journey_patterns_at_stop[stop_index]->len;
         for (i_route = 0; i_route < n_routes; ++i_route) {
             #ifdef RRRR_INFO
             fprintf (stderr, "  flagging changed route %d at stop %d\n",
                              routes[i_route], stop_index);
             #endif
             /* extra routes should only be applied on the current day */
-            if ((req->mode & router->tdata->routes[routes[i_route]].attributes) > 0) {
+            if ((req->mode & router->tdata->journey_patterns[routes[i_route]].attributes) > 0) {
                 bitset_set (router->updated_routes, routes[i_route]);
                 #ifdef RRRR_INFO
                 fprintf (stderr, "  route running\n");
@@ -503,7 +503,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
     if (serviceday->apply_realtime) {
 
         /* the expanded stoptimes can be found at the same row as the trip */
-        trip_times = tdata->trip_stoptimes[tdata->routes[i_route].trip_ids_offset + trip_offset];
+        trip_times = tdata->trip_stoptimes[tdata->journey_patterns[i_route].trip_ids_offset + trip_offset];
 
         if (trip_times) {
             /* if the expanded stoptimes have been added,
@@ -514,14 +514,14 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
             /* if the expanded stoptimes have not been added,
              * or our source is not time-expanded
              */
-            trip_t *trip = tdata_trips_for_route (tdata, i_route) + trip_offset;
+            trip_t *trip = tdata_trips_in_journey_pattern(tdata, i_route) + trip_offset;
             trip_times = &tdata->stop_times[trip->stop_times_offset];
             time = trip->begin_time;
         }
     } else
     #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
     {
-        trip_t *trip = tdata_trips_for_route (tdata, i_route) + trip_offset;
+        trip_t *trip = tdata_trips_in_journey_pattern(tdata, i_route) + trip_offset;
         trip_times = &tdata->stop_times[trip->stop_times_offset];
         time = trip->begin_time;
     }
@@ -553,7 +553,7 @@ bool tdata_next (router_t *router, router_request_t *req,
                  uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
 
     uint32_t *route_stops = tdata_stops_for_route(router->tdata, route_index);
-    route_t  *route       = router->tdata->routes + route_index;
+    journey_pattern_t *route       = router->tdata->journey_patterns + route_index;
     uint32_t i_route_stop;
 
     *ret_stop_index = NONE;
@@ -1076,7 +1076,7 @@ bool write_state(router_t *router, router_request_t *req,
 
 static bool fill_route_cache(router_t *router, router_request_t *req,
                              uint32_t route_index, struct route_cache *cache) {
-    cache->this_route    = &(router->tdata->routes[route_index]);
+    cache->this_route    = &(router->tdata->journey_patterns[route_index]);
 
     #ifdef FEATURE_AGENCY_FILTER
     if (req->agency != AGENCY_UNFILTERED &&
@@ -1093,7 +1093,7 @@ static bool fill_route_cache(router_t *router, router_request_t *req,
 
     /* if trips during two servicedays, overlap */
     cache->route_overlap = cache->this_route->min_time < cache->this_route->max_time - RTIME_ONE_DAY;
-    cache->route_trips   = tdata_trips_for_route(router->tdata, route_index);
+    cache->route_trips   = tdata_trips_in_journey_pattern(router->tdata, route_index);
     cache->trip_masks    = tdata_trip_masks_for_route(router->tdata, route_index);
 
     return true;

@@ -183,11 +183,11 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
-                route_t *route;
+                journey_pattern_t *route;
                 trip_t *trip;
                 uint32_t trip_index;
 
-                route = router->tdata->routes + ride->back_route;
+                route = router->tdata->journey_patterns + ride->back_route;
                 trip_index = route->trip_ids_offset + ride->back_trip;
                 trip = router->tdata->trips + trip_index;
 
@@ -269,23 +269,23 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             if (leg->s0 == leg->s1) leg_mode = "WAIT";
             else leg_mode = "WALK";
         } else {
-            agency_name = tdata_agency_name_for_route (tdata, leg->route);
-            short_name = tdata_shortname_for_route (tdata, leg->route);
-            headsign = tdata_headsign_for_route (tdata, leg->route);
-            productcategory = tdata_productcategory_for_route (tdata, leg->route);
+            agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->route);
+            short_name = tdata_shortname_for_journey_pattern(tdata, leg->route);
+            headsign = tdata_headsign_for_journey_pattern(tdata, leg->route);
+            productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->route);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             d0 = leg->d0 / 60.0f;
             d1 = leg->d1 / 60.0f;
             #endif
 
-            if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
-            if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
-            if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
-            if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
-            if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
-            if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
-            if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
-            if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
+            if ((tdata->journey_patterns[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
+            if ((tdata->journey_patterns[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
+            if ((tdata->journey_patterns[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
+            if ((tdata->journey_patterns[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
+            if ((tdata->journey_patterns[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
+            if ((tdata->journey_patterns[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
+            if ((tdata->journey_patterns[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
+            if ((tdata->journey_patterns[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
             leg_mode = "INVALID";
 
             #ifdef RRRR_FEATURE_REALTIME_ALERTS

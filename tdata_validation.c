@@ -8,28 +8,28 @@
 
 #include <stdio.h>
 
-/* Validate that the first routestop have won't alighting set and
- * the last routestop won't allow boarding.
+/* Validate that the first journey_pattern_point have won't alighting set and
+ * the last journey_pattern_point won't allow boarding.
  */
 int tdata_validation_boarding_alighting(tdata_t *tdata) {
     int32_t ret_invalid = 0;
-    uint32_t i_route;
+    uint32_t i_jp;
 
-    for (i_route = 0; i_route < tdata->n_routes; ++i_route) {
-        route_t *route = &(tdata->routes[i_route]);
-        uint8_t *rsa = tdata->route_stop_attributes +
-                       route->route_stops_offset;
+    for (i_jp = 0; i_jp < tdata->n_journey_patterns; ++i_jp) {
+        journey_pattern_t *jp = &(tdata->journey_patterns[i_jp]);
+        uint8_t *rsa = tdata->journey_pattern_point_attributes +
+                       jp->journey_pattern_point_offset;
 
         if ((rsa[0] & rsa_alighting) == rsa_alighting ||
-            (rsa[route->n_stops - 1] & rsa_boarding) == rsa_boarding) {
-            fprintf(stderr, "Route index %d %s %s %s has:\n%s%s", i_route,
-              tdata_agency_name_for_route(tdata, i_route),
-              tdata_shortname_for_route(tdata, i_route),
-              tdata_headsign_for_route(tdata, i_route),
+            (rsa[jp->n_stops - 1] & rsa_boarding) == rsa_boarding) {
+            fprintf(stderr, "journey_pattern index %d %s %s %s has:\n%s%s", i_jp,
+                    tdata_agency_name_for_journey_pattern(tdata, i_jp),
+                    tdata_shortname_for_journey_pattern(tdata, i_jp),
+                    tdata_headsign_for_journey_pattern(tdata, i_jp),
               ((rsa[0] & rsa_alighting) == rsa_alighting ?
                 "  alighting on the first stop\n" : ""),
 
-              ((rsa[route->n_stops - 1] & rsa_boarding) == rsa_boarding ?
+              ((rsa[jp->n_stops - 1] & rsa_boarding) == rsa_boarding ?
                 "  boarding on the last stop\n" : ""));
 
             ret_invalid--;
@@ -79,18 +79,18 @@ int tdata_validation_coordinates(tdata_t *tdata) {
  */
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
-    uint32_t route_index, stop_index, trip_index;
+    uint32_t jp_index, stop_index, trip_index;
     int ret_nonincreasing = 0;
 
-    for (route_index = 0; route_index < tdata->n_routes; ++route_index) {
-        route_t route = tdata->routes[route_index];
-        trip_t *trips = tdata->trips + route.trip_ids_offset;
+    for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
+        journey_pattern_t jp = tdata->journey_patterns[jp_index];
+        trip_t *trips = tdata->trips + jp.trip_ids_offset;
         int n_nonincreasing_trips = 0;
-        for (trip_index = 0; trip_index < route.n_trips; ++trip_index) {
+        for (trip_index = 0; trip_index < jp.n_trips; ++trip_index) {
             trip_t trip = trips[trip_index];
             stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
             stoptime_t *prev_st = NULL;
-            for (stop_index = 0; stop_index < route.n_stops; ++stop_index) {
+            for (stop_index = 0; stop_index < jp.n_stops; ++stop_index) {
                 if (stop_index == 0 && st->arrival != 0) {
                     fprintf (stderr,
                              "timedemand type begins at %d,%d not 0.\n",
@@ -102,8 +102,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (st->departure < st->arrival) {
                     fprintf (stderr, "departure before arrival at "
-                                     "route %d, trip %d, stop %d.\n",
-                                     route_index, trip_index, stop_index);
+                                     "journey_pattern %d, trip %d, stop %d.\n",
+                            jp_index, trip_index, stop_index);
                     #ifndef RRRR_DEBUG
                     return -1;
                     #endif
@@ -117,8 +117,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         }
 
                         fprintf (stderr, "negative travel time arriving at "
-                                         "route %d, trip %d (%s), stop %d.\n",
-                                         route_index, trip_index,
+                                         "journey_pattern %d, trip %d (%s), stop %d.\n",
+                                jp_index, trip_index,
                                          trip_id, stop_index);
                         #if 0
                         fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
@@ -134,8 +134,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                     } else if (st->arrival == prev_st->departure) {
                         #if 0
                         fprintf (stderr, "last departure equals arrival at "
-                                         "route %d, trip %d, stop %d.\n",
-                                         route_index, trip_index, stop_index);
+                                         "journey_pattern %d, trip %d, stop %d.\n",
+                                jp_index, trip_index, stop_index);
 
                         #ifdef RRRR_DEBUG
                         n_nonincreasing_trips += 1;
@@ -149,9 +149,9 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             }
         }
         if (n_nonincreasing_trips > 0) {
-            fprintf (stderr, "route %d has %d trips with "
+            fprintf (stderr, "journey_pattern %d has %d trips with "
                              "negative travel times\n",
-                             route_index, n_nonincreasing_trips);
+                    jp_index, n_nonincreasing_trips);
             ret_nonincreasing -= n_nonincreasing_trips;
         }
     }

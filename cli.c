@@ -270,9 +270,9 @@ int main (int argc, char *argv[]) {
                         uint32_t route_idx;
 
                         route_idx = (uint32_t) strtol(&argv[i][21], &endptr, 10);
-                        if (route_idx < tdata.n_routes && endptr[0] == ',') {
+                        if (route_idx < tdata.n_journey_patterns && endptr[0] == ',') {
                             uint16_t trip_offset = strtol(++endptr, NULL, 10);
-                            if (trip_offset < tdata.routes[route_idx].n_trips) {
+                            if (trip_offset < tdata.journey_patterns[route_idx].n_trips) {
                                 set2_add(req.banned_trips_route, req.banned_trips_offset,
                                          &req.n_banned_trips,
                                          RRRR_MAX_BANNED_TRIPS,
@@ -323,7 +323,7 @@ int main (int argc, char *argv[]) {
 
         tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
         tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
-        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_routes);
+        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_journey_patterns);
 
         #ifdef RRRR_FEATURE_REALTIME_ALERTS
         if (cli_args.gtfsrt_alerts_filename != NULL) {
