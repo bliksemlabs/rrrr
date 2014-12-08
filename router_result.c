@@ -74,10 +74,10 @@ static bool check_plan_invariants (plan_t *plan) {
             for (i_leg = 0; i_leg < itin->n_legs; ++i_leg) {
                 leg_t *leg = itin->legs + i_leg;
                 if (i_leg % 2 == 0) {
-                    if (leg->route != WALK) fprintf(stderr, "even numbered leg %d has route %d not WALK.\n", i_leg, leg->route);
+                    if (leg->journey_pattern != WALK) fprintf(stderr, "even numbered leg %d has journey_pattern %d not WALK.\n", i_leg, leg->journey_pattern);
                     fail = true;
                 } else {
-                    if (leg->route == WALK) fprintf(stderr, "odd numbered leg %d has route WALK.\n", i_leg);
+                    if (leg->journey_pattern == WALK) fprintf(stderr, "odd numbered leg %d has journey_pattern WALK.\n", i_leg);
                     fail = true;
                 }
                 if (leg->t1 < leg->t0) {
@@ -89,7 +89,7 @@ static bool check_plan_invariants (plan_t *plan) {
                         fprintf(stderr, "legs do not chain: leg %d begins with stop %d, previous leg ends with stop %d.\n", i_leg, leg->s0, prev_leg->s1);
                         fail = true;
                     }
-                    if (leg->route == WALK && leg->t0 != prev_leg->t1) {
+                    if (leg->journey_pattern == WALK && leg->t0 != prev_leg->t1) {
                         /* This will fail unless reversal is being performed */
 #if 0
                         fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
@@ -167,7 +167,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->s1 = walk_stop;
             l->t0 = ride->time; /* Rendering the walk requires already having the ride arrival time */
             l->t1 = walk->walk_time;
-            l->route = WALK;
+            l->journey_pattern = WALK;
             l->trip  = WALK;
 
             if (req->arrive_by) leg_swap (l);
@@ -178,24 +178,24 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->s1 = ride_stop;
             l->t0 = ride->board_time;
             l->t1 = ride->time;
-            l->route = ride->back_route;
+            l->journey_pattern = ride->back_journey_pattern;
             l->trip  = ride->back_trip;
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
-                route_t *route;
+                journey_pattern_t *jp;
                 trip_t *trip;
                 uint32_t trip_index;
 
-                route = router->tdata->routes + ride->back_route;
-                trip_index = route->trip_ids_offset + ride->back_trip;
+                jp = router->tdata->journey_patterns + ride->back_journey_pattern;
+                trip_index = jp->trip_ids_offset + ride->back_trip;
                 trip = router->tdata->trips + trip_index;
 
                 if (router->tdata->trip_stoptimes[trip_index] &&
-                    router->tdata->stop_times[trip->stop_times_offset + ride->route_stop].arrival != UNREACHED) {
+                    router->tdata->stop_times[trip->stop_times_offset + ride->journey_pattern_point].arrival != UNREACHED) {
 
-                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->back_route_stop].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->back_route_stop].departure + trip->begin_time);
-                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->route_stop].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->route_stop].arrival + trip->begin_time);
+                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->back_journey_pattern_point].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->back_journey_pattern_point].departure + trip->begin_time);
+                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->journey_pattern_point].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->journey_pattern_point].arrival + trip->begin_time);
                 } else {
                     l->d0 = 0;
                     l->d1 = 0;
@@ -207,11 +207,11 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l += (req->arrive_by ? 1 : -1);   /* next leg */
 
         }
-        if (req->onboard_trip_offset != NONE) {
+        if (req->onboard_journey_pattern_offset != NONE) {
             /* Results starting on board do not have an initial walk leg. */
             l->s0 = l->s1 = ONBOARD;
             l->t0 = l->t1 = req->time;
-            l->route = l->trip = WALK;
+            l->journey_pattern = l->trip = WALK;
             l += 1; /* move back to first transit leg */
             l->s0 = ONBOARD;
             l->t0 = req->time;
@@ -228,7 +228,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t0 = state->time;
             duration = transfer_duration (router->tdata, req, l->s0, l->s1);
             l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
-            l->route = WALK;
+            l->journey_pattern = WALK;
             l->trip  = WALK;
             if (req->arrive_by) leg_swap (l);
         }
@@ -258,7 +258,7 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
 
         /* d1 = 0.0; */
 
-        if (leg->route == WALK) {
+        if (leg->journey_pattern == WALK) {
             agency_name = "";
             short_name = "walk";
             headsign = "walk";
@@ -269,27 +269,27 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             if (leg->s0 == leg->s1) leg_mode = "WAIT";
             else leg_mode = "WALK";
         } else {
-            agency_name = tdata_agency_name_for_route (tdata, leg->route);
-            short_name = tdata_shortname_for_route (tdata, leg->route);
-            headsign = tdata_headsign_for_route (tdata, leg->route);
-            productcategory = tdata_productcategory_for_route (tdata, leg->route);
+            agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->journey_pattern);
+            short_name = tdata_shortname_for_journey_pattern(tdata, leg->journey_pattern);
+            headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
+            productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->journey_pattern);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             d0 = leg->d0 / 60.0f;
             d1 = leg->d1 / 60.0f;
             #endif
 
-            if ((tdata->routes[leg->route].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
-            if ((tdata->routes[leg->route].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
-            if ((tdata->routes[leg->route].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
-            if ((tdata->routes[leg->route].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
-            if ((tdata->routes[leg->route].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
-            if ((tdata->routes[leg->route].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
-            if ((tdata->routes[leg->route].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
-            if ((tdata->routes[leg->route].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
+            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
             leg_mode = "INVALID";
 
             #ifdef RRRR_FEATURE_REALTIME_ALERTS
-            if (leg->route != WALK && tdata->alerts) {
+            if (leg->journey_pattern != WALK && tdata->alerts) {
                 size_t i_entity;
                 for (i_entity = 0; i_entity < tdata->alerts->n_entity; ++i_entity) {
                     if (tdata->alerts->entity[i_entity] &&
@@ -301,7 +301,7 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
                         for (i_informed_entity = 0; i_informed_entity < alert->n_informed_entity; ++i_informed_entity) {
                             TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[i_informed_entity];
 
-                            if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->route) ) &&
+                            if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->journey_pattern) ) &&
                                 ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->s0) ) &&
                                 ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->trip ) )
                                 /* TODO: need to have rtime_to_date  for informed_entity->trip->start_date */
@@ -324,7 +324,7 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
         b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
-            leg_mode, leg->route, leg->trip, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
+            leg_mode, leg->journey_pattern, leg->trip, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
                         (alert_msg ? alert_msg : ""));
 
         /* EXAMPLE

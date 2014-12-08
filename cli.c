@@ -35,7 +35,7 @@ struct cli_arguments {
     bool verbose;
 };
 
-#if RRRR_MAX_BANNED_ROUTES > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
 static void set_add (uint32_t *set,
                      uint8_t  *length, uint8_t max_length,
                      uint32_t value) {
@@ -105,7 +105,7 @@ int main (int argc, char *argv[]) {
                         "[ --from-idx=idx | --from-latlon=Y,X ]\n"
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
-#if RRRR_MAX_BANNED_ROUTES > 0
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-route-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_STOPS > 0
@@ -230,12 +230,12 @@ int main (int argc, char *argv[]) {
 
                 case 'b':
                     if (false) {}
-                    #if RRRR_MAX_BANNED_ROUTES > 0
+                    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                     else
                     if (strncmp(argv[i], "--banned-route-idx=", 19) == 0) {
-                        set_add(req.banned_routes,
-                                &req.n_banned_routes,
-                                RRRR_MAX_BANNED_ROUTES,
+                        set_add(req.banned_journey_patterns,
+                                &req.n_banned_journey_patterns,
+                                RRRR_MAX_BANNED_JOURNEY_PATTERNS,
                                 (uint32_t) strtol(&argv[i][19], NULL, 10));
                     }
                     #endif
@@ -270,9 +270,9 @@ int main (int argc, char *argv[]) {
                         uint32_t route_idx;
 
                         route_idx = (uint32_t) strtol(&argv[i][21], &endptr, 10);
-                        if (route_idx < tdata.n_routes && endptr[0] == ',') {
+                        if (route_idx < tdata.n_journey_patterns && endptr[0] == ',') {
                             uint16_t trip_offset = strtol(++endptr, NULL, 10);
-                            if (trip_offset < tdata.routes[route_idx].n_trips) {
+                            if (trip_offset < tdata.journey_patterns[route_idx].n_trips) {
                                 set2_add(req.banned_trips_route, req.banned_trips_offset,
                                          &req.n_banned_trips,
                                          RRRR_MAX_BANNED_TRIPS,
@@ -323,7 +323,7 @@ int main (int argc, char *argv[]) {
 
         tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
         tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
-        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_routes);
+        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_journey_patterns);
 
         #ifdef RRRR_FEATURE_REALTIME_ALERTS
         if (cli_args.gtfsrt_alerts_filename != NULL) {

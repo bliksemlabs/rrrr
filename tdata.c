@@ -33,9 +33,9 @@
 #include "bitset.h"
 #include "stubs.h"
 
-char *tdata_route_id_for_index(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->route_ids + (td->route_ids_width * route_index);
+char *tdata_route_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->route_ids + (td->route_ids_width * jp_index);
 }
 
 char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
@@ -50,8 +50,8 @@ char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
     return td->trip_ids + (td->trip_ids_width * trip_index);
 }
 
-char *tdata_trip_id_for_route_trip_index(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
-    return td->trip_ids + (td->trip_ids_width * (td->routes[route_index].trip_ids_offset + trip_index));
+char *tdata_trip_id_for_jp_trip_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index) {
+    return td->trip_ids + (td->trip_ids_width * (td->journey_patterns[jp_index].trip_ids_offset + trip_index));
 }
 
 char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index) {
@@ -117,45 +117,45 @@ uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t stop_inde
 
 #define tdata_stopidx_by_stop_id(td, stop_id) tdata_stopidx_by_stop_id(td, stop_id, 0)
 
-uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t route_index_offset) {
-    uint32_t route_index;
-    for (route_index = route_index_offset;
-         route_index < td->n_routes;
-         ++route_index) {
-        if (strcasestr(td->route_ids + (td->route_ids_width * route_index),
+uint32_t tdata_journey_pattern_idx_by_route_id(tdata_t *td, char *route_id, uint32_t jp_index_offset) {
+    uint32_t jp_index;
+    for (jp_index = jp_index_offset;
+         jp_index < td->n_journey_patterns;
+         ++jp_index) {
+        if (strcasestr(td->route_ids + (td->route_ids_width * jp_index),
                        route_id)) {
-            return route_index;
+            return jp_index;
         }
     }
     return NONE;
 }
 
-#define tdata_routeidx_by_route_id(td, route_id) tdata_routeidx_by_route_id(td, route_id, 0)
+#define tdata_journey_pattern_idx_by_route_id(td, route_id) tdata_routeidx_by_route_id(td, route_id, 0)
 
-char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
-    route_t route = (td->routes)[route_index];
-    uint32_t char_offset = route.trip_ids_offset * td->trip_ids_width;
+char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
+    uint32_t char_offset = journey_pattern.trip_ids_offset * td->trip_ids_width;
     return td->trip_ids + char_offset;
 }
 
-calendar_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
-    route_t route = (td->routes)[route_index];
-    return td->trip_active + route.trip_ids_offset;
+calendar_t *tdata_trip_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
+    return td->trip_active + journey_pattern.trip_ids_offset;
 }
 
-char *tdata_headsign_for_route(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->headsigns + (td->routes)[route_index].headsign_offset;
+char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->headsigns + (td->journey_patterns)[jp_index].headsign_offset;
 }
 
-char *tdata_shortname_for_route(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->route_shortnames + (td->route_shortnames_width * (td->routes)[route_index].shortname_index);
+char *tdata_shortname_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->route_shortnames + (td->route_shortnames_width * (td->journey_patterns)[jp_index].shortname_index);
 }
 
-char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->productcategories + (td->productcategories_width * (td->routes)[route_index].productcategory_index);
+char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->productcategories + (td->productcategories_width * (td->journey_patterns)[jp_index].productcategory_index);
 }
 
 uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t agency_index_offset) {
@@ -173,19 +173,19 @@ uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t
 
 #define tdata_agencyidx_by_route_name(td, agency_name) tdata_routeidx_by_route_id(td, agency_name, 0)
 
-char *tdata_agency_id_for_route(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->agency_ids + (td->agency_ids_width * (td->routes)[route_index].agency_index);
+char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->agency_ids + (td->agency_ids_width * (td->journey_patterns)[jp_index].agency_index);
 }
 
-char *tdata_agency_name_for_route(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->agency_names + (td->agency_names_width * (td->routes)[route_index].agency_index);
+char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->agency_names + (td->agency_names_width * (td->journey_patterns)[jp_index].agency_index);
 }
 
-char *tdata_agency_url_for_route(tdata_t *td, uint32_t route_index) {
-    if (route_index == NONE) return "NONE";
-    return td->agency_urls + (td->agency_urls_width * (td->routes)[route_index].agency_index);
+char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->agency_urls + (td->agency_urls_width * (td->journey_patterns)[jp_index].agency_index);
 }
 
 bool tdata_load(tdata_t *td, char *filename) {
@@ -216,28 +216,28 @@ void tdata_close(tdata_t *td) {
     tdata_io_v3_close (td);
 }
 
-uint32_t *tdata_stops_for_route(tdata_t *td, uint32_t route) {
-    return td->route_stops + td->routes[route].route_stops_offset;
+uint32_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    return td->journey_pattern_points + td->journey_patterns[jp_index].journey_pattern_point_offset;
 }
 
-uint8_t *tdata_stop_attributes_for_route(tdata_t *td, uint32_t route) {
-    route_t route0 = td->routes[route];
-    return td->route_stop_attributes + route0.route_stops_offset;
+uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    journey_pattern_t journey_pattern = td->journey_patterns[jp_index];
+    return td->journey_pattern_point_attributes + journey_pattern.journey_pattern_point_offset;
 }
 
-uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret) {
+uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **jp_ret) {
     stop_t stop0 = td->stops[stop];
     stop_t stop1 = td->stops[stop + 1];
-    *routes_ret = td->stop_routes + stop0.stop_routes_offset;
-    return stop1.stop_routes_offset - stop0.stop_routes_offset;
+    *jp_ret = td->journey_patterns_at_stop + stop0.journey_patterns_at_stop_offset;
+    return stop1.journey_patterns_at_stop_offset - stop0.journey_patterns_at_stop_offset;
 }
 
-stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
-    return td->stop_times + td->trips[td->routes[route_index].trip_ids_offset + trip_index].stop_times_offset;
+stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t trip_index) {
+    return td->stop_times + td->trips[td->journey_patterns[jp_index].trip_ids_offset + trip_index].stop_times_offset;
 }
 
-trip_t *tdata_trips_for_route (tdata_t *td, uint32_t route_index) {
-    return td->trips + td->routes[route_index].trip_ids_offset;
+trip_t *tdata_trips_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    return td->trips + td->journey_patterns[jp_index].trip_ids_offset;
 }
 
 char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
@@ -284,41 +284,41 @@ uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t s
 }
 
 #ifdef RRRR_DEBUG
-void tdata_dump_route(tdata_t *td, uint32_t route_index, uint32_t trip_index) {
+void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_index) {
     uint32_t ti, si;
-    uint32_t *stops = tdata_stops_for_route(td, route_index);
-    route_t route = td->routes[route_index];
-    printf("\nRoute details for %s %s %s '%s %s' [%d] (n_stops %d, n_trips %d)\n"
+    uint32_t *stops = tdata_points_for_journey_pattern(td, jp_index);
+    journey_pattern_t jp = td->journey_patterns[jp_index];
+    printf("\njourney_pattern details for %s %s %s '%s %s' [%d] (n_stops %d, n_trips %d)\n"
            "tripid, stop sequence, stop name (index), departures  \n",
-        tdata_agency_name_for_route(td, route_index),
-        tdata_agency_id_for_route(td, route_index),
-        tdata_agency_url_for_route(td, route_index),
-        tdata_shortname_for_route(td, route_index),
-        tdata_headsign_for_route(td, route_index),
-        route_index, route.n_stops, route.n_trips);
+        tdata_agency_name_for_journey_pattern(td, jp_index),
+        tdata_agency_id_for_journey_pattern(td, jp_index),
+        tdata_agency_url_for_journey_pattern(td, jp_index),
+        tdata_shortname_for_journey_pattern(td, jp_index),
+        tdata_headsign_for_journey_pattern(td, jp_index),
+        jp_index, jp.n_stops, jp.n_trips);
 
     for (ti = (trip_index == NONE ? 0 : trip_index);
-         ti < (trip_index == NONE ? route.n_trips :
+         ti < (trip_index == NONE ? jp.n_trips :
                                     trip_index + 1);
          ++ti) {
-        stoptime_t *times = tdata_timedemand_type(td, route_index, ti);
+        stoptime_t *times = tdata_timedemand_type(td, jp_index, ti);
         /* TODO should this really be a 2D array ?
-        stoptime_t (*times)[route.n_stops] = (void*) tdata_timedemand_type(td, route_index, ti); */
+        stoptime_t (*times)[jp.n_stops] = (void*) tdata_timedemand_type(td, jp_index, ti); */
 
-        printf("%s\n", tdata_trip_id_for_index(td, route.trip_ids_offset + ti));
-        for (si = 0; si < route.n_stops; ++si) {
+        printf("%s\n", tdata_trip_id_for_index(td, jp.trip_ids_offset + ti));
+        for (si = 0; si < jp.n_stops; ++si) {
             char *stop_id = tdata_stop_name_for_index (td, stops[si]);
             char arrival[13], departure[13];
             printf("%4d %35s [%06d] : %s %s",
                    si, stop_id, stops[si],
-                   btimetext(times[si].arrival + td->trips[route.trip_ids_offset + ti].begin_time + RTIME_ONE_DAY, arrival),
-                   btimetext(times[si].departure + td->trips[route.trip_ids_offset + ti].begin_time + RTIME_ONE_DAY, departure));
+                   btimetext(times[si].arrival + td->trips[jp.trip_ids_offset + ti].begin_time + RTIME_ONE_DAY, arrival),
+                   btimetext(times[si].departure + td->trips[jp.trip_ids_offset + ti].begin_time + RTIME_ONE_DAY, departure));
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-            if (td->trip_stoptimes && td->trip_stoptimes[route.trip_ids_offset + ti]) {
+            if (td->trip_stoptimes && td->trip_stoptimes[jp.trip_ids_offset + ti]) {
                 printf (" %s %s",
-                        btimetext(td->trip_stoptimes[route.trip_ids_offset + ti][si].arrival + RTIME_ONE_DAY, arrival),
-                        btimetext(td->trip_stoptimes[route.trip_ids_offset + ti][si].departure + RTIME_ONE_DAY, departure));
+                        btimetext(td->trip_stoptimes[jp.trip_ids_offset + ti][si].arrival + RTIME_ONE_DAY, arrival),
+                        btimetext(td->trip_stoptimes[jp.trip_ids_offset + ti][si].departure + RTIME_ONE_DAY, departure));
             }
             #endif
 
@@ -334,36 +334,36 @@ void tdata_dump(tdata_t *td) {
 
     printf("\nCONTEXT\n"
            "n_stops: %d\n"
-           "n_routes: %d\n", td->n_stops, td->n_routes);
+           "n_journey_patterns: %d\n", td->n_stops, td->n_journey_patterns);
     printf("\nSTOPS\n");
     for (i = 0; i < td->n_stops; i++) {
         stop_t s0 = td->stops[i];
         stop_t s1 = td->stops[i+1];
-        uint32_t j0 = s0.stop_routes_offset;
-        uint32_t j1 = s1.stop_routes_offset;
+        uint32_t j0 = s0.journey_patterns_at_stop_offset;
+        uint32_t j1 = s1.journey_patterns_at_stop_offset;
         uint32_t j;
 
         printf("stop %d at lat %f lon %f\n",
                i, td->stop_coords[i].lat, td->stop_coords[i].lon);
-        printf("served by routes ");
+        printf("served by journey_patterns ");
         for (j=j0; j<j1; ++j) {
-            printf("%d ", td->stop_routes[j]);
+            printf("%d ", td->journey_patterns_at_stop[j]);
         }
         printf("\n");
     }
-    printf("\nROUTES\n");
-    for (i = 0; i < td->n_routes; i++) {
-        route_t r0 = td->routes[i];
-        route_t r1 = td->routes[i+1];
-        uint32_t j0 = r0.route_stops_offset;
-        uint32_t j1 = r1.route_stops_offset;
+    printf("\nJOURNEY_PATTERN\n");
+    for (i = 0; i < td->n_journey_patterns; i++) {
+        journey_pattern_t r0 = td->journey_patterns[i];
+        journey_pattern_t r1 = td->journey_patterns[i+1];
+        uint32_t j0 = r0.journey_pattern_point_offset;
+        uint32_t j1 = r1.journey_pattern_point_offset;
         uint32_t j;
 
-        printf("route %d\n", i);
-        printf("having trips %d\n", td->routes[i].n_trips);
+        printf("journey_pattern %d\n", i);
+        printf("having trips %d\n", td->journey_patterns[i].n_trips);
         printf("serves stops ");
         for (j = j0; j < j1; ++j) {
-            printf("%d ", td->route_stops[j]);
+            printf("%d ", td->journey_pattern_points[j]);
         }
         printf("\n");
     }
@@ -371,13 +371,13 @@ void tdata_dump(tdata_t *td) {
     for (i = 0; i < td->n_stops; i++) {
         printf("stop %03d has id %s \n", i, tdata_stop_name_for_index(td, i));
     }
-    for (i = 0; i < td->n_routes; i++) {
+    for (i = 0; i < td->n_journey_patterns; i++) {
         /* TODO: Remove?
-         * printf("route %03d has id %s and first trip id %s \n", i,
+         * printf("journey_pattern %03d has id %s and first trip id %s \n", i,
          *        tdata_route_desc_for_index(td, i),
          *        tdata_trip_ids_for_route(td, i));
          */
-        tdata_dump_route(td, i, NONE);
+        tdata_dump_journey_pattern(td, i, NONE);
     }
 }
 #endif

@@ -63,9 +63,9 @@ void router_request_initialize(router_request_t *req) {
     req->mode = m_all;
     req->trip_attributes = ta_none;
     req->optimise = o_all;
-    #if RRRR_MAX_BANNED_ROUTES > 0
-    req->n_banned_routes = 0;
-    memset32(req->banned_routes, NONE, RRRR_MAX_BANNED_ROUTES);
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    req->n_banned_journey_patterns = 0;
+    memset32(req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     req->n_banned_stops = 0;
@@ -80,8 +80,8 @@ void router_request_initialize(router_request_t *req) {
     memset32(req->banned_trips_route, NONE, RRRR_MAX_BANNED_TRIPS);
     memset16(req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
     #endif
-    req->onboard_trip_route = NONE;
-    req->onboard_trip_offset = NONE;
+    req->onboard_trip_journey_pattern = NONE;
+    req->onboard_journey_pattern_offset = NONE;
     req->intermediatestops = false;
 
     #ifdef RRRR_FEATURE_LATLON
@@ -141,9 +141,9 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->mode = m_all;
     req->trip_attributes = ta_none;
     req->optimise = o_all;
-    #if RRRR_MAX_BANNED_ROUTES > 0
-    req->n_banned_routes = 0;
-    memset32(req->banned_routes, NONE, RRRR_MAX_BANNED_ROUTES);
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    req->n_banned_journey_patterns = 0;
+    memset32(req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     req->n_banned_stops = 0;
