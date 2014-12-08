@@ -55,6 +55,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             if (informed_entity->route_id) {
                 uint32_t jp_index = rxt_find (tdata->routeid_index,
                                                  informed_entity->route_id);
+                /*TODO This only applies the alert to one of the journey_patterns in the line/route.*/
                 #ifdef RRRR_DEBUG
                 if (jp_index == RADIX_TREE_NONE) {
                      fprintf (stderr,

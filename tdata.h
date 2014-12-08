@@ -19,7 +19,7 @@
 
 typedef struct stop stop_t;
 struct stop {
-    uint32_t stop_routes_offset;
+    uint32_t journey_patterns_at_stop_offset;
     uint32_t transfers_offset;
 };
 
@@ -192,16 +192,16 @@ void tdata_close(tdata_t *td);
 
 void tdata_dump(tdata_t *td);
 
-uint32_t *tdata_stops_for_route(tdata_t *td, uint32_t route);
+uint32_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-uint8_t *tdata_stop_attributes_for_route(tdata_t *td, uint32_t route);
+uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-uint32_t tdata_routes_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret);
+uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **routes_ret);
 
 stoptime_t *tdata_stoptimes_for_route(tdata_t *td, uint32_t jp_index);
 
-void tdata_dump_route(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
+void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
 char *tdata_route_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -235,11 +235,11 @@ uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t start
 
 uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t start_index);
 
-uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t start_index);
+uint32_t tdata_journey_pattern_idx_by_route_id(tdata_t *td, char *route_id, uint32_t start_index);
 
 char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-calendar_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t jp_index);
+calendar_t *tdata_trip_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 

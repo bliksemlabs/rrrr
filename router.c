@@ -183,8 +183,8 @@ static void flag_routes_for_stop (router_t *router, router_request_t *req,
                                   uint32_t stop_index) {
     uint32_t *routes;
     uint32_t i_route;
-    uint32_t n_routes = tdata_routes_for_stop (router->tdata, stop_index,
-                                               &routes);
+    uint32_t n_routes = tdata_journey_patterns_for_stop(router->tdata, stop_index,
+            &routes);
 
     for (i_route = 0; i_route < n_routes; ++i_route) {
         calendar_t route_active_flags;
@@ -552,7 +552,7 @@ bool tdata_next (router_t *router, router_request_t *req,
                  uint32_t route_index, uint32_t trip_offset, rtime_t qtime,
                  uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
 
-    uint32_t *route_stops = tdata_stops_for_route(router->tdata, route_index);
+    uint32_t *route_stops = tdata_points_for_journey_pattern(router->tdata, route_index);
     journey_pattern_t *route       = router->tdata->journey_patterns + route_index;
     uint32_t i_route_stop;
 
@@ -1086,15 +1086,15 @@ static bool fill_route_cache(router_t *router, router_request_t *req,
     #endif
 
     /* For each stop in this route, its global stop index. */
-    cache->route_stops   = tdata_stops_for_route(router->tdata, route_index);
-    cache->route_stop_attributes = tdata_stop_attributes_for_route(router->tdata, route_index);
+    cache->route_stops   = tdata_points_for_journey_pattern(router->tdata, route_index);
+    cache->route_stop_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, route_index);
 
     cache->route_index = route_index;
 
     /* if trips during two servicedays, overlap */
     cache->route_overlap = cache->this_route->min_time < cache->this_route->max_time - RTIME_ONE_DAY;
     cache->route_trips   = tdata_trips_in_journey_pattern(router->tdata, route_index);
-    cache->trip_masks    = tdata_trip_masks_for_route(router->tdata, route_index);
+    cache->trip_masks    = tdata_trip_masks_for_journey_pattern(router->tdata, route_index);
 
     return true;
 }
@@ -1145,11 +1145,11 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         #if 0
         if (route_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", route.min_time, route.max_time, route_overlap);
-        fprintf (stderr, "route %d has min_time %d and max_time %d. \n", i_route, route.min_time, route.max_time);
+        fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", i_route, route.min_time, route.max_time);
         fprintf (stderr, "  actual first time: %d \n", tdata_depart(router->tdata, i_route, 0, 0));
         fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, i_route, route.n_trips - 1, route.n_stops - 1));
         fprintf(stderr, "  route %d: %s;%s\n", i_route, tdata_shortname_for_route(router->tdata, i_route),tdata_headsign_for_route(router->tdata, i_route));
-        tdata_dump_route(router->tdata, i_route, NONE);
+        tdata_dump_journey_pattern(router->tdata, i_route, NONE);
         #endif
 
 
@@ -1259,7 +1259,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                                  stop_index);
                 #endif
                 #ifdef RRRR_TDATA
-                tdata_dump_route(router->tdata, i_route, NONE);
+                tdata_dump_journey_pattern(router->tdata, i_route, NONE);
                 #endif
 
                 search_trips_within_days (router, req, &cache, (uint16_t) i_route_stop,
