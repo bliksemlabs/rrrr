@@ -106,7 +106,7 @@ int main (int argc, char *argv[]) {
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-                        "[ --banned-route-idx=idx ]\n"
+                        "[ --banned-journey_pattern-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_STOPS > 0
                         "[ --banned-stop-idx=idx ]\n"
@@ -115,7 +115,7 @@ int main (int argc, char *argv[]) {
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_TRIPS > 0
-                        "[ --banned-trip-offset=route_idx,trip_offset ]\n"
+                        "[ --banned-trip-offset=jp_index,trip_offset ]\n"
 #endif
 #if RRRR_FEATURE_REALTIME_ALERTS == 1
                         "[ --gtfsrt-alerts=filename.pb ]\n"
@@ -267,16 +267,16 @@ int main (int argc, char *argv[]) {
                     else
                     if (strncmp(argv[i], "--banned-trip-offset=", 21) == 0) {
                         char *endptr;
-                        uint32_t route_idx;
+                        uint32_t jp_index;
 
-                        route_idx = (uint32_t) strtol(&argv[i][21], &endptr, 10);
-                        if (route_idx < tdata.n_journey_patterns && endptr[0] == ',') {
+                        jp_index = (uint32_t) strtol(&argv[i][21], &endptr, 10);
+                        if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
                             uint16_t trip_offset = strtol(++endptr, NULL, 10);
-                            if (trip_offset < tdata.journey_patterns[route_idx].n_trips) {
-                                set2_add(req.banned_trips_route, req.banned_trips_offset,
+                            if (trip_offset < tdata.journey_patterns[jp_index].n_trips) {
+                                set2_add(req.banned_trips_journey_pattern, req.banned_trips_offset,
                                          &req.n_banned_trips,
                                          RRRR_MAX_BANNED_TRIPS,
-                                         route_idx, trip_offset);
+                                        jp_index, trip_offset);
                             }
                         }
                     }
@@ -323,7 +323,7 @@ int main (int argc, char *argv[]) {
 
         tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
         tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
-        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_journey_patterns);
+        tdata.lineid_index = rxt_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 
         #ifdef RRRR_FEATURE_REALTIME_ALERTS
         if (cli_args.gtfsrt_alerts_filename != NULL) {
@@ -487,7 +487,7 @@ clean_exit:
     #ifdef RRRR_FEATURE_REALTIME
     if (tdata.stopid_index)  rxt_destroy (tdata.stopid_index);
     if (tdata.tripid_index)  rxt_destroy (tdata.tripid_index);
-    if (tdata.routeid_index) rxt_destroy (tdata.routeid_index);
+    if (tdata.lineid_index) rxt_destroy (tdata.lineid_index);
     #endif
 
     /* Unmap the memory and/or deallocate the memory on the heap */

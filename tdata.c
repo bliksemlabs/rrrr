@@ -33,9 +33,9 @@
 #include "bitset.h"
 #include "stubs.h"
 
-char *tdata_route_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->route_ids + (td->route_ids_width * jp_index);
+    return td->line_ids + (td->line_ids_width * jp_index);
 }
 
 char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
@@ -70,8 +70,8 @@ char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset) {
     return td->headsigns + headsign_offset;
 }
 
-char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index) {
-    return td->route_shortnames + (td->route_shortnames_width * route_shortname_index);
+char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
+    return td->line_codes + (td->line_codes_width * line_code_index);
 }
 
 char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index) {
@@ -117,20 +117,20 @@ uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t stop_inde
 
 #define tdata_stopidx_by_stop_id(td, stop_id) tdata_stopidx_by_stop_id(td, stop_id, 0)
 
-uint32_t tdata_journey_pattern_idx_by_route_id(tdata_t *td, char *route_id, uint32_t jp_index_offset) {
+uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t jp_index_offset) {
     uint32_t jp_index;
     for (jp_index = jp_index_offset;
          jp_index < td->n_journey_patterns;
          ++jp_index) {
-        if (strcasestr(td->route_ids + (td->route_ids_width * jp_index),
-                       route_id)) {
+        if (strcasestr(td->line_ids + (td->line_ids_width * jp_index),
+                line_id)) {
             return jp_index;
         }
     }
     return NONE;
 }
 
-#define tdata_journey_pattern_idx_by_route_id(td, route_id) tdata_routeidx_by_route_id(td, route_id, 0)
+#define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index, 0)
 
 char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
     journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
@@ -148,9 +148,9 @@ char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     return td->headsigns + (td->journey_patterns)[jp_index].headsign_offset;
 }
 
-char *tdata_shortname_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->route_shortnames + (td->route_shortnames_width * (td->journey_patterns)[jp_index].shortname_index);
+    return td->line_codes + (td->line_codes_width * (td->journey_patterns)[jp_index].line_code_index);
 }
 
 char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
@@ -170,8 +170,6 @@ uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t
     }
     return NONE;
 }
-
-#define tdata_agencyidx_by_route_name(td, agency_name) tdata_routeidx_by_route_id(td, agency_name, 0)
 
 char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
@@ -293,7 +291,7 @@ void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_in
         tdata_agency_name_for_journey_pattern(td, jp_index),
         tdata_agency_id_for_journey_pattern(td, jp_index),
         tdata_agency_url_for_journey_pattern(td, jp_index),
-        tdata_shortname_for_journey_pattern(td, jp_index),
+        tdata_line_code_for_journey_pattern(td, jp_index),
         tdata_headsign_for_journey_pattern(td, jp_index),
         jp_index, jp.n_stops, jp.n_trips);
 

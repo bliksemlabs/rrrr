@@ -109,7 +109,7 @@ struct router_request {
     uint32_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
-    uint32_t banned_trips_route[RRRR_MAX_BANNED_TRIPS];
+    uint32_t banned_trips_journey_pattern[RRRR_MAX_BANNED_TRIPS];
     uint16_t banned_trips_offset[RRRR_MAX_BANNED_TRIPS];
     #endif
 
@@ -129,7 +129,7 @@ struct router_request {
     uint16_t walk_max_distance;
 
 #ifdef FEATURE_AGENCY_FILTER
-    /* Filter the routes by the operating agency */
+    /* Filter the journey_patterns by the operating agency */
     uint16_t agency;
 #endif
 
