@@ -123,7 +123,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
         router_state_t *state;
         leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward trips */
         uint32_t stop = router->target; /* Work backward from the target to the origin */
-        int8_t j_transfer; /* signed int because we will be decreasing */
+        int16_t j_transfer; /* signed int because we will be decreasing */
 
         state = router->states + (i_transfer * router->tdata->n_stops) + stop;
 
@@ -137,7 +137,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             router_state_t *walk, *ride;
             uint32_t walk_stop, ride_stop;
 
-            state = router->states + (j_transfer * router->tdata->n_stops);
+            state = router->states + (((uint8_t) j_transfer) * router->tdata->n_stops);
 
             if (stop > router->tdata->n_stops) {
                 printf ("ERROR: stopid %d out of range.\n", stop);
