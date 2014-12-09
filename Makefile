@@ -73,14 +73,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/skinkie/Sources/ansi/CMakeFiles /home/skinkie/Sources/ansi/CMakeFiles/progress.marks
-	$(MAKE) -f CMakeFiles/Makefile2 all
+	cd /home/skinkie/Sources/ansi && $(CMAKE_COMMAND) -E cmake_progress_start /home/skinkie/Sources/ansi/CMakeFiles /home/skinkie/Sources/ansi/tests/CMakeFiles/progress.marks
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f CMakeFiles/Makefile2 tests/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/skinkie/Sources/ansi/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	$(MAKE) -f CMakeFiles/Makefile2 clean
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f CMakeFiles/Makefile2 tests/clean
 .PHONY : clean
 
 # The main clean target
@@ -89,476 +89,104 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f CMakeFiles/Makefile2 tests/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f CMakeFiles/Makefile2 tests/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/skinkie/Sources/ansi && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-#=============================================================================
-# Target rules for targets named cli
+# Convenience name for target.
+tests/CMakeFiles/tests.dir/rule:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f CMakeFiles/Makefile2 tests/CMakeFiles/tests.dir/rule
+.PHONY : tests/CMakeFiles/tests.dir/rule
 
-# Build rule for target.
-cli: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 cli
-.PHONY : cli
-
-# fast build rule for target.
-cli/fast:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/build
-.PHONY : cli/fast
-
-#=============================================================================
-# Target rules for targets named tests
-
-# Build rule for target.
-tests: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 tests
+# Convenience name for target.
+tests: tests/CMakeFiles/tests.dir/rule
 .PHONY : tests
 
 # fast build rule for target.
 tests/fast:
-	$(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/build
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/build
 .PHONY : tests/fast
 
-bitset.o: bitset.c.o
-.PHONY : bitset.o
+__/bitset.o: __/bitset.c.o
+.PHONY : __/bitset.o
 
 # target to build an object file
-bitset.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/bitset.c.o
-.PHONY : bitset.c.o
+__/bitset.c.o:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/__/bitset.c.o
+.PHONY : __/bitset.c.o
 
-bitset.i: bitset.c.i
-.PHONY : bitset.i
+__/bitset.i: __/bitset.c.i
+.PHONY : __/bitset.i
 
 # target to preprocess a source file
-bitset.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/bitset.c.i
-.PHONY : bitset.c.i
+__/bitset.c.i:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/__/bitset.c.i
+.PHONY : __/bitset.c.i
 
-bitset.s: bitset.c.s
-.PHONY : bitset.s
+__/bitset.s: __/bitset.c.s
+.PHONY : __/bitset.s
 
 # target to generate assembly for a file
-bitset.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/bitset.c.s
-.PHONY : bitset.c.s
+__/bitset.c.s:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/__/bitset.c.s
+.PHONY : __/bitset.c.s
 
-cli.o: cli.c.o
-.PHONY : cli.o
+run_tests.o: run_tests.c.o
+.PHONY : run_tests.o
 
 # target to build an object file
-cli.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/cli.c.o
-.PHONY : cli.c.o
+run_tests.c.o:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/run_tests.c.o
+.PHONY : run_tests.c.o
 
-cli.i: cli.c.i
-.PHONY : cli.i
+run_tests.i: run_tests.c.i
+.PHONY : run_tests.i
 
 # target to preprocess a source file
-cli.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/cli.c.i
-.PHONY : cli.c.i
+run_tests.c.i:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/run_tests.c.i
+.PHONY : run_tests.c.i
 
-cli.s: cli.c.s
-.PHONY : cli.s
+run_tests.s: run_tests.c.s
+.PHONY : run_tests.s
 
 # target to generate assembly for a file
-cli.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/cli.c.s
-.PHONY : cli.c.s
+run_tests.c.s:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/run_tests.c.s
+.PHONY : run_tests.c.s
 
-geometry.o: geometry.c.o
-.PHONY : geometry.o
+test_bitset.o: test_bitset.c.o
+.PHONY : test_bitset.o
 
 # target to build an object file
-geometry.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/geometry.c.o
-.PHONY : geometry.c.o
+test_bitset.c.o:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/test_bitset.c.o
+.PHONY : test_bitset.c.o
 
-geometry.i: geometry.c.i
-.PHONY : geometry.i
-
-# target to preprocess a source file
-geometry.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/geometry.c.i
-.PHONY : geometry.c.i
-
-geometry.s: geometry.c.s
-.PHONY : geometry.s
-
-# target to generate assembly for a file
-geometry.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/geometry.c.s
-.PHONY : geometry.c.s
-
-gtfs-realtime.pb-c.o: gtfs-realtime.pb-c.c.o
-.PHONY : gtfs-realtime.pb-c.o
-
-# target to build an object file
-gtfs-realtime.pb-c.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/gtfs-realtime.pb-c.c.o
-.PHONY : gtfs-realtime.pb-c.c.o
-
-gtfs-realtime.pb-c.i: gtfs-realtime.pb-c.c.i
-.PHONY : gtfs-realtime.pb-c.i
+test_bitset.i: test_bitset.c.i
+.PHONY : test_bitset.i
 
 # target to preprocess a source file
-gtfs-realtime.pb-c.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/gtfs-realtime.pb-c.c.i
-.PHONY : gtfs-realtime.pb-c.c.i
+test_bitset.c.i:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/test_bitset.c.i
+.PHONY : test_bitset.c.i
 
-gtfs-realtime.pb-c.s: gtfs-realtime.pb-c.c.s
-.PHONY : gtfs-realtime.pb-c.s
-
-# target to generate assembly for a file
-gtfs-realtime.pb-c.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/gtfs-realtime.pb-c.c.s
-.PHONY : gtfs-realtime.pb-c.c.s
-
-hashgrid.o: hashgrid.c.o
-.PHONY : hashgrid.o
-
-# target to build an object file
-hashgrid.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/hashgrid.c.o
-.PHONY : hashgrid.c.o
-
-hashgrid.i: hashgrid.c.i
-.PHONY : hashgrid.i
-
-# target to preprocess a source file
-hashgrid.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/hashgrid.c.i
-.PHONY : hashgrid.c.i
-
-hashgrid.s: hashgrid.c.s
-.PHONY : hashgrid.s
+test_bitset.s: test_bitset.c.s
+.PHONY : test_bitset.s
 
 # target to generate assembly for a file
-hashgrid.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/hashgrid.c.s
-.PHONY : hashgrid.c.s
-
-list.o: list.c.o
-.PHONY : list.o
-
-# target to build an object file
-list.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/list.c.o
-.PHONY : list.c.o
-
-list.i: list.c.i
-.PHONY : list.i
-
-# target to preprocess a source file
-list.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/list.c.i
-.PHONY : list.c.i
-
-list.s: list.c.s
-.PHONY : list.s
-
-# target to generate assembly for a file
-list.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/list.c.s
-.PHONY : list.c.s
-
-radixtree.o: radixtree.c.o
-.PHONY : radixtree.o
-
-# target to build an object file
-radixtree.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/radixtree.c.o
-.PHONY : radixtree.c.o
-
-radixtree.i: radixtree.c.i
-.PHONY : radixtree.i
-
-# target to preprocess a source file
-radixtree.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/radixtree.c.i
-.PHONY : radixtree.c.i
-
-radixtree.s: radixtree.c.s
-.PHONY : radixtree.s
-
-# target to generate assembly for a file
-radixtree.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/radixtree.c.s
-.PHONY : radixtree.c.s
-
-router.o: router.c.o
-.PHONY : router.o
-
-# target to build an object file
-router.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router.c.o
-.PHONY : router.c.o
-
-router.i: router.c.i
-.PHONY : router.i
-
-# target to preprocess a source file
-router.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router.c.i
-.PHONY : router.c.i
-
-router.s: router.c.s
-.PHONY : router.s
-
-# target to generate assembly for a file
-router.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router.c.s
-.PHONY : router.c.s
-
-router_dump.o: router_dump.c.o
-.PHONY : router_dump.o
-
-# target to build an object file
-router_dump.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_dump.c.o
-.PHONY : router_dump.c.o
-
-router_dump.i: router_dump.c.i
-.PHONY : router_dump.i
-
-# target to preprocess a source file
-router_dump.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_dump.c.i
-.PHONY : router_dump.c.i
-
-router_dump.s: router_dump.c.s
-.PHONY : router_dump.s
-
-# target to generate assembly for a file
-router_dump.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_dump.c.s
-.PHONY : router_dump.c.s
-
-router_request.o: router_request.c.o
-.PHONY : router_request.o
-
-# target to build an object file
-router_request.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_request.c.o
-.PHONY : router_request.c.o
-
-router_request.i: router_request.c.i
-.PHONY : router_request.i
-
-# target to preprocess a source file
-router_request.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_request.c.i
-.PHONY : router_request.c.i
-
-router_request.s: router_request.c.s
-.PHONY : router_request.s
-
-# target to generate assembly for a file
-router_request.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_request.c.s
-.PHONY : router_request.c.s
-
-router_result.o: router_result.c.o
-.PHONY : router_result.o
-
-# target to build an object file
-router_result.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_result.c.o
-.PHONY : router_result.c.o
-
-router_result.i: router_result.c.i
-.PHONY : router_result.i
-
-# target to preprocess a source file
-router_result.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_result.c.i
-.PHONY : router_result.c.i
-
-router_result.s: router_result.c.s
-.PHONY : router_result.s
-
-# target to generate assembly for a file
-router_result.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/router_result.c.s
-.PHONY : router_result.c.s
-
-tdata.o: tdata.c.o
-.PHONY : tdata.o
-
-# target to build an object file
-tdata.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata.c.o
-.PHONY : tdata.c.o
-
-tdata.i: tdata.c.i
-.PHONY : tdata.i
-
-# target to preprocess a source file
-tdata.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata.c.i
-.PHONY : tdata.c.i
-
-tdata.s: tdata.c.s
-.PHONY : tdata.s
-
-# target to generate assembly for a file
-tdata.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata.c.s
-.PHONY : tdata.c.s
-
-tdata_io_v3_dynamic.o: tdata_io_v3_dynamic.c.o
-.PHONY : tdata_io_v3_dynamic.o
-
-# target to build an object file
-tdata_io_v3_dynamic.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_io_v3_dynamic.c.o
-.PHONY : tdata_io_v3_dynamic.c.o
-
-tdata_io_v3_dynamic.i: tdata_io_v3_dynamic.c.i
-.PHONY : tdata_io_v3_dynamic.i
-
-# target to preprocess a source file
-tdata_io_v3_dynamic.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_io_v3_dynamic.c.i
-.PHONY : tdata_io_v3_dynamic.c.i
-
-tdata_io_v3_dynamic.s: tdata_io_v3_dynamic.c.s
-.PHONY : tdata_io_v3_dynamic.s
-
-# target to generate assembly for a file
-tdata_io_v3_dynamic.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_io_v3_dynamic.c.s
-.PHONY : tdata_io_v3_dynamic.c.s
-
-tdata_io_v3_mmap.o: tdata_io_v3_mmap.c.o
-.PHONY : tdata_io_v3_mmap.o
-
-# target to build an object file
-tdata_io_v3_mmap.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_io_v3_mmap.c.o
-.PHONY : tdata_io_v3_mmap.c.o
-
-tdata_io_v3_mmap.i: tdata_io_v3_mmap.c.i
-.PHONY : tdata_io_v3_mmap.i
-
-# target to preprocess a source file
-tdata_io_v3_mmap.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_io_v3_mmap.c.i
-.PHONY : tdata_io_v3_mmap.c.i
-
-tdata_io_v3_mmap.s: tdata_io_v3_mmap.c.s
-.PHONY : tdata_io_v3_mmap.s
-
-# target to generate assembly for a file
-tdata_io_v3_mmap.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_io_v3_mmap.c.s
-.PHONY : tdata_io_v3_mmap.c.s
-
-tdata_realtime_alerts.o: tdata_realtime_alerts.c.o
-.PHONY : tdata_realtime_alerts.o
-
-# target to build an object file
-tdata_realtime_alerts.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_realtime_alerts.c.o
-.PHONY : tdata_realtime_alerts.c.o
-
-tdata_realtime_alerts.i: tdata_realtime_alerts.c.i
-.PHONY : tdata_realtime_alerts.i
-
-# target to preprocess a source file
-tdata_realtime_alerts.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_realtime_alerts.c.i
-.PHONY : tdata_realtime_alerts.c.i
-
-tdata_realtime_alerts.s: tdata_realtime_alerts.c.s
-.PHONY : tdata_realtime_alerts.s
-
-# target to generate assembly for a file
-tdata_realtime_alerts.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_realtime_alerts.c.s
-.PHONY : tdata_realtime_alerts.c.s
-
-tdata_realtime_expanded.o: tdata_realtime_expanded.c.o
-.PHONY : tdata_realtime_expanded.o
-
-# target to build an object file
-tdata_realtime_expanded.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_realtime_expanded.c.o
-.PHONY : tdata_realtime_expanded.c.o
-
-tdata_realtime_expanded.i: tdata_realtime_expanded.c.i
-.PHONY : tdata_realtime_expanded.i
-
-# target to preprocess a source file
-tdata_realtime_expanded.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_realtime_expanded.c.i
-.PHONY : tdata_realtime_expanded.c.i
-
-tdata_realtime_expanded.s: tdata_realtime_expanded.c.s
-.PHONY : tdata_realtime_expanded.s
-
-# target to generate assembly for a file
-tdata_realtime_expanded.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_realtime_expanded.c.s
-.PHONY : tdata_realtime_expanded.c.s
-
-tdata_validation.o: tdata_validation.c.o
-.PHONY : tdata_validation.o
-
-# target to build an object file
-tdata_validation.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_validation.c.o
-.PHONY : tdata_validation.c.o
-
-tdata_validation.i: tdata_validation.c.i
-.PHONY : tdata_validation.i
-
-# target to preprocess a source file
-tdata_validation.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_validation.c.i
-.PHONY : tdata_validation.c.i
-
-tdata_validation.s: tdata_validation.c.s
-.PHONY : tdata_validation.s
-
-# target to generate assembly for a file
-tdata_validation.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/tdata_validation.c.s
-.PHONY : tdata_validation.c.s
-
-util.o: util.c.o
-.PHONY : util.o
-
-# target to build an object file
-util.c.o:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/util.c.o
-.PHONY : util.c.o
-
-util.i: util.c.i
-.PHONY : util.i
-
-# target to preprocess a source file
-util.c.i:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/util.c.i
-.PHONY : util.c.i
-
-util.s: util.c.s
-.PHONY : util.s
-
-# target to generate assembly for a file
-util.c.s:
-	$(MAKE) -f CMakeFiles/cli.dir/build.make CMakeFiles/cli.dir/util.c.s
-.PHONY : util.c.s
+test_bitset.c.s:
+	cd /home/skinkie/Sources/ansi && $(MAKE) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/test_bitset.c.s
+.PHONY : test_bitset.c.s
 
 # Help Target
 help:
@@ -566,64 +194,18 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... cli"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... tests"
-	@echo "... bitset.o"
-	@echo "... bitset.i"
-	@echo "... bitset.s"
-	@echo "... cli.o"
-	@echo "... cli.i"
-	@echo "... cli.s"
-	@echo "... geometry.o"
-	@echo "... geometry.i"
-	@echo "... geometry.s"
-	@echo "... gtfs-realtime.pb-c.o"
-	@echo "... gtfs-realtime.pb-c.i"
-	@echo "... gtfs-realtime.pb-c.s"
-	@echo "... hashgrid.o"
-	@echo "... hashgrid.i"
-	@echo "... hashgrid.s"
-	@echo "... list.o"
-	@echo "... list.i"
-	@echo "... list.s"
-	@echo "... radixtree.o"
-	@echo "... radixtree.i"
-	@echo "... radixtree.s"
-	@echo "... router.o"
-	@echo "... router.i"
-	@echo "... router.s"
-	@echo "... router_dump.o"
-	@echo "... router_dump.i"
-	@echo "... router_dump.s"
-	@echo "... router_request.o"
-	@echo "... router_request.i"
-	@echo "... router_request.s"
-	@echo "... router_result.o"
-	@echo "... router_result.i"
-	@echo "... router_result.s"
-	@echo "... tdata.o"
-	@echo "... tdata.i"
-	@echo "... tdata.s"
-	@echo "... tdata_io_v3_dynamic.o"
-	@echo "... tdata_io_v3_dynamic.i"
-	@echo "... tdata_io_v3_dynamic.s"
-	@echo "... tdata_io_v3_mmap.o"
-	@echo "... tdata_io_v3_mmap.i"
-	@echo "... tdata_io_v3_mmap.s"
-	@echo "... tdata_realtime_alerts.o"
-	@echo "... tdata_realtime_alerts.i"
-	@echo "... tdata_realtime_alerts.s"
-	@echo "... tdata_realtime_expanded.o"
-	@echo "... tdata_realtime_expanded.i"
-	@echo "... tdata_realtime_expanded.s"
-	@echo "... tdata_validation.o"
-	@echo "... tdata_validation.i"
-	@echo "... tdata_validation.s"
-	@echo "... util.o"
-	@echo "... util.i"
-	@echo "... util.s"
+	@echo "... __/bitset.o"
+	@echo "... __/bitset.i"
+	@echo "... __/bitset.s"
+	@echo "... run_tests.o"
+	@echo "... run_tests.i"
+	@echo "... run_tests.s"
+	@echo "... test_bitset.o"
+	@echo "... test_bitset.i"
+	@echo "... test_bitset.s"
 .PHONY : help
 
 
@@ -635,6 +217,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/skinkie/Sources/ansi && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
