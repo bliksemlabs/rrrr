@@ -148,12 +148,14 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                 prev_st = st++;
             }
         }
+        #ifdef RRRR_DEBUG
         if (n_nonincreasing_trips > 0) {
             fprintf (stderr, "journey_pattern %d has %d trips with "
                              "negative travel times\n",
                     jp_index, n_nonincreasing_trips);
             ret_nonincreasing -= n_nonincreasing_trips;
         }
+        #endif
     }
 
     return ret_nonincreasing;
