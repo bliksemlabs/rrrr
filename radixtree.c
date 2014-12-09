@@ -351,7 +351,7 @@ void rxt_destroy (RadixTree *root) {
     rxt_edge_free (root);
 }
 
-#if RRRR_DEBUG
+#ifdef RRRR_DEBUG
 uint32_t rxt_edge_count (struct rxt_edge *e) {
     uint32_t n = 0;
     if (e != NULL) {

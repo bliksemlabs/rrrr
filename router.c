@@ -378,7 +378,7 @@ void apply_transfers (router_t *router, router_request_t *req,
          * the state_from->time, because the best time may have been updated
          * by a transfer.
          */
-        #if RRRR_DEBUG
+        #ifdef RRRR_DEBUG
         if (time_from != router->best_time[stop_index_from]) {
             char buf[13];
 
