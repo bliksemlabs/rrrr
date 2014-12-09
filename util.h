@@ -5,9 +5,9 @@
 #include <stddef.h>
 #include <time.h>
 
-#ifdef HAVE_LOCALTIME_R
+#if defined (HAVE_LOCALTIME_R)
     #define rrrr_localtime_r(a, b) localtime_r(a, b)
-#elif HAVE_LOCALTIME_S
+#elif defined (HAVE_LOCALTIME_S)
     #define rrrr_localtime_r(a, b) localtime_s(b, a)
 #else
     #define rrrr_localtime_r(a, b) { \
@@ -16,9 +16,9 @@
 }
 #endif
 
-#ifdef HAVE_GMTIME_R
+#if defined (HAVE_GMTIME_R)
     #define rrrr_gmtime_r(a, b) gmtime_r(a, b)
-#elif HAVE_GMTIME_S
+#elif defined (HAVE_GMTIME_S)
     #define rrrr_gmtime_r(a, b) gmtime_s(b, a)
 #else
     #define rrrr_gmtime_r(a, b) { \
