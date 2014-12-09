@@ -239,7 +239,8 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
     return check_plan_invariants (plan);
 }
 
-static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+static char *
+plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
     leg_t *leg;
 
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
@@ -343,7 +344,8 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
 }
 
 /* Write a plan structure out to a text buffer in tabular format. */
-uint32_t plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
+static uint32_t
+plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
 
