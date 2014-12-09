@@ -32,7 +32,7 @@ static bool check_plan_invariants (plan_t *plan) {
             leg_t *legN = itin->legs + (itin->n_legs - 1);
             /* Itineraries should be Pareto-optimal. Increase in number of rides implies improving arrival time. */
             rtime_t target_time = plan->req.arrive_by ? leg0->t0 : legN->t1;
-            if (i_itinerary > 0) {
+            if (prev_itin != NULL) {
                 if (itin->n_legs <= prev_itin->n_legs) {
                     fprintf(stderr, "itineraries do not have strictly increasing numbers of legs: %d, %d.\n", prev_itin->n_legs, itin->n_legs);
                     fail = true;
