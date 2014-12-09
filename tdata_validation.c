@@ -80,7 +80,10 @@ int tdata_validation_coordinates(tdata_t *tdata) {
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
     uint32_t jp_index, stop_index, trip_index;
+    #ifdef RRRR_DEBUG
+    /* statistics on errors, instead of early bail out */
     int ret_nonincreasing = 0;
+    #endif
 
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
