@@ -312,7 +312,7 @@ static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
  * using them in routing. We iterate over all of them, because we don't
  * maintain a list of all the stops that might have been added by the hashgrid.
  */
-void initialize_transfers_full (router_t *router, uint32_t round) {
+static void initialize_transfers_full (router_t *router, uint32_t round) {
     uint32_t i_stop;
     router_state_t *states = router->states + (round * router->tdata->n_stops);
     for ( i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
@@ -488,7 +488,7 @@ void apply_transfers (router_t *router, router_request_t *req,
 /* Get the departure or arrival time of the given trip on the given
  * service day, applying realtime data as needed.
  */
-rtime_t
+static rtime_t
 tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
                 uint32_t jp_index, uint32_t trip_offset, uint32_t journey_pattern_point,
                 bool arrive) {
@@ -549,9 +549,11 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
     return time_adjusted;
 }
 
-bool tdata_next (router_t *router, router_request_t *req,
-                 uint32_t jp_index, uint32_t trip_offset, rtime_t qtime,
-                 uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
+/* TODO: change the function name of tdata_next */
+static bool
+tdata_next (router_t *router, router_request_t *req,
+            uint32_t jp_index, uint32_t trip_offset, rtime_t qtime,
+            uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
 
     uint32_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
     journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
@@ -687,13 +689,13 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
          * Sadly that might not give us an accurate best_stop_index.
          */
 
-        #if RRRR_MAX_BANNED_STOP > 0
+        #if RRRR_MAX_BANNED_STOPS > 0
         /* if a stop is banned, we should not act upon it here */
         if (set_in (req->banned_stops, req->n_banned_stops,
                     stop_index)) continue;
         #endif
 
-        #if RRRR_MAX_BANNED_STOP_HARD > 0
+        #if RRRR_MAX_BANNED_STOPS_HARD > 0
         /* if a stop is banned hard, we should not act upon it here */
         if (set_in (req->banned_stops_hard, req->n_banned_stops_hard,
                     stop_index)) continue;
@@ -968,7 +970,7 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
          serviceday <= router->servicedays + 2;
          ++serviceday) {
 
-        uint32_t i_trip_offset;
+        uint16_t i_trip_offset;
 
         /* Check that this journey_pattern still has any trips
          * running on this day.
@@ -1039,11 +1041,12 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
     }  /*  end for (service days: yesterday, today, tomorrow) */
 }
 
-bool write_state(router_t *router, router_request_t *req,
-                 uint8_t round, uint32_t jpp_index, uint32_t trip_offset,
-                 uint32_t stop_index, uint16_t jpp_offset, rtime_t time,
-                 uint32_t board_stop, uint16_t board_jpp_stop,
-                 rtime_t board_time) {
+static bool
+write_state(router_t *router, router_request_t *req,
+            uint8_t round, uint32_t jpp_index, uint32_t trip_offset,
+            uint32_t stop_index, uint16_t jpp_offset, rtime_t time,
+            uint32_t board_stop, uint16_t board_jpp_stop,
+            rtime_t board_time) {
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
 
