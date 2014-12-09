@@ -80,15 +80,17 @@ int tdata_validation_coordinates(tdata_t *tdata) {
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
     uint32_t jp_index, stop_index, trip_index;
-    #ifdef RRRR_DEBUG
-    /* statistics on errors, instead of early bail out */
     int ret_nonincreasing = 0;
-    #endif
 
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
         trip_t *trips = tdata->trips + jp.trip_ids_offset;
+
+        #ifdef RRRR_DEBUG
+        /* statistics on errors, instead of early bail out */
         int n_nonincreasing_trips = 0;
+        #endif
+
         for (trip_index = 0; trip_index < jp.n_trips; ++trip_index) {
             trip_t trip = trips[trip_index];
             stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
