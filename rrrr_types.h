@@ -24,8 +24,8 @@ typedef uint16_t rtime_t;
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
-    rtime_t  midnight;
     calendar_t mask;
+    rtime_t  midnight;
     bool     apply_realtime;
 } serviceday_t;
 
