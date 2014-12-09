@@ -20,10 +20,15 @@
 #endif
 
 typedef struct HashGrid {
-    uint32_t     grid_dim;
-    double       bin_size_meters;
-    coord_t      bin_size;
-    uint32_t     n_items;
+    /* the array of coords that were indexed
+     * note: may have been deallocated by caller
+     */
+    coord_t *coords;
+
+    /* array containing all the binned items,
+     * aliased by the bins array
+     */
+    uint32_t     *items;
 
     /* 2D array of counts */
     uint32_t     *counts;
@@ -31,25 +36,21 @@ typedef struct HashGrid {
     /* 2D array of uint32_t pointers */
     uint32_t     **bins;
 
-    /* array containing all the binned items,
-     * aliased by the bins array
-     */
-    uint32_t     *items;
+    double       bin_size_meters;
+    coord_t      bin_size;
+    uint32_t     grid_dim;
+    uint32_t     n_items;
 
-    /* the array of coords that were indexed
-     * note: may have been deallocated by caller
-     */
-    coord_t *coords;
 } HashGrid;
 
 typedef struct HashGridResult {
     HashGrid *hg;
 
-    /* the query coordinate */
-    coord_t coord;
-
     /* query radius in meters */
     double radius_meters;
+
+    /* the query coordinate */
+    coord_t coord;
 
     /* defines a bounding box around the result in projected brads */
     coord_t min, max;
@@ -72,6 +73,8 @@ void HashGrid_teardown (HashGrid*);
 void HashGridResult_reset (HashGridResult*);
 
 uint32_t HashGridResult_next_filtered (HashGridResult *r, double *distance);
+
+uint32_t HashGridResult_next (HashGridResult *r);
 
 uint32_t HashGridResult_closest (HashGridResult *r);
 
