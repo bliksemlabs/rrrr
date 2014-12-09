@@ -271,7 +271,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
             else leg_mode = "WALK";
         } else {
             agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->journey_pattern);
-            short_name = tdata_shortname_for_journey_pattern(tdata, leg->journey_pattern);
+            short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
             headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
             productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->journey_pattern);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED

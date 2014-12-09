@@ -32,9 +32,9 @@ struct tdata_header {
 
     /* length of the object in bytes */
     uint32_t n_headsigns;
-    uint32_t n_route_shortnames;
+    uint32_t n_line_codes;
     uint32_t n_productcategories;
-    uint32_t n_route_ids;
+    uint32_t n_line_ids;
     uint32_t n_stop_ids;
     uint32_t n_trip_ids;
     uint32_t loc_stops;
@@ -57,9 +57,9 @@ struct tdata_header {
     uint32_t loc_agency_names;
     uint32_t loc_agency_urls;
     uint32_t loc_headsigns;
-    uint32_t loc_route_shortnames;
+    uint32_t loc_line_codes;
     uint32_t loc_productcategories;
-    uint32_t loc_route_ids;
+    uint32_t loc_line_ids;
     uint32_t loc_stop_ids;
     uint32_t loc_trip_ids;
 };

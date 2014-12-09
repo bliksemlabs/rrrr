@@ -23,7 +23,7 @@ struct stop {
     uint32_t transfers_offset;
 };
 
-/* An individual Route in the RAPTOR sense:
+/* An individual JourneyPattern in the RAPTOR sense:
  * A group of VehicleJourneys all share the same JourneyPattern.
  */
 typedef struct journey_pattern journey_pattern_t;
@@ -35,7 +35,7 @@ struct journey_pattern {
     uint16_t n_trips;
     uint16_t attributes;
     uint16_t agency_index;
-    uint16_t shortname_index;
+    uint16_t line_code_index;
     uint16_t productcategory_index;
     rtime_t  min_time;
     rtime_t  max_time;
@@ -128,9 +128,9 @@ struct tdata {
     uint32_t n_agency_names;
     uint32_t n_agency_urls;
     uint32_t n_headsigns;
-    uint32_t n_route_shortnames;
+    uint32_t n_line_codes;
     uint32_t n_productcategories;
-    uint32_t n_route_ids;
+    uint32_t n_line_ids;
     uint32_t n_stop_ids;
     uint32_t n_trip_ids;
     stop_t *stops;
@@ -157,20 +157,20 @@ struct tdata {
     uint32_t agency_urls_width;
     char *agency_urls;
     char *headsigns;
-    uint32_t route_shortnames_width;
-    char *route_shortnames;
+    uint32_t line_codes_width;
+    char *line_codes;
     uint32_t productcategories_width;
     char *productcategories;
     calendar_t *trip_active;
     calendar_t *journey_pattern_active;
-    uint32_t route_ids_width;
-    char *route_ids;
+    uint32_t line_ids_width;
+    char *line_ids;
     uint32_t stop_ids_width;
     char *stop_ids;
     uint32_t trip_ids_width;
     char *trip_ids;
     #ifdef RRRR_FEATURE_REALTIME
-    RadixTree *routeid_index;
+    RadixTree *lineid_index;
     RadixTree *stopid_index;
     RadixTree *tripid_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -199,11 +199,11 @@ uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_inde
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **jp_ret);
 
-stoptime_t *tdata_stoptimes_for_route(tdata_t *td, uint32_t jp_index);
+stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
-char *tdata_route_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index);
 
@@ -223,7 +223,7 @@ char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
 
 char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset);
 
-char *tdata_route_shortname_for_index(tdata_t *td, uint32_t route_shortname_index);
+char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
 char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
 
@@ -235,7 +235,7 @@ uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t start
 
 uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t start_index);
 
-uint32_t tdata_journey_pattern_idx_by_route_id(tdata_t *td, char *route_id, uint32_t start_index);
+uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t start_index);
 
 char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -243,7 +243,7 @@ calendar_t *tdata_trip_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index)
 
 char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_shortname_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -257,7 +257,7 @@ char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
-/* Get a pointer to the array of trip structs for this route. */
+/* Get a pointer to the array of trip structs for this journey_pattern. */
 trip_t *tdata_trips_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);

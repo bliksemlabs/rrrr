@@ -121,7 +121,7 @@ static void tdata_realtime_free_trip_index (tdata_t *tdata, uint32_t trip_index)
 static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *trip_ids,
         uint16_t n_stops, uint16_t n_trips,
         uint16_t attributes, uint32_t headsign_offset,
-        uint16_t agency_index, uint16_t shortname_index,
+        uint16_t agency_index, uint16_t line_code_index,
         uint16_t productcategory_index) {
     journey_pattern_t *new;
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
@@ -140,7 +140,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *trip_ids,
     new->attributes = attributes;
     new->agency_index = agency_index;
     new->productcategory_index = productcategory_index;
-    new->shortname_index = shortname_index;
+    new->line_code_index = line_code_index;
 
     tdata->trips[trip_index].stop_times_offset = stop_times_offset;
 
@@ -173,7 +173,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *trip_ids,
         tdata->trips_in_journey_pattern[trip_index] = tdata->n_journey_patterns;
         trip_index++;
 
-        rxt_insert(tdata->routeid_index,
+        rxt_insert(tdata->lineid_index,
                    &trip_ids[i_trip * tdata->trip_ids_width],
                    tdata->n_journey_patterns);
     }
@@ -251,7 +251,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t trip
     trip_id_new[0] = '@';
     strncpy(&trip_id_new[1], rt_trip->trip_id, tdata->trip_ids_width - 1);
 
-    jp_index = rxt_find (tdata->routeid_index, trip_id_new);
+    jp_index = rxt_find (tdata->lineid_index, trip_id_new);
 
     if (jp_index != RADIX_TREE_NONE) {
         /* Fixes the case where a trip changes a second time */
@@ -289,7 +289,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t trip
                 jp->attributes,
                 jp->headsign_offset,
                 jp->agency_index,
-                jp->shortname_index,
+                jp->line_code_index,
                 jp->productcategory_index);
 
         jp_new = &(tdata->journey_patterns[jp_index]);

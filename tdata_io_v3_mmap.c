@@ -83,8 +83,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap_string (td->base, agency_ids);
     load_mmap_string (td->base, agency_names);
     load_mmap_string (td->base, agency_urls);
-    load_mmap_string (td->base, route_shortnames);
-    load_mmap_string (td->base, route_ids);
+    load_mmap_string (td->base, line_codes);
+    load_mmap_string (td->base, line_ids);
     load_mmap_string (td->base, productcategories);
 
     /* We must close the file descriptor otherwise we will

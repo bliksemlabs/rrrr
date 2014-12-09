@@ -77,7 +77,7 @@ void router_request_initialize(router_request_t *req) {
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     req->n_banned_trips = 0;
-    memset32(req->banned_trips_route, NONE, RRRR_MAX_BANNED_TRIPS);
+    memset32(req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
     memset16(req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
     #endif
     req->onboard_trip_journey_pattern = NONE;
@@ -155,7 +155,7 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     req->n_banned_trips = 0;
-    memset32(req->banned_trips_route, NONE, RRRR_MAX_BANNED_TRIPS);
+    memset32(req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
     memset16(req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
     #endif
     req->intermediatestops = false;

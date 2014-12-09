@@ -999,7 +999,7 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
 
             #if RRRR_MAX_BANNED_TRIPS > 0
             /* skip this trip if it is banned */
-            if (set2_in(req->banned_trips_route, req->banned_trips_offset,
+            if (set2_in(req->banned_trips_journey_pattern, req->banned_trips_offset,
                         req->n_banned_trips, cache->jp_index,
                         i_trip_offset)) continue;
             #endif
@@ -1152,7 +1152,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", jp_index, cache.this_jp->min_time, cache.this_jp->max_time);
         fprintf (stderr, "  actual first time: %d \n", tdata_depart(router->tdata, jp_index, 0, 0));
         fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, jp_index, cache.this_jp->n_trips - 1, cache.this_jp->n_stops - 1));
-        fprintf(stderr, "  journey_pattern %d: %s;%s\n", jp_index, tdata_shortname_for_journey_pattern(router->tdata, jp_index), tdata_headsign_for_journey_pattern(router->tdata, jp_index));
+        fprintf(stderr, "  journey_pattern %d: %s;%s\n", jp_index, tdata_line_code_for_journey_pattern(router->tdata, jp_index), tdata_headsign_for_journey_pattern(router->tdata, jp_index));
         tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
         #endif
 

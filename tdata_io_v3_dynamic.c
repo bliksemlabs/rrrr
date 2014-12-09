@@ -80,8 +80,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic_string (fd, agency_ids);
     load_dynamic_string (fd, agency_names);
     load_dynamic_string (fd, agency_urls);
-    load_dynamic_string (fd, route_shortnames);
-    load_dynamic_string (fd, route_ids);
+    load_dynamic_string (fd, line_codes);
+    load_dynamic_string (fd, line_ids);
     load_dynamic_string (fd, productcategories);
 
     close (fd);
@@ -118,8 +118,8 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->agency_ids);
     free (td->agency_names);
     free (td->agency_urls);
-    free (td->route_shortnames);
-    free (td->route_ids);
+    free (td->line_codes);
+    free (td->line_ids);
     free (td->productcategories);
 }
 
