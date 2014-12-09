@@ -38,24 +38,25 @@ START_TEST (test_bitset)
         ck_assert_int_eq(BITSET_NONE, bitset_next_set_bit(bs_inv, 50001));
 
         bitset_mask_and(bs, bs_inv);
-        for (i = 0; i < 50000; ++i){
+        for (i = 0; i < 50000; ++i) {
             ck_assert(!bitset_get(bs, i));
         }
 
-        //Test flipping all bits on
+        /* Test flipping all bits on */
         bitset_black(bs);
-        for (i = 0; i < 50000; ++i){
+        for (i = 0; i < 50000; ++i) {
             ck_assert(bitset_get(bs, i));
         }
 
-        //Test clearing all bits
+        /* Test clearing all bits */
         bitset_clear(bs);
         ck_assert_int_eq(BITSET_NONE,bitset_next_set_bit(bs, 0));
 
-        //Test unset
+        /* Test unset */
         bitset_black(bs);
-        for (i = 0; i < 50000; i += 2)
+        for (i = 0; i < 50000; i += 2) {
             bitset_unset(bs, i);
+        }
 
         ck_assert(!bitset_get(bs, 0));
         ck_assert(bitset_get(bs, 1));
@@ -90,7 +91,7 @@ Enumerating very dense 50kbit bitset 100k times:
 So no real slowdown from skipping checks, but great improvement on sparse sets.
 Maybe switching to 32bit ints would allow finer-grained skipping.
 
-Why is the dense set so much slower? Probably function call overhead (1 per result). 
+Why is the dense set so much slower? Probably function call overhead (1 per result).
 For dense set:
 Adding inline keyword and -O2 reduces to 6.1 seconds.
 Adding inline keyword and -O3 reduces to 7.6 seconds (note this is higher than -O2).
