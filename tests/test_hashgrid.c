@@ -47,8 +47,8 @@ START_TEST (test_hashgrid) {
     coord_from_lat_lon (&qc, 51.92520, 4.46867); // Rotterdam CS
     HashGrid_query (&hg, &result, qc, radius_meters);    
     item = HashGridResult_closest (&result);
-    char *stop_desc = tdata_stop_desc_for_index (&tdata, item);
-    printf ("The closest stop is %s [ID %d].\n", stop_desc, item);
+    char *stop_name = tdata_stop_name_for_index (&tdata, item);
+    printf ("The closest stop is %s [ID %d].\n", stop_name, item);
     HashGrid_teardown (&hg);
 } END_TEST
 
