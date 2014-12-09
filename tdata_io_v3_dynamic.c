@@ -23,14 +23,14 @@
     td->n_##storage = header->n_##storage; \
     td->storage = (type*) malloc (RRRR_DYNAMIC_SLACK * (td->n_##storage + 1) * sizeof(type)); \
     lseek (fd, header->loc_##storage, SEEK_SET); \
-    if (read (fd, td->storage, (td->n_##storage + 1) * sizeof(type)) != (ssize_t) ((td->n_##storage + 1) * sizeof(type))) return false;
+    if (read (fd, td->storage, (td->n_##storage + 1) * sizeof(type)) != (ssize_t) ((td->n_##storage + 1) * sizeof(type))) goto fail_close_fd;
 
 #define load_dynamic_string(fd, storage) \
     td->n_##storage = header->n_##storage; \
     lseek (fd, header->loc_##storage, SEEK_SET); \
-    if (read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) return false; \
+    if (read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) goto fail_close_fd; \
     td->storage = (char*) malloc (RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width * sizeof(char)); \
-    if (read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char)) != (ssize_t) (td->n_##storage * td->storage##_width * sizeof(char))) return false;
+    if (read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char)) != (ssize_t) (td->n_##storage * td->storage##_width * sizeof(char))) goto fail_close_fd;
 
 bool tdata_io_v3_load(tdata_t *td, char *filename) {
     tdata_header_t h;
@@ -42,14 +42,16 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
         return false;
     }
 
-    if (read (fd, header, sizeof(*header)) != sizeof(*header)) return false;
+    if (read (fd, header, sizeof(tdata_header_t)) != sizeof(tdata_header_t)) {
+        goto fail_close_fd;
+    }
 
     td->base = NULL;
     td->size = 0;
 
     if( strncmp("TTABLEV3", header->version_string, 8) ) {
         fprintf(stderr, "The input file %s does not appear to be a timetable or is of the wrong version.\n", filename);
-        return false;
+        goto fail_close_fd;
     }
 
     td->calendar_start_time = header->calendar_start_time;
@@ -85,6 +87,11 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     close (fd);
 
     return true;
+
+fail_close_fd:
+    close (fd);
+
+    return false;
 }
 
 void tdata_io_v3_close(tdata_t *td) {
