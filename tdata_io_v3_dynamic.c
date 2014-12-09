@@ -82,6 +82,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic_string (fd, route_ids);
     load_dynamic_string (fd, productcategories);
 
+    close (fd);
+
     return true;
 }
 

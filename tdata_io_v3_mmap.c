@@ -87,6 +87,12 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap_string (td->base, route_ids);
     load_mmap_string (td->base, productcategories);
 
+    /* We must close the file descriptor otherwise we will
+     * leak it. Because mmap has created a reference to it
+     * there will not be a problem.
+     */
+    close (fd);
+
     return true;
 
 fail_munmap_base:
