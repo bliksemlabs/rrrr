@@ -258,7 +258,7 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_
         uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             if (tdata->transfer_target_stops[t] == stop_index_to) {
-                uint32_t distance_meters = tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
+                uint32_t distance_meters = ((uint32_t) tdata->transfer_dist_meters[t]) << 4; /* actually in units of 16 meters */
                 return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
             }
         }
@@ -274,7 +274,7 @@ uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t s
         uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             if (tdata->transfer_target_stops[t] == stop_index_to) {
-                return tdata->transfer_dist_meters[t] << 4; /* actually in units of 16 meters */
+                return ((uint32_t) tdata->transfer_dist_meters[t]) << 4; /* actually in units of 16 meters */
             }
         }
     } else {
