@@ -9,6 +9,7 @@
 #include "tdata.h"
 #include "tdata_io_v3.h"
 #include "tdata_validation.h"
+#include "util.h"
 
 #ifdef RRRR_FEATURE_REALTIME_ALERTS
 #include "tdata_realtime_alerts.h"
@@ -31,7 +32,6 @@
 
 #include "config.h"
 #include "bitset.h"
-#include "stubs.h"
 
 char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";

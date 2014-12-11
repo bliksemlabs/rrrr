@@ -10,8 +10,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "stubs.h"
 #include "router_request.h"
+#include "router_result.h"
 
 #ifdef RRRR_FEATURE_REALTIME
 

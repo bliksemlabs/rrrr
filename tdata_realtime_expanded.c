@@ -11,8 +11,9 @@
 #include "radixtree.h"
 #include "gtfs-realtime.pb-c.h"
 #include "rrrr_types.h"
-#include "stubs.h"
+#include "util.h"
 
+#include <time.h>
 #include <stdio.h>
 #include <alloca.h>
 #include <unistd.h>
