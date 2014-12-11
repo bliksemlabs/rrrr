@@ -249,9 +249,10 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
     for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
         char ct0[16];
         char ct1[16];
-        char *agency_name, *short_name, *headsign, *productcategory, *leg_mode = NULL,  *alert_msg = NULL;
-        char *s0_id = tdata_stop_name_for_index(tdata, leg->s0);
-        char *s1_id = tdata_stop_name_for_index(tdata, leg->s1);
+        const char *agency_name, *short_name, *headsign, *productcategory, *leg_mode = NULL;
+        char *alert_msg = NULL;
+        const char *s0_id = tdata_stop_name_for_index(tdata, leg->s0);
+        const char *s1_id = tdata_stop_name_for_index(tdata, leg->s1);
         float d0 = 0.0, d1 = 0.0;
 
         btimetext(leg->t0, ct0);

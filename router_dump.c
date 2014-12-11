@@ -44,7 +44,7 @@ void dump_results(router_t *router) {
     fprintf(stderr, "\n");
 
     for (i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
-        char *stop_id;
+        const char *stop_id;
         char time[13], walk_time[13];
 
         /* filter out stops which will not be reached */

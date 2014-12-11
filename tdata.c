@@ -33,12 +33,12 @@
 #include "config.h"
 #include "bitset.h"
 
-char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->line_ids + (td->line_ids_width * jp_index);
 }
 
-char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
+const char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index) {
     return td->stop_ids + (td->stop_ids_width * stop_index);
 }
 
@@ -46,39 +46,39 @@ uint8_t *tdata_stop_attributes_for_index(tdata_t *td, uint32_t stop_index) {
     return td->stop_attributes + stop_index;
 }
 
-char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
+const char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index) {
     return td->trip_ids + (td->trip_ids_width * trip_index);
 }
 
-char *tdata_trip_id_for_jp_trip_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index) {
+const char *tdata_trip_id_for_jp_trip_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index) {
     return td->trip_ids + (td->trip_ids_width * (td->journey_patterns[jp_index].trip_ids_offset + trip_index));
 }
 
-char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index) {
+const char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index) {
     return td->agency_ids + (td->agency_ids_width * agency_index);
 }
 
-char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index) {
+const char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index) {
     return td->agency_names + (td->agency_names_width * agency_index);
 }
 
-char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
+const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
     return td->agency_urls + (td->agency_urls_width * agency_index);
 }
 
-char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset) {
+const char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset) {
     return td->headsigns + headsign_offset;
 }
 
-char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
+const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
     return td->line_codes + (td->line_codes_width * line_code_index);
 }
 
-char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index) {
+const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index) {
     return td->productcategories + (td->productcategories_width * productcategory_index);
 }
 
-char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index) {
+const char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :
         return NULL;
@@ -132,7 +132,7 @@ uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32
 
 #define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index, 0)
 
-char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
     journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
     uint32_t char_offset = journey_pattern.trip_ids_offset * td->trip_ids_width;
     return td->trip_ids + char_offset;
@@ -143,17 +143,17 @@ calendar_t *tdata_trip_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index)
     return td->trip_active + journey_pattern.trip_ids_offset;
 }
 
-char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->headsigns + (td->journey_patterns)[jp_index].headsign_offset;
 }
 
-char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->line_codes + (td->line_codes_width * (td->journey_patterns)[jp_index].line_code_index);
 }
 
-char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->productcategories + (td->productcategories_width * (td->journey_patterns)[jp_index].productcategory_index);
 }
@@ -171,17 +171,17 @@ uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t
     return NONE;
 }
 
-char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->agency_ids + (td->agency_ids_width * (td->journey_patterns)[jp_index].agency_index);
 }
 
-char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->agency_names + (td->agency_names_width * (td->journey_patterns)[jp_index].agency_index);
 }
 
-char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->agency_urls + (td->agency_urls_width * (td->journey_patterns)[jp_index].agency_index);
 }
@@ -238,7 +238,7 @@ trip_t *tdata_trips_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
     return td->trips + td->journey_patterns[jp_index].trip_ids_offset;
 }
 
-char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
+const char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index) {
     switch (stop_index) {
     case NONE :
         return "NONE";
@@ -305,7 +305,7 @@ void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_in
 
         printf("%s\n", tdata_trip_id_for_index(td, jp.trip_ids_offset + ti));
         for (si = 0; si < jp.n_stops; ++si) {
-            char *stop_id = tdata_stop_name_for_index (td, stops[si]);
+            const char *stop_id = tdata_stop_name_for_index (td, stops[si]);
             char arrival[13], departure[13];
             printf("%4d %35s [%06d] : %s %s",
                    si, stop_id, stops[si],

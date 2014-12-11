@@ -362,8 +362,8 @@ bool range_check(router_request_t *req, tdata_t *tdata) {
 /* router_request_dump prints the current request structure to the screen */
 
 void router_request_dump(router_request_t *req, tdata_t *tdata) {
-    char *from_stop_id = tdata_stop_name_for_index(tdata, req->from);
-    char *to_stop_id   = tdata_stop_name_for_index(tdata, req->to);
+    const char *from_stop_id = tdata_stop_name_for_index(tdata, req->from);
+    const char *to_stop_id   = tdata_stop_name_for_index(tdata, req->to);
     char time[32], time_cutoff[32], date[11];
     struct tm ltm;
 

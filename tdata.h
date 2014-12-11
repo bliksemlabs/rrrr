@@ -203,33 +203,33 @@ stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
-char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index);
 
 uint8_t *tdata_stop_attributes_for_index(tdata_t *td, uint32_t stop_index);
 
-char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index);
+const char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index);
 
-char *tdata_trip_id_for_jp_trip_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
+const char *tdata_trip_id_for_jp_trip_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
 uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t start_index);
 
-char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index);
+const char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index);
 
-char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
+const char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
 
-char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
+const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
 
-char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset);
+const char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset);
 
-char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
+const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
-char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
+const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
 
-char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
 
-char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index);
 
 uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t start_index);
 
@@ -237,21 +237,21 @@ uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t start_ind
 
 uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t start_index);
 
-char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 calendar_t *tdata_trip_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 /* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
@@ -260,12 +260,12 @@ stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t trip_
 /* Get a pointer to the array of trip structs for this journey_pattern. */
 trip_t *tdata_trips_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
 
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to);
 
 uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to);
 
-char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
 
 #endif /* _TDATA_H */
