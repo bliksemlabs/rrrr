@@ -1010,7 +1010,7 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
             if ( ! (serviceday->mask & cache->trip_masks[i_trip_offset])) continue;
             /* skip this trip if it doesn't have all our
              * required attributes
-             * Checking whether we have required req->trip_attributes at all, before checking the attributes of the trips 
+             * Checking whether we have required req->trip_attributes at all, before checking the attributes of the trips
              * is about 4% more efficient for journeys without specific trip attribute requirements.
              */
             if (req->trip_attributes && ! ((req->trip_attributes & cache->trips_in_journey_pattern[i_trip_offset].trip_attributes) == req->trip_attributes)) continue;
@@ -1065,8 +1065,10 @@ write_state(router_t *router, router_request_t *req,
     this_state->back_trip         = trip_offset;
     this_state->ride_from         = board_stop;
     this_state->board_time        = board_time;
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     this_state->back_journey_pattern_point = board_jpp_stop;
     this_state->journey_pattern_point = jpp_offset;
+    #endif
 
     if (req->arrive_by && board_time < time) {
         fprintf (stderr, "board time non-decreasing\n");

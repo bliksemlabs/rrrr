@@ -46,8 +46,10 @@ struct router_state {
     /* The time at which the trip within back_journey_pattern left back_stop */
     rtime_t  board_time;
 
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     uint16_t back_journey_pattern_point;
     uint16_t journey_pattern_point;
+    #endif
 };
 
 /* Scratch space for use by the routing algorithm.
