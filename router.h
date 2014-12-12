@@ -32,17 +32,19 @@ struct router_state {
     uint32_t back_journey_pattern;
     /* The index of the trip used to travel from back_stop */
     uint32_t back_trip;
-    /* The time when this stop was reached */
-    rtime_t  time;
-    /* The time at which the trip within back_journey_pattern left back_stop */
-    rtime_t  board_time;
 
     /* Second phase footpath/transfer results */
     /* The stop from which this stop was reached by walking (2nd phase) */
     uint32_t walk_from;
 
+    /* Second phase footpath/transfer results */
     /* The time when this stop was reached by walking (2nd phase) */
     rtime_t  walk_time;
+
+    /* The time when this stop was reached */
+    rtime_t  time;
+    /* The time at which the trip within back_journey_pattern left back_stop */
+    rtime_t  board_time;
 
     uint16_t back_journey_pattern_point;
     uint16_t journey_pattern_point;
