@@ -44,27 +44,6 @@ char *btimetext(rtime_t rt, char *buf) {
     return buf;
 }
 
-void memset16(uint16_t *s, uint16_t u, size_t n) {
-    uint16_t i;
-    for (i = 0; i < n; i++) {
-        s[i] = u;
-    }
-}
-
-void memset32(uint32_t *s, uint32_t u, size_t n) {
-    uint32_t i;
-    for (i = 0; i < n; i++) {
-        s[i] = u;
-    }
-}
-
-void memset_rtime(rtime_t *s, rtime_t u, size_t n) {
-    size_t i;
-    for (i = 0; i < n; i++) {
-        s[i] = u;
-    }
-}
-
 uint32_t rrrrandom(uint32_t limit) {
     return (uint32_t) (limit * (rand() / (RAND_MAX + 1.0)));
 }

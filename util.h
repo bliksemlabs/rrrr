@@ -29,9 +29,8 @@
 
 #define UNUSED(expr) (void)(expr)
 
-void memset16(uint16_t *s, uint16_t u, size_t n);
-void memset32(uint32_t *s, uint32_t u, size_t n);
-void memset_rtime(rtime_t *s, rtime_t u, size_t n);
+#define rrrr_memset(s, u, n) { size_t i = n; do { i--; s[i] = u; } while (i); }
+
 uint32_t rrrrandom(uint32_t limit);
 void printBits(size_t const size, void const * const ptr);
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out);

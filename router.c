@@ -102,7 +102,7 @@ void router_reset(router_t *router) {
      * UNREACHED. This allows to compare for a lesser time candidate in the
      * search.
      */
-    memset_rtime(router->best_time, UNREACHED, router->tdata->n_stops);
+    rrrr_memset (router->best_time, UNREACHED, router->tdata->n_stops);
 }
 
 static bool initialize_states (router_t *router) {

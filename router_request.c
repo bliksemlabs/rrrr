@@ -65,20 +65,20 @@ void router_request_initialize(router_request_t *req) {
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
-    memset32(req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
+    rrrr_memset (req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     req->n_banned_stops = 0;
-    memset32(req->banned_stops, NONE, RRRR_MAX_BANNED_STOPS);
+    rrrr_memset (req->banned_stops, NONE, RRRR_MAX_BANNED_STOPS);
     #endif
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     req->n_banned_stops_hard = 0;
-    memset32(req->banned_stops_hard, NONE, RRRR_MAX_BANNED_STOPS_HARD);
+    rrrr_memset (req->banned_stops_hard, NONE, RRRR_MAX_BANNED_STOPS_HARD);
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     req->n_banned_trips = 0;
-    memset32(req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
-    memset16(req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
+    rrrr_memset (req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
+    rrrr_memset (req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
     #endif
     req->onboard_trip_journey_pattern = NONE;
     req->onboard_journey_pattern_offset = NONE;
@@ -143,20 +143,20 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
-    memset32(req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
+    rrrr_memset (req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     req->n_banned_stops = 0;
-    memset32(req->banned_stops, NONE, RRRR_MAX_BANNED_STOPS);
+    rrrr_memset (req->banned_stops, NONE, RRRR_MAX_BANNED_STOPS);
     #endif
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     req->n_banned_stops_hard = 0;
-    memset32(req->banned_stops_hard, NONE, RRRR_MAX_BANNED_STOPS_HARD);
+    rrrr_memset (req->banned_stops_hard, NONE, RRRR_MAX_BANNED_STOPS_HARD);
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     req->n_banned_trips = 0;
-    memset32(req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
-    memset16(req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
+    rrrr_memset (req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
+    rrrr_memset (req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
     #endif
     req->intermediatestops = false;
     req->from = rrrrandom(tdata->n_stops);
