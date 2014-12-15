@@ -13,12 +13,17 @@
  */
 int tdata_validation_boarding_alighting(tdata_t *tdata) {
     int32_t ret_invalid = 0;
-    uint32_t i_jp;
+    uint32_t i_jp = tdata->n_journey_patterns;
 
-    for (i_jp = 0; i_jp < tdata->n_journey_patterns; ++i_jp) {
-        journey_pattern_t *jp = &(tdata->journey_patterns[i_jp]);
-        uint8_t *rsa = tdata->journey_pattern_point_attributes +
-                       jp->journey_pattern_point_offset;
+    do {
+        journey_pattern_t *jp;
+        uint8_t *rsa;
+
+        i_jp--;
+
+        jp = &(tdata->journey_patterns[i_jp]);
+        rsa = tdata->journey_pattern_point_attributes +
+              jp->journey_pattern_point_offset;
 
         if ((rsa[0] & rsa_alighting) == rsa_alighting ||
             (rsa[jp->n_stops - 1] & rsa_boarding) == rsa_boarding) {
@@ -39,7 +44,7 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
             fprintf(stderr, "Too many boarding/alighting problems.\n");
             break;
         }
-    }
+    } while (i_jp);
 
     return ret_invalid;
 }
@@ -60,16 +65,21 @@ int tdata_validation_coordinates(tdata_t *tdata) {
 
     int32_t ret_invalid = 0;
 
-    uint32_t stop_index;
-    for (stop_index = 0; stop_index < tdata->n_stops; ++stop_index) {
-        latlon_t ll = tdata->stop_coords[stop_index];
+    uint32_t i_stop = tdata->n_stops;
+
+    do {
+        latlon_t ll;
+
+        i_stop--;
+
+        ll = tdata->stop_coords[i_stop];
         if (ll.lat < min_lat || ll.lat > max_lat ||
             ll.lon < min_lon || ll.lon > max_lon) {
             fprintf (stderr, "stop lat/lon out of range: lat=%f, lon=%f \n",
                                                 ll.lat, ll.lon);
             ret_invalid--;
         }
-    }
+    } while (i_stop);
 
     return ret_invalid;
 }
@@ -229,7 +239,9 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
 bool tdata_validation_check_coherent (tdata_t *tdata) {
     fprintf (stderr, "checking tdata coherency...\n");
 
-    return  (tdata_validation_boarding_alighting(tdata) == 0 &&
+    return  (tdata->n_stops > 0 &&
+             tdata->n_journey_patterns > 0 &&
+             tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&
              tdata_validation_increasing_times(tdata) == 0 &&
              tdata_validation_symmetric_transfers(tdata) == 0);

@@ -30,10 +30,13 @@ static bool router_setup_hashgrid(router_t *router) {
     coords = (coord_t *) malloc(sizeof(coord_t) * router->tdata->n_stops);
     if (!coords) return false;
 
-    for (i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
+    i_stop = router->tdata->n_stops;
+    do {
+        i_stop--;
         coord_from_latlon(coords + i_stop,
                           router->tdata->stop_coords + i_stop);
-    }
+    } while(i_stop);
+
     HashGrid_init (&router->hg, 100, 500.0, coords, router->tdata->n_stops);
     free(coords);
 
@@ -106,13 +109,13 @@ void router_reset(router_t *router) {
 }
 
 static bool initialize_states (router_t *router) {
-    uint64_t n_states = ((uint64_t) RRRR_DEFAULT_MAX_ROUNDS) * router->tdata->n_stops;
-    uint64_t i;
+    uint64_t i_state = ((uint64_t) RRRR_DEFAULT_MAX_ROUNDS) * router->tdata->n_stops;
 
-    for (i = 0; i < n_states; ++i) {
-        router->states[i].time = UNREACHED;
-        router->states[i].walk_time = UNREACHED;
-    }
+    do {
+        i_state--;
+        router->states[i_state].time = UNREACHED;
+        router->states[i_state].walk_time = UNREACHED;
+    } while (i_state);
 
     return true;
 }
@@ -183,19 +186,22 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 static void flag_journey_patterns_for_stop(router_t *router, router_request_t *req,
         uint32_t stop_index) {
     uint32_t *journey_patterns;
-    uint32_t jp_index;
-    uint32_t n_journey_patterns = tdata_journey_patterns_for_stop(router->tdata, stop_index,
-            &journey_patterns);
+    uint32_t i_jp = tdata_journey_patterns_for_stop(router->tdata, stop_index,
+                                                    &journey_patterns);
 
-    for (jp_index = 0; jp_index < n_journey_patterns; ++jp_index) {
+    if (i_jp == 0) return;
+
+    do {
         calendar_t jp_active_flags;
+
+        i_jp--;
 
         #ifdef RRRR_INFO
         fprintf (stderr, "flagging journey_pattern %d at stop %d\n",
-                         journey_patterns[jp_index], stop_index);
+                         journey_patterns[i_jp], stop_index);
         #endif
 
-        jp_active_flags = router->tdata->journey_pattern_active[journey_patterns[jp_index]];
+        jp_active_flags = router->tdata->journey_pattern_active[journey_patterns[i_jp]];
 
         /* CHECK that there are any trips running on this journey_pattern
          * (another bitfield)
@@ -207,32 +213,35 @@ static void flag_journey_patterns_for_stop(router_t *router, router_request_t *r
          * in throughput
          */
         if ((router->day_mask & jp_active_flags) &&
-            (req->mode & router->tdata->journey_patterns[journey_patterns[jp_index]].attributes) > 0) {
-           bitset_set (router->updated_journey_patterns, journey_patterns[jp_index]);
+            (req->mode & router->tdata->journey_patterns[journey_patterns[i_jp]].attributes) > 0) {
+           bitset_set (router->updated_journey_patterns, journey_patterns[i_jp]);
            #ifdef RRRR_INFO
            fprintf (stderr, "  journey_pattenr running\n");
            #endif
         }
-    }
+    } while (i_jp);
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     if (router->servicedays[1].apply_realtime &&
         router->tdata->rt_journey_patterns_at_stop[stop_index]) {
         journey_patterns = router->tdata->rt_journey_patterns_at_stop[stop_index]->list;
-        n_journey_patterns = router->tdata->rt_journey_patterns_at_stop[stop_index]->len;
-        for (jp_index = 0; jp_index < n_journey_patterns; ++jp_index) {
+        i_jp = router->tdata->rt_journey_patterns_at_stop[stop_index]->len;
+        if (i_jp == 0) return;
+        do {
+            i_jp--;
+
             #ifdef RRRR_INFO
             fprintf (stderr, "  flagging changed journey_pattern %d at stop %d\n",
-                             journey_patterns[jp_index], stop_index);
+                             journey_patterns[i_jp], stop_index);
             #endif
             /* extra journey_patterns should only be applied on the current day */
-            if ((req->mode & router->tdata->journey_patterns[journey_patterns[jp_index]].attributes) > 0) {
-                bitset_set (router->updated_journey_patterns, journey_patterns[jp_index]);
+            if ((req->mode & router->tdata->journey_patterns[journey_patterns[i_jp]].attributes) > 0) {
+                bitset_set (router->updated_journey_patterns, journey_patterns[i_jp]);
                 #ifdef RRRR_INFO
                 fprintf (stderr, "  journey_pattern running\n");
                 #endif
             }
-        }
+        } while (i_jp);
     }
     #endif
 }
@@ -246,48 +255,50 @@ static void unflag_banned_journey_patterns (router_t *router, router_request_t *
 }
 
 static void initialize_banned_journey_patterns (router_t *router, router_request_t *req) {
-    uint32_t i_banned_jp;
+    uint8_t i_banned_jp = req->n_banned_journey_patterns;
 
     bitset_black(router->banned_journey_patterns);
 
-    for (i_banned_jp = 0;
-          i_banned_jp < req->n_banned_journey_patterns;
-          ++i_banned_jp) {
+    if (i_banned_jp == 0) return;
+    do {
+        i_banned_jp--;
          bitset_unset (router->banned_journey_patterns,
                        req->banned_journey_patterns[i_banned_jp]);
     }
 }
 #else
 static void unflag_banned_journey_patterns(router_t *router, router_request_t *req) {
-    uint32_t i_banned_jp;
-     for (i_banned_jp = 0;
-          i_banned_jp < req->n_banned_journey_patterns;
-          ++i_banned_jp) {
-         bitset_unset (router->updated_journey_patterns,
-                       req->banned_journey_patterns[i_banned_jp]);
-     }
+    uint8_t i_banned_jp = req->n_banned_journey_patterns;
+    if (i_banned_jp == 0) return;
+    do {
+        i_banned_jp--;
+        bitset_unset (router->updated_journey_patterns,
+                      req->banned_journey_patterns[i_banned_jp]);
+    } while (i_banned_jp);
 }
 #endif
 #endif
 
 #if RRRR_MAX_BANNED_STOPS > 0
 static void unflag_banned_stops (router_t *router, router_request_t *req) {
-    uint32_t i_banned_stop;
-    for (i_banned_stop = 0;
-         i_banned_stop < req->n_banned_stops;
-         ++i_banned_stop) {
+    uint8_t i_banned_stop = req->n_banned_stops;
+    if (i_banned_stop == 0) return;
+    do {
+        i_banned_stop--;
         bitset_unset (router->updated_stops,
                       req->banned_stops[i_banned_stop]);
-    }
+    } while (i_banned_stop);
 }
 #endif
 
 #if RRRR_MAX_BANNED_STOPS > 0 || RRRR_BAX_BANNED_STOPS_HARD > 0
 static bool set_in (uint32_t *set, uint8_t length, uint32_t value) {
-    uint8_t i;
-    for (i = 0; i < length; ++i) {
+    uint8_t i = length;
+    if (i == 0) return false;
+    do {
+        i--;
         if (set[i] == value) return true;
-    }
+    } while (i);
     return false;
 }
 #endif
@@ -295,11 +306,13 @@ static bool set_in (uint32_t *set, uint8_t length, uint32_t value) {
 #if RRRR_MAX_BANNED_TRIPS > 0
 static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
                      uint32_t value1, uint16_t value2) {
-    uint8_t i;
-    for (i = 0; i < length; ++i) {
+    uint8_t i = length;
+    if (i == 0) return false;
+    do {
+        i--;
         if (set1[i] == value1 &&
             set2[i] == value2) return true;
-    }
+    } while (i);
     return false;
 }
 #endif
@@ -313,11 +326,12 @@ static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
  * maintain a list of all the stops that might have been added by the hashgrid.
  */
 static void initialize_transfers_full (router_t *router, uint32_t round) {
-    uint32_t i_stop;
+    uint32_t i_state = router->tdata->n_stops;
     router_state_t *states = router->states + (round * router->tdata->n_stops);
-    for ( i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
-        states[i_stop].walk_time = UNREACHED;
-    }
+    do {
+        i_state--;
+        states[i_state].walk_time = UNREACHED;
+    } while (i_state);
 }
 #else
 
