@@ -236,10 +236,23 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     return 0;
 }
 
+static bool tdata_validation_check_nstops (tdata_t *tdata) {
+    if (tdata->n_stops < 2) {
+        fprintf (stderr, "n_stops should be at least two, %d found.\n", tdata->n_stops);
+        return false;
+    } else
+    if (tdata->n_stops > ONBOARD) {
+        fprintf (stderr, "n_stops %d exceeds compiled stopidx_t width.\n", tdata->n_stops);
+        return false;
+    }
+
+    return true;
+}
+
 bool tdata_validation_check_coherent (tdata_t *tdata) {
     fprintf (stderr, "checking tdata coherency...\n");
 
-    return  (tdata->n_stops > 0 &&
+    return  (tdata_validation_check_nstops(tdata) &&
              tdata->n_journey_patterns > 0 &&
              tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&
