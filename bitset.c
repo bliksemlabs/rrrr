@@ -49,24 +49,30 @@ void bitset_destroy(BitSet *self) {
 }
 
 void bitset_clear(BitSet *self) {
-    uint32_t i_chunk;
-    for (i_chunk = 0; i_chunk < self->n_chunks; ++i_chunk)
+    uint32_t i_chunk = self->n_chunks;
+    do {
+        i_chunk--;
         self->chunks[i_chunk] = (bits_t) 0;
+    } while (i_chunk);
 }
 
 void bitset_black(BitSet *self) {
-    uint32_t i_chunk;
-    for (i_chunk = 0; i_chunk < self->n_chunks; ++i_chunk)
+    uint32_t i_chunk = self->n_chunks;
+    do {
+        i_chunk--;
         self->chunks[i_chunk] = ~((bits_t) 0);
+    } while (i_chunk);
 }
 
 void bitset_mask_and(BitSet *self, BitSet *mask) {
-    uint32_t i_chunk;
+    uint32_t i_chunk = self->n_chunks;
 
     assert (self->capacity == mask->capacity);
 
-    for (i_chunk = 0; i_chunk < self->n_chunks; ++i_chunk)
+    do {
+        i_chunk--;
         self->chunks[i_chunk] &= mask->chunks[i_chunk];
+    } while (i_chunk);
 }
 
 /* Our bitset code is storing a long number of bits by packing an array of
