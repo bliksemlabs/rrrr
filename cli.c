@@ -106,7 +106,7 @@ int main (int argc, char *argv[]) {
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-                        "[ --banned-journey_pattern-idx=idx ]\n"
+                        "[ --banned-jp-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_STOPS > 0
                         "[ --banned-stop-idx=idx ]\n"
@@ -115,7 +115,7 @@ int main (int argc, char *argv[]) {
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_TRIPS > 0
-                        "[ --banned-trip-offset=jp_index,trip_offset ]\n"
+                        "[ --banned-trip-offset=jp_idx,trip_offset ]\n"
 #endif
 #if RRRR_FEATURE_REALTIME_ALERTS == 1
                         "[ --gtfsrt-alerts=filename.pb ]\n"
@@ -232,11 +232,14 @@ int main (int argc, char *argv[]) {
                     if (false) {}
                     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                     else
-                    if (strncmp(argv[i], "--banned-route-idx=", 19) == 0) {
-                        set_add(req.banned_journey_patterns,
-                                &req.n_banned_journey_patterns,
-                                RRRR_MAX_BANNED_JOURNEY_PATTERNS,
-                                (uint32_t) strtol(&argv[i][19], NULL, 10));
+                    if (strncmp(argv[i], "--banned-jp-idx=", 16) == 0) {
+                        uint32_t jp_index = (uint32_t) strtol(&argv[i][16], NULL, 10);
+                        if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
+                            set_add(req.banned_journey_patterns,
+                                    &req.n_banned_journey_patterns,
+                                    RRRR_MAX_BANNED_JOURNEY_PATTERNS,
+                                    jp_index);
+                        }
                     }
                     #endif
                     #if RRRR_MAX_BANNED_STOPS > 0
