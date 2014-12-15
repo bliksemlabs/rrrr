@@ -19,8 +19,8 @@
 static void bitset_init(BitSet *self, uint32_t capacity) {
     self->capacity = capacity;
     /* round upwards */
-    self->nchunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
-    self->chunks = (bits_t *) calloc(self->nchunks, sizeof(bits_t));
+    self->n_chunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
+    self->chunks = (bits_t *) calloc(self->n_chunks, sizeof(bits_t));
     if (self->chunks == NULL) {
         fprintf(stderr, "bitset chunk allocation failure.");
         exit(1);
@@ -50,13 +50,13 @@ void bitset_destroy(BitSet *self) {
 
 void bitset_clear(BitSet *self) {
     uint32_t i_chunk;
-    for (i_chunk = 0; i_chunk < self->nchunks; ++i_chunk)
+    for (i_chunk = 0; i_chunk < self->n_chunks; ++i_chunk)
         self->chunks[i_chunk] = (bits_t) 0;
 }
 
 void bitset_black(BitSet *self) {
     uint32_t i_chunk;
-    for (i_chunk = 0; i_chunk < self->nchunks; ++i_chunk)
+    for (i_chunk = 0; i_chunk < self->n_chunks; ++i_chunk)
         self->chunks[i_chunk] = ~((bits_t) 0);
 }
 
@@ -65,7 +65,7 @@ void bitset_mask_and(BitSet *self, BitSet *mask) {
 
     assert (self->capacity == mask->capacity);
 
-    for (i_chunk = 0; i_chunk < self->nchunks; ++i_chunk)
+    for (i_chunk = 0; i_chunk < self->n_chunks; ++i_chunk)
         self->chunks[i_chunk] &= mask->chunks[i_chunk];
 }
 

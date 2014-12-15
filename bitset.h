@@ -32,7 +32,7 @@ typedef uint32_t bits_t;
 typedef struct bitset_s BitSet;
 struct bitset_s {
     bits_t  *chunks;
-    uint32_t nchunks;
+    uint32_t n_chunks;
     uint32_t capacity;
 };
 
