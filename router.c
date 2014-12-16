@@ -192,6 +192,11 @@ static void flag_journey_patterns_for_stop(router_t *router, router_request_t *r
     if (i_jp == 0) return;
 
     do {
+        #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+        /* Don't check whether journeypattern is valid since we banned all unsuitable journey_patterns */
+        i_jp--;
+        bitset_set (router->updated_journey_patterns, journey_patterns[i_jp]);
+        #else
         calendar_t jp_active_flags;
 
         i_jp--;
@@ -212,6 +217,7 @@ static void flag_journey_patterns_for_stop(router_t *router, router_request_t *r
         /* & journey_pattern_active_flags seems to provide about 14% increase
          * in throughput
          */
+
         if ((router->day_mask & jp_active_flags) &&
             (req->mode & router->tdata->journey_patterns[journey_patterns[i_jp]].attributes) > 0) {
            bitset_set (router->updated_journey_patterns, journey_patterns[i_jp]);
@@ -219,6 +225,7 @@ static void flag_journey_patterns_for_stop(router_t *router, router_request_t *r
            fprintf (stderr, "  journey_pattenr running\n");
            #endif
         }
+        #endif
     } while (i_jp);
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -255,15 +262,27 @@ static void unflag_banned_journey_patterns (router_t *router, router_request_t *
 }
 
 static void initialize_banned_journey_patterns (router_t *router, router_request_t *req) {
+    uint32_t i_jp = router->tdata->n_journey_patterns;
     uint8_t i_banned_jp = req->n_banned_journey_patterns;
 
     bitset_black(router->banned_journey_patterns);
 
+    do {
+        calendar_t jp_active_flags;
+        i_jp--;
+        jp_active_flags = router->tdata->journey_pattern_active[i_jp];
+
+        if (! ( router->day_mask & jp_active_flags &&
+                req->mode & router->tdata->journey_patterns[i_jp].attributes)) {
+            /* Journey is invalid on selected days and/or attributes */
+            bitset_unset (router->banned_journey_patterns,i_jp);
+        }
+    } while (i_jp);
+
     if (i_banned_jp == 0) return;
     do {
         i_banned_jp--;
-         bitset_unset (router->banned_journey_patterns,
-                       req->banned_journey_patterns[i_banned_jp]);
+        bitset_unset (router->banned_journey_patterns,req->banned_journey_patterns[i_banned_jp]);
     } while (i_banned_jp);
 }
 #else
