@@ -424,9 +424,6 @@ void apply_transfers (router_t *router, router_request_t *req,
             state_from->walk_from = stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
             flag_journey_patterns_for_stop(router, req, stop_index_from);
-            #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-            unflag_banned_journey_patterns(router, req);
-            #endif
         }
 
         if (transfer) {
@@ -484,13 +481,15 @@ void apply_transfers (router_t *router, router_request_t *req,
                 state_to->walk_from = stop_index_from;
                 router->best_time[stop_index_to] = time_to;
                 flag_journey_patterns_for_stop(router, req, stop_index_to);
-                #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-                unflag_banned_journey_patterns(router, req);
-                #endif
             }
         }
         }
     }
+
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    unflag_banned_journey_patterns(router, req);
+    #endif
+
     /* Done with all transfers, reset stop-reached bits for the next round */
     bitset_clear (router->updated_stops);
     /* Check invariant: Every stop reached in this round should have a
