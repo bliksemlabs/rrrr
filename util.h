@@ -37,3 +37,4 @@ rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out);
 char *btimetext(rtime_t rt, char *buf);
 char *timetext(rtime_t t);
 time_t strtoepoch (char *time);
+char * strcasestr(const char *s, const char *find);
