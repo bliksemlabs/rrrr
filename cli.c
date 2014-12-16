@@ -443,8 +443,8 @@ plan:
      */
 
     {
-        uint32_t i;
-        uint32_t n_reversals = req.arrive_by ? 1 : 2;
+        uint8_t i;
+        uint8_t n_reversals = req.arrive_by ? 1 : 2;
         for (i = 0; i < n_reversals; ++i) {
             if ( ! router_request_reverse (&router, &req)) {
                 /* if the reversal fails we must exit */

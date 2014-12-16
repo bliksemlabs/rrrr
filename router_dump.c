@@ -2,6 +2,7 @@
 #include "router_dump.h"
 #include "router.h"
 #include "util.h"
+#include "rrrr_types.h"
 #include "tdata.h"
 
 #include <stdio.h>
@@ -26,7 +27,8 @@ void router_state_dump (router_state_t *state) {
 }
 
 void dump_results(router_t *router) {
-    uint32_t i_round, i_stop;
+    spidx_t i_stop;
+    uint8_t i_round;
     #if 0
     char id_fmt[10];
     sprintf(id_fmt, "%%%ds", router.tdata.stop_id_width);
