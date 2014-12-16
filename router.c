@@ -264,7 +264,7 @@ static void initialize_banned_journey_patterns (router_t *router, router_request
         i_banned_jp--;
          bitset_unset (router->banned_journey_patterns,
                        req->banned_journey_patterns[i_banned_jp]);
-    }
+    } while (i_banned_jp);
 }
 #else
 static void unflag_banned_journey_patterns(router_t *router, router_request_t *req) {
