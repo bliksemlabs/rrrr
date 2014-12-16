@@ -234,7 +234,7 @@ int main (int argc, char *argv[]) {
                     else
                     if (strncmp(argv[i], "--banned-jp-idx=", 16) == 0) {
                         uint32_t jp_index = (uint32_t) strtol(&argv[i][16], NULL, 10);
-                        if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
+                        if (jp_index < tdata.n_journey_patterns) {
                             set_add(req.banned_journey_patterns,
                                     &req.n_banned_journey_patterns,
                                     RRRR_MAX_BANNED_JOURNEY_PATTERNS,
