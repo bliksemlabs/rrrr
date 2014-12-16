@@ -242,7 +242,7 @@ static bool tdata_validation_check_nstops (tdata_t *tdata) {
         return false;
     } else
     if (tdata->n_stops > ONBOARD) {
-        fprintf (stderr, "n_stops %d exceeds compiled stopidx_t width.\n", tdata->n_stops);
+        fprintf (stderr, "n_stops %d exceeds compiled spidx_t width.\n", tdata->n_stops);
         return false;
     }
 

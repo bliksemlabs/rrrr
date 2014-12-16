@@ -98,8 +98,8 @@ void router_reset(router_t *router) {
      * becomes possible to validate that they have been set to a valid
      * stop index.
      */
-    router->origin = NONE;
-    router->target = NONE;
+    router->origin = STOP_NONE;
+    router->target = STOP_NONE;
 
     /* The best times to arrive at a stop scratch space is initialised with
      * UNREACHED. This allows to compare for a lesser time candidate in the
@@ -292,7 +292,7 @@ static void unflag_banned_stops (router_t *router, router_request_t *req) {
 #endif
 
 #if RRRR_MAX_BANNED_STOPS > 0 || RRRR_BAX_BANNED_STOPS_HARD > 0
-static bool set_in (uint32_t *set, uint8_t length, uint32_t value) {
+static bool set_in (spidx_t *set, uint8_t length, spidx_t value) {
     uint8_t i = length;
     if (i == 0) return false;
     do {
@@ -567,13 +567,16 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 static bool
 tdata_next (router_t *router, router_request_t *req,
             uint32_t jp_index, uint32_t trip_offset, rtime_t qtime,
-            uint32_t *ret_stop_index, rtime_t *ret_stop_time) {
+            spidx_t *ret_stop_index, rtime_t *ret_stop_time) {
 
+    #if 0
+    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+    #endif
     uint32_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
     journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
     uint32_t jpp_i;
 
-    *ret_stop_index = NONE;
+    *ret_stop_index = STOP_NONE;
     *ret_stop_time = UNREACHED;
 
     for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
@@ -587,13 +590,13 @@ tdata_next (router_t *router, router_request_t *req,
             if (*ret_stop_time == UNREACHED ||
                 (req->arrive_by ? time < *ret_stop_time :
                                   time > *ret_stop_time)) {
-                *ret_stop_index = journey_pattern_points[jpp_i];
+                *ret_stop_index = (spidx_t) journey_pattern_points[jpp_i];
                 *ret_stop_time = time;
             }
         }
     }
 
-    return (*ret_stop_index != NONE);
+    return (*ret_stop_index != STOP_NONE);
 }
 
 static bool initialize_origin_onboard (router_t *router, router_request_t *req) {
@@ -605,8 +608,8 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
      * reversal, but reversal is meaningless/useless in on-board
      * depart trips anyway.
      */
-    uint32_t stop_index;
-    rtime_t  stop_time;
+    spidx_t stop_index;
+    rtime_t stop_time;
 
     if (tdata_next (router, req,
                     req->onboard_trip_journey_pattern, req->onboard_journey_pattern_offset,
@@ -642,7 +645,7 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
 
     router->origin = (req->arrive_by ? req->to : req->from);
 
-    if (router->origin == NONE) return false;
+    if (router->origin == STOP_NONE) return false;
 
     router->best_time[router->origin] = req->time;
 
@@ -665,7 +668,7 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
     router->states[i_state].time    = req->time;
 
     /* the rest of these should be unnecessary */
-    router->states[i_state].ride_from  = NONE;
+    router->states[i_state].ride_from  = STOP_NONE;
     router->states[i_state].back_journey_pattern = NONE;
     router->states[i_state].back_trip  = NONE;
     router->states[i_state].board_time = UNREACHED;
@@ -681,14 +684,14 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
 static bool initialize_target_index (router_t *router, router_request_t *req) {
     router->target = (req->arrive_by ? req->from : req->to);
 
-    return (router->target != NONE);
+    return (router->target != STOP_NONE);
 }
 
 #ifdef RRRR_FEATURE_LATLON
 static bool latlon_best_stop_index(router_t *router, router_request_t *req,
                                    HashGridResult *hg_result) {
     double distance, best_distance = INFINITY;
-    uint32_t stop_index, best_stop_index = NONE;
+    uint32_t stop_index, best_stop_index = HASHGRID_NONE;
 
     HashGridResult_reset(hg_result);
     stop_index = HashGridResult_next_filtered(hg_result, &distance);
@@ -728,7 +731,7 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
         }
 
         /*  the rest of these should be unnecessary */
-        router->states[i_state].ride_from  = NONE;
+        router->states[i_state].ride_from  = STOP_NONE;
         router->states[i_state].back_journey_pattern = NONE;
         router->states[i_state].back_trip  = NONE;
         router->states[i_state].board_time = UNREACHED;
@@ -754,7 +757,7 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
 
     router->origin = best_stop_index;
 
-    if (router->origin == NONE) return false;
+    if (router->origin == STOP_NONE) return false;
 
     /*  TODO eliminate this now that we have rtimes in requests */
     router->states[router->origin].time = req->time;
@@ -827,7 +830,7 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
         router->target = HashGridResult_closest (&req->to_hg_result);
     }
 
-    return (router->target != NONE);
+    return (router->target != STOP_NONE);
 }
 #endif
 
@@ -888,7 +891,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
          * set to the walk optimum. For the geographic optimisation to start
          * a latlon must be set and the stop_index must be set to NONE.
          */
-        if (req->to == NONE || req->from == NONE) {
+        if (req->to == STOP_NONE || req->from == STOP_NONE) {
             /* search the target based on latlon */
             return initialize_origin_latlon (router, req);
         } else
@@ -907,7 +910,7 @@ static bool initialize_target (router_t *router, router_request_t *req) {
      * a latlon must be set and the stop_index must be set to NONE.
      */
     #ifdef RRRR_FEATURE_LATLON
-    if (req->to == NONE || req->from == NONE) {
+    if (req->to == STOP_NONE || req->from == STOP_NONE) {
         /* search the target based on latlon */
         return initialize_target_latlon (router, req);
     } else
@@ -1060,7 +1063,7 @@ static void search_trips_within_days (router_t *router, router_request_t *req,
 static bool
 write_state(router_t *router, router_request_t *req,
             uint8_t round, uint32_t jpp_index, uint32_t trip_offset,
-            uint32_t stop_index, uint16_t jpp_offset, rtime_t time,
+            spidx_t stop_index, uint16_t jpp_offset, rtime_t time,
             uint32_t board_stop, uint16_t board_jpp_stop,
             rtime_t board_time) {
 
@@ -1236,7 +1239,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             if (prev_time != UNREACHED) {
                 if (trip_index == NONE || req->via == stop_index) {
                     attempt_board = true;
-                } else if (trip_index != NONE && req->via != NONE &&
+                } else if (trip_index != NONE && req->via != STOP_NONE &&
                                            req->via == board_stop) {
                     attempt_board = false;
                 } else {

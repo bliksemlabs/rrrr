@@ -53,7 +53,7 @@ void router_request_initialize(router_request_t *req) {
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
-    req->from = req->to = req->via = NONE;
+    req->from = req->to = req->via = STOP_NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
     req->arrive_by = true;
@@ -69,11 +69,11 @@ void router_request_initialize(router_request_t *req) {
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     req->n_banned_stops = 0;
-    rrrr_memset (req->banned_stops, NONE, RRRR_MAX_BANNED_STOPS);
+    rrrr_memset (req->banned_stops, STOP_NONE, RRRR_MAX_BANNED_STOPS);
     #endif
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     req->n_banned_stops_hard = 0;
-    rrrr_memset (req->banned_stops_hard, NONE, RRRR_MAX_BANNED_STOPS_HARD);
+    rrrr_memset (req->banned_stops_hard, STOP_NONE, RRRR_MAX_BANNED_STOPS_HARD);
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     req->n_banned_trips = 0;
@@ -132,7 +132,7 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
     req->time = RTIME_ONE_DAY + SEC_TO_RTIME(3600 * 9 + rrrrandom(3600 * 12));
-    req->via = NONE;
+    req->via = STOP_NONE;
     req->time_cutoff = UNREACHED;
     /* 0 or 1 */
     req->arrive_by = (bool) rrrrandom(2);
@@ -147,11 +147,11 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
     req->n_banned_stops = 0;
-    rrrr_memset (req->banned_stops, NONE, RRRR_MAX_BANNED_STOPS);
+    rrrr_memset (req->banned_stops, STOP_NONE, RRRR_MAX_BANNED_STOPS);
     #endif
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     req->n_banned_stops_hard = 0;
-    rrrr_memset (req->banned_stops_hard, NONE, RRRR_MAX_BANNED_STOPS_HARD);
+    rrrr_memset (req->banned_stops_hard, STOP_NONE, RRRR_MAX_BANNED_STOPS_HARD);
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     req->n_banned_trips = 0;
@@ -165,8 +165,8 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     #ifdef RRRR_FEATURE_LATLON
     req->from_latlon = tdata->stop_coords[rrrrandom(tdata->n_stops)];
     req->to_latlon = tdata->stop_coords[rrrrandom(tdata->n_stops)];
-    req->from = NONE;
-    req->to = NONE;
+    req->from = STOP_NONE;
+    req->to = STOP_NONE;
     #endif
 
     #ifdef RRRR_FEATURE_AGENCY_FILTER
@@ -196,8 +196,8 @@ void router_request_next(router_request_t *req, rtime_t inc) {
  * Returns a boolean value indicating whether the request was successfully reversed.
  */
 bool router_request_reverse(router_t *router, router_request_t *req) {
-    uint32_t best_stop_index = NONE;
     uint32_t max_transfers = req->max_transfers;
+    uint32_t best_stop_index = HASHGRID_NONE;
     uint8_t round = UINT8_MAX;
     /* Variable Array Length implementation for states[round][stop_index]
      * router_state_t (*states)[router->tdata->n_stops] = (router_state_t(*)[]) (router->states);
@@ -208,7 +208,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     #ifdef RRRR_FEATURE_LATLON
-    if ((req->arrive_by ? req->from == NONE : req->to == NONE)) {
+    if ((req->arrive_by ? req->from == STOP_NONE : req->to == STOP_NONE)) {
         HashGridResult *hg_result;
         uint32_t stop_index;
         double distance;
@@ -262,9 +262,9 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         }
 
         if (req->arrive_by) {
-            req->from = best_stop_index;
+            req->from = (spidx_t) best_stop_index;
         } else {
-            req->to = best_stop_index;
+            req->to = (spidx_t) best_stop_index;
         }
 
         /* TODO: Ideally we should implement a o_transfers option here to find the stop that requires the

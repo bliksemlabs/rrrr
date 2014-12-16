@@ -26,16 +26,17 @@ typedef struct router_state router_state_t;
  */
 /* TODO rename members to ride_from, walk_from, journey_pattern, trip, */
 struct router_state {
-    /* The index of the previous stop in the itinerary */
-    uint32_t ride_from;
-    /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
+   /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
     uint32_t back_journey_pattern;
     /* The index of the trip used to travel from back_stop */
     uint32_t back_trip;
 
+    /* The index of the previous stop in the itinerary */
+    spidx_t ride_from;
+
     /* Second phase footpath/transfer results */
     /* The stop from which this stop was reached by walking (2nd phase) */
-    uint32_t walk_from;
+    spidx_t walk_from;
 
     /* Second phase footpath/transfer results */
     /* The time when this stop was reached by walking (2nd phase) */
@@ -77,8 +78,8 @@ struct router {
     BitSet *banned_journey_patterns;
 #endif
 
-    uint32_t origin;
-    uint32_t target;
+    spidx_t origin;
+    spidx_t target;
 
     calendar_t day_mask;
     serviceday_t servicedays[3];
@@ -93,7 +94,7 @@ struct router {
 
 struct journey_pattern_cache {
     journey_pattern_t *this_jp;
-    uint32_t *journey_pattern_points;
+    uint32_t *journey_pattern_points; /* TODO: spidx_t */
     uint8_t  *journey_pattern_point_attributes;
     trip_t   *trips_in_journey_pattern;
     calendar_t *trip_masks;

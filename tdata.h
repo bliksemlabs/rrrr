@@ -136,12 +136,12 @@ struct tdata {
     stop_t *stops;
     uint8_t *stop_attributes;
     journey_pattern_t *journey_patterns;
-    uint32_t *journey_pattern_points;
+    uint32_t *journey_pattern_points; /* TODO: spidx_t */
     uint8_t  *journey_pattern_point_attributes;
     stoptime_t *stop_times;
     trip_t *trips;
     uint32_t *journey_patterns_at_stop;
-    uint32_t *transfer_target_stops;
+    uint32_t *transfer_target_stops; /* TODO: spidx_t */
     uint8_t  *transfer_dist_meters;
     /* optional data:
      * NULL pointer means it is not available */
@@ -192,12 +192,17 @@ void tdata_close(tdata_t *td);
 
 void tdata_dump(tdata_t *td);
 
+/* TODO */
+#if 0
+spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+#endif
+
 uint32_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-uint32_t tdata_journey_patterns_for_stop(tdata_t *td, uint32_t stop, uint32_t **jp_ret);
+uint32_t tdata_journey_patterns_for_stop(tdata_t *td, spidx_t stop_index, uint32_t **jp_ret);
 
 stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -205,9 +210,9 @@ void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_in
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-const char *tdata_stop_id_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_id_for_index(tdata_t *td, spidx_t stop_index);
 
-uint8_t *tdata_stop_attributes_for_index(tdata_t *td, uint32_t stop_index);
+uint8_t *tdata_stop_attributes_for_index(tdata_t *td, spidx_t stop_index);
 
 const char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index);
 
@@ -227,13 +232,13 @@ const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
 const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
 
-const char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_name_for_index(tdata_t *td, spidx_t stop_index);
 
-const char *tdata_platformcode_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_platformcode_for_index(tdata_t *td, spidx_t stop_index);
 
-uint32_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, uint32_t start_index);
+spidx_t tdata_stopidx_by_stop_name(tdata_t *td, char* stop_name, spidx_t start_index);
 
-uint32_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, uint32_t start_index);
+spidx_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, spidx_t start_index);
 
 uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t start_index);
 
@@ -260,12 +265,12 @@ stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t trip_
 /* Get a pointer to the array of trip structs for this journey_pattern. */
 trip_t *tdata_trips_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-const char *tdata_stop_desc_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_desc_for_index(tdata_t *td, spidx_t stop_index);
 
-rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, uint32_t stop_index_from, uint32_t stop_index_to);
+rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t stop_index_from, spidx_t stop_index_to);
 
-uint32_t transfer_distance (tdata_t *tdata, uint32_t stop_index_from, uint32_t stop_index_to);
+uint32_t transfer_distance (tdata_t *tdata, spidx_t stop_index_from, spidx_t stop_index_to);
 
-const char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
+const char *tdata_stop_name_for_index(tdata_t *td, spidx_t stop_index);
 
 #endif /* _TDATA_H */

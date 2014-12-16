@@ -35,10 +35,10 @@ struct cli_arguments {
     bool verbose;
 };
 
-#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
-static void set_add (uint32_t *set,
-                     uint8_t  *length, uint8_t max_length,
-                     uint32_t value) {
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+static void set_add_jp (uint32_t *set,
+                        uint8_t  *length, uint8_t max_length,
+                        uint32_t value) {
     uint8_t i;
 
     if (*length >= max_length) return;
@@ -52,10 +52,28 @@ static void set_add (uint32_t *set,
 }
 #endif
 
+#if RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
+static void set_add_sp (spidx_t *set,
+                        uint8_t  *length, uint8_t max_length,
+                        spidx_t value) {
+    uint8_t i;
+
+    if (*length >= max_length) return;
+
+    for (i = 0; i < *length; ++i) {
+        if (set[i] == value) return;
+    }
+
+    set[*length] = value;
+    (*length)++;
+}
+#endif
+
+
 #if RRRR_MAX_BANNED_TRIPS > 0
-static void set2_add (uint32_t *set1, uint16_t *set2,
-                      uint8_t  *length, uint8_t max_length,
-                      uint32_t value1, uint16_t value2) {
+static void set_add_trip (uint32_t *set1, uint16_t *set2,
+                          uint8_t  *length, uint8_t max_length,
+                          uint32_t value1, uint16_t value2) {
     uint8_t i;
 
     if (*length >= max_length) return;
@@ -235,10 +253,10 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--banned-jp-idx=", 16) == 0) {
                         uint32_t jp_index = (uint32_t) strtol(&argv[i][16], NULL, 10);
                         if (jp_index < tdata.n_journey_patterns) {
-                            set_add(req.banned_journey_patterns,
-                                    &req.n_banned_journey_patterns,
-                                    RRRR_MAX_BANNED_JOURNEY_PATTERNS,
-                                    jp_index);
+                            set_add_jp(req.banned_journey_patterns,
+                                       &req.n_banned_journey_patterns,
+                                       RRRR_MAX_BANNED_JOURNEY_PATTERNS,
+                                       jp_index);
                         }
                     }
                     #endif
@@ -247,10 +265,10 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
                         uint32_t stop_idx = (uint32_t) strtol(&argv[i][19], NULL, 10);
                         if (stop_idx < tdata.n_stops) {
-                            set_add(req.banned_stops,
-                                    &req.n_banned_stops,
-                                    RRRR_MAX_BANNED_STOPS,
-                                    stop_idx);
+                            set_add_sp(req.banned_stops,
+                                       &req.n_banned_stops,
+                                       RRRR_MAX_BANNED_STOPS,
+                                       stop_idx);
                         }
                     }
                     #endif
@@ -259,10 +277,10 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
                         uint32_t stop_idx = (uint32_t) strtol(&argv[i][23], NULL, 10);
                         if (stop_idx < tdata.n_stops) {
-                            set_add(req.banned_stops_hard,
-                                    &req.n_banned_stops_hard,
-                                    RRRR_MAX_BANNED_STOPS_HARD,
-                                    stop_idx);
+                            set_add_sp(req.banned_stops_hard,
+                                       &req.n_banned_stops_hard,
+                                       RRRR_MAX_BANNED_STOPS_HARD,
+                                       stop_idx);
                         }
                     }
                     #endif
@@ -276,10 +294,11 @@ int main (int argc, char *argv[]) {
                         if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
                             uint16_t trip_offset = strtol(++endptr, NULL, 10);
                             if (trip_offset < tdata.journey_patterns[jp_index].n_trips) {
-                                set2_add(req.banned_trips_journey_pattern, req.banned_trips_offset,
-                                         &req.n_banned_trips,
-                                         RRRR_MAX_BANNED_TRIPS,
-                                        jp_index, trip_offset);
+                                set_add_trip(req.banned_trips_journey_pattern,
+                                             req.banned_trips_offset,
+                                             &req.n_banned_trips,
+                                             RRRR_MAX_BANNED_TRIPS,
+                                             jp_index, trip_offset);
                             }
                         }
                     }

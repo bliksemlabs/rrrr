@@ -16,10 +16,10 @@ struct leg {
     uint32_t trip;
 
     /* from stop index */
-    uint32_t s0;
+    spidx_t s0;
 
     /* to stop index */
-    uint32_t s1;
+    spidx_t s1;
 
     /* start time */
     rtime_t  t0;

@@ -21,6 +21,8 @@
  */
 typedef uint16_t rtime_t;
 
+typedef uint16_t spidx_t;
+
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
@@ -84,13 +86,13 @@ struct router_request {
     HashGridResult via_hg_result;
 #endif
     /* (nearest) start stop index from the users perspective */
-    uint32_t from;
+    spidx_t from;
 
     /* (nearest) destination stop index from the users perspective */
-    uint32_t to;
+    spidx_t to;
 
     /* preferred transfer stop index from the users perspective */
-    uint32_t via;
+    spidx_t via;
 
     /* onboard departure, journey_pattern index from the users perspective */
     uint32_t onboard_trip_journey_pattern;
@@ -103,10 +105,10 @@ struct router_request {
     uint32_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
-    uint32_t banned_stops[RRRR_MAX_BANNED_STOPS];
+    spidx_t banned_stops[RRRR_MAX_BANNED_STOPS];
     #endif
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
-    uint32_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
+    spidx_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
     #endif
     #if RRRR_MAX_BANNED_TRIPS > 0
     uint32_t banned_trips_journey_pattern[RRRR_MAX_BANNED_TRIPS];
@@ -198,6 +200,8 @@ struct router_request {
 #define UNREACHED UINT16_MAX
 #define NONE      (UINT32_MAX)
 #define WALK      (UINT32_MAX - 1)
-#define ONBOARD   (UINT32_MAX - 2)
+
+#define STOP_NONE ((spidx_t) -1)
+#define ONBOARD   ((spidx_t) -2)
 
 #endif /* _RRRR_TYPES */
