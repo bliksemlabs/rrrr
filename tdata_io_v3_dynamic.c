@@ -23,13 +23,11 @@
 #define load_dynamic(fd, storage, type) \
     td->n_##storage = header->n_##storage; \
     td->storage = (type*) malloc (RRRR_DYNAMIC_SLACK * (td->n_##storage + 1) * sizeof(type)); \
-    lseek (fd, header->loc_##storage, SEEK_SET); \
-    if (read (fd, td->storage, (td->n_##storage + 1) * sizeof(type)) != (ssize_t) ((td->n_##storage + 1) * sizeof(type))) goto fail_close_fd;
+    if (lseek (fd, header->loc_##storage, SEEK_SET) != -1 && read (fd, td->storage, (td->n_##storage + 1) * sizeof(type)) != (ssize_t) ((td->n_##storage + 1) * sizeof(type))) goto fail_close_fd;
 
 #define load_dynamic_string(fd, storage) \
     td->n_##storage = header->n_##storage; \
-    lseek (fd, header->loc_##storage, SEEK_SET); \
-    if (read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) goto fail_close_fd; \
+    if (lseek (fd, header->loc_##storage, SEEK_SET) != -1 && read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) goto fail_close_fd; \
     td->storage = (char*) malloc (RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width * sizeof(char)); \
     if (read (fd, td->storage, td->n_##storage * td->storage##_width * sizeof(char)) != (ssize_t) (td->n_##storage * td->storage##_width * sizeof(char))) goto fail_close_fd;
 
