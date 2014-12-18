@@ -208,14 +208,20 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
 
         }
         if (req->onboard_journey_pattern_offset != NONE) {
-            /* Results starting on board do not have an initial walk leg. */
-            l->s0 = l->s1 = ONBOARD;
-            l->t0 = l->t1 = req->time;
-            l->journey_pattern = l->trip = WALK;
-            l += 1; /* move back to first transit leg */
-            l->s0 = ONBOARD;
-            l->t0 = req->time;
-
+            if (!req->arrive_by) {
+                /* Results starting on board do not have an initial walk leg. */
+                l->s0 = l->s1 = ONBOARD;
+                l->t0 = l->t1 = req->time;
+                l->journey_pattern = l->trip = WALK;
+                l += 1; /* move back to first transit leg */
+                l->s0 = ONBOARD;
+                l->t0 = req->time;
+            } else {
+                #ifdef RRRR_DEBUG
+                fprintf(stderr, "We observed an onboard departure with an arrive by.\n");
+                #endif
+                return false;
+            }
         } else {
             /* The initial walk leg leading out of the search origin. This is inferred, not stored explicitly. */
             uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
