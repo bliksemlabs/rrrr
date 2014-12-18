@@ -44,8 +44,8 @@ static void tdata_rt_journey_patterns_at_stop_append(tdata_t *tdata,
         tdata->rt_journey_patterns_at_stop[stop_index]->size) {
         tdata->rt_journey_patterns_at_stop[stop_index]->list =
             realloc(tdata->rt_journey_patterns_at_stop[stop_index]->list,
-                    (tdata->rt_journey_patterns_at_stop[stop_index]->size + 8) *
-                    sizeof(uint32_t));
+                    sizeof(uint32_t) *
+                    (tdata->rt_journey_patterns_at_stop[stop_index]->size + 8));
         tdata->rt_journey_patterns_at_stop[stop_index]->size += 8;
     }
 
@@ -162,7 +162,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *trip_ids,
 
     /* add the last journey_pattern index to the lookup table */
     for (i_trip = 0; i_trip < n_trips; ++i_trip) {
-        tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(n_stops * sizeof(stoptime_t));
+        tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(sizeof(stoptime_t) * n_stops);
 
         for (i_stop = 0; i_stop < n_stops; ++i_stop) {
             /* Initialise the realtime stoptimes */
@@ -248,7 +248,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t trip
     /* The idea is to fork a trip to a new journey_pattern, based on
      * the trip_id find if the trip_id already exists
      */
-    trip_id_new = (char *) alloca (tdata->trip_ids_width * sizeof(char));
+    trip_id_new = (char *) alloca (sizeof(char) * tdata->trip_ids_width);
     trip_id_new[0] = '@';
     strncpy(&trip_id_new[1], rt_trip->trip_id, tdata->trip_ids_width - 1);
 
@@ -263,7 +263,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t trip
             #ifdef RRRR_DEBUG
             fprintf (stderr, "WARNING: this is changed trip %s being CHANGED again!\n", trip_id_new);
             #endif
-            tdata->trip_stoptimes[jp_new->trip_ids_offset] = (stoptime_t *) realloc(tdata->trip_stoptimes[jp_new->trip_ids_offset], n_stops * sizeof(stoptime_t));
+            tdata->trip_stoptimes[jp_new->trip_ids_offset] = (stoptime_t *) realloc(tdata->trip_stoptimes[jp_new->trip_ids_offset], sizeof(stoptime_t) * n_stops);
 
             /* Only initialises if the length of the list increased */
             for (i_stop_index = jp_new->n_stops;
@@ -359,7 +359,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_inde
      */
     if (tdata->trip_stoptimes[trip_index] == NULL) {
         /* If the expanded timetable does not contain an entry yet, we are creating one */
-        tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(jp->n_stops * sizeof(stoptime_t));
+        tdata->trip_stoptimes[trip_index] = (stoptime_t *) malloc(sizeof(stoptime_t) * jp->n_stops);
     }
 
     /* The initial time-demand based schedules */
@@ -434,7 +434,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_inde
 bool tdata_alloc_expanded(tdata_t *td) {
     uint32_t i_jp;
     td->trip_stoptimes = (stoptime_t **) calloc(td->n_trips, sizeof(stoptime_t *));
-    td->trips_in_journey_pattern = (uint32_t *) malloc(td->n_trips * sizeof(uint32_t));
+    td->trips_in_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * td->n_trips);
 
     if (!td->trip_stoptimes || !td->trips_in_journey_pattern) return false;
 
@@ -448,17 +448,15 @@ bool tdata_alloc_expanded(tdata_t *td) {
 
     td->rt_journey_patterns_at_stop = (list_t **) calloc(td->n_stops, sizeof(list_t *));
 
-    td->trip_active_orig = (calendar_t *) malloc(td->n_trips *
-                                                 sizeof(calendar_t));
+    td->trip_active_orig = (calendar_t *) malloc(sizeof(calendar_t) * td->n_trips);
 
-    td->journey_pattern_active_orig = (calendar_t *) malloc(td->n_trips *
-                                                  sizeof(calendar_t));
+    td->journey_pattern_active_orig = (calendar_t *) malloc(sizeof(calendar_t) * td->n_trips);
 
     memcpy (td->trip_active_orig, td->trip_active,
-            td->n_trips * sizeof(calendar_t));
+            sizeof(calendar_t) * td->n_trips);
 
     memcpy (td->journey_pattern_active_orig, td->journey_pattern_active,
-            td->n_journey_patterns * sizeof(calendar_t));
+            sizeof(calendar_t) * td->n_journey_patterns);
 
     if (!td->rt_journey_patterns_at_stop) return false;
 
@@ -660,9 +658,9 @@ void tdata_clear_gtfsrt (tdata_t *tdata) {
         tdata_realtime_free_trip_index (tdata, i_trip_index);
     }
     memcpy (tdata->trip_active, tdata->trip_active_orig,
-            tdata->n_trips * sizeof(calendar_t));
+            sizeof(calendar_t) * tdata->n_trips);
     memcpy (tdata->journey_pattern_active, tdata->journey_pattern_active_orig,
-            tdata->n_trips * sizeof(calendar_t));
+            sizeof(calendar_t) * tdata->n_trips);
 }
 
 #else
