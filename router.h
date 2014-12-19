@@ -73,6 +73,9 @@ struct router {
     /* Used to track which journey_patterns might have changed during each round */
     BitSet *updated_journey_patterns;
 
+    /* Used to track to which stops we changed the walk_time during each round */
+    BitSet *updated_walk_stops;
+
 #ifdef RRRR_BANNED_JOURNEY_PATTERNS_BITMASK
     /* Used to ban journey_patterns and in the final clockwise search optimise */
     BitSet *banned_journey_patterns;

@@ -51,6 +51,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
                                                (tdata->n_stops *
                                                 RRRR_DEFAULT_MAX_ROUNDS));
     router->updated_stops  = bitset_new(tdata->n_stops);
+    router->updated_walk_stops  = bitset_new(tdata->n_stops);
     router->updated_journey_patterns = bitset_new(tdata->n_journey_patterns);
 
 #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
@@ -60,6 +61,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     if ( ! (router->best_time
             && router->states
             && router->updated_stops
+            && router->updated_walk_stops
             && router->updated_journey_patterns
 #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
             && router->banned_journey_patterns
@@ -81,6 +83,7 @@ void router_teardown(router_t *router) {
     free(router->best_time);
     free(router->states);
     bitset_destroy(router->updated_stops);
+    bitset_destroy(router->updated_walk_stops);
     bitset_destroy(router->updated_journey_patterns);
 
 #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
@@ -175,12 +178,6 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
     return true;
 }
-
-
-
-/* TODO? flag_journey_patterns_for_stop all at once after doing transfers?
- * this would require another stops bitset for transfer target stops.
- */
 
 /* Given a stop index, mark all journey_patterns that serve it as updated. */
 static void flag_journey_patterns_for_stop(router_t *router, router_request_t *req,
@@ -423,7 +420,7 @@ void apply_transfers (router_t *router, router_request_t *req,
             state_from->walk_time = time_from;
             state_from->walk_from = stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
-            flag_journey_patterns_for_stop(router, req, stop_index_from);
+            bitset_set(router->updated_walk_stops, stop_index_from);
         }
 
         if (transfer) {
@@ -480,10 +477,16 @@ void apply_transfers (router_t *router, router_request_t *req,
                 state_to->walk_time = time_to;
                 state_to->walk_from = stop_index_from;
                 router->best_time[stop_index_to] = time_to;
-                flag_journey_patterns_for_stop(router, req, stop_index_to);
+                bitset_set(router->updated_walk_stops, stop_index_to);
             }
         }
         }
+    }
+
+    for (stop_index_from  = bitset_next_set_bit (router->updated_walk_stops, 0);
+         stop_index_from != BITSET_NONE;
+         stop_index_from  = bitset_next_set_bit (router->updated_walk_stops, stop_index_from + 1)) {
+        flag_journey_patterns_for_stop(router, req, stop_index_from);
     }
 
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -492,6 +495,7 @@ void apply_transfers (router_t *router, router_request_t *req,
 
     /* Done with all transfers, reset stop-reached bits for the next round */
     bitset_clear (router->updated_stops);
+    bitset_clear (router->updated_walk_stops);
     /* Check invariant: Every stop reached in this round should have a
      * best time equal to its walk time, and
      * a walk arrival time <= its ride arrival time.
