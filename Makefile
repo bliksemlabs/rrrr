@@ -41,6 +41,6 @@ all:
 	$(CC) -lm -lprotobuf-c -o cli -Wextra -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_alerts.c tdata_realtime_expanded.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c
 
 clean:
-	rm *.o gtfs-realtime.pb-c.c gtfs-realtime.pb-c.h
+	rm cli *.o gtfs-realtime.pb-c.c gtfs-realtime.pb-c.h
 
 
