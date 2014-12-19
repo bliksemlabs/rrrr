@@ -3,7 +3,7 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
-/* list.h */
+/* linkedlist.h */
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,10 +11,10 @@
 typedef struct list_node {
     struct list_node *next;
     void *payload;
-} ListNode;
+} listnode_t;
 
 typedef struct {
-    ListNode *head;
-    ListNode *tail;
+    listnode_t *head;
+    listnode_t *tail;
     uint32_t size;
-} LinkedList;
+} linkedlist_t;

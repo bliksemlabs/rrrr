@@ -21,7 +21,7 @@ ios:
 all:
 	protoc-c --c_out=. gtfs-realtime.proto
 	$(CC) -c -Wextra -Wall -ansi -pedantic util.c
-	$(CC) -c -Wextra -Wall -ansi -pedantic list.c
+	$(CC) -c -Wextra -Wall -ansi -pedantic linkedlist.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic bitset.c
 	$(CC) -DRRRR_BITSET_64  -c -Wextra -Wall -ansi -pedantic bitset.c
 	$(CC) -DRRRR_BITSET_128 -c -Wextra -Wall -std=c99 bitset.c
