@@ -88,7 +88,7 @@ struct router {
     serviceday_t servicedays[3];
 
 #ifdef RRRR_FEATURE_LATLON
-    HashGrid hg;
+    hashgrid_t hg;
 #endif
     /* TODO: We should move more routing state in here,
      * like round and sub-scratch pointers.

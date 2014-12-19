@@ -209,7 +209,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
 
     #ifdef RRRR_FEATURE_LATLON
     if ((req->arrive_by ? req->from == STOP_NONE : req->to == STOP_NONE)) {
-        HashGridResult *hg_result;
+        hashgrid_result_t *hg_result;
         uint32_t stop_index;
         double distance;
         rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
@@ -220,13 +220,13 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             hg_result = &req->to_hg_result;
         }
 
-        HashGridResult_reset(hg_result);
+        hashgrid_result_reset(hg_result);
 
         #ifdef RRRR_DEBUG
         fprintf (stderr, "Reversal - Hashgrid results:\n");
         #endif
 
-        stop_index = HashGridResult_next_filtered(hg_result, &distance);
+        stop_index = hashgrid_result_next_filtered(hg_result, &distance);
 
         while (stop_index != HASHGRID_NONE) {
             rtime_t extra_walktime = 0;
@@ -258,7 +258,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             #endif
 
             /* get the next potential start stop */
-            stop_index = HashGridResult_next_filtered(hg_result, &distance);
+            stop_index = hashgrid_result_next_filtered(hg_result, &distance);
         }
 
         if (req->arrive_by) {

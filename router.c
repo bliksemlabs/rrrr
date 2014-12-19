@@ -37,7 +37,7 @@ static bool router_setup_hashgrid(router_t *router) {
                           router->tdata->stop_coords + i_stop);
     } while(i_stop);
 
-    HashGrid_init (&router->hg, 100, 500.0, coords, router->tdata->n_stops);
+    hashgrid_init (&router->hg, 100, 500.0, coords, router->tdata->n_stops);
     free(coords);
 
     return true;
@@ -91,7 +91,7 @@ void router_teardown(router_t *router) {
 #endif
 
 #ifdef RRRR_FEATURE_LATLON
-    HashGrid_teardown (&router->hg);
+    hashgrid_teardown (&router->hg);
 #endif
 }
 
@@ -692,12 +692,12 @@ static bool initialize_target_index (router_t *router, router_request_t *req) {
 
 #ifdef RRRR_FEATURE_LATLON
 static bool latlon_best_stop_index(router_t *router, router_request_t *req,
-                                   HashGridResult *hg_result) {
+                                   hashgrid_result_t *hg_result) {
     double distance, best_distance = INFINITY;
     uint32_t stop_index, best_stop_index = HASHGRID_NONE;
 
-    HashGridResult_reset(hg_result);
-    stop_index = HashGridResult_next_filtered(hg_result, &distance);
+    hashgrid_result_reset(hg_result);
+    stop_index = hashgrid_result_next_filtered(hg_result, &distance);
 
     while (stop_index != HASHGRID_NONE) {
         uint32_t i_state;
@@ -755,7 +755,7 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
         #endif
 
         /* get the next potential start stop */
-        stop_index = HashGridResult_next_filtered(hg_result, &distance);
+        stop_index = hashgrid_result_next_filtered(hg_result, &distance);
     }
 
     router->origin = best_stop_index;
@@ -780,7 +780,7 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
         if (req->to_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
-            HashGrid_query (&router->hg, &req->to_hg_result,
+            hashgrid_query (&router->hg, &req->to_hg_result,
                             coord, req->walk_max_distance);
         }
         return latlon_best_stop_index (router, req, &req->to_hg_result);
@@ -793,7 +793,7 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
         if (req->from_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
-            HashGrid_query (&router->hg, &req->from_hg_result,
+            hashgrid_query (&router->hg, &req->from_hg_result,
                             coord, req->walk_max_distance);
         }
         return latlon_best_stop_index (router, req, &req->from_hg_result);
@@ -812,11 +812,11 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
         if (req->from_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
-            HashGrid_query (&router->hg, &req->from_hg_result,
+            hashgrid_query (&router->hg, &req->from_hg_result,
                             coord, req->walk_max_distance);
         }
-        HashGridResult_reset (&req->from_hg_result);
-        router->target = HashGridResult_closest (&req->from_hg_result);
+        hashgrid_result_reset (&req->from_hg_result);
+        router->target = hashgrid_result_closest (&req->from_hg_result);
     } else {
         if (req->to_latlon.lat == 0.0 &&
             req->to_latlon.lon == 0.0) {
@@ -826,11 +826,11 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
         if (req->to_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
-            HashGrid_query (&router->hg, &req->to_hg_result,
+            hashgrid_query (&router->hg, &req->to_hg_result,
                             coord, req->walk_max_distance);
         }
-        HashGridResult_reset (&req->to_hg_result);
-        router->target = HashGridResult_closest (&req->to_hg_result);
+        hashgrid_result_reset (&req->to_hg_result);
+        router->target = hashgrid_result_closest (&req->to_hg_result);
     }
 
     return (router->target != STOP_NONE);

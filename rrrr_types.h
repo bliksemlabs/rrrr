@@ -75,15 +75,15 @@ struct router_request {
 #ifdef RRRR_FEATURE_LATLON
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
-    HashGridResult from_hg_result;
+    hashgrid_result_t from_hg_result;
 
     /* actual destination in wgs84 presented to the planner */
     latlon_t to_latlon;
-    HashGridResult to_hg_result;
+    hashgrid_result_t to_hg_result;
 
     /* actual intermediate in wgs84 presented to the planner */
     latlon_t via_latlon;
-    HashGridResult via_hg_result;
+    hashgrid_result_t via_hg_result;
 #endif
     /* (nearest) start stop index from the users perspective */
     spidx_t from;
