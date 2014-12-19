@@ -6,8 +6,8 @@ START_TEST (test_bitset)
     {
         uint32_t i;
         uint32_t max = 50000;
-        BitSet *bs = bitset_new(max);
-        BitSet *bs_inv = bitset_new(max);
+        bitset_t *bs = bitset_new(max);
+        bitset_t *bs_inv = bitset_new(max);
 
         for (i = 0; i < 50000; i += 2)
             bitset_set(bs, i);
@@ -71,7 +71,7 @@ START_TEST (test_bitset)
 END_TEST
 
 Suite *make_bitset_suite(void) {
-    Suite *s = suite_create("BitSet");
+    Suite *s = suite_create("bitset_t");
     TCase *tc_core = tcase_create("Core");
     tcase_add_test  (tc_core, test_bitset);
     suite_add_tcase(s, tc_core);
