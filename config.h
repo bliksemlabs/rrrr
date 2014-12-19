@@ -43,4 +43,14 @@
 #define RRRR_TDATA_IO_DYNAMIC 1
 #endif
 
+
+/* roughly the length of common prefixes in IDs */
+#define RRRR_RADIXTREE_PREFIX_SIZE 4
+
+/* with prefix size of 4 and -m32, edge size is 16 bytes, total 11.9MB
+ * with prefix size of 4 and -m64, edge size is 24 bytes, total 17.8MB
+ * total size of all ids is 15.6 MB
+ * could use int indexes into a fixed-size, pre-allocated edge pool.
+ */
+
 #endif

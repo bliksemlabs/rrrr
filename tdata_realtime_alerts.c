@@ -53,11 +53,11 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             if (!informed_entity) continue;
 
             if (informed_entity->route_id) {
-                uint32_t jp_index = rxt_find (tdata->lineid_index,
-                                                 informed_entity->route_id);
+                uint32_t jp_index = radixtree_find (tdata->lineid_index,
+                                                    informed_entity->route_id);
                 /*TODO This only applies the alert to one of the journey_patterns in the line/route.*/
                 #ifdef RRRR_DEBUG
-                if (jp_index == RADIX_TREE_NONE) {
+                if (jp_index == RADIXTREE_NONE) {
                      fprintf (stderr,
                      "    route id was not found in the radix tree.\n");
                 }
@@ -67,10 +67,10 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             }
 
             if (informed_entity->stop_id) {
-                uint32_t stop_index = rxt_find (tdata->stopid_index,
-                                                informed_entity->stop_id);
+                uint32_t stop_index = radixtree_find (tdata->stopid_index,
+                                                      informed_entity->stop_id);
                 #ifdef RRRR_DEBUG
-                if (stop_index == RADIX_TREE_NONE) {
+                if (stop_index == RADIXTREE_NONE) {
                      fprintf (stderr,
                      "    stop id was not found in the radix tree.\n");
                 }
@@ -80,10 +80,10 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             }
 
             if (informed_entity->trip && informed_entity->trip->trip_id) {
-                uint32_t trip_index = rxt_find (tdata->tripid_index,
-                                                informed_entity->trip->trip_id);
+                uint32_t trip_index = radixtree_find (tdata->tripid_index,
+                                                      informed_entity->trip->trip_id);
                 #ifdef RRRR_DEBUG
-                if (trip_index == RADIX_TREE_NONE) {
+                if (trip_index == RADIXTREE_NONE) {
                     fprintf (stderr,
                     "    trip id was not found in the radix tree.\n");
                 }

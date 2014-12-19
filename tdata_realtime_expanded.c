@@ -174,9 +174,9 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *trip_ids,
         tdata->trips_in_journey_pattern[trip_index] = tdata->n_journey_patterns;
         trip_index++;
 
-        rxt_insert(tdata->lineid_index,
-                   &trip_ids[i_trip * tdata->trip_ids_width],
-                   tdata->n_journey_patterns);
+        radixtree_insert(tdata->lineid_index,
+                         &trip_ids[i_trip * tdata->trip_ids_width],
+                         tdata->n_journey_patterns);
     }
 
     /* housekeeping in tdata: increment for each new element */
@@ -208,7 +208,7 @@ void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t t
             char *stop_id = rt_stop_time_update->stop_id;
             if (stop_id) {
 
-                uint32_t stop_index = rxt_find (tdata->stopid_index, stop_id);
+                uint32_t stop_index = radixtree_find (tdata->stopid_index, stop_id);
                 if (tdata->journey_pattern_points[journey_pattern_point_offset] != stop_index &&
                     tdata->journey_pattern_points[journey_pattern_point_offset] != NONE) {
                     tdata_rt_journey_patterns_at_stop_remove(tdata, tdata->journey_pattern_points[journey_pattern_point_offset], jp_index);
@@ -252,9 +252,9 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t trip
     trip_id_new[0] = '@';
     strncpy(&trip_id_new[1], rt_trip->trip_id, tdata->trip_ids_width - 1);
 
-    jp_index = rxt_find (tdata->lineid_index, trip_id_new);
+    jp_index = radixtree_find (tdata->lineid_index, trip_id_new);
 
-    if (jp_index != RADIX_TREE_NONE) {
+    if (jp_index != RADIXTREE_NONE) {
         /* Fixes the case where a trip changes a second time */
         jp_new = &tdata->journey_patterns[jp_index];
         if (jp_new->n_stops != n_stops) {
@@ -379,7 +379,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_inde
 
         rt_stop_time_update = rt_trip_update->stop_time_update[i_stu];
         stop_id = rt_stop_time_update->stop_id;
-        stop_index = rxt_find (tdata->stopid_index, stop_id);
+        stop_index = radixtree_find (tdata->stopid_index, stop_id);
 
 
         if (journey_pattern_points[rs] == stop_index) {
@@ -529,8 +529,8 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
             if (rt_trip == NULL) continue;
 
-            trip_index = rxt_find (tdata->tripid_index, rt_trip->trip_id);
-            if (trip_index == RADIX_TREE_NONE) {
+            trip_index = radixtree_find (tdata->tripid_index, rt_trip->trip_id);
+            if (trip_index == RADIXTREE_NONE) {
                 #ifdef RRRR_DEBUG
                 fprintf (stderr, "    trip id was not found in the radix tree.\n");
                 #endif

@@ -170,9 +170,9 @@ struct tdata {
     uint32_t trip_ids_width;
     char *trip_ids;
     #ifdef RRRR_FEATURE_REALTIME
-    RadixTree *lineid_index;
-    RadixTree *stopid_index;
-    RadixTree *tripid_index;
+    radixtree_t *lineid_index;
+    radixtree_t *stopid_index;
+    radixtree_t *tripid_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     stoptime_t **trip_stoptimes;
     uint32_t *trips_in_journey_pattern;
