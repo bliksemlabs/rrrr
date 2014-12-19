@@ -343,8 +343,8 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
-        tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
+        tdata.stopid_index = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
+        tdata.tripid_index = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
         tdata.lineid_index = rxt_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 
         #ifdef RRRR_FEATURE_REALTIME_ALERTS
@@ -507,8 +507,8 @@ clean_exit:
     router_teardown (&router);
 
     #ifdef RRRR_FEATURE_REALTIME
-    if (tdata.stopid_index)  rxt_destroy (tdata.stopid_index);
-    if (tdata.tripid_index)  rxt_destroy (tdata.tripid_index);
+    if (tdata.stopid_index) rxt_destroy (tdata.stopid_index);
+    if (tdata.tripid_index) rxt_destroy (tdata.tripid_index);
     if (tdata.lineid_index) rxt_destroy (tdata.lineid_index);
     #endif
 
