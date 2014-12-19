@@ -44,7 +44,7 @@ static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
 static uint32_t ybin (hashgrid_t *hg, coord_t *coord) {
     uint32_t y = (uint32_t) abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
-    #ifdef DEBUG
+    #ifdef RRRR_DEBUG
     fprintf(stderr, "binning y coord %d, bin is %d \n", coord->y, y);
     #endif
     return y;
@@ -104,7 +104,7 @@ uint32_t hashgrid_result_next (hashgrid_result_t *r) {
     }
 
     ret_item = r->hg->bins[r->y * r->hg->grid_dim + r->x][r->i];
-    #ifdef DEBUG
+    #ifdef RRRR_DEBUG
     printf ("x=%d y=%d i=%d item=%d ", r->x, r->y, r->i, ret_item);
     #endif
     return ret_item;
@@ -200,7 +200,7 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
         /* Count the number of items that will fall into each bin. */
         uint32_t i_coord;
         for (i_coord = 0; i_coord < n_items; ++i_coord) {
-            #ifdef DEBUG
+            #ifdef RRRR_DEBUG
             fprintf(stderr, "binning coordinate x=%d y=%d \n",
                             (coords + i_coord)->x, (coords + i_coord)->y);
             #endif
