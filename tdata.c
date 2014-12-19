@@ -201,7 +201,7 @@ bool tdata_load(tdata_t *td, char *filename) {
     /* This is probably a bit slow and is not strictly necessary,
      * but does page in all the timetable entries.
      */
-    #ifdef RRRR_DEBUG
+    #ifdef RRRR_STRICT
     return tdata_validation_check_coherent(td);
     #else
     return true;
