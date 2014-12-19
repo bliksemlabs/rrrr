@@ -38,8 +38,8 @@ set(SOURCE_FILES
     gtfs-realtime.pb-c.h
     hashgrid.c
     hashgrid.h
-    list.c
-    list.h
+    linkedlist.c
+    linkedlist.h
     radixtree.c
     radixtree.h
     router.c
