@@ -36,8 +36,24 @@ static struct rxt_edge *rxt_edge_new () {
     return e;
 }
 
+static void rxt_init(RadixTree *self) {
+    self->root = rxt_edge_new();
+    self->base = NULL;
+    self->size = 0;
+}
+
 RadixTree *rxt_new () {
-    return rxt_edge_new();
+    RadixTree *r = (RadixTree *) malloc(sizeof(RadixTree));
+    if (r == NULL)  return NULL;
+
+    rxt_init(r);
+
+    if (r->root == NULL) {
+        free(r);
+        return NULL;
+    }
+
+    return r;
 }
 
 static uint32_t edge_prefix_length (struct rxt_edge *e) {
@@ -53,9 +69,9 @@ static uint32_t edge_prefix_length (struct rxt_edge *e) {
 /* Insert a string-to-int mapping into the prefix tree.
  * Uses tail recursion, not actual recursive function calls.
  */
-bool rxt_insert (struct rxt_edge *root, const char *key, uint32_t value) {
+bool rxt_insert (RadixTree *r, const char *key, uint32_t value) {
     const char *k = key;
-    struct rxt_edge *e = root;
+    struct rxt_edge *e = r->root;
 
     /* Loop over edges labeled to continuation from within nested loops. */
     tail_recurse: while (e != NULL) {
@@ -195,9 +211,9 @@ bool rxt_insert (struct rxt_edge *root, const char *key, uint32_t value) {
     /* should never happen unless allocation fails, giving a NULL next edge. */
 }
 
-uint32_t rxt_find (struct rxt_edge *root, const char *key) {
+uint32_t rxt_find (RadixTree *r, const char *key) {
     const char *k = key;
-    struct rxt_edge *e = root;
+    struct rxt_edge *e = r->root;
     while (e != NULL) {
         const char *p = e->prefix;
         if (*k == *p) { /* we have a match, consume some characters */
@@ -271,11 +287,16 @@ void rxt_compress (struct rxt_edge *root) {
 }
 
 RadixTree *rxt_load_strings_from_file (char *filename) {
-    RadixTree *root = NULL;
-    char *strings, *strings_end, *s;
+    RadixTree *r;
+    char *strings_end, *s;
     struct stat st;
     uint32_t idx;
     int fd;
+
+    r = rxt_new();
+    if (r == NULL) {
+        return r;
+    }
 
     fd = open(filename, O_RDONLY);
     if (fd == -1) die("could not find input file.");
@@ -285,19 +306,22 @@ RadixTree *rxt_load_strings_from_file (char *filename) {
         goto clean_fd;
     }
 
-    strings = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (strings == MAP_FAILED) {
+    r->base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    r->size = st.st_size;
+    if (r->base == MAP_FAILED) {
         die("Could not map radixtree input file.\n");
         goto clean_fd;
     }
 
-    strings_end = strings + st.st_size;
-    s = strings;
+    strings_end = (char *) r->base + r->size;
+    s = (char *) r->base;
     idx = 0;
-    root = rxt_new ();
+
+    #ifdef RRRR_DEBUG
     fprintf (stderr, "Indexing strings...\n");
+    #endif
     while (s < strings_end) {
-        rxt_insert (root, s, idx);
+        rxt_insert (r, s, idx);
         while(*(s++) != '\0') { }
         idx += 1;
     }
@@ -311,11 +335,11 @@ clean_fd:
     fprintf (stderr, "total size of all edges: %ld\n",
                      edge_count(root) * sizeof(struct rxt_edge));
     */
-    return root;
+    return r;
 }
 
 RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t length) {
-    RadixTree *root = rxt_new ();
+    RadixTree *r = rxt_new ();
     char *strings_end = strings + (width * length);
     char *s = strings;
     uint32_t idx = 0;
@@ -323,7 +347,7 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     fprintf (stderr, "Indexing strings...\n");
     #endif
     while (s < strings_end) {
-        rxt_insert (root, s, idx);
+        rxt_insert (r, s, idx);
         s += width;
         idx += 1;
     }
@@ -335,7 +359,7 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
     fprintf (stderr, "total size of all edges: %ld\n",
                      edge_count(root) * sizeof(struct rxt_edge));
     #endif
-    return root;
+    return r;
 }
 
 static void rxt_edge_free (struct rxt_edge *e) {
@@ -347,8 +371,13 @@ static void rxt_edge_free (struct rxt_edge *e) {
     free(e);
 }
 
-void rxt_destroy (RadixTree *root) {
-    rxt_edge_free (root);
+void rxt_destroy (RadixTree *r) {
+    if (r == NULL) return;
+
+    rxt_edge_free (r->root);
+    if (r->base) munmap(r->base, r->size);
+
+    free(r);
 }
 
 #ifdef RRRR_DEBUG

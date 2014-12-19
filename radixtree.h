@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /* roughly the length of common prefixes in IDs */
 #define RADIX_TREE_PREFIX_SIZE 4
@@ -37,10 +38,12 @@ struct rxt_edge {
     char prefix[RADIX_TREE_PREFIX_SIZE];
 };
 
-/* TODO probably better to have two different structs for clarity
- * TODO Andrew what do you mean?
- */
-typedef struct rxt_edge RadixTree;
+typedef struct radixtree_s RadixTree;
+struct radixtree_s {
+    struct rxt_edge *root;
+    void *base;
+    size_t size;
+};
 
 RadixTree *rxt_load_strings_from_file (char *filename);
 
@@ -48,11 +51,11 @@ RadixTree *rxt_load_strings_from_tdata (char *strings, uint32_t width, uint32_t 
 
 RadixTree *rxt_new ();
 
-void rxt_destroy (RadixTree *root);
+void rxt_destroy (RadixTree *r);
 
-bool rxt_insert (struct rxt_edge *root, const char *key, uint32_t value);
+bool rxt_insert (RadixTree *r, const char *key, uint32_t value);
 
-uint32_t rxt_find (struct rxt_edge *root, const char *key);
+uint32_t rxt_find (RadixTree *r, const char *key);
 
 #ifdef RRRR_DEBUG
 uint32_t rxt_edge_count (struct rxt_edge *e);
