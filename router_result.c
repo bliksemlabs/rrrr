@@ -140,15 +140,15 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             state = router->states + (((uint8_t) j_transfer) * router->tdata->n_stops);
 
             if (stop > router->tdata->n_stops) {
-                printf ("ERROR: stopid %d out of range.\n", stop);
-                break;
+                fprintf (stderr, "ERROR: stopid %d out of range.\n", stop);
+                return false;
             }
 
             /* Walk phase */
             walk = state + stop;
             if (walk->walk_time == UNREACHED) {
-                printf ("ERROR: stop %d was unreached by walking.\n", stop);
-                break;
+                fprintf (stderr, "ERROR: stop %d was unreached by walking.\n", stop);
+                return false;
             }
             walk_stop = stop;
             stop = walk->walk_from;  /* follow the chain of states backward */
@@ -156,8 +156,8 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             /* Ride phase */
             ride = state + stop;
             if (ride->time == UNREACHED) {
-                printf ("ERROR: stop %d was unreached by riding.\n", stop);
-                break;
+                fprintf (stderr, "ERROR: stop %d was unreached by riding.\n", stop);
+                return false;
             }
             ride_stop = stop;
             stop = ride->ride_from;  /* follow the chain of states backward */
