@@ -231,18 +231,19 @@ uint32_t radixtree_find (radixtree_t *r, const char *key) {
 }
 
 radixtree_t *radixtree_load_strings_from_file (char *filename) {
-    radixtree_t *r = radixtree_new();
+    radixtree_t *r;
     char *strings_end, *s;
     struct stat st;
     uint32_t idx;
     int fd;
 
+    r = radixtree_new();
     if (r == NULL) return NULL;
 
     fd = open(filename, O_RDONLY);
     if (fd == -1) {
         fprintf(stderr, "The input file %s could not be found.\n", filename);
-        return NULL;
+        goto fail_free_r;
     }
 
     if (stat(filename, &st) == -1) {
@@ -259,15 +260,19 @@ radixtree_t *radixtree_load_strings_from_file (char *filename) {
         goto fail_close_fd;
     }
     #else
-    r->base = malloc(st.st_size);
+    r->base = malloc(st.st_size + 1);
     if (r->base == NULL) {
         fprintf(stderr, "Could not allocate memomry to store %s.\n", filename);
         goto fail_close_fd;
-    }
-    if (read (fd, r->base, r->size) != (ssize_t) r->size) {
-        free (r->base);
-        r->base = NULL;
-        goto fail_close_fd;
+    } else {
+        ssize_t len = read (fd, r->base, r->size);
+        ((char *) r->base)[len] = '\0';
+
+        if (len != (ssize_t) r->size)  {
+            free (r->base);
+            r->base = NULL;
+            goto fail_close_fd;
+        }
     }
     #endif
 
@@ -302,6 +307,8 @@ radixtree_t *radixtree_load_strings_from_file (char *filename) {
 
 fail_close_fd:
     close(fd);
+
+fail_free_r:
     free(r);
 
     return NULL;
