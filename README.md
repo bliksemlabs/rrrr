@@ -54,3 +54,8 @@ Using make:
 ```bash
 make clean && make && ./cli
 ```
+
+Building RRRR for mobile development
+------------------------------------
+
+Refer to the Makefile for which files are required as the bare minimum. We do suggest that you explicitly read config.h to disable all unused functionality.
