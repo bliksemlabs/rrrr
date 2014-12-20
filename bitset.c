@@ -21,10 +21,6 @@ static void bitset_init(bitset_t *self, uint32_t capacity) {
     /* round upwards */
     self->n_chunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
     self->chunks = (bits_t *) calloc(self->n_chunks, sizeof(bits_t));
-    if (self->chunks == NULL) {
-        fprintf(stderr, "bitset chunk allocation failure.");
-        exit(1);
-    }
 }
 
 /* Allocate a new bitset of the specified capacity,
@@ -32,8 +28,14 @@ static void bitset_init(bitset_t *self, uint32_t capacity) {
  */
 bitset_t *bitset_new(uint32_t capacity) {
     bitset_t *bs = (bitset_t *) malloc(sizeof(bitset_t));
-    if (bs != NULL)
-        bitset_init(bs, capacity);
+    if (bs == NULL) return NULL;
+
+    bitset_init(bs, capacity);
+    if (bs->chunks == NULL) {
+        fprintf(stderr, "bitset chunk allocation failure.");
+        free (bs);
+        return NULL;
+    }
 
     return bs;
 }
