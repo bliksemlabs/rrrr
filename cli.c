@@ -347,6 +347,14 @@ int main (int argc, char *argv[]) {
         tdata.tripid_index = radixtree_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
         tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 
+        /* Validate the radixtrees are actually created. */
+        if (!(tdata.stopid_index &&
+              tdata.tripid_index &&
+              tdata.lineid_index)) {
+            status = EXIT_FAILURE;
+            goto clean_exit;
+        }
+
         #ifdef RRRR_FEATURE_REALTIME_ALERTS
         if (cli_args.gtfsrt_alerts_filename != NULL) {
             tdata_apply_gtfsrt_alerts_file (&tdata, cli_args.gtfsrt_alerts_filename);
