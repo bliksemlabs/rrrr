@@ -203,7 +203,7 @@ class VehicleJourney:
         if len(self.points) == 0:
             self.departure_time = departure_time
             self.timedemandgroup.append(TimeDemandGroupPoint(0,0))
-            foralighting = False # Do not allow boarding at first stop
+            foralighting = False # Do not allow alighting at first stop
         else:
             drivetime,totaldrivetime = (arrival_time-self.departure_time,departure_time-self.departure_time)
             if drivetime < self.timedemandgroup[-1].totaldrivetime:
