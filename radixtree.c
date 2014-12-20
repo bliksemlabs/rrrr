@@ -4,6 +4,7 @@
  */
 
 #include "radixtree.h"
+#include "config.h"
 
 /* All nodes are identical in size, allowing use with no dynamic allocation
  * (in a contiguous block of memory). Only supports insertion and retrieval,
@@ -249,12 +250,26 @@ radixtree_t *radixtree_load_strings_from_file (char *filename) {
         goto fail_close_fd;
     }
 
-    r->base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     r->size = st.st_size;
+
+    #if defined(RRRR_TDATA_IO_MMAP)
+    r->base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (r->base == MAP_FAILED) {
         fprintf(stderr, "The input file %s could not be mapped.\n", filename);
         goto fail_close_fd;
     }
+    #else
+    r->base = malloc(st.st_size);
+    if (r->base == NULL) {
+        fprintf(stderr, "Could not allocate memomry to store %s.\n", filename);
+        goto fail_close_fd;
+    }
+    if (read (fd, r->base, r->size) != (ssize_t) r->size) {
+        free (r->base);
+        r->base = NULL;
+        goto fail_close_fd;
+    }
+    #endif
 
     strings_end = (char *) r->base + r->size;
     s = (char *) r->base;
@@ -330,7 +345,12 @@ void radixtree_destroy (radixtree_t *r) {
     if (r == NULL) return;
 
     rxt_edge_free (r->root);
+
+    #if defined(RRRR_TDATA_IO_MMAP)
     if (r->base) munmap(r->base, r->size);
+    #else
+    if (r->base) free (r->base);
+    #endif
 
     free(r);
 }
