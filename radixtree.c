@@ -22,7 +22,7 @@
 
 static struct rxt_edge *rxt_edge_new () {
     struct rxt_edge *e = (struct rxt_edge *) malloc(sizeof(struct rxt_edge));
-    if (e == NULL) return e;
+    if (e == NULL) return NULL;
 
     e->next = NULL;
     e->child = NULL;
@@ -39,7 +39,7 @@ static void rxt_init(radixtree_t *self) {
 
 radixtree_t *radixtree_new () {
     radixtree_t *r = (radixtree_t *) malloc(sizeof(radixtree_t));
-    if (r == NULL)  return NULL;
+    if (r == NULL) return NULL;
 
     rxt_init(r);
 
