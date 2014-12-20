@@ -23,13 +23,17 @@
 #define load_dynamic(fd, storage, type) \
     td->n_##storage = header->n_##storage; \
     td->storage = (type*) malloc (sizeof(type) * RRRR_DYNAMIC_SLACK * (td->n_##storage + 1)); \
-    if (lseek (fd, header->loc_##storage, SEEK_SET) != -1 && read (fd, td->storage, sizeof(type) * (td->n_##storage + 1)) != (ssize_t) (sizeof(type) * (td->n_##storage + 1))) goto fail_close_fd;
+    if (lseek (fd, header->loc_##storage, SEEK_SET) == -1) goto fail_close_fd; \
+    if (read (fd, td->storage, sizeof(type) * (td->n_##storage + 1)) != (ssize_t) (sizeof(type) * (td->n_##storage + 1))) goto fail_close_fd;
 
 #define load_dynamic_string(fd, storage) \
     td->n_##storage = header->n_##storage; \
-    if (lseek (fd, header->loc_##storage, SEEK_SET) != -1 && read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) goto fail_close_fd; \
-    td->storage = (char*) malloc (sizeof(char) * RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width); \
-    if (read (fd, td->storage, sizeof(char) * td->n_##storage * td->storage##_width) != (ssize_t) (sizeof(char) * td->n_##storage * td->storage##_width)) goto fail_close_fd;
+    if (lseek (fd, header->loc_##storage, SEEK_SET) == -1) goto fail_close_fd; \
+    if (read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) goto fail_close_fd; \
+    if (!(td->storage##_width > 0 && td->storage##_width < UINT16_MAX)) goto fail_close_fd; \
+    td->storage = (char*) malloc (((uint64_t) sizeof(char)) * RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width); \
+    if (!td->storage) goto fail_close_fd; \
+    if (read (fd, td->storage, ((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width) != (ssize_t) (((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width)) goto fail_close_fd;
 
 bool tdata_io_v3_load(tdata_t *td, char *filename) {
     tdata_header_t h;
@@ -50,6 +54,37 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     if( strncmp("TTABLEV3", header->version_string, 8) ) {
         fprintf(stderr, "The input file %s does not appear to be a timetable or is of the wrong version.\n", filename);
+        goto fail_close_fd;
+    }
+
+    /* More input validation in the dynamic loading case. */
+    if ( !( header->n_stops < ((spidx_t) -2) &&
+            header->n_stop_attributes < ((spidx_t) -2) &&
+            header->n_stop_coords < ((spidx_t) -2) &&
+            header->n_journey_patterns < (UINT32_MAX - 1) &&
+            header->n_journey_pattern_points < (UINT32_MAX) &&
+            header->n_journey_pattern_point_attributes < (UINT32_MAX) &&
+            header->n_stop_times < (UINT32_MAX) &&
+            header->n_trips < (UINT32_MAX) &&
+            header->n_journey_patterns_at_stop < (UINT32_MAX) &&
+            header->n_transfer_target_stops < (UINT32_MAX) &&
+            header->n_transfer_dist_meters < (UINT32_MAX) &&
+            header->n_trip_active < (UINT32_MAX) &&
+            header->n_journey_pattern_active < (UINT32_MAX) &&
+            header->n_platformcodes < (UINT32_MAX) &&
+            header->n_stop_names < (UINT32_MAX) &&
+            header->n_stop_nameidx < ((spidx_t) -2) &&
+            header->n_agency_ids < (UINT16_MAX) &&
+            header->n_agency_names < (UINT16_MAX) &&
+            header->n_agency_urls < (UINT16_MAX) &&
+            header->n_headsigns < (UINT32_MAX) &&
+            header->n_line_codes < (UINT16_MAX) &&
+            header->n_productcategories < (UINT16_MAX) &&
+            header->n_line_ids < (UINT32_MAX) &&
+            header->n_stop_ids < ((spidx_t) -2) &&
+            header->n_trip_ids < (UINT32_MAX) ) ) {
+
+        fprintf(stderr, "The input file %s does not appear to be a valid timetable.\n", filename);
         goto fail_close_fd;
     }
 
