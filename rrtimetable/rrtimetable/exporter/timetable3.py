@@ -87,12 +87,6 @@ def export_sp_coords(tdata,index,out):
     for sp in index.stop_points:
         write2floats(out,sp.latitude or 0.0, sp.longitude or 0.0)
 
-def export_sp_attributes(tdata,index,out):
-    write_text_comment(out,"STOP_POINTS ATTR")
-    index.loc_stop_attributes = out.tell()
-    for sp in index.stop_points:
-        writebyte(out,0)
-
 def export_journey_pattern_point_stop(tdata,index,out):
     write_text_comment(out,"JOURNEY_PATTERN_POINT STOP")
     index.loc_journey_pattern_points = tell(out)
