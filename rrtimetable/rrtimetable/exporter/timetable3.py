@@ -182,6 +182,7 @@ def export_transfers(tdata,index,out):
             print (conn.from_stop_point.uri,conn.to_stop_point.uri)
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
             n_connections += 1
+    print index.transfers_offsets
     index.n_connections = n_connections
     print "saving transfer distances (footpaths)"
     write_text_comment(out,"TRANSFER DISTANCES")
@@ -190,7 +191,7 @@ def export_transfers(tdata,index,out):
     for sp in index.stop_points:
         for conn in index.connections_from_stop_point[sp.uri]:
             print (conn.from_stop_point.uri,conn.to_stop_point.uri)
-            writebyte(out,(int(conn.min_transfer_time or 0) + 8) >> 4)
+            writebyte(out,(int(conn.min_transfer_time) >> 2))
 
 def export_stop_indices(tdata,index,out):
     print "saving stop indexes"
