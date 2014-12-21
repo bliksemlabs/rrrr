@@ -57,7 +57,6 @@ def make_idx(tdata):
         if vj.timedemandgroup.uri not in index.idx_for_timedemandgroup_uri:
             index.idx_for_timedemandgroup_uri[vj.timedemandgroup.uri] = len(index.idx_for_timedemandgroup_uri)
             index.timedemandgroups.append(vj.timedemandgroup)
-
         for jpp in vj.journey_pattern.points:
             if jpp.stop_point.uri not in index.idx_for_stop_point_uri:
                 index.idx_for_stop_point_uri[jpp.stop_point.uri] = len(index.stop_points)
@@ -68,12 +67,14 @@ def make_idx(tdata):
             if jpp.stop_point.stop_area.uri not in index.idx_for_stop_area_uri:
                 index.idx_for_stop_point_uri[jpp.stop_point.stop_area.uri] = len(index.stop_areas)
                 index.stop_areas.append(jpp.stop_point.stop_area)
+
     for conn in tdata.connections.values():
         #if conn.from_stop_point.uri not in index.idx_for_stop_point_uri or conn.to_stop_point.uri not in index.idx_for_stop_point_uri:
             #continue #connection to or from unknown stop_point
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
+    print '--------------------------'
     return index
 
 def write_stop_point_idx(out,index,stop_uri):
@@ -102,12 +103,13 @@ def export_jp_attributes(tdata,index,out):
 def export_journey_pattern_point_stop(tdata,index,out):
     write_text_comment(out,"JOURNEY_PATTERN_POINT STOP")
     index.loc_journey_pattern_points = tell(out)
-    index.offset_firstjpp_for_journey_pattern = {}
+    index.offset_jpp = []
     offset = 0
     index.n_jpp = 0
     for jp in index.journey_patterns:
-        index.offset_firstjpp_for_journey_pattern[jp.uri] = offset
+        index.offset_jpp.append(offset)
         for jpp in jp.points:
+            print (jp.uri,jpp.stop_point.uri)
             index.n_jpp += 1
             write_stop_point_idx(out,index,jpp.stop_point.uri)
             offset += 1
@@ -214,7 +216,7 @@ def export_jp_structs(tdata,index,out):
     write_text_comment(out,"ROUTE STRUCTS")
     index.loc_journey_patterns = tell(out)
     route_t = Struct('3I8H')
-    jpp_offsets = [index.offset_firstjpp_for_journey_pattern[jp.uri] for jp in index.journey_patterns]
+    jpp_offsets = index.offset_jpp
     trip_ids_offsets = index.vj_ids_offsets
     jp_attributes = index.offset_jpp_attributes
 
@@ -314,43 +316,46 @@ def export_platform_codes(tdata,index,out):
     index.loc_platformcodes = write_string_table(out,[sp.platformcode or '' for sp in index.stop_points])
 
 def export_stop_point_names(tdata,index,out):
+
     nameloc_for_name = {}
-    nameloc_for_idx = []
-    namesize = 0
+    index.sp_nameloc_for_idx = []
+    index.sp_namesize = 0
+    idx = 0
     for sp in index.stop_points:
         name = sp.name or ''
         if name in nameloc_for_name:
             nameloc = nameloc_for_name[name]
         else:
-            nameloc = namesize
+            nameloc = index.sp_namesize
             nameloc_for_name[name] = nameloc
-            namesize += 1 + len(name)
-    index.sp_namesize = namesize
-    index.sp_nameloc_for_idx_len = len(nameloc_for_idx)
+            index.sp_namesize += 1 + len(name)
+        index.sp_nameloc_for_idx.append(nameloc)
+        idx += 1
+    nstops = idx
+    assert len(index.sp_nameloc_for_idx) == idx
+
     print "writing out stop names to string table"
     write_text_comment(out,"STOP NAME")
     stop_names = sorted(nameloc_for_name.iteritems(), key=operator.itemgetter(1))
     index.loc_stop_names = tell(out)
     for stop_name,nameloc in stop_names:
         assert nameloc == out.tell() - index.loc_stop_names
-        out.write(stop_name+'\0')  
+        out.write(stop_name+'\0')
 
     print "writing out locations for stopnames"
     write_text_comment(out,"STOP NAME LOCATIONS")
     index.loc_stop_nameidx = tell(out)
-    for nameloc in nameloc_for_idx:
+    for nameloc in index.sp_nameloc_for_idx:
         writeint(out,nameloc)
     writeint(out,0)
 
 def export_operators(tdata,index,out):
     print "writing out agencies to string table"
     write_text_comment(out,"OPERATOR IDS")
-    print "writing out agencyIds to string table"
     uris = index.jp_operators
     index.n_operators = len(uris)
     index.loc_operator_ids = write_string_table(out,[index.operators[index.idx_for_operator_uri[uri]].uri for uri in uris])
     write_text_comment(out,"OPERATOR NAMES")
-    print "writing out agencyIds to string table"
     index.loc_operator_names = write_string_table(out,[index.operators[index.idx_for_operator_uri[uri]].name or '' for uri in uris])
     write_text_comment(out,"OPERATOR URLS")
     index.loc_operator_urls = write_string_table(out,[index.operators[index.idx_for_operator_uri[uri]].url or '' for uri in uris])
@@ -384,6 +389,7 @@ def export_sp_uris(tdata,index,out):
     print "writing out sorted stop ids to string table"
     # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
     write_text_comment(out,"STOP IDS")
+    print [sp.uri for sp in index.stop_points]
     index.loc_stop_point_uris = write_string_table(out,[sp.uri for sp in index.stop_points])
 
 def export_vj_uris(tdata,index,out):
@@ -423,7 +429,7 @@ def write_header (out,index) :
         index.n_jp, # n_route_active
         index.n_stops, # n_platformcodes
         index.sp_namesize, # n_stop_names (length of the object)
-        index.sp_nameloc_for_idx_len + 1, # n_stop_nameidx
+        len(index.sp_nameloc_for_idx) + 1, # n_stop_nameidx
         index.n_operators, # n_agency_ids
         index.n_operators, # n_agency_names
         index.n_operators, # n_agency_urls
@@ -460,6 +466,7 @@ def write_header (out,index) :
         index.loc_stop_point_uris,
         index.loc_vj_uris,
     )
+    print 
     out.write(packed)
 
 
@@ -471,7 +478,7 @@ def export(tdata):
     index.dst_mask = 0
     index.calendar_start_time = time.mktime((tdata.validfrom).timetuple())
     index.n_stops = len(index.stop_points)
-    index.n_jp = len(index.stop_points)
+    index.n_jp = len(index.journey_patterns)
     out = open('timetable.dat','wb')
     out.seek(struct_header.size)
 
