@@ -69,8 +69,8 @@ def make_idx(tdata):
                 index.stop_areas.append(jpp.stop_point.stop_area)
 
     for conn in tdata.connections.values():
-        #if conn.from_stop_point.uri not in index.idx_for_stop_point_uri or conn.to_stop_point.uri not in index.idx_for_stop_point_uri:
-            #continue #connection to or from unknown stop_point
+        if conn.from_stop_point.uri not in index.idx_for_stop_point_uri or conn.to_stop_point.uri not in index.idx_for_stop_point_uri:
+            continue #connection to or from unknown stop_point
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
@@ -93,13 +93,6 @@ def export_sp_attributes(tdata,index,out):
     for sp in index.stop_points:
         writebyte(out,0)
 
-def export_jp_attributes(tdata,index,out):
-    print "writing jp attributes" 
-    write_text_comment(out,"JP ATTRIBUTES")
-    index.loc_jp_attributes = tell(out)
-    for jp in index.journey_patterns:
-        writebyte(out,0)
-
 def export_journey_pattern_point_stop(tdata,index,out):
     write_text_comment(out,"JOURNEY_PATTERN_POINT STOP")
     index.loc_journey_pattern_points = tell(out)
@@ -109,7 +102,6 @@ def export_journey_pattern_point_stop(tdata,index,out):
     for jp in index.journey_patterns:
         index.offset_jpp.append(offset)
         for jpp in jp.points:
-            print (jp.uri,jpp.stop_point.uri)
             index.n_jpp += 1
             write_stop_point_idx(out,index,jpp.stop_point.uri)
             offset += 1
@@ -180,7 +172,8 @@ def export_transfers(tdata,index,out):
     for sp in index.stop_points:
         index.transfers_offsets.append(offset)
         for conn in index.connections_from_stop_point[sp.uri]:
-            print (conn.from_stop_point.uri,conn.to_stop_point.uri)
+            if (int(conn.min_transfer_time) >> 2) > 255:
+                continue
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
             offset += 1
     index.transfers_offsets.append(offset) #sentinel
@@ -191,7 +184,8 @@ def export_transfers(tdata,index,out):
 
     for sp in index.stop_points:
         for conn in index.connections_from_stop_point[sp.uri]:
-            print (conn.from_stop_point.uri,conn.to_stop_point.uri)
+            if (int(conn.min_transfer_time) >> 2) > 255:
+                continue
             writebyte(out,(int(conn.min_transfer_time) >> 2))
 
 def export_stop_indices(tdata,index,out):
@@ -219,7 +213,7 @@ def export_jp_structs(tdata,index,out):
     route_t = Struct('3I8H')
     jpp_offsets = index.offset_jpp
     trip_ids_offsets = index.vj_ids_offsets
-    jp_attributes = index.offset_jpp_attributes
+    jp_attributes = []
 
     nroutes = len(index.journey_patterns)
 
@@ -247,8 +241,8 @@ def export_jp_structs(tdata,index,out):
     for jp in index.journey_patterns:
         jp_n_jpp.append(len(jp.points))
         jp_n_vj.append(len(index.vehicle_journeys_in_journey_pattern[jp.uri]))
-        jp_min_time.append(min([vj.departure_time for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]))
-        jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]))
+        jp_min_time.append(min([vj.departure_time for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
+        jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
 
         productcategory = jp.productcategory or ''
         if productcategory not in index.idx_for_productcategory:
@@ -274,7 +268,7 @@ def export_jp_structs(tdata,index,out):
             index.idx_for_operator[operator] = len(index.idx_for_operator)
             index.jp_operators.append(operator)
         operator_offsets.append(index.idx_for_operator[operator]) 
-
+        jp_attributes.append(0)
     jp_t_fields = [jpp_offsets, trip_ids_offsets,headsign_offsets, jp_n_jpp, jp_n_vj,jp_attributes,operator_offsets,linecode_offsets,productcategory_offsets,jp_min_time, jp_max_time]
     for l in jp_t_fields :
         # the extra last route is a sentinel so we can derive list lengths for the last true route.
@@ -390,7 +384,6 @@ def export_sp_uris(tdata,index,out):
     print "writing out sorted stop ids to string table"
     # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
     write_text_comment(out,"STOP IDS")
-    print [sp.uri for sp in index.stop_points]
     index.loc_stop_point_uris = write_string_table(out,[sp.uri for sp in index.stop_points])
 
 def export_vj_uris(tdata,index,out):
