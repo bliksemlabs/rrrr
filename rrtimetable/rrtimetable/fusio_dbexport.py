@@ -29,8 +29,8 @@ def convert(dbname):
         if from_stop_id == to_stop_id:
             continue
         try:
-            conn = Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
-            conn = Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)
+            Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
+            Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)
         except:
             pass
     cur.execute("SELECT agency_id,agency_name,agency_url FROM fusio.agency")
