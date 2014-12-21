@@ -35,7 +35,7 @@
 static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
     uint32_t x = (uint32_t) abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
-    #ifdef RRRR_DEBUG
+    #ifdef RRRR_DEBUG_HASHGRID
     fprintf(stderr, "binning x coord %d, bin is %d \n", coord->x, x);
     #endif
     return x;
@@ -44,7 +44,7 @@ static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
 static uint32_t ybin (hashgrid_t *hg, coord_t *coord) {
     uint32_t y = (uint32_t) abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
-    #ifdef RRRR_DEBUG
+    #ifdef RRRR_DEBUG_HASHGRID
     fprintf(stderr, "binning y coord %d, bin is %d \n", coord->y, y);
     #endif
     return y;
@@ -126,7 +126,7 @@ uint32_t hashgrid_result_next_filtered (hashgrid_result_t *r, double *distance) 
         coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
-        #ifdef RRRR_DEBUG
+        #ifdef RRRR_DEBUG_HASHGRID
         fprintf (stderr, "%f,%f\n", latlon.lat, latlon.lon);
         #endif
         if (coord->x > r->min.x && coord->x < r->max.x &&
@@ -135,7 +135,7 @@ uint32_t hashgrid_result_next_filtered (hashgrid_result_t *r, double *distance) 
              * calculate actual distance
              */
             *distance = coord_distance_meters (&(r->coord), coord);
-            #ifdef RRRR_DEBUG
+            #ifdef RRRR_DEBUG_HASHGRID
             fprintf (stderr, "%d,%d,%f\n", coord->x, coord->y, *distance);
             #endif
             if (*distance < r->radius_meters) {
@@ -154,7 +154,7 @@ uint32_t hashgrid_result_closest (hashgrid_result_t *r) {
         coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
-        #ifdef RRRR_DEBUG
+        #ifdef RRRR_DEBUG_HASHGRID
         fprintf (stderr, "%f,%f\n", latlon.lat, latlon.lon);
         #endif
         if (coord->x > r->min.x && coord->x < r->max.x &&
@@ -200,7 +200,7 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
         /* Count the number of items that will fall into each bin. */
         uint32_t i_coord;
         for (i_coord = 0; i_coord < n_items; ++i_coord) {
-            #ifdef RRRR_DEBUG
+            #ifdef RRRR_DEBUG_HASHGRID
             fprintf(stderr, "binning coordinate x=%d y=%d \n",
                             (coords + i_coord)->x, (coords + i_coord)->y);
             #endif
