@@ -282,7 +282,7 @@ def export_jp_structs(tdata,index,out):
     for route in zip (*jp_t_fields) :
         # print route
         out.write(route_t.pack(*route));
-    out.write(route_t.pack(0,0,0,0,0,0,0,0,0,0, 0)) #Sentinel
+    out.write(route_t.pack(jpp_offsets[-1]+1,0,0,0,0,0,0,0,0,0, 0)) #Sentinel
     index.n_headsigns = headsigncount
 
 def validity_mask(days):
