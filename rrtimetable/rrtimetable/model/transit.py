@@ -84,13 +84,14 @@ class Line:
             self.code = code
 
 class Route:
-    def __init__(self,timetable,uri,line_uri,direction=None):
+    def __init__(self,timetable,uri,line_uri,direction=None,route_type=None):
         self.type = 'route'
         self.uri = uri
         self.journey_patterns = []
         if line_uri not in timetable.lines:
             raise ValueError('Violation of foreign key, line not found')
         self.line = timetable.lines[line_uri]
+        self.route_type = route_type
         if uri in timetable.routes:
             raise ValueError('Violation of unique Route key') 
         timetable.routes[uri] = self
