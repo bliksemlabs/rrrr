@@ -171,6 +171,8 @@ def export_transfers(tdata,index,out):
     offset = 0
     for sp in index.stop_points:
         index.transfers_offsets.append(offset)
+        if sp.uri not in index.connections_from_stop_point:
+            continue
         for conn in index.connections_from_stop_point[sp.uri]:
             if (int(conn.min_transfer_time) >> 2) > 255:
                 continue
@@ -183,6 +185,8 @@ def export_transfers(tdata,index,out):
     index.loc_transfer_dist_meters = tell(out)
 
     for sp in index.stop_points:
+        if sp.uri not in index.connections_from_stop_point:
+            continue
         for conn in index.connections_from_stop_point[sp.uri]:
             if (int(conn.min_transfer_time) >> 2) > 255:
                 continue
