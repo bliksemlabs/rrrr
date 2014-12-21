@@ -24,6 +24,7 @@ class Index():
         self.journey_patterns_at_stop_point = {}
         self.vehicle_journeys_in_journey_pattern = {}
         self.connections_from_stop_point = {}
+        self.connections_point_to_point = {}
 
 def make_idx(tdata):
     index = Index()
@@ -73,7 +74,18 @@ def make_idx(tdata):
             continue #connection to or from unknown stop_point
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
+        if conn.from_stop_point.uri not in connections_point_to_point:
+            connections_point_to_point[conn.from_stop_point.uri] = {}
+        connections_point_to_point[conn.from_stop_point.uri][conn.to_stop_point.uri] = conn
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
+
+    for from_stop_point_uri,to_stop_point_uri in connections_point_to_point.items():
+        if from_stop_point_uri not in connections_point_to_point[to_stop_point_uri]:
+            raise Exception("No reverse transfer")
+        forward = connections_point_to_point[to_stop_point_uri][to_stop_point_uri]
+        backward = connections_point_to_point[to_stop_point_uri][to_stop_point_uri]
+        if forward.min_transfer_time != backward.min_transfer_time:
+            raise Exception("Trasnfer not symetric")
     print '--------------------------'
     return index
 
