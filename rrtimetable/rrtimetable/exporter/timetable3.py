@@ -169,6 +169,7 @@ def export_transfers(tdata,index,out):
 
     index.transfers_offsets = []
     offset = 0
+    transfertimes = []
     for sp in index.stop_points:
         index.transfers_offsets.append(offset)
         if sp.uri not in index.connections_from_stop_point:
@@ -177,20 +178,18 @@ def export_transfers(tdata,index,out):
             if (int(conn.min_transfer_time) >> 2) > 255:
                 continue
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
+            transfertimes.append(conn.min_transfer_time)
             offset += 1
+    assert len(transfertimes) == offset
     index.transfers_offsets.append(offset) #sentinel
     index.n_connections = offset
-    print "saving transfer distances (footpaths)"
-    write_text_comment(out,"TRANSFER DISTANCES")
+
+    print "saving transfer times (footpaths)"
+    write_text_comment(out,"TRANSFER TIMES")
     index.loc_transfer_dist_meters = tell(out)
 
-    for sp in index.stop_points:
-        if sp.uri not in index.connections_from_stop_point:
-            continue
-        for conn in index.connections_from_stop_point[sp.uri]:
-            if (int(conn.min_transfer_time) >> 2) > 255:
-                continue
-            writebyte(out,(int(conn.min_transfer_time) >> 2))
+    for transfer_time in transfertimes:
+        writebyte(out,(int(transfer_time) >> 2))
 
 def export_stop_indices(tdata,index,out):
     print "saving stop indexes"
