@@ -167,6 +167,7 @@ def export_jpp_at_sp(tdata,index,out):
         for jp_uri in jp_uris:
             writeint(out,index.idx_for_journey_pattern_uri[jp_uri])
             n_offset += 1
+    index.jpp_at_sp_offsets.append(n_offset) #sentinel
     index.n_jpp_at_sp = n_offset
 
 def export_transfers(tdata,index,out):
@@ -175,15 +176,15 @@ def export_transfers(tdata,index,out):
     index.loc_transfer_target_stop_points = tell(out)
 
     index.transfers_offsets = []
-    n_connections = 0
+    offset = 0
     for sp in index.stop_points:
-        index.transfers_offsets.append(n_connections)
+        index.transfers_offsets.append(offset)
         for conn in index.connections_from_stop_point[sp.uri]:
             print (conn.from_stop_point.uri,conn.to_stop_point.uri)
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
-            n_connections += 1
-    print index.transfers_offsets
-    index.n_connections = n_connections
+            offset += 1
+    index.transfers_offsets.append(offset) #sentinel
+    index.n_connections = offset
     print "saving transfer distances (footpaths)"
     write_text_comment(out,"TRANSFER DISTANCES")
     index.loc_transfer_dist_meters = tell(out)
@@ -202,7 +203,6 @@ def export_stop_indices(tdata,index,out):
     assert len(index.jpp_at_sp_offsets) == len(index.transfers_offsets)
     for stop in zip (index.jpp_at_sp_offsets, index.transfers_offsets) :
         out.write(struct_2i.pack(*stop));
-    out.write(struct_2i.pack(0,0));
 
 def export_stop_point_attributes(tdata,index,out):
     print "saving stop attributes"
