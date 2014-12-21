@@ -69,17 +69,14 @@ def make_idx(tdata):
                 index.idx_for_stop_point_uri[jpp.stop_point.stop_area.uri] = len(index.stop_areas)
                 index.stop_areas.append(jpp.stop_point.stop_area)
     for conn in tdata.connections.values():
-        if conn.from_stop_point.uri not in index.idx_for_stop_point_uri or conn.to_stop_point.uri not in index.idx_for_stop_point_uri:
-            continue #connection to or from unknown stop_point
+        #if conn.from_stop_point.uri not in index.idx_for_stop_point_uri or conn.to_stop_point.uri not in index.idx_for_stop_point_uri:
+            #continue #connection to or from unknown stop_point
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
     return index
 
 def write_stop_point_idx(out,index,stop_uri):
-    writeint(out,index.idx_for_stop_point_uri[stop_uri])
-
-def write_jp_idx(out,index,stop_uri):
     writeint(out,index.idx_for_stop_point_uri[stop_uri])
 
 timedemandgroup_t = Struct('HH')
@@ -179,11 +176,8 @@ def export_transfers(tdata,index,out):
     n_connections = 0
     for sp in index.stop_points:
         index.transfers_offsets.append(n_connections)
-        if sp.uri not in index.connections_from_stop_point:
-            write_stop_point_idx(out,index,conn.from_stop_point.uri)
-            n_connections += 1 #Hack to work with stop_poitns without originating transfers
-            continue
         for conn in index.connections_from_stop_point[sp.uri]:
+            print (conn.from_stop_point.uri,conn.to_stop_point.uri)
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
             n_connections += 1
     index.n_connections = n_connections
@@ -192,10 +186,8 @@ def export_transfers(tdata,index,out):
     index.loc_transfer_dist_meters = tell(out)
 
     for sp in index.stop_points:
-        if sp.uri not in index.connections_from_stop_point:
-            writebyte(out,(0 + 8) >> 4)
-            continue
         for conn in index.connections_from_stop_point[sp.uri]:
+            print (conn.from_stop_point.uri,conn.to_stop_point.uri)
             writebyte(out,(int(conn.min_transfer_time or 0) + 8) >> 4)
 
 def export_stop_indices(tdata,index,out):
@@ -207,6 +199,7 @@ def export_stop_indices(tdata,index,out):
     assert len(index.jpp_at_sp_offsets) == len(index.transfers_offsets)
     for stop in zip (index.jpp_at_sp_offsets, index.transfers_offsets) :
         out.write(struct_2i.pack(*stop));
+    out.write(struct_2i.pack(0,0));
 
 def export_stop_point_attributes(tdata,index,out):
     print "saving stop attributes"
@@ -286,18 +279,25 @@ def export_jp_structs(tdata,index,out):
     for route in zip (*jp_t_fields) :
         # print route
         out.write(route_t.pack(*route));
-    out.write(route_t.pack(0,0,0,0,0,0,0,0,0,0, 0))
+    out.write(route_t.pack(0,0,0,0,0,0,0,0,0,0, 0)) #Sentinel
     index.n_headsigns = headsigncount
+
+def validity_mask(days):
+    mask = 0
+    for day in days:
+        if day < NUMBER_OF_DAYS:
+            mask |= 1 << day
+    return mask
 
 def export_vj_validities(tdata,index,out):
     print "writing bitfields indicating which days each trip is active" 
     # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
     write_text_comment(out,"VJ ACTIVE BITFIELDS")
     index.loc_vj_active = tell(out)
-    n_zeros = 0
+
     for jp in index.journey_patterns:
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-            writeint(out,0)
+            writeint(out,validity_mask(vj.validity_pattern))
 
 def export_jp_validities(tdata,index,out):
     print "writing bitfields indicating which days each trip is active" 
@@ -306,7 +306,7 @@ def export_jp_validities(tdata,index,out):
     index.loc_jp_active = tell(out)
     n_zeros = 0
     for jp in index.journey_patterns:
-        writeint(out,0)
+        writeint(out,validity_mask(index.validity_pattern_for_journey_pattern_uri[jp.uri]))
 
 def export_platform_codes(tdata,index,out):
     print "writing out platformcodes for stops"
@@ -435,7 +435,7 @@ def write_header (out,index) :
         index.n_vj, # n_trip_ids
 
         index.loc_stops,
-        index.loc_stop_attributes,
+        index.loc_stop_point_attributes,
         index.loc_stop_coords,
         index.loc_journey_patterns,
         index.loc_journey_pattern_points,
@@ -476,11 +476,9 @@ def export(tdata):
     out.seek(struct_header.size)
 
     export_sp_coords(tdata,index,out)
-    export_sp_attributes(tdata,index,out)
     export_journey_pattern_point_stop(tdata,index,out)
     export_journey_pattern_point_attributes(tdata,index,out)
     export_timedemandgroups(tdata,index,out)
-    export_jp_attributes(tdata,index,out)
     export_vj_in_jp(tdata,index,out)
     export_jpp_at_sp(tdata,index,out)
     export_transfers(tdata,index,out)
