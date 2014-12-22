@@ -1195,8 +1195,10 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
             #ifdef RRRR_INFO
             char buf[13];
-            fprintf(stderr, "    stop %2d [%d] %s %s\n", jpp_index,
+            fprintf(stderr, "    stop %2d [%d] %c%c %s %s\n", jpp_index,
                             stop_index,
+                            forboarding ? 'B' : ' ',
+                            foralighting ? 'A' : ' ',
                             btimetext(router->best_time[stop_index], buf),
                             tdata_stop_name_for_index (router->tdata,
                                                        stop_index));
