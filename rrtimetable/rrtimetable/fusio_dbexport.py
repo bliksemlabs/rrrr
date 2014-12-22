@@ -28,7 +28,7 @@ def convert(dbname):
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in cur.fetchall():
         if from_stop_id == to_stop_id:
             continue
-        if (int(min_transfer_time) >> 2) > 255
+        if (int(min_transfer_time) >> 2) > 255:
             min_transfer_time = 255
         try:
             Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
