@@ -78,10 +78,8 @@ class Line:
         if uri in timetable.lines:
             raise ValueError('Violation of unique Line key') 
         timetable.lines[uri] = self
-        if name is not None:
-            self.name = name
-        if code is not None:
-            self.code = code
+        self.name = name
+        self.code = code
 
 class Route:
     def __init__(self,timetable,uri,line_uri,direction=None,route_type=None):
