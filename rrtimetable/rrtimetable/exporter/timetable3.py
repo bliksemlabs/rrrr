@@ -74,18 +74,8 @@ def make_idx(tdata):
             continue #connection to or from unknown stop_point
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
-        if conn.from_stop_point.uri not in connections_point_to_point:
-            connections_point_to_point[conn.from_stop_point.uri] = {}
-        connections_point_to_point[conn.from_stop_point.uri][conn.to_stop_point.uri] = conn
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
 
-    for from_stop_point_uri,to_stop_point_uri in connections_point_to_point.items():
-        if from_stop_point_uri not in connections_point_to_point[to_stop_point_uri]:
-            raise Exception("No reverse transfer")
-        forward = connections_point_to_point[to_stop_point_uri][to_stop_point_uri]
-        backward = connections_point_to_point[to_stop_point_uri][to_stop_point_uri]
-        if forward.min_transfer_time != backward.min_transfer_time:
-            raise Exception("Trasnfer not symetric")
     print '--------------------------'
     return index
 
@@ -160,7 +150,8 @@ def export_jpp_at_sp(tdata,index,out):
     index.loc_jp_at_sp = tell(out)
     index.jpp_at_sp_offsets = []
     n_offset = 0
-    for stop_point_uri,jp_uris in index.journey_patterns_at_stop_point.items():
+    for sp in index.stop_points:
+        jp_uris = index.journey_patterns_at_stop_point[sp.uri]
         index.jpp_at_sp_offsets.append(n_offset)
         for jp_uri in jp_uris:
             writeint(out,index.idx_for_journey_pattern_uri[jp_uri])
