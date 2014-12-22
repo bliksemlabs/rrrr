@@ -373,7 +373,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t trip_inde
 
     rs = 0;
     for (i_stu = 0; i_stu < rt_trip_update->n_stop_time_update; ++i_stu) {
-        uint32_t *journey_pattern_points = tdata->journey_pattern_points + jp->journey_pattern_point_offset;
+        spidx_t *journey_pattern_points = tdata->journey_pattern_points + jp->journey_pattern_point_offset;
         char *stop_id;
         uint32_t stop_index;
 

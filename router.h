@@ -97,7 +97,7 @@ struct router {
 
 struct journey_pattern_cache {
     journey_pattern_t *this_jp;
-    uint32_t *journey_pattern_points; /* TODO: spidx_t */
+    spidx_t *journey_pattern_points;
     uint8_t  *journey_pattern_point_attributes;
     trip_t   *trips_in_journey_pattern;
     calendar_t *trip_masks;
