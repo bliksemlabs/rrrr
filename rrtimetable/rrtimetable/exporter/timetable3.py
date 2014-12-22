@@ -26,6 +26,38 @@ class Index():
         self.connections_from_stop_point = {}
         self.connections_point_to_point = {}
 
+        self.loc_for_headsign = {}
+        self.headsigns = []
+        self.headsign_length = 0
+
+        self.idx_for_productcategory = {}
+        self.productcategories = []
+
+        self.idx_for_linecode = {}
+        self.linecodes = []
+
+    def put_headsign(self,headsign):
+        if headsign in self.loc_for_headsign:
+            return self.loc_for_headsign[headsign]
+        self.loc_for_headsign[headsign] = self.headsign_length
+        self.headsign_length += (len(headsign) + 1)
+        self.headsigns.append(headsign)
+        return self.loc_for_headsign[headsign]
+
+    def put_productcategory(self,productcategory):
+        if productcategory in self.idx_for_productcategory:
+            return self.idx_for_productcategory[productcategory]
+        self.idx_for_productcategory[productcategory] = len(self.idx_for_productcategory)
+        self.productcategories.append(productcategory)
+        return self.idx_for_productcategory[productcategory]
+
+    def put_linecode(self,linecode):
+        if linecode in self.idx_for_linecode:
+            return self.idx_for_linecode[linecode]
+        self.idx_for_linecode[linecode] = len(self.idx_for_linecode)
+        self.linecodes.append(linecode)
+        return self.idx_for_linecode[linecode]
+
 def make_idx(tdata):
     index = Index()
     for vj in sorted(tdata.vehicle_journeys.values(), key= lambda vj: (vj.route.line.operator.uri,vj.route.line.uri,vj.route.uri,vj.departure_time)):
@@ -222,22 +254,13 @@ def export_jp_structs(tdata,index,out):
     jp_n_jpp = []
     jp_n_vj = []
 
-    index.loc_for_headsign = {}
-    index.jp_headsigns = []
-    headsign_offsets = []
-    headsigncount = 0
-
     index.idx_for_operator = {}
     index.jp_operators = []
     operator_offsets = []
 
-    index.idx_for_linecode = {}
-    index.jp_linecodes = []
     linecode_offsets = []
-
-    index.jp_productcategory = []
-    index.idx_for_productcategory = {}
     productcategory_offsets = []
+    headsign_offsets=[]
     jp_min_time = []
     jp_max_time = []
     for jp in index.journey_patterns:
@@ -246,24 +269,9 @@ def export_jp_structs(tdata,index,out):
         jp_min_time.append(min([vj.departure_time for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
         jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
 
-        productcategory = jp.productcategory or ''
-        if productcategory not in index.idx_for_productcategory:
-            index.idx_for_productcategory[productcategory] = len(index.idx_for_productcategory)
-            index.jp_productcategory.append(productcategory)
-        productcategory_offsets.append(index.idx_for_productcategory[productcategory]) 
-
-        headsign = jp.headsign or ''
-        if headsign not in index.loc_for_headsign:
-            headsign_offset = headsigncount
-            headsigncount += len(headsign)+1
-            index.loc_for_headsign[headsign] = headsign_offset
-        headsign_offsets.append(index.loc_for_headsign[headsign]) 
-
-        linecode = jp.route.line.code or ''
-        if linecode not in index.idx_for_linecode:
-            index.idx_for_linecode[linecode] = len(index.idx_for_linecode)
-            index.jp_linecodes.append(linecode)
-        linecode_offsets.append(index.idx_for_linecode[linecode]) 
+        productcategory_offsets.append(index.put_productcategory(jp.productcategory or '')) 
+        headsign_offsets.append(index.put_headsign(jp.headsign or '')) 
+        linecode_offsets.append(index.put_linecode(jp.route.line.code or '')) 
 
         operator = jp.route.line.operator.uri
         if operator not in index.idx_for_operator:
@@ -279,7 +287,6 @@ def export_jp_structs(tdata,index,out):
         # print route
         out.write(route_t.pack(*route));
     out.write(route_t.pack(jpp_offsets[-1]+1,0,0,0,0,0,0,0,0,0, 0)) #Sentinel
-    index.n_headsigns = headsigncount
 
 def validity_mask(days):
     mask = 0
@@ -362,19 +369,20 @@ def export_headsigns(tdata,index,out):
     write_text_comment(out,"HEADSIGNS")
     sorted_headsigns = sorted(index.loc_for_headsign.iteritems(), key=operator.itemgetter(1))
     index.loc_headsign = tell(out)
-    for headsign,headsignloc in sorted_headsigns:
-        assert headsignloc == out.tell() - index.loc_headsign
+    written_length = 0
+    for headsign in index.headsigns:
         out.write(headsign+'\0')
+        written_length += len(headsign) + 1
+    assert written_length == index.headsign_length
+
 
 def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
-    sorted_linecodes = sorted(index.idx_for_linecode.iteritems(), key=operator.itemgetter(1))
-    index.loc_line_codes = write_string_table(out,[line for line,idx in sorted_linecodes])
+    index.loc_line_codes = write_string_table(out,index.linecodes)
 
 def export_productcategories(tdata,index,out):
     write_text_comment(out,"PRODUCT CATEGORIES")
-    sorted_productcategories = sorted(index.idx_for_productcategory.iteritems(), key=operator.itemgetter(1))
-    index.loc_productcategories = write_string_table(out,[productcategory for productcategory,idx in sorted_productcategories])
+    index.loc_productcategories = write_string_table(out,index.productcategories)
 
 def export_line_uris(tdata,index,out):
     # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
@@ -429,7 +437,7 @@ def write_header (out,index) :
         index.n_operators, # n_agency_ids
         index.n_operators, # n_agency_names
         index.n_operators, # n_agency_urls
-        index.n_headsigns, # n_headsigns (length of the object)
+        index.headsign_length, # n_headsigns (length of the object)
         len(index.idx_for_linecode), # n_route_shortnames
         len(index.idx_for_productcategory), # n_productcategories
         len(index.journey_patterns), # n_route_ids
