@@ -277,7 +277,7 @@ def export_jp_structs(tdata,index,out):
             index.idx_for_operator[operator] = len(index.idx_for_operator)
             index.jp_operators.append(operator)
         operator_offsets.append(index.idx_for_operator[operator]) 
-        jp_attributes.append(0)
+        jp_attributes.append(1 << jp.route.route_type)
     jp_t_fields = [jpp_offsets, trip_ids_offsets,headsign_offsets, jp_n_jpp, jp_n_vj,jp_attributes,operator_offsets,linecode_offsets,productcategory_offsets,jp_min_time, jp_max_time]
     for l in jp_t_fields :
         # the extra last route is a sentinel so we can derive list lengths for the last true route.
