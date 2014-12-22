@@ -80,9 +80,10 @@ def make_idx(tdata):
     return index
 
 def write_stop_point_idx(out,index,stop_uri):
-    writeint(out,index.idx_for_stop_point_uri[stop_uri])
-
-timedemandgroup_t = Struct('HH')
+    if len(index.stop_points) <= 65535:
+        writeshort(out,index.idx_for_stop_point_uri[stop_uri])
+    else:
+        writeint(out,index.idx_for_stop_point_uri[stop_uri])
 
 def export_sp_coords(tdata,index,out):
     index.loc_stop_coords = out.tell()
@@ -120,6 +121,7 @@ def export_journey_pattern_point_attributes(tdata,index,out):
             writebyte(out,attr)
             offset += 1
 
+timedemandgroup_t = Struct('HH')
 def export_timedemandgroups(tdata,index,out):
     write_text_comment(out,"TIMEDEMANDGROUPS")
     index.loc_timedemandgroups = tell(out)
