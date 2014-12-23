@@ -136,12 +136,12 @@ struct tdata {
     stop_t *stops;
     uint8_t *stop_attributes;
     journey_pattern_t *journey_patterns;
-    uint32_t *journey_pattern_points; /* TODO: spidx_t */
+    spidx_t *journey_pattern_points;
     uint8_t  *journey_pattern_point_attributes;
     stoptime_t *stop_times;
     trip_t *trips;
     uint32_t *journey_patterns_at_stop;
-    uint32_t *transfer_target_stops; /* TODO: spidx_t */
+    spidx_t *transfer_target_stops;
     uint8_t  *transfer_dist_meters;
     /* optional data:
      * NULL pointer means it is not available */
@@ -192,12 +192,7 @@ void tdata_close(tdata_t *td);
 
 void tdata_dump(tdata_t *td);
 
-/* TODO */
-#if 0
 spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
-#endif
-
-uint32_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 

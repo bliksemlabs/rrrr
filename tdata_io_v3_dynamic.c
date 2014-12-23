@@ -95,12 +95,12 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, stop_attributes, uint8_t);
     load_dynamic (fd, stop_coords, latlon_t);
     load_dynamic (fd, journey_patterns, journey_pattern_t);
-    load_dynamic (fd, journey_pattern_points, uint32_t); /* TODO: spidx_t */
+    load_dynamic (fd, journey_pattern_points, spidx_t);
     load_dynamic (fd, journey_pattern_point_attributes, uint8_t);
     load_dynamic (fd, stop_times, stoptime_t);
     load_dynamic (fd, trips, trip_t);
     load_dynamic (fd, journey_patterns_at_stop, uint32_t);
-    load_dynamic (fd, transfer_target_stops, uint32_t); /* TODO: spidx_t */
+    load_dynamic (fd, transfer_target_stops, spidx_t);
     load_dynamic (fd, transfer_dist_meters, uint8_t);
     load_dynamic (fd, trip_active, calendar_t);
     load_dynamic (fd, journey_pattern_active, calendar_t);

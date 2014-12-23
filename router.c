@@ -572,10 +572,7 @@ tdata_next (router_t *router, router_request_t *req,
             uint32_t jp_index, uint32_t trip_offset, rtime_t qtime,
             spidx_t *ret_stop_index, rtime_t *ret_stop_time) {
 
-    #if 0
     spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-    #endif
-    uint32_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
     journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
     uint32_t jpp_i;
 

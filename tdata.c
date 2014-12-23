@@ -219,17 +219,9 @@ void tdata_close(tdata_t *td) {
     tdata_io_v3_close (td);
 }
 
-/* TODO */
-#if 0
 spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     return td->journey_pattern_points + td->journey_patterns[jp_index].journey_pattern_point_offset;
 }
-#endif
-
-uint32_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
-    return td->journey_pattern_points + td->journey_patterns[jp_index].journey_pattern_point_offset;
-}
-
 
 uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     journey_pattern_t journey_pattern = td->journey_patterns[jp_index];
@@ -296,8 +288,7 @@ uint32_t transfer_distance (tdata_t *tdata, spidx_t stop_index_from, spidx_t sto
 
 #ifdef RRRR_DEBUG
 void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_index) {
-    uint32_t *stops = tdata_points_for_journey_pattern(td, jp_index);
-    /* TODO: spidx_t *stops = tdata_points_for_journey_pattern(td, jp_index); */
+    spidx_t *stops = tdata_points_for_journey_pattern(td, jp_index);
     uint32_t ti;
     spidx_t si;
     journey_pattern_t jp = td->journey_patterns[jp_index];
