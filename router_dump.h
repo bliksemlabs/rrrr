@@ -22,7 +22,7 @@ void day_mask_dump (uint32_t mask);
 void service_day_dump (struct service_day *sd);
 
 #if 0
-void dump_trips(router_t *router);
+void dump_vehicle_journeys(router_t *router);
 #endif
 
 #endif /* _ROUTER_DUMP_H */

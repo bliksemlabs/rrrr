@@ -110,9 +110,9 @@ struct router_request {
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     spidx_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    uint32_t banned_trips_journey_pattern[RRRR_MAX_BANNED_TRIPS];
-    uint16_t banned_trips_offset[RRRR_MAX_BANNED_TRIPS];
+    #if RRRR_MAX_BANNED_JOURNEYS > 0
+    uint32_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_JOURNEYS];
+    uint16_t banned_vjs_offset[RRRR_MAX_BANNED_JOURNEYS];
     #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */
@@ -157,8 +157,8 @@ struct router_request {
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     uint8_t n_banned_stops_hard;
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    uint8_t n_banned_trips;
+    #if RRRR_MAX_BANNED_JOURNEYS > 0
+    uint8_t n_banned_vjs;
     #endif
 
     /* restrict the output to specific optimisation flags */

@@ -29,10 +29,10 @@ struct stop {
 typedef struct journey_pattern journey_pattern_t;
 struct journey_pattern {
     uint32_t journey_pattern_point_offset;
-    uint32_t trip_ids_offset;
+    uint32_t vj_ids_offset;
     uint32_t headsign_offset;
     uint16_t n_stops;
-    uint16_t n_trips;
+    uint16_t n_vjs;
     uint16_t attributes;
     uint16_t agency_index;
     uint16_t line_code_index;
@@ -43,10 +43,10 @@ struct journey_pattern {
 
 /* An individual VehicleJourney,
  * a materialized instance of a time demand type. */
-typedef struct trip trip_t;
-struct trip {
+typedef struct vehicle_journey vehicle_journey_t;
+struct vehicle_journey {
     /* The offset of the first stoptime of the
-     * time demand type used by this trip.
+     * time demand type used by this vehicle_journey.
      */
     uint32_t stop_times_offset;
 
@@ -115,11 +115,11 @@ struct tdata {
     uint32_t n_journey_pattern_points;
     uint32_t n_journey_pattern_point_attributes;
     uint32_t n_stop_times;
-    uint32_t n_trips;
+    uint32_t n_vjs;
     uint32_t n_journey_patterns_at_stop;
     uint32_t n_transfer_target_stops;
     uint32_t n_transfer_dist_meters;
-    uint32_t n_trip_active;
+    uint32_t n_vj_active;
     uint32_t n_journey_pattern_active;
     uint32_t n_platformcodes;
     uint32_t n_stop_names;
@@ -132,14 +132,14 @@ struct tdata {
     uint32_t n_productcategories;
     uint32_t n_line_ids;
     uint32_t n_stop_ids;
-    uint32_t n_trip_ids;
+    uint32_t n_vj_ids;
     stop_t *stops;
     uint8_t *stop_attributes;
     journey_pattern_t *journey_patterns;
     spidx_t *journey_pattern_points;
     uint8_t  *journey_pattern_point_attributes;
     stoptime_t *stop_times;
-    trip_t *trips;
+    vehicle_journey_t *vjs;
     uint32_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
     uint8_t  *transfer_dist_meters;
@@ -161,23 +161,23 @@ struct tdata {
     char *line_codes;
     uint32_t productcategories_width;
     char *productcategories;
-    calendar_t *trip_active;
+    calendar_t *vj_active;
     calendar_t *journey_pattern_active;
     uint32_t line_ids_width;
     char *line_ids;
     uint32_t stop_ids_width;
     char *stop_ids;
-    uint32_t trip_ids_width;
-    char *trip_ids;
+    uint32_t vj_ids_width;
+    char *vj_ids;
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;
     radixtree_t *stopid_index;
     radixtree_t *tripid_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    stoptime_t **trip_stoptimes;
-    uint32_t *trips_in_journey_pattern;
+    stoptime_t **vj_stoptimes;
+    uint32_t *vjs_in_journey_pattern;
     list_t **rt_journey_patterns_at_stop;
-    calendar_t *trip_active_orig;
+    calendar_t *vj_active_orig;
     calendar_t *journey_pattern_active_orig;
     #endif
     #ifdef RRRR_FEATURE_REALTIME_ALERTS
@@ -201,7 +201,7 @@ uint32_t tdata_journey_patterns_for_stop(tdata_t *td, spidx_t stop_index, uint32
 
 stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
+void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -209,9 +209,9 @@ const char *tdata_stop_id_for_index(tdata_t *td, spidx_t stop_index);
 
 uint8_t *tdata_stop_attributes_for_index(tdata_t *td, spidx_t stop_index);
 
-const char *tdata_trip_id_for_index(tdata_t *td, uint32_t trip_index);
+const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t trip_index);
 
-const char *tdata_trip_id_for_jp_trip_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
 uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t start_index);
 
@@ -237,9 +237,9 @@ spidx_t tdata_stopidx_by_stop_id(tdata_t *td, char* stop_id, spidx_t start_index
 
 uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t start_index);
 
-const char *tdata_trip_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-calendar_t *tdata_trip_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -257,8 +257,8 @@ const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index)
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
 
-/* Get a pointer to the array of trip structs for this journey_pattern. */
-trip_t *tdata_trips_in_journey_pattern(tdata_t *td, uint32_t jp_index);
+/* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
+vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 const char *tdata_stop_desc_for_index(tdata_t *td, spidx_t stop_index);
 

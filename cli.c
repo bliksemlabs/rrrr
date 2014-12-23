@@ -70,7 +70,7 @@ static void set_add_sp (spidx_t *set,
 #endif
 
 
-#if RRRR_MAX_BANNED_TRIPS > 0
+#if RRRR_MAX_BANNED_JOURNEYS > 0
 static void set_add_trip (uint32_t *set1, uint16_t *set2,
                           uint8_t  *length, uint8_t max_length,
                           uint32_t value1, uint16_t value2) {
@@ -132,7 +132,7 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_STOP_HARD > 0
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_TRIPS > 0
+#if RRRR_MAX_BANNED_JOURNEYS > 0
                         "[ --banned-trip-offset=jp_idx,trip_offset ]\n"
 #endif
 #if RRRR_FEATURE_REALTIME_ALERTS == 1
@@ -284,7 +284,7 @@ int main (int argc, char *argv[]) {
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_TRIPS > 0
+                    #if RRRR_MAX_BANNED_JOURNEYS > 0
                     else
                     if (strncmp(argv[i], "--banned-trip-offset=", 21) == 0) {
                         char *endptr;
@@ -292,13 +292,13 @@ int main (int argc, char *argv[]) {
 
                         jp_index = (uint32_t) strtol(&argv[i][21], &endptr, 10);
                         if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
-                            uint16_t trip_offset = strtol(++endptr, NULL, 10);
-                            if (trip_offset < tdata.journey_patterns[jp_index].n_trips) {
-                                set_add_trip(req.banned_trips_journey_pattern,
-                                             req.banned_trips_offset,
-                                             &req.n_banned_trips,
-                                             RRRR_MAX_BANNED_TRIPS,
-                                             jp_index, trip_offset);
+                            uint16_t vj_offset = strtol(++endptr, NULL, 10);
+                            if (vj_offset < tdata.journey_patterns[jp_index].n_vjs) {
+                                set_add_trip(req.banned_vjs_journey_pattern,
+                                             req.banned_vjs_offset,
+                                             &req.n_banned_vjs,
+                                        RRRR_MAX_BANNED_JOURNEYS,
+                                             jp_index, vj_offset);
                             }
                         }
                     }
@@ -344,7 +344,7 @@ int main (int argc, char *argv[]) {
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
         tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
-        tdata.tripid_index = radixtree_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
+        tdata.tripid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
         tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 
         /* Validate the radixtrees are actually created. */

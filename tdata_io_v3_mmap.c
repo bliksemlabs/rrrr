@@ -68,11 +68,11 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, journey_pattern_points, spidx_t);
     load_mmap (td->base, journey_pattern_point_attributes, uint8_t);
     load_mmap (td->base, stop_times, stoptime_t);
-    load_mmap (td->base, trips, trip_t);
+    load_mmap (td->base, vjs, vehicle_journey_t);
     load_mmap (td->base, journey_patterns_at_stop, uint32_t);
     load_mmap (td->base, transfer_target_stops, spidx_t);
     load_mmap (td->base, transfer_dist_meters, uint8_t);
-    load_mmap (td->base, trip_active, calendar_t);
+    load_mmap (td->base, vj_active, calendar_t);
     load_mmap (td->base, journey_pattern_active, calendar_t);
     load_mmap (td->base, headsigns, char);
     load_mmap (td->base, stop_names, char);
@@ -80,7 +80,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     load_mmap_string (td->base, platformcodes);
     load_mmap_string (td->base, stop_ids);
-    load_mmap_string (td->base, trip_ids);
+    load_mmap_string (td->base, vj_ids);
     load_mmap_string (td->base, agency_ids);
     load_mmap_string (td->base, agency_names);
     load_mmap_string (td->base, agency_urls);

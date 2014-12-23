@@ -65,11 +65,11 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_journey_pattern_points < (UINT32_MAX) &&
             header->n_journey_pattern_point_attributes < (UINT32_MAX) &&
             header->n_stop_times < (UINT32_MAX) &&
-            header->n_trips < (UINT32_MAX) &&
+            header->n_vjs < (UINT32_MAX) &&
             header->n_journey_patterns_at_stop < (UINT32_MAX) &&
             header->n_transfer_target_stops < (UINT32_MAX) &&
             header->n_transfer_dist_meters < (UINT32_MAX) &&
-            header->n_trip_active < (UINT32_MAX) &&
+            header->n_vj_active < (UINT32_MAX) &&
             header->n_journey_pattern_active < (UINT32_MAX) &&
             header->n_platformcodes < (UINT32_MAX) &&
             header->n_stop_names < (UINT32_MAX) &&
@@ -82,7 +82,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_productcategories < (UINT16_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
             header->n_stop_ids < ((spidx_t) -2) &&
-            header->n_trip_ids < (UINT32_MAX) ) ) {
+            header->n_vj_ids < (UINT32_MAX) ) ) {
 
         fprintf(stderr, "The input file %s does not appear to be a valid timetable.\n", filename);
         goto fail_close_fd;
@@ -98,11 +98,11 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, journey_pattern_points, spidx_t);
     load_dynamic (fd, journey_pattern_point_attributes, uint8_t);
     load_dynamic (fd, stop_times, stoptime_t);
-    load_dynamic (fd, trips, trip_t);
+    load_dynamic (fd, vjs, vehicle_journey_t);
     load_dynamic (fd, journey_patterns_at_stop, uint32_t);
     load_dynamic (fd, transfer_target_stops, spidx_t);
     load_dynamic (fd, transfer_dist_meters, uint8_t);
-    load_dynamic (fd, trip_active, calendar_t);
+    load_dynamic (fd, vj_active, calendar_t);
     load_dynamic (fd, journey_pattern_active, calendar_t);
     load_dynamic (fd, headsigns, char);
     load_dynamic (fd, stop_names, char);
@@ -110,7 +110,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     load_dynamic_string (fd, platformcodes);
     load_dynamic_string (fd, stop_ids);
-    load_dynamic_string (fd, trip_ids);
+    load_dynamic_string (fd, vj_ids);
     load_dynamic_string (fd, agency_ids);
     load_dynamic_string (fd, agency_names);
     load_dynamic_string (fd, agency_urls);
@@ -136,11 +136,11 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->journey_pattern_points);
     free (td->journey_pattern_point_attributes);
     free (td->stop_times);
-    free (td->trips);
+    free (td->vjs);
     free (td->journey_patterns_at_stop);
     free (td->transfer_target_stops);
     free (td->transfer_dist_meters);
-    free (td->trip_active);
+    free (td->vj_active);
     free (td->journey_pattern_active);
     free (td->headsigns);
     free (td->stop_names);
@@ -148,7 +148,7 @@ void tdata_io_v3_close(tdata_t *td) {
 
     free (td->platformcodes);
     free (td->stop_ids);
-    free (td->trip_ids);
+    free (td->vj_ids);
     free (td->agency_ids);
     free (td->agency_names);
     free (td->agency_urls);

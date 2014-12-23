@@ -425,7 +425,7 @@ def write_header (out,index) :
         index.n_jpp, # n_route_stops
         index.n_jpp, # n_route_stop_attributes
         index.n_tpp, # n_stop_times
-        index.n_vj, # n_trips
+        index.n_vj, # n_vjs
         index.n_jpp_at_sp, # n_stop_routes
         index.n_connections, #n_transfer_target_stop
         index.n_connections, #n_transfer_dist_meters

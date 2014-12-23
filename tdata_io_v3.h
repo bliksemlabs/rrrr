@@ -15,11 +15,11 @@ struct tdata_header {
     uint32_t n_journey_pattern_points;
     uint32_t n_journey_pattern_point_attributes;
     uint32_t n_stop_times;
-    uint32_t n_trips;
+    uint32_t n_vjs;
     uint32_t n_journey_patterns_at_stop;
     uint32_t n_transfer_target_stops;
     uint32_t n_transfer_dist_meters;
-    uint32_t n_trip_active;
+    uint32_t n_vj_active;
     uint32_t n_journey_pattern_active;
     uint32_t n_platformcodes;
     /* length of the object in bytes */
@@ -36,7 +36,7 @@ struct tdata_header {
     uint32_t n_productcategories;
     uint32_t n_line_ids;
     uint32_t n_stop_ids;
-    uint32_t n_trip_ids;
+    uint32_t n_vj_ids;
     uint32_t loc_stops;
     uint32_t loc_stop_attributes;
     uint32_t loc_stop_coords;
@@ -44,11 +44,11 @@ struct tdata_header {
     uint32_t loc_journey_pattern_points;
     uint32_t loc_journey_pattern_point_attributes;
     uint32_t loc_stop_times;
-    uint32_t loc_trips;
+    uint32_t loc_vjs;
     uint32_t loc_journey_patterns_at_stop;
     uint32_t loc_transfer_target_stops;
     uint32_t loc_transfer_dist_meters;
-    uint32_t loc_trip_active;
+    uint32_t loc_vj_active;
     uint32_t loc_journey_pattern_active;
     uint32_t loc_platformcodes;
     uint32_t loc_stop_names;
@@ -61,7 +61,7 @@ struct tdata_header {
     uint32_t loc_productcategories;
     uint32_t loc_line_ids;
     uint32_t loc_stop_ids;
-    uint32_t loc_trip_ids;
+    uint32_t loc_vj_ids;
 };
 
 bool tdata_io_v3_load(tdata_t *td, char* filename);

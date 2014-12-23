@@ -121,7 +121,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
     for (i_transfer = 0; i_transfer < RRRR_DEFAULT_MAX_ROUNDS; ++i_transfer) {
         /* Work backward from the target to the origin */
         router_state_t *state;
-        leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward trips */
+        leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward vehicle_journey's */
         uint32_t stop = router->target; /* Work backward from the target to the origin */
         int16_t j_transfer; /* signed int because we will be decreasing */
 
@@ -179,23 +179,23 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t0 = ride->board_time;
             l->t1 = ride->time;
             l->journey_pattern = ride->back_journey_pattern;
-            l->trip  = ride->back_trip;
+            l->trip  = ride->back_vj;
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
                 journey_pattern_t *jp;
-                trip_t *trip;
-                uint32_t trip_index;
+                vehicle_journey_t *vj;
+                uint32_t vj_index;
 
                 jp = router->tdata->journey_patterns + ride->back_journey_pattern;
-                trip_index = jp->trip_ids_offset + ride->back_trip;
-                trip = router->tdata->trips + trip_index;
+                vj_index = jp->vj_ids_offset + ride->back_vj;
+                vj = router->tdata->vjs + vj_index;
 
-                if (router->tdata->trip_stoptimes[trip_index] &&
-                    router->tdata->stop_times[trip->stop_times_offset + ride->journey_pattern_point].arrival != UNREACHED) {
+                if (router->tdata->vj_stoptimes[vj_index] &&
+                    router->tdata->stop_times[vj->stop_times_offset + ride->journey_pattern_point].arrival != UNREACHED) {
 
-                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->back_journey_pattern_point].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->back_journey_pattern_point].departure + trip->begin_time);
-                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->journey_pattern_point].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->journey_pattern_point].arrival + trip->begin_time);
+                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][ride->back_journey_pattern_point].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + ride->back_journey_pattern_point].departure + vj->begin_time);
+                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][ride->journey_pattern_point].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + ride->journey_pattern_point].arrival + vj->begin_time);
                 } else {
                     l->d0 = 0;
                     l->d1 = 0;

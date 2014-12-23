@@ -24,12 +24,12 @@ typedef struct router_state router_state_t;
  * the back_trip_stop rather than the back_stop (global stop index):
  * a trip can pass through a stop more than once.
  */
-/* TODO rename members to ride_from, walk_from, journey_pattern, trip, */
+/* TODO rename members to ride_from, walk_from, journey_pattern, vehicle_journey, */
 struct router_state {
    /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
     uint32_t back_journey_pattern;
-    /* The index of the trip used to travel from back_stop */
-    uint32_t back_trip;
+    /* The index of the vehicle_journey used to travel from back_stop */
+    uint32_t back_vj;
 
     /* The index of the previous stop in the itinerary */
     spidx_t ride_from;
@@ -44,7 +44,7 @@ struct router_state {
 
     /* The time when this stop was reached */
     rtime_t  time;
-    /* The time at which the trip within back_journey_pattern left back_stop */
+    /* The time at which the vehicle_journey within back_journey_pattern left back_stop */
     rtime_t  board_time;
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -99,8 +99,8 @@ struct journey_pattern_cache {
     journey_pattern_t *this_jp;
     spidx_t *journey_pattern_points;
     uint8_t  *journey_pattern_point_attributes;
-    trip_t   *trips_in_journey_pattern;
-    calendar_t *trip_masks;
+    vehicle_journey_t   *vjs_in_journey_pattern;
+    calendar_t *vj_masks;
     uint32_t jp_index;
     bool jp_overlap;
 };
