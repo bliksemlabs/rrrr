@@ -300,7 +300,7 @@ static bool set_in (spidx_t *set, uint8_t length, spidx_t value) {
 }
 #endif
 
-#if RRRR_MAX_BANNED_JOURNEYS > 0
+#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
 static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
                      uint32_t value1, uint16_t value2) {
     uint8_t i = length;
@@ -1014,7 +1014,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             fprintf(stderr, "\n");
             #endif
 
-            #if RRRR_MAX_BANNED_JOURNEYS > 0
+            #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
             /* skip this vj if it is banned */
             if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
                         req->n_banned_vjs, cache->jp_index,
@@ -1037,7 +1037,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
              */
             time = tdata_stoptime (router->tdata, serviceday, cache->jp_index, i_vj_offset, jpp_offset, req->arrive_by);
 
-            #ifdef RRRR_VJ
+            #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
             fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
             #endif
 
@@ -1076,15 +1076,15 @@ write_state(router_t *router, router_request_t *req,
     }
     #endif
 
-    router->best_time[stop_index] = time;
-    this_state->time              = time;
+    router->best_time[stop_index]    = time;
+    this_state->time                 = time;
     this_state->back_journey_pattern = jpp_index;
-    this_state->back_vj = vj_offset;
-    this_state->ride_from         = board_stop;
-    this_state->board_time        = board_time;
+    this_state->back_vj              = vj_offset;
+    this_state->ride_from            = board_stop;
+    this_state->board_time           = board_time;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     this_state->back_journey_pattern_point = board_jpp_stop;
-    this_state->journey_pattern_point = jpp_offset;
+    this_state->journey_pattern_point      = jpp_offset;
     #endif
 
     if (req->arrive_by && board_time < time) {
@@ -1314,7 +1314,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         vj_index = best_vj;
                     }
                 } else {
-                    #ifdef RRRR_VJ
+                    #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
                     fprintf(stderr, "    no suitable vj to board.\n");
                     #endif
                 }
@@ -1330,7 +1330,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 /* overflow due to long overnight vehicle_journeys on day 2 */
                 if (time == UNREACHED) continue;
 
-                #ifdef RRRR_VJ
+                #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
                 fprintf(stderr, "    on board vj %d considering time %s \n",
                                 vj_index, timetext(time));
                 #endif
@@ -1339,7 +1339,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 if ((router->best_time[router->target] != UNREACHED) &&
                     (req->arrive_by ? time < router->best_time[router->target]
                                     : time > router->best_time[router->target])) {
-                    #ifdef RRRR_VJ
+                    #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
                     fprintf(stderr, "    (target pruning)\n");
                     #endif
 
