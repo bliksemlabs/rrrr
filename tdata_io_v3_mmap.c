@@ -65,12 +65,12 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, stop_attributes, uint8_t);
     load_mmap (td->base, stop_coords, latlon_t);
     load_mmap (td->base, journey_patterns, journey_pattern_t);
-    load_mmap (td->base, journey_pattern_points, uint32_t); /* TODO: spidx_t */
+    load_mmap (td->base, journey_pattern_points, spidx_t);
     load_mmap (td->base, journey_pattern_point_attributes, uint8_t);
     load_mmap (td->base, stop_times, stoptime_t);
     load_mmap (td->base, trips, trip_t);
     load_mmap (td->base, journey_patterns_at_stop, uint32_t);
-    load_mmap (td->base, transfer_target_stops, uint32_t); /* TODO: spidx_t */
+    load_mmap (td->base, transfer_target_stops, spidx_t);
     load_mmap (td->base, transfer_dist_meters, uint8_t);
     load_mmap (td->base, trip_active, calendar_t);
     load_mmap (td->base, journey_pattern_active, calendar_t);
