@@ -38,12 +38,12 @@ struct list {
     uint32_t len;
 };
 
-typedef enum trip_attributes {
-    ta_none = 0,
-    ta_accessible = 1,
-    ta_toilet = 2,
-    ta_wifi = 4
-} trip_attributes_t;
+typedef enum vehicle_journey_attributes {
+    vja_none = 0,
+    vja_accessible = 1,
+    vja_toilet = 2,
+    vja_wifi = 4
+} vehicle_journey_attributes_t;
 
 
 typedef enum optimise {
@@ -95,9 +95,9 @@ struct router_request {
     spidx_t via;
 
     /* onboard departure, journey_pattern index from the users perspective */
-    uint32_t onboard_trip_journey_pattern;
+    uint32_t onboard_vj_journey_pattern;
 
-    /* onboard departure, trip offset within the journey_pattern */
+    /* onboard departure, vehicle_journey offset within the journey_pattern */
     uint32_t onboard_journey_pattern_offset;
 
     /* TODO comment on banning */
@@ -110,9 +110,9 @@ struct router_request {
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     spidx_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    uint32_t banned_trips_journey_pattern[RRRR_MAX_BANNED_TRIPS];
-    uint16_t banned_trips_offset[RRRR_MAX_BANNED_TRIPS];
+    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+    uint32_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    uint16_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
     #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */
@@ -144,8 +144,8 @@ struct router_request {
     /* an extra delay per transfer, in seconds */
     uint8_t walk_slack;
 
-    /* select the required trip attributes by a bitfield */
-    uint8_t trip_attributes;
+    /* select the required vehicle_journey attributes by a bitfield */
+    uint8_t vj_attributes;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -157,8 +157,8 @@ struct router_request {
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     uint8_t n_banned_stops_hard;
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    uint8_t n_banned_trips;
+    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+    uint8_t n_banned_vjs;
     #endif
 
     /* restrict the output to specific optimisation flags */

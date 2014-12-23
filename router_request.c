@@ -61,7 +61,7 @@ void router_request_initialize(router_request_t *req) {
     req->calendar_wrapped = false;
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
     req->mode = m_all;
-    req->trip_attributes = ta_none;
+    req->vj_attributes = vja_none;
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
@@ -75,12 +75,12 @@ void router_request_initialize(router_request_t *req) {
     req->n_banned_stops_hard = 0;
     rrrr_memset (req->banned_stops_hard, STOP_NONE, RRRR_MAX_BANNED_STOPS_HARD);
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    req->n_banned_trips = 0;
-    rrrr_memset (req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
-    rrrr_memset (req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
+    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+    req->n_banned_vjs = 0;
+    rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
-    req->onboard_trip_journey_pattern = NONE;
+    req->onboard_vj_journey_pattern = NONE;
     req->onboard_journey_pattern_offset = NONE;
     req->intermediatestops = false;
 
@@ -139,7 +139,7 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
     req->day_mask = ((calendar_t) 1) << rrrrandom(32);
     req->mode = m_all;
-    req->trip_attributes = ta_none;
+    req->vj_attributes = vja_none;
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
@@ -153,10 +153,10 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->n_banned_stops_hard = 0;
     rrrr_memset (req->banned_stops_hard, STOP_NONE, RRRR_MAX_BANNED_STOPS_HARD);
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    req->n_banned_trips = 0;
-    rrrr_memset (req->banned_trips_journey_pattern, NONE, RRRR_MAX_BANNED_TRIPS);
-    rrrr_memset (req->banned_trips_offset, 0, RRRR_MAX_BANNED_TRIPS);
+    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+    req->n_banned_vjs = 0;
+    rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
     req->intermediatestops = false;
     req->from = rrrrandom(tdata->n_stops);
@@ -350,7 +350,7 @@ time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
  * Indexes larger than array lengths for the given router, signed values less than zero, etc.
  * can and will cause segfaults and present security risks.
  *
- * We could also infer departure stop etc. from start trip here, "missing start point" and reversal problems.
+ * We could also infer departure stop etc. from start vehicle_journey here, "missing start point" and reversal problems.
  */
 bool range_check(router_request_t *req, tdata_t *tdata) {
     return !(req->walk_speed < 0.1 ||

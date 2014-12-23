@@ -70,7 +70,7 @@ static void set_add_sp (spidx_t *set,
 #endif
 
 
-#if RRRR_MAX_BANNED_TRIPS > 0
+#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
 static void set_add_trip (uint32_t *set1, uint16_t *set2,
                           uint8_t  *length, uint8_t max_length,
                           uint32_t value1, uint16_t value2) {
@@ -132,8 +132,8 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_STOP_HARD > 0
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_TRIPS > 0
-                        "[ --banned-trip-offset=jp_idx,trip_offset ]\n"
+#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+                        "[ --banned-vj-offset=jp_idx,trip_offset ]\n"
 #endif
 #if RRRR_FEATURE_REALTIME_ALERTS == 1
                         "[ --gtfsrt-alerts=filename.pb ]\n"
@@ -284,21 +284,21 @@ int main (int argc, char *argv[]) {
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_TRIPS > 0
+                    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
                     else
-                    if (strncmp(argv[i], "--banned-trip-offset=", 21) == 0) {
+                    if (strncmp(argv[i], "--banned-vj-offset=", 19) == 0) {
                         char *endptr;
                         uint32_t jp_index;
 
                         jp_index = (uint32_t) strtol(&argv[i][21], &endptr, 10);
                         if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
-                            uint16_t trip_offset = strtol(++endptr, NULL, 10);
-                            if (trip_offset < tdata.journey_patterns[jp_index].n_trips) {
-                                set_add_trip(req.banned_trips_journey_pattern,
-                                             req.banned_trips_offset,
-                                             &req.n_banned_trips,
-                                             RRRR_MAX_BANNED_TRIPS,
-                                             jp_index, trip_offset);
+                            uint16_t vj_offset = strtol(++endptr, NULL, 10);
+                            if (vj_offset < tdata.journey_patterns[jp_index].n_vjs) {
+                                set_add_trip(req.banned_vjs_journey_pattern,
+                                             req.banned_vjs_offset,
+                                             &req.n_banned_vjs,
+                                        RRRR_MAX_BANNED_VEHICLE_JOURNEYS,
+                                             jp_index, vj_offset);
                             }
                         }
                     }
@@ -344,12 +344,12 @@ int main (int argc, char *argv[]) {
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
         tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
-        tdata.tripid_index = radixtree_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
+        tdata.vjid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
         tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 
         /* Validate the radixtrees are actually created. */
         if (!(tdata.stopid_index &&
-              tdata.tripid_index &&
+              tdata.vjid_index &&
               tdata.lineid_index)) {
             status = EXIT_FAILURE;
             goto clean_exit;
@@ -426,7 +426,7 @@ plan:
         puts(result_buf);
     }
 
-    /* When searching clockwise we will board any trip that will bring us at
+    /* When searching clockwise we will board any vehicle_journey that will bring us at
      * the earliest time at any destination location. If we have to wait at
      * some stage for a connection, and this wait time exceeds the frequency
      * of the ingress network, we may suggest a later departure decreases
@@ -434,13 +434,13 @@ plan:
      *
      * To compress waitingtime we employ a reversal. A clockwise search
      * departing at 9:00am and arriving at 10:00am is observed as was
-     * requested: what trip allows to arrive at 10:00am? The counter clockwise
+     * requested: what vehicle_journey allows to arrive at 10:00am? The counter clockwise
      * search starts at 10:00am and offers the last possible arrival at 9:15am.
      * This bounds our searchspace between 9:15am and 10:00am.
      *
      * Because of the memory structure. We are not able to render an arrive-by
      * search, therefore the second arrival will start at 9:15am and should
-     * render exactly the same trip. This is not always true, especially not
+     * render exactly the same vehicle_journey. This is not always true, especially not
      * when there are multiple paths with exactly the same transittime.
      *
      *
@@ -516,7 +516,7 @@ clean_exit:
 
     #ifdef RRRR_FEATURE_REALTIME
     if (tdata.stopid_index) radixtree_destroy (tdata.stopid_index);
-    if (tdata.tripid_index) radixtree_destroy (tdata.tripid_index);
+    if (tdata.vjid_index) radixtree_destroy (tdata.vjid_index);
     if (tdata.lineid_index) radixtree_destroy (tdata.lineid_index);
     #endif
 

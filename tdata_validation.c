@@ -89,21 +89,20 @@ int tdata_validation_coordinates(tdata_t *tdata) {
  */
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
-    uint32_t jp_index, stop_index, trip_index;
+    uint32_t jp_index, stop_index, vj_index;
     int ret_nonincreasing = 0;
-
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
-        trip_t *trips = tdata->trips + jp.trip_ids_offset;
+        vehicle_journey_t *vjs = tdata->vjs + jp.vj_ids_offset;
 
         #ifdef RRRR_DEBUG
         /* statistics on errors, instead of early bail out */
-        int n_nonincreasing_trips = 0;
+        int n_nonincreasing_vjs = 0;
         #endif
 
-        for (trip_index = 0; trip_index < jp.n_trips; ++trip_index) {
-            trip_t trip = trips[trip_index];
-            stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
+        for (vj_index = 0; vj_index < jp.n_vjs; ++vj_index) {
+            vehicle_journey_t vj = vjs[vj_index];
+            stoptime_t *st = tdata->stop_times + vj.stop_times_offset;
             stoptime_t *prev_st = NULL;
             for (stop_index = 0; stop_index < jp.n_stops; ++stop_index) {
                 if (stop_index == 0 && st->arrival != 0) {
@@ -117,8 +116,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (st->departure < st->arrival) {
                     fprintf (stderr, "departure before arrival at "
-                                     "journey_pattern %d, trip %d, stop %d.\n",
-                            jp_index, trip_index, stop_index);
+                                     "journey_pattern %d, vj %d, stop %d.\n",
+                            jp_index, vj_index, stop_index);
                     #ifndef RRRR_DEBUG
                     return -1;
                     #endif
@@ -126,15 +125,15 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
-                        char *trip_id = "";
-                        if (tdata->trip_ids) {
-                            trip_id = tdata->trip_ids + (trip_index * tdata->trip_ids_width);
+                        char *vj_id = "";
+                        if (tdata->vj_ids) {
+                            vj_id = tdata->vj_ids + (vj_index * tdata->vj_ids_width);
                         }
 
                         fprintf (stderr, "negative travel time arriving at "
-                                         "journey_pattern %d, trip %d (%s), stop %d.\n",
-                                jp_index, trip_index,
-                                         trip_id, stop_index);
+                                         "journey_pattern %d, vj %d (%s), stop %d.\n",
+                                jp_index, vj_index,
+                                vj_id, stop_index);
                         #if 0
                         fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
                                          prev_st->arrival, prev_st->departure,
@@ -142,18 +141,18 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         #endif
 
                         #ifdef RRRR_DEBUG
-                        n_nonincreasing_trips += 1;
+                        n_nonincreasing_vjs += 1;
                         #else
                         return -1;
                         #endif
                     } else if (st->arrival == prev_st->departure) {
                         #if 0
                         fprintf (stderr, "last departure equals arrival at "
-                                         "journey_pattern %d, trip %d, stop %d.\n",
-                                jp_index, trip_index, stop_index);
+                                         "journey_pattern %d, vj %d, stop %d.\n",
+                                jp_index, vj_index, stop_index);
 
                         #ifdef RRRR_DEBUG
-                        n_nonincreasing_trips += 1;
+                        n_nonincreasing_vjs += 1;
                         #else
                         return -1;
                         #endif
@@ -164,11 +163,11 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             }
         }
         #ifdef RRRR_DEBUG
-        if (n_nonincreasing_trips > 0) {
-            fprintf (stderr, "journey_pattern %d has %d trips with "
+        if (n_nonincreasing_vjs > 0) {
+            fprintf (stderr, "journey_pattern %d has %d vehicle_journeys with "
                              "negative travel times\n",
-                    jp_index, n_nonincreasing_trips);
-            ret_nonincreasing -= n_nonincreasing_trips;
+                    jp_index, n_nonincreasing_vjs);
+            ret_nonincreasing -= n_nonincreasing_vjs;
         }
         #endif
     }

@@ -66,19 +66,19 @@ void dump_results(router_t *router) {
 }
 
 #if 0
-/* WARNING we are not currently storing trip IDs so this will segfault */
-void dump_trips(router_t *router) {
+/* WARNING we are not currently storing vehicle_journey IDs so this will segfault */
+void dump_vehicle_journeys(router_t *router) {
     uint32_t jp_index;
     for (jp_index = 0; jp_index < router->tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-        char *trip_ids = tdata_trip_ids_in_journey_pattern(router->tdata, jp_index);
-        uint32_t *trip_masks = tdata_trip_masks_for_journey_pattern(router->tdata, jp_index);
-        uint32_t i_trip;
+        char *vj_ids = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
+        uint32_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
+        uint32_t i_vj;
 
-        printf ("journey_pattern %d (of %d), n trips %d, n stops %d\n", jp_index, router->tdata->n_journey_patterns, jp->n_trips, jp->n_stops);
-        for (i_trip = 0; i_trip < jp->n_trips; ++i_trip) {
-            printf ("trip index %d trip_id %s mask ", i_trip, trip_ids[i_trip * router->tdata->trip_ids_width]);
-            printBits (4, & (trip_masks[i_trip]));
+        printf ("journey_pattern %d (of %d), n vehicle_journeys %d, n stops %d\n", jp_index, router->tdata->n_journey_patterns, jp->n_vjs, jp->n_stops);
+        for (i_vj = 0; i_vj < jp->n_vjs; ++i_vj) {
+            printf ("vj index %d vj_id %s mask ", i_vj, vj_ids[i_vj * router->tdata->vj_ids_width]);
+            printBits (4, & (vj_masks[i_vj]));
             printf ("\n");
         }
     }
