@@ -12,8 +12,8 @@ struct leg {
     /* journey_pattern index */
     uint32_t journey_pattern;
 
-    /* trip index */
-    uint32_t trip;
+    /* vj index */
+    uint32_t vj;
 
     /* from stop index */
     spidx_t s0;

@@ -101,8 +101,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
         #endif
 
         for (vj_index = 0; vj_index < jp.n_vjs; ++vj_index) {
-            vehicle_journey_t trip = vjs[vj_index];
-            stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
+            vehicle_journey_t vj = vjs[vj_index];
+            stoptime_t *st = tdata->stop_times + vj.stop_times_offset;
             stoptime_t *prev_st = NULL;
             for (stop_index = 0; stop_index < jp.n_stops; ++stop_index) {
                 if (stop_index == 0 && st->arrival != 0) {

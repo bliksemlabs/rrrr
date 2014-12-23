@@ -12,7 +12,7 @@ static void leg_swap (leg_t *leg) {
     leg->t1 = temp.t0;
 }
 
-/* Checks charateristics that should be the same for all trip plans produced by this router:
+/* Checks charateristics that should be the same for all vj plans produced by this router:
    All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc.
    Returns true if any of the checks fail, false if no problems are detected. */
 static bool check_plan_invariants (plan_t *plan) {
@@ -168,7 +168,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t0 = ride->time; /* Rendering the walk requires already having the ride arrival time */
             l->t1 = walk->walk_time;
             l->journey_pattern = WALK;
-            l->trip  = WALK;
+            l->vj = WALK;
 
             if (req->arrive_by) leg_swap (l);
             l += (req->arrive_by ? 1 : -1); /* next leg */
@@ -179,7 +179,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t0 = ride->board_time;
             l->t1 = ride->time;
             l->journey_pattern = ride->back_journey_pattern;
-            l->trip  = ride->back_vj;
+            l->vj = ride->back_vj;
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
@@ -212,7 +212,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                 /* Results starting on board do not have an initial walk leg. */
                 l->s0 = l->s1 = ONBOARD;
                 l->t0 = l->t1 = req->time;
-                l->journey_pattern = l->trip = WALK;
+                l->journey_pattern = l->vj = WALK;
                 l += 1; /* move back to first transit leg */
                 l->s0 = ONBOARD;
                 l->t0 = req->time;
@@ -235,7 +235,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             duration = transfer_duration (router->tdata, req, l->s0, l->s1);
             l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
             l->journey_pattern = WALK;
-            l->trip  = WALK;
+            l->vj = WALK;
             if (req->arrive_by) leg_swap (l);
         }
         /* Move to the next itinerary in the plan. */
@@ -311,8 +311,8 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
 
                             if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->journey_pattern) ) &&
                                 ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->s0) ) &&
-                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->trip ) )
-                                /* TODO: need to have rtime_to_date  for informed_entity->trip->start_date */
+                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->vj) )
+                                /* TODO: need to have rtime_to_date  for informed_entity->vj->start_date */
                                 /* TODO: need to have rtime_to_epoch for informed_entity->active_period */
                             ) {
                                 alert_msg = alert->header_text->translation[0]->text;
@@ -332,7 +332,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
         b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
-            leg_mode, leg->journey_pattern, leg->trip, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
+            leg_mode, leg->journey_pattern, leg->vj, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
                         (alert_msg ? alert_msg : ""));
 
         /* EXAMPLE

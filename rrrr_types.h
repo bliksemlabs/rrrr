@@ -38,12 +38,12 @@ struct list {
     uint32_t len;
 };
 
-typedef enum trip_attributes {
-    ta_none = 0,
-    ta_accessible = 1,
-    ta_toilet = 2,
-    ta_wifi = 4
-} trip_attributes_t;
+typedef enum vehicle_journey_attributes {
+    vja_none = 0,
+    vja_accessible = 1,
+    vja_toilet = 2,
+    vja_wifi = 4
+} vehicle_journey_attributes_t;
 
 
 typedef enum optimise {
@@ -95,9 +95,9 @@ struct router_request {
     spidx_t via;
 
     /* onboard departure, journey_pattern index from the users perspective */
-    uint32_t onboard_trip_journey_pattern;
+    uint32_t onboard_vj_journey_pattern;
 
-    /* onboard departure, trip offset within the journey_pattern */
+    /* onboard departure, vehicle_journey offset within the journey_pattern */
     uint32_t onboard_journey_pattern_offset;
 
     /* TODO comment on banning */
@@ -144,8 +144,8 @@ struct router_request {
     /* an extra delay per transfer, in seconds */
     uint8_t walk_slack;
 
-    /* select the required trip attributes by a bitfield */
-    uint8_t trip_attributes;
+    /* select the required vehicle_journey attributes by a bitfield */
+    uint8_t vj_attributes;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0

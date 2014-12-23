@@ -47,8 +47,8 @@ uint8_t *tdata_stop_attributes_for_index(tdata_t *td, spidx_t stop_index) {
     return td->stop_attributes + stop_index;
 }
 
-const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t trip_index) {
-    return td->vj_ids + (td->vj_ids_width * trip_index);
+const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index) {
+    return td->vj_ids + (td->vj_ids_width * vj_index);
 }
 
 const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t vj_index) {
@@ -293,7 +293,7 @@ void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t vj_inde
     spidx_t si;
     journey_pattern_t jp = td->journey_patterns[jp_index];
     printf("\njourney_pattern details for %s %s %s '%s %s' [%d] (n_stops %d, n_vjs %d)\n"
-           "tripid, stop sequence, stop name (index), departures  \n",
+           "vjid, stop sequence, stop name (index), departures  \n",
         tdata_agency_name_for_journey_pattern(td, jp_index),
         tdata_agency_id_for_journey_pattern(td, jp_index),
         tdata_agency_url_for_journey_pattern(td, jp_index),
@@ -377,9 +377,9 @@ void tdata_dump(tdata_t *td) {
     }
     for (i = 0; i < td->n_journey_patterns; i++) {
         /* TODO: Remove?
-         * printf("journey_pattern %03d has id %s and first trip id %s \n", i,
+         * printf("journey_pattern %03d has id %s and first vehicle_journey id %s \n", i,
          *        tdata_route_desc_for_index(td, i),
-         *        tdata_trip_ids_for_route(td, i));
+         *        tdata_vehicle_journey_ids_for_route(td, i));
          */
         tdata_dump_journey_pattern(td, i, NONE);
     }

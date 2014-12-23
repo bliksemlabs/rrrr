@@ -21,8 +21,8 @@
 typedef struct router_state router_state_t;
 /* We could potentially remove the back_time from router_state,
  * but this requires implementing some lookup functions and storing
- * the back_trip_stop rather than the back_stop (global stop index):
- * a trip can pass through a stop more than once.
+ * the back_vj_stop rather than the back_stop (global stop index):
+ * a vehicle_journey can pass through a stop more than once.
  */
 /* TODO rename members to ride_from, walk_from, journey_pattern, vehicle_journey, */
 struct router_state {

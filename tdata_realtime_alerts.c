@@ -80,12 +80,12 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             }
 
             if (informed_entity->trip && informed_entity->trip->trip_id) {
-                uint32_t trip_index = radixtree_find (tdata->tripid_index,
+                uint32_t trip_index = radixtree_find (tdata->vjid_index,
                                                       informed_entity->trip->trip_id);
                 #ifdef RRRR_DEBUG
                 if (trip_index == RADIXTREE_NONE) {
                     fprintf (stderr,
-                    "    trip id was not found in the radix tree.\n");
+                    vj);
                 }
                 #endif
 

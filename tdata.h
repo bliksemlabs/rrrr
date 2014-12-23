@@ -55,9 +55,9 @@ struct vehicle_journey {
      */
     rtime_t  begin_time;
 
-    /* The trip_attributes, including CANCELED flag
+    /* The vj_attributes, including CANCELED flag
      */
-    uint16_t trip_attributes;
+    uint16_t vj_attributes;
 };
 
 typedef struct stoptime stoptime_t;
@@ -172,7 +172,7 @@ struct tdata {
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;
     radixtree_t *stopid_index;
-    radixtree_t *tripid_index;
+    radixtree_t *vjid_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     stoptime_t **vj_stoptimes;
     uint32_t *vjs_in_journey_pattern;
@@ -209,9 +209,9 @@ const char *tdata_stop_id_for_index(tdata_t *td, spidx_t stop_index);
 
 uint8_t *tdata_stop_attributes_for_index(tdata_t *td, spidx_t stop_index);
 
-const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t trip_index);
+const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
 
 uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t start_index);
 
@@ -253,9 +253,9 @@ const char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index
 
 const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-/* Returns a pointer to the first stoptime for the trip (VehicleJourney). These are generally TimeDemandTypes that must
+/* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
-stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t trip_index);
+stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
 
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
 vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index);

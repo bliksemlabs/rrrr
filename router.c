@@ -502,7 +502,7 @@ void apply_transfers (router_t *router, router_request_t *req,
      */
 }
 
-/* Get the departure or arrival time of the given trip on the given
+/* Get the departure or arrival time of the given vj on the given
  * service day, applying realtime data as needed.
  */
 static rtime_t
@@ -510,7 +510,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
                 uint32_t jp_index, uint32_t vj_offset, uint32_t journey_pattern_point,
                 bool arrive) {
     rtime_t time, time_adjusted;
-    stoptime_t *trip_times;
+    stoptime_t *vj_stoptimes;
 
     /* This code is only required if want realtime support in
      * the journey planner
@@ -521,9 +521,9 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
     if (serviceday->apply_realtime) {
 
         /* the expanded stoptimes can be found at the same row as the vehicle_journey */
-        trip_times = tdata->vj_stoptimes[tdata->journey_patterns[jp_index].vj_ids_offset + vj_offset];
+        vj_stoptimes = tdata->vj_stoptimes[tdata->journey_patterns[jp_index].vj_ids_offset + vj_offset];
 
-        if (trip_times) {
+        if (vj_stoptimes) {
             /* if the expanded stoptimes have been added,
              * the begin_time is precalculated
              */
@@ -533,21 +533,21 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
              * or our source is not time-expanded
              */
             vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
-            trip_times = &tdata->stop_times[vj->stop_times_offset];
+            vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
             time = vj->begin_time;
         }
     } else
     #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
     {
         vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
-        trip_times = &tdata->stop_times[vj->stop_times_offset];
+        vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
         time = vj->begin_time;
     }
 
     if (arrive) {
-        time += trip_times[journey_pattern_point].arrival;
+        time += vj_stoptimes[journey_pattern_point].arrival;
     } else {
-        time += trip_times[journey_pattern_point].departure;
+        time += vj_stoptimes[journey_pattern_point].departure;
     }
 
     time_adjusted = time + serviceday->midnight;
@@ -569,7 +569,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 /* TODO: change the function name of tdata_next */
 static bool
 tdata_next (router_t *router, router_request_t *req,
-            uint32_t jp_index, uint32_t trip_offset, rtime_t qtime,
+            uint32_t jp_index, uint32_t vj_offset, rtime_t qtime,
             spidx_t *ret_stop_index, rtime_t *ret_stop_time) {
 
     spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
@@ -583,9 +583,9 @@ tdata_next (router_t *router, router_request_t *req,
         /* TODO: check if the arrive = false flag works with req->arrive_by */
 
         rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
-                jp_index, trip_offset, jpp_i, false);
+                jp_index, vj_offset, jpp_i, false);
 
-        /* Find stop immediately after the given time on the given trip. */
+        /* Find stop immediately after the given time on the given vj. */
         if (req->arrive_by ? time > qtime : time < qtime) {
             if (*ret_stop_time == UNREACHED ||
                 (req->arrive_by ? time < *ret_stop_time :
@@ -600,9 +600,9 @@ tdata_next (router_t *router, router_request_t *req,
 }
 
 static bool initialize_origin_onboard (router_t *router, router_request_t *req) {
-    /* We cannot expand the start trip into the temporary round (1)
+    /* We cannot expand the start vj into the temporary round (1)
      * during initialization because we may be able to reach the
-     * destination on that starting trip.
+     * destination on that starting vj.
      * We discover the previous stop and flag only the selected journey_pattern
      * for exploration in round 0. This would interfere with search
      * reversal, but reversal is meaningless/useless in on-board
@@ -612,7 +612,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     rtime_t stop_time;
 
     if (tdata_next (router, req,
-                    req->onboard_trip_journey_pattern, req->onboard_journey_pattern_offset,
+                    req->onboard_vj_journey_pattern, req->onboard_journey_pattern_offset,
                     req->time, &stop_index, &stop_time) ){
         uint32_t i_state;
 
@@ -632,7 +632,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
          */
         bitset_clear (router->updated_stops);
         bitset_clear (router->updated_journey_patterns);
-        bitset_set (router->updated_journey_patterns, req->onboard_trip_journey_pattern);
+        bitset_set (router->updated_journey_patterns, req->onboard_vj_journey_pattern);
 
         return true;
     }
@@ -839,11 +839,11 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      * routing engine we also infer what the requestee wants to do, the
      * following use cases can be observed:
      *
-     * 0) from is actually onboard an existing trip
+     * 0) from is actually onboard an existing vj
      * 1) from/to a station, req->from and/or req->to are filled
      * 2) from/to a coordinate, req->from_coord and/or req->to_coord are filled
      *
-     * Given 0, we calculate the previous stop from an existing running trip
+     * Given 0, we calculate the previous stop from an existing running vj
      * and determine the best way to the destination.
      *
      * Given 1, the user is actually at a stop and wants to leave from there,
@@ -872,8 +872,8 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      * back_journey_pattern wordt gebruikt
      */
 
-    /* We are starting on board a trip, not at a station. */
-    if (req->onboard_trip_journey_pattern != NONE && req->onboard_journey_pattern_offset != NONE) {
+    /* We are starting on board a vj, not at a station. */
+    if (req->onboard_vj_journey_pattern != NONE && req->onboard_journey_pattern_offset != NONE) {
 
         /* On-board departure only makes sense for depart-after requests. */
         if (!req->arrive_by) {
@@ -976,7 +976,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
         uint16_t jpp_offset,
         rtime_t prev_time,
         serviceday_t **best_serviceday,
-        uint32_t *best_trip, rtime_t *best_time) {
+        uint32_t *best_vj, rtime_t *best_time) {
 
     serviceday_t *serviceday;
 
@@ -1001,7 +1001,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
          * scanning additional days. Note that day list is
          * reversed for arrive-by searches.
          */
-        if (*best_trip != NONE && ! cache->jp_overlap) break;
+        if (*best_vj != NONE && ! cache->jp_overlap) break;
 
         for (i_vj_offset = 0;
              i_vj_offset < cache->this_jp->n_vjs;
@@ -1015,44 +1015,44 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             #endif
 
             #if RRRR_MAX_BANNED_JOURNEYS > 0
-            /* skip this trip if it is banned */
+            /* skip this vj if it is banned */
             if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
                         req->n_banned_vjs, cache->jp_index,
                     i_vj_offset)) continue;
             #endif
 
-            /* skip this trip if it is not running on
+            /* skip this vj if it is not running on
              * the current service day
              */
             if ( ! (serviceday->mask & cache->vj_masks[i_vj_offset])) continue;
-            /* skip this trip if it doesn't have all our
+            /* skip this vj if it doesn't have all our
              * required attributes
-             * Checking whether we have required req->trip_attributes at all, before checking the attributes of the vehicle_journeys
-             * is about 4% more efficient for journeys without specific trip attribute requirements.
+             * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
+             * is about 4% more efficient for journeys without specific vj attribute requirements.
              */
-            if (req->trip_attributes && ! ((req->trip_attributes & cache->vjs_in_journey_pattern[i_vj_offset].trip_attributes) == req->trip_attributes)) continue;
+            if (req->vj_attributes && ! ((req->vj_attributes & cache->vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
 
             /* consider the arrival or departure time on
              * the current service day
              */
             time = tdata_stoptime (router->tdata, serviceday, cache->jp_index, i_vj_offset, jpp_offset, req->arrive_by);
 
-            #ifdef RRRR_TRIP
+            #ifdef RRRR_VJ
             fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
             #endif
 
             /* rtime overflow due to long overnight vehicle_journey's on day 2 */
             if (time == UNREACHED) continue;
 
-            /* Mark trip for boarding if it improves on the last round's
+            /* Mark vj for boarding if it improves on the last round's
              * post-walk time at this stop. Note: we should /not/ be comparing
              * to the current best known time at this stop, because it may have
-             * been updated in this round by another trip (in the pre-walk
+             * been updated in this round by another vj (in the pre-walk
              * transit phase).
              */
             if (req->arrive_by ? time <= prev_time && time > *best_time
                                : time >= prev_time && time < *best_time) {
-                *best_trip = i_vj_offset;
+                *best_vj = i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
             }
@@ -1062,7 +1062,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
 
 static bool
 write_state(router_t *router, router_request_t *req,
-            uint8_t round, uint32_t jpp_index, uint32_t trip_offset,
+            uint8_t round, uint32_t jpp_index, uint32_t vj_offset,
             spidx_t stop_index, uint16_t jpp_offset, rtime_t time,
             uint32_t board_stop, uint16_t board_jpp_stop,
             rtime_t board_time) {
@@ -1079,7 +1079,7 @@ write_state(router_t *router, router_request_t *req,
     router->best_time[stop_index] = time;
     this_state->time              = time;
     this_state->back_journey_pattern = jpp_index;
-    this_state->back_vj = trip_offset;
+    this_state->back_vj = vj_offset;
     this_state->ride_from         = board_stop;
     this_state->board_time        = board_time;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -1139,19 +1139,19 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
         journey_pattern_cache_t cache;
 
-        /* trip index within the route. NONE means not yet boarded. */
+        /* vj index within the route. NONE means not yet boarded. */
         uint32_t      vj_index = NONE;
 
-        /* stop index where that trip was boarded */
+        /* stop index where that vj was boarded */
         uint32_t      board_stop = 0;
 
-        /* journey_pattern_point index where that trip was boarded */
+        /* journey_pattern_point index where that vj was boarded */
         uint16_t      board_jpp = 0;
 
-        /* time when that trip was boarded */
+        /* time when that vj was boarded */
         rtime_t       board_time = 0;
 
-        /* Service day on which that trip was boarded */
+        /* Service day on which that vj was boarded */
         serviceday_t *board_serviceday = NULL;
 
 
@@ -1219,7 +1219,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
             #if RRRR_MAX_BANNED_STOPS_HARD > 0
             /* If a stop in in banned_stops_hard, we do not want to transit
-             * through this stationwe reset the current trip to NONE and skip
+             * through this stationwe reset the current vj to NONE and skip
              * the currect stop. This effectively splits the journey_pattern in two,
              * and forces a re-board afterwards.
              */
@@ -1230,9 +1230,9 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
             }
             #endif
 
-            /* If we are not already on a trip, or if we might be able to board
-             * a better trip on this journey_pattern at this location, indicate that we
-             * want to search for a trip.
+            /* If we are not already on a vj, or if we might be able to board
+             * a better vj on this journey_pattern at this location, indicate that we
+             * want to search for a vj.
              */
             prev_time = router->states[last_round * router->tdata->n_stops +
                                                     stop_index].walk_time;
@@ -1249,30 +1249,30 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     /* TODO: is this repetitively triggering re-boarding
                      * searches along a single route?
                      */
-                    rtime_t trip_time = tdata_stoptime (router->tdata,
+                    rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
                             jp_index, vj_index,
                                                         (uint16_t) jpp_index,
                                                         req->arrive_by);
-                    if (trip_time == UNREACHED) {
+                    if (vj_stoptime == UNREACHED) {
                         attempt_board = false;
-                    } else if (req->arrive_by ? prev_time > trip_time
-                                              : prev_time < trip_time) {
+                    } else if (req->arrive_by ? prev_time > vj_stoptime
+                                              : prev_time < vj_stoptime) {
                         #ifdef RRRR_INFO
                         char buf[13];
-                        fprintf (stderr, "    [reboarding here] trip = %s\n",
-                                         btimetext(trip_time, buf));
+                        fprintf (stderr, "    [reboarding here] vj = %s\n",
+                                         btimetext(vj_stoptime, buf));
                         #endif
                         attempt_board = true;
                     }
                 }
             }
-            /* If we have not yet boarded a trip on this route, see if we can
+            /* If we have not yet boarded a vj on this route, see if we can
              * board one.  Also handle the case where we hit a stop with an
              * existing better arrival time. */
 
             if (attempt_board) {
-                /* Scan all vehicle_journeys to find the soonest trip that can be boarded,
+                /* Scan all vehicle_journeys to find the soonest vj that can be boarded,
                  * if any. Real-time updates can ruin FIFO ordering of vehicle_journeys
                  * within journey_patterns. Scanning through the whole list of vehicle_journeys
                  * reduces speed by ~20 percent over binary search.
@@ -1314,8 +1314,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                         vj_index = best_vj;
                     }
                 } else {
-                    #ifdef RRRR_TRIP
-                    fprintf(stderr, "    no suitable trip to board.\n");
+                    #ifdef RRRR_VJ
+                    fprintf(stderr, "    no suitable vj to board.\n");
                     #endif
                 }
                 continue;  /*  to the next stop in the journey_pattern */
@@ -1330,8 +1330,8 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 /* overflow due to long overnight vehicle_journeys on day 2 */
                 if (time == UNREACHED) continue;
 
-                #ifdef RRRR_TRIP
-                fprintf(stderr, "    on board trip %d considering time %s \n",
+                #ifdef RRRR_VJ
+                fprintf(stderr, "    on board vj %d considering time %s \n",
                                 vj_index, timetext(time));
                 #endif
 
@@ -1339,7 +1339,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                 if ((router->best_time[router->target] != UNREACHED) &&
                     (req->arrive_by ? time < router->best_time[router->target]
                                     : time > router->best_time[router->target])) {
-                    #ifdef RRRR_TRIP
+                    #ifdef RRRR_VJ
                     fprintf(stderr, "    (target pruning)\n");
                     #endif
 
@@ -1365,7 +1365,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
                     fprintf(stderr, "    (no improvement)\n");
                     #endif
 
-                    /* the current trip does not improve on the best time
+                    /* the current vj does not improve on the best time
                      * at this stop
                      */
                     continue;
@@ -1383,7 +1383,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
 
                     #ifdef RRRR_DEBUG
                     fprintf(stderr, "ERROR: setting state to time before" \
-                                    "start time. journey_pattern %d trip %d stop %d \n",
+                                    "start time. journey_pattern %d vj %d stop %d \n",
                                     jp_index, vj_index, stop_index);
                     #endif
                 } else {
