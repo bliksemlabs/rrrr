@@ -10,6 +10,7 @@ def convert(gtfsdb):
 
     from_date,to_date = gtfsdb.date_range()
     tdata = Timetable(from_date)
+    print "Timetable valid from "+str(from_date)
 
     for stop_id,stop_name,stop_lat,stop_lon in gtfsdb.stop_areas():
         StopArea(tdata,stop_id,name=stop_name,latitude=stop_lat,longitude=stop_lon)
@@ -99,6 +100,9 @@ def main():
     gtfsdb = GTFSDatabase( gtfsdb_filename, overwrite=True )
     gtfsdb.load_gtfs( gtfs_filename, None, reporter=sys.stdout, verbose=options.verbose )
     tdata = convert(gtfsdb)
+    if len(tdata.journey_patterns) == 0 or len(tdata.vehicle_journeys) == 0:
+        print "No valid trips in this GTFS file!"
+        sys.exit(1)
     export(tdata)
 
 if __name__=='__main__': 
