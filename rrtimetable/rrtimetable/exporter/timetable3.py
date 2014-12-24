@@ -1,6 +1,7 @@
 import helper
 from utils import *
 import operator
+import sys
 
 NUMBER_OF_DAYS = 32
 
@@ -107,7 +108,9 @@ def make_idx(tdata):
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
-
+    if len(index.journey_patterns) == 0:
+        print "No valid journey_patterns found to export to this timetable. Exiting..."
+        sys.exit(1)
     print '--------------------------'
     return index
 
