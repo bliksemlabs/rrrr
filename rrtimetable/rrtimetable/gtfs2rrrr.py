@@ -1,4 +1,3 @@
-import psycopg2
 from model.transit import *
 from gtfsdb import GTFSDatabase
 import sys
