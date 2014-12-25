@@ -532,7 +532,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
             vj_index = radixtree_find (tdata->vjid_index, rt_trip->trip_id);
             if (vj_index == RADIXTREE_NONE) {
                 #ifdef RRRR_DEBUG
-                fprintf (stderr, vj
+                fprintf (stderr, "    trip id was not found in the radix tree.\n");
                 #endif
                 continue;
             }
