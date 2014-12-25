@@ -344,13 +344,13 @@ static void initialize_transfers_full (router_t *router, uint32_t round) {
  * return to them.
  */
 static void initialize_transfers (router_t *router,
-                                  uint32_t round, uint32_t stop_index_from) {
+                                  uint32_t round, spidx_t stop_index_from) {
     router_state_t *states = router->states + (round * router->tdata->n_stops);
     uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
     uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
     states[stop_index_from].walk_time = UNREACHED;
     for ( ; t < tN ; ++t) {
-        uint32_t stop_index_to = router->tdata->transfer_target_stops[t];
+        spidx_t stop_index_to = router->tdata->transfer_target_stops[t];
         states[stop_index_to].walk_time = UNREACHED;
     }
 }
@@ -463,7 +463,7 @@ tdata_next (router_t *router, router_request_t *req,
  */
 static void apply_transfers (router_t *router, router_request_t *req,
                       uint32_t round, bool transfer) {
-    uint32_t stop_index_from;
+    uint32_t stop_index_from; /* uint32_t: because we need to compare to BITSET_NONE */
     router_state_t *states = router->states + (round * router->tdata->n_stops);
     /* The transfer process will flag journey_patterns that should be explored in
      * the next round.
@@ -525,7 +525,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
         uint32_t tr     = router->tdata->stops[stop_index_from    ].transfers_offset;
         uint32_t tr_end = router->tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; tr < tr_end ; ++tr) {
-            uint32_t stop_index_to = router->tdata->transfer_target_stops[tr];
+            spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
             /* Transfer distances are stored in units of 16 meters,
              * rounded not truncated, in a uint8_t
              */
