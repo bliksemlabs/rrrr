@@ -21,9 +21,7 @@
 #include <stdint.h>
 #include <math.h>
 
-static void apply_transfers (router_t *router, router_request_t *req, uint32_t round, bool transfer);
 static void router_round(router_t *router, router_request_t *req, uint8_t round);
-
 
 #ifdef RRRR_FEATURE_LATLON
 static bool router_setup_hashgrid(router_t *router) {
@@ -360,6 +358,104 @@ static void initialize_transfers (router_t *router,
 }
 #endif
 
+
+/* Get the departure or arrival time of the given vj on the given
+ * service day, applying realtime data as needed.
+ */
+static rtime_t
+tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
+                uint32_t jp_index, uint32_t vj_offset, uint32_t journey_pattern_point,
+                bool arrive) {
+    rtime_t time, time_adjusted;
+    stoptime_t *vj_stoptimes;
+
+    /* This code is only required if want realtime support in
+     * the journey planner
+     */
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+
+    /* given that we are at a serviceday the realtime scope applies to */
+    if (serviceday->apply_realtime) {
+
+        /* the expanded stoptimes can be found at the same row as the vehicle_journey */
+        vj_stoptimes = tdata->vj_stoptimes[tdata->journey_patterns[jp_index].vj_ids_offset + vj_offset];
+
+        if (vj_stoptimes) {
+            /* if the expanded stoptimes have been added,
+             * the begin_time is precalculated
+             */
+            time = 0;
+        } else {
+            /* if the expanded stoptimes have not been added,
+             * or our source is not time-expanded
+             */
+            vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
+            vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
+            time = vj->begin_time;
+        }
+    } else
+    #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
+    {
+        vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
+        vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
+        time = vj->begin_time;
+    }
+
+    if (arrive) {
+        time += vj_stoptimes[journey_pattern_point].arrival;
+    } else {
+        time += vj_stoptimes[journey_pattern_point].departure;
+    }
+
+    time_adjusted = time + serviceday->midnight;
+
+    /*
+    printf ("boarding at stop %d, time is: %s \n", journey_pattern_point, timetext (time));
+    printf ("   after adjusting: %s \n", timetext (time_adjusted));
+    printf ("   midnight: %d \n", serviceday->midnight);
+    */
+
+    /* Detect overflow (this will still not catch wrapping due to negative
+     * delays on small positive times) actually this happens naturally with
+     * times like '03:00+1day' transposed to serviceday 'tomorrow'
+     */
+    if (time_adjusted < time) return UNREACHED;
+    return time_adjusted;
+}
+
+/* TODO: change the function name of tdata_next */
+static bool
+tdata_next (router_t *router, router_request_t *req,
+            uint32_t jp_index, uint32_t vj_offset, rtime_t qtime,
+            spidx_t *ret_stop_index, rtime_t *ret_stop_time) {
+
+    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
+    uint32_t jpp_i;
+
+    *ret_stop_index = STOP_NONE;
+    *ret_stop_time = UNREACHED;
+
+    for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
+        /* TODO: check if the arrive = false flag works with req->arrive_by */
+
+        rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
+                jp_index, vj_offset, jpp_i, false);
+
+        /* Find stop immediately after the given time on the given vj. */
+        if (req->arrive_by ? time > qtime : time < qtime) {
+            if (*ret_stop_time == UNREACHED ||
+                (req->arrive_by ? time < *ret_stop_time :
+                                  time > *ret_stop_time)) {
+                *ret_stop_index = (spidx_t) journey_pattern_points[jpp_i];
+                *ret_stop_time = time;
+            }
+        }
+    }
+
+    return (*ret_stop_index != STOP_NONE);
+}
+
 /* For each updated stop and each destination of a transfer from an updated
  * stop, set the associated journey_patterns as updated. The journey_patterns bitset is cleared
  * before the operation, and the stops bitset is cleared after all transfers
@@ -503,103 +599,6 @@ static void apply_transfers (router_t *router, router_request_t *req,
      * best time equal to its walk time, and
      * a walk arrival time <= its ride arrival time.
      */
-}
-
-/* Get the departure or arrival time of the given vj on the given
- * service day, applying realtime data as needed.
- */
-static rtime_t
-tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
-                uint32_t jp_index, uint32_t vj_offset, uint32_t journey_pattern_point,
-                bool arrive) {
-    rtime_t time, time_adjusted;
-    stoptime_t *vj_stoptimes;
-
-    /* This code is only required if want realtime support in
-     * the journey planner
-     */
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-
-    /* given that we are at a serviceday the realtime scope applies to */
-    if (serviceday->apply_realtime) {
-
-        /* the expanded stoptimes can be found at the same row as the vehicle_journey */
-        vj_stoptimes = tdata->vj_stoptimes[tdata->journey_patterns[jp_index].vj_ids_offset + vj_offset];
-
-        if (vj_stoptimes) {
-            /* if the expanded stoptimes have been added,
-             * the begin_time is precalculated
-             */
-            time = 0;
-        } else {
-            /* if the expanded stoptimes have not been added,
-             * or our source is not time-expanded
-             */
-            vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
-            vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
-            time = vj->begin_time;
-        }
-    } else
-    #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
-    {
-        vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
-        vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
-        time = vj->begin_time;
-    }
-
-    if (arrive) {
-        time += vj_stoptimes[journey_pattern_point].arrival;
-    } else {
-        time += vj_stoptimes[journey_pattern_point].departure;
-    }
-
-    time_adjusted = time + serviceday->midnight;
-
-    /*
-    printf ("boarding at stop %d, time is: %s \n", journey_pattern_point, timetext (time));
-    printf ("   after adjusting: %s \n", timetext (time_adjusted));
-    printf ("   midnight: %d \n", serviceday->midnight);
-    */
-
-    /* Detect overflow (this will still not catch wrapping due to negative
-     * delays on small positive times) actually this happens naturally with
-     * times like '03:00+1day' transposed to serviceday 'tomorrow'
-     */
-    if (time_adjusted < time) return UNREACHED;
-    return time_adjusted;
-}
-
-/* TODO: change the function name of tdata_next */
-static bool
-tdata_next (router_t *router, router_request_t *req,
-            uint32_t jp_index, uint32_t vj_offset, rtime_t qtime,
-            spidx_t *ret_stop_index, rtime_t *ret_stop_time) {
-
-    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
-    uint32_t jpp_i;
-
-    *ret_stop_index = STOP_NONE;
-    *ret_stop_time = UNREACHED;
-
-    for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
-        /* TODO: check if the arrive = false flag works with req->arrive_by */
-
-        rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
-                jp_index, vj_offset, jpp_i, false);
-
-        /* Find stop immediately after the given time on the given vj. */
-        if (req->arrive_by ? time > qtime : time < qtime) {
-            if (*ret_stop_time == UNREACHED ||
-                (req->arrive_by ? time < *ret_stop_time :
-                                  time > *ret_stop_time)) {
-                *ret_stop_index = (spidx_t) journey_pattern_points[jpp_i];
-                *ret_stop_time = time;
-            }
-        }
-    }
-
-    return (*ret_stop_index != STOP_NONE);
 }
 
 static bool initialize_origin_onboard (router_t *router, router_request_t *req) {
