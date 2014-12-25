@@ -59,3 +59,8 @@ Building RRRR for mobile development
 ------------------------------------
 
 Refer to the Makefile for which files are required as the bare minimum. We do suggest that you explicitly read config.h to disable all unused functionality.
+
+Been there done that
+--------------------
+
+ * We have attempted to unroll some of branches caused by "arrive by". The resulting code was unsignificantly slower than our existing code.
