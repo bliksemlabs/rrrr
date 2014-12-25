@@ -713,7 +713,7 @@ write_state(router_t *router, router_request_t *req,
     router->best_time[stop_index]    = time;
     this_state->time                 = time;
     this_state->back_journey_pattern = jpp_index;
-    this_state->back_vj              = vj_offset;
+    this_state->back_vehicle_journey = vj_offset;
     this_state->ride_from            = board_stop;
     this_state->board_time           = board_time;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -1135,7 +1135,7 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
     /* the rest of these should be unnecessary */
     router->states[i_state].ride_from  = STOP_NONE;
     router->states[i_state].back_journey_pattern = NONE;
-    router->states[i_state].back_vj = NONE;
+    router->states[i_state].back_vehicle_journey = NONE;
     router->states[i_state].board_time = UNREACHED;
 
     /* Apply transfers to initial state,
@@ -1198,7 +1198,7 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
         /*  the rest of these should be unnecessary */
         router->states[i_state].ride_from  = STOP_NONE;
         router->states[i_state].back_journey_pattern = NONE;
-        router->states[i_state].back_vj = NONE;
+        router->states[i_state].back_vehicle_journey = NONE;
         router->states[i_state].board_time = UNREACHED;
 
         bitset_set(router->updated_stops, stop_index);

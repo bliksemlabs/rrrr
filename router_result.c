@@ -179,7 +179,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t0 = ride->board_time;
             l->t1 = ride->time;
             l->journey_pattern = ride->back_journey_pattern;
-            l->vj = ride->back_vj;
+            l->vj = ride->back_vehicle_journey;
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
@@ -188,7 +188,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                 uint32_t vj_index;
 
                 jp = router->tdata->journey_patterns + ride->back_journey_pattern;
-                vj_index = jp->vj_ids_offset + ride->back_vj;
+                vj_index = jp->vj_ids_offset + ride->back_vehicle_journey;
                 vj = router->tdata->vjs + vj_index;
 
                 if (router->tdata->vj_stoptimes[vj_index] &&

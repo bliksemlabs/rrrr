@@ -24,12 +24,12 @@ typedef struct router_state router_state_t;
  * the back_vj_stop rather than the back_stop (global stop index):
  * a vehicle_journey can pass through a stop more than once.
  */
-/* TODO rename members to ride_from, walk_from, journey_pattern, vehicle_journey, */
 struct router_state {
    /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
     uint32_t back_journey_pattern;
+
     /* The index of the vehicle_journey used to travel from back_stop */
-    uint32_t back_vj;
+    uint32_t back_vehicle_journey;
 
     /* The index of the previous stop in the itinerary */
     spidx_t ride_from;
