@@ -21,6 +21,9 @@
 #include <stdint.h>
 #include <math.h>
 
+static void apply_transfers (router_t *router, router_request_t *req, uint32_t round, bool transfer);
+static void router_round(router_t *router, router_request_t *req, uint8_t round);
+
 
 #ifdef RRRR_FEATURE_LATLON
 static bool router_setup_hashgrid(router_t *router) {
@@ -364,7 +367,7 @@ static void initialize_transfers (router_t *router,
  * Transfer results are computed within the same round, based on arrival time
  * in the ride phase and stored in the walk time member of states.
  */
-void apply_transfers (router_t *router, router_request_t *req,
+static void apply_transfers (router_t *router, router_request_t *req,
                       uint32_t round, bool transfer) {
     uint32_t stop_index_from;
     router_state_t *states = router->states + (round * router->tdata->n_stops);
@@ -1124,7 +1127,7 @@ static bool fill_jp_cache(router_t *router, router_request_t *req,
     return true;
 }
 
-void router_round(router_t *router, router_request_t *req, uint8_t round) {
+static void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
     uint32_t jp_index;
     uint8_t last_round = (uint8_t) ((round == 0) ? 1 : round - 1);
