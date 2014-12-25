@@ -1064,7 +1064,7 @@ static bool
 write_state(router_t *router, router_request_t *req,
             uint8_t round, uint32_t jpp_index, uint32_t vj_offset,
             spidx_t stop_index, uint16_t jpp_offset, rtime_t time,
-            uint32_t board_stop, uint16_t board_jpp_stop,
+            spidx_t board_stop, uint16_t board_jpp_stop,
             rtime_t board_time) {
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
@@ -1143,7 +1143,7 @@ void router_round(router_t *router, router_request_t *req, uint8_t round) {
         uint32_t      vj_index = NONE;
 
         /* stop index where that vj was boarded */
-        uint32_t      board_stop = 0;
+        spidx_t       board_stop = 0;
 
         /* journey_pattern_point index where that vj was boarded */
         uint16_t      board_jpp = 0;
