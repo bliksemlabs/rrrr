@@ -525,7 +525,6 @@ static void apply_transfers (router_t *router, router_request_t *req,
         uint32_t tr     = router->tdata->stops[stop_index_from    ].transfers_offset;
         uint32_t tr_end = router->tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; tr < tr_end ; ++tr) {
-            spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
             /* Transfer distances are stored in units of 16 meters,
              * rounded not truncated, in a uint8_t
              */
@@ -534,6 +533,8 @@ static void apply_transfers (router_t *router, router_request_t *req,
                                             req->walk_speed + req->walk_slack));
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
+            spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
+
             /* Avoid reserved values including UNREACHED */
             if (time_to > RTIME_THREE_DAYS) continue;
             /* Catch wrapping/overflow due to limited range of rtime_t
@@ -697,6 +698,11 @@ write_state(router_t *router, router_request_t *req,
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
 
+    #ifndef RRRR_REALTIME
+    UNUSED (jpp_offset);
+    UNUSED (board_jpp_stop);
+    #endif
+
     #ifdef RRRR_INFO
     {
         char buf[13];
@@ -766,6 +772,9 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
          jp_index != BITSET_NONE;
          jp_index = bitset_next_set_bit (router->updated_journey_patterns, jp_index + 1)) {
 
+        /* Service day on which that vj was boarded */
+        serviceday_t *board_serviceday = NULL;
+
         journey_pattern_cache_t cache;
 
         /* vj index within the route. NONE means not yet boarded. */
@@ -779,9 +788,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         /* time when that vj was boarded */
         rtime_t       board_time = 0;
-
-        /* Service day on which that vj was boarded */
-        serviceday_t *board_serviceday = NULL;
 
 
         /* Iterate over stop indexes within the route. Each one corresponds to
@@ -906,9 +912,9 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                  * within journey_patterns. Scanning through the whole list of vehicle_journeys
                  * reduces speed by ~20 percent over binary search.
                  */
+                serviceday_t *best_serviceday = NULL;
                 uint32_t best_vj = NONE;
                 rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UINT16_MAX);
-                serviceday_t *best_serviceday = NULL;
 
                 #ifdef RRRR_INFO
                 fprintf (stderr, "    attempting boarding at stop %d\n",
@@ -952,7 +958,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             /*  We have already boarded a vehicle_journey along this journey_pattern. */
             } else if (vj_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
-                        jp_index, vj_index,
+                                               jp_index, vj_index,
                                                (uint16_t) jpp_index,
                                                !req->arrive_by);
 
