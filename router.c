@@ -529,11 +529,11 @@ static void apply_transfers (router_t *router, router_request_t *req,
              * rounded not truncated, in a uint8_t
              */
             uint32_t dist_meters = router->tdata->transfer_dist_meters[tr] << 4;
+            spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
             rtime_t transfer_duration = SEC_TO_RTIME((uint32_t)(dist_meters /
                                             req->walk_speed + req->walk_slack));
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
-            spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
 
             /* Avoid reserved values including UNREACHED */
             if (time_to > RTIME_THREE_DAYS) continue;
