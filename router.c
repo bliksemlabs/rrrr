@@ -715,6 +715,7 @@ write_state(router_t *router, router_request_t *req,
     this_state->journey_pattern_point      = jpp_offset;
     #endif
 
+    #ifdef RRRR_STRICT
     if (req->arrive_by && board_time < time) {
         fprintf (stderr, "board time non-decreasing\n");
         return false;
@@ -722,6 +723,7 @@ write_state(router_t *router, router_request_t *req,
         fprintf (stderr, "board time non-increasing\n");
         return false;
     }
+    #endif
 
     return true;
 }
