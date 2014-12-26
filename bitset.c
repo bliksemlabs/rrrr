@@ -16,7 +16,7 @@
 /* Initialize a pre-allocated bitset struct,
  * allocating memory for bits_t holding the bits.
  */
-static void bitset_init(bitset_t *self, uint32_t capacity) {
+static void bitset_init(bitset_t *self, const uint32_t capacity) {
     self->capacity = capacity;
     /* round upwards */
     self->n_chunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
@@ -26,7 +26,7 @@ static void bitset_init(bitset_t *self, uint32_t capacity) {
 /* Allocate a new bitset of the specified capacity,
  * and return a pointer to the bitset_t struct.
  */
-bitset_t *bitset_new(uint32_t capacity) {
+bitset_t *bitset_new(const uint32_t capacity) {
     bitset_t *bs = (bitset_t *) malloc(sizeof(bitset_t));
     if (bs == NULL) return NULL;
 
@@ -66,7 +66,7 @@ void bitset_black(bitset_t *self) {
     } while (i_chunk);
 }
 
-void bitset_mask_and(bitset_t *self, bitset_t *mask) {
+void bitset_mask_and(bitset_t *self, const bitset_t *mask) {
     uint32_t i_chunk = self->n_chunks;
 
     assert (self->capacity == mask->capacity);
@@ -102,19 +102,19 @@ void bitset_mask_and(bitset_t *self, bitset_t *mask) {
  * 00001001      =   9
  */
 
-void bitset_set(bitset_t *self, uint32_t index) {
+void bitset_set(bitset_t *self, const uint32_t index) {
     assert (index < self->capacity);
 
     self->chunks[index >> BS_SHIFT] |= ((bits_t) 1) << (index & (BS_BITS - 1));
 }
 
-void bitset_unset(bitset_t *self, uint32_t index) {
+void bitset_unset(bitset_t *self, const uint32_t index) {
     assert (index < self->capacity);
 
     self->chunks[index >> BS_SHIFT] &= ~(((bits_t) 1) << (index & (BS_BITS - 1)));
 }
 
-bool bitset_get(bitset_t *self, uint32_t index) {
+bool bitset_get(const bitset_t *self, const uint32_t index) {
     assert (index < self->capacity);
 
     return self->chunks[index >> BS_SHIFT] & ((bits_t) 1) << (index & (BS_BITS - 1));
@@ -124,7 +124,7 @@ bool bitset_get(bitset_t *self, uint32_t index) {
 /* Return the next set index in this bitset_t greater than or equal to
  * the specified index. Returns BITSET_NONE if there are no more set bits.
  */
-uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
+uint32_t bitset_next_set_bit(const bitset_t *bs, uint32_t index) {
     bits_t *chunk = bs->chunks + (index >> BS_SHIFT);
     bits_t mask = ((bits_t) 1) << (index & (BS_BITS - 1));
     while (index < bs->capacity) {
@@ -156,7 +156,7 @@ uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
 
 #ifdef RRRR_DEBUG
 
-void bitset_dump(bitset_t *self) {
+void bitset_dump(const bitset_t *self) {
     uint32_t i;
     for (i = 0; i < self->capacity; ++i)
         if (bitset_get(self, i))
@@ -164,7 +164,7 @@ void bitset_dump(bitset_t *self) {
     fprintf(stderr, "\n\n");
 }
 
-uint32_t bitset_enumerate(bitset_t *self) {
+uint32_t bitset_enumerate(const bitset_t *self) {
     uint32_t total = 0;
     uint32_t elem;
     for (elem = bitset_next_set_bit(self, 0);
