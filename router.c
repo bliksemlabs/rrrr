@@ -929,7 +929,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                  */
                 serviceday_t *best_serviceday = NULL;
                 uint32_t best_vj = NONE;
-                rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UINT16_MAX);
+                rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
                 #ifdef RRRR_INFO
                 fprintf (stderr, "    attempting boarding at stop %d\n",
