@@ -185,13 +185,13 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
     yesterday.midnight = 0;
     yesterday.mask = router->day_mask >> 1;
-    yesterday.apply_realtime = yesterday.mask & realtime_mask;
+    yesterday.apply_realtime = (bool) (yesterday.mask & realtime_mask);
     today.midnight = RTIME_ONE_DAY;
     today.mask = router->day_mask;
-    today.apply_realtime = today.mask & realtime_mask;
+    today.apply_realtime = (bool) (today.mask & realtime_mask);
     tomorrow.midnight = RTIME_TWO_DAYS;
     tomorrow.mask = router->day_mask << 1;
-    tomorrow.apply_realtime = tomorrow.mask & realtime_mask;
+    tomorrow.apply_realtime = (bool) (tomorrow.mask & realtime_mask);
 
     router->day_mask = today.mask;
     /* Iterate backward over days for arrive-by searches. */
