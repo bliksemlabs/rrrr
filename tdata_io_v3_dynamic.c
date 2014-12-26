@@ -35,7 +35,7 @@
     if (!td->storage) goto fail_close_fd; \
     if (read (fd, td->storage, ((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width) != (ssize_t) (((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width)) goto fail_close_fd;
 
-bool tdata_io_v3_load(tdata_t *td, char *filename) {
+bool tdata_io_v3_load(tdata_t *td, const char *filename) {
     tdata_header_t h;
     tdata_header_t *header = &h;
 
