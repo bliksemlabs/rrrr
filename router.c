@@ -171,9 +171,9 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
      * applied (applying only on the true current calendar day)
      */
     serviceday_t yesterday, today, tomorrow;
+    uint8_t day_i = 0;
     calendar_t realtime_mask;
     router->day_mask = req->day_mask;
-    uint8_t day_i = 0;
 
     /*  Fake realtime_mask if we are QA testing. */
     #ifdef RRRR_FAKE_REALTIME
