@@ -173,6 +173,7 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
     serviceday_t yesterday, today, tomorrow;
     calendar_t realtime_mask;
     router->day_mask = req->day_mask;
+    uint8_t day_i = 0;
 
     /*  Fake realtime_mask if we are QA testing. */
     #ifdef RRRR_FAKE_REALTIME
@@ -192,30 +193,39 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
     tomorrow.mask = router->day_mask << 1;
     tomorrow.apply_realtime = tomorrow.mask & realtime_mask;
 
+    router->day_mask = today.mask;
     /* Iterate backward over days for arrive-by searches. */
     if (req->arrive_by) {
-        router->servicedays[0] = tomorrow;
-        router->servicedays[1] = today;
-        router->servicedays[2] = yesterday;
+        if (req->time > tomorrow.midnight) {
+            /* Departuretime includes trips running tomorrow */
+            router->servicedays[day_i] = tomorrow;
+            router->day_mask |= tomorrow.mask;
+            day_i++;
+        }
+        router->servicedays[day_i] = today;
+        day_i++;
+        if (req->time_cutoff < router->tdata->max_time){
+            /* Cut-off request includes vehicle_journey running tomorrow */
+            router->servicedays[day_i] = yesterday;
+            day_i++;
+        }
     } else {
-        router->servicedays[0] = yesterday;
-        router->servicedays[1] = today;
-        router->servicedays[2] = tomorrow;
+        if (req->time < router->tdata->max_time){
+            /* There are still some journeys running of previous day on departure_time of journey */
+            router->day_mask |= yesterday.mask;
+            router->servicedays[day_i] = yesterday;
+            day_i++;
+        }
+        router->servicedays[day_i] = today;
+        day_i++;
+        if (req->time_cutoff > tomorrow.midnight){
+            /* Cut-off request includes vehicle_journey running tomorrow */
+            router->day_mask |= tomorrow.mask;
+            router->servicedays[day_i] = tomorrow;
+            day_i++;
+        }
     }
-
-    router->day_mask = today.mask;
-    /* Set mask for yesterday if:
-     * Clockwise search: if the start-time overlaps with any vehicle_journey of the previous day that still runs.
-     * Counterclockwise search: if the time_cutoff allows to scan any vehicle_journey of the previous day*/
-    if ((req->arrive_by ? req->time_cutoff : req->time) > router->tdata->max_time){
-        router->day_mask |= yesterday.mask;
-    }
-    /* Set mask for tomorrow if:
-     * Clockwise search: time_cutoff overlaps with tomorrow
-     * Counterclockwise search: departure_time is on the next day */
-    if ((req->arrive_by ? req->time : req->time_cutoff) > tomorrow.midnight){
-        router->day_mask |= tomorrow.mask;
-    }
+    router->n_servicedays = day_i;
 
     #ifdef RRRR_DEBUG
     {
@@ -666,7 +676,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
      * The loop nesting could also be inverted.
      */
     for (serviceday  = router->servicedays;
-         serviceday <= router->servicedays + 2;
+         serviceday <= router->servicedays + router->n_servicedays;
          ++serviceday) {
 
         uint16_t i_vj_offset;
