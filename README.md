@@ -65,3 +65,5 @@ Been there done that
 
  * We have attempted to unroll some of branches caused by "arrive by". The resulting code was unsignificantly slower than our existing code.
  * We have attempted to split the journey_pattern_t in a core routing and a meta data struct. The resulting code was 4% slower.
+ * The original code for the router state was packed in one struct. It gave 10% improvement to split it in separate lists.
+ * In an attempt to prevent overflow checking (migrating rtime to 32bit) resulted in a serious performance degradation.
