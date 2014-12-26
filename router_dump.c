@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 
+#if 0
 void router_state_dump (router_state_t *state) {
     char walk_time[13], time[13], board_time[13];
     fprintf (stderr, "-- Router State --\n"
@@ -25,7 +26,9 @@ void router_state_dump (router_state_t *state) {
     if (state->back_journey_pattern == NONE) fprintf (stderr, "NONE\n");
     else fprintf (stderr, "%d\n", state->back_journey_pattern);
 }
+#endif
 
+#if 0
 void dump_results(router_t *router) {
     spidx_t i_stop;
     uint8_t i_round;
@@ -64,6 +67,7 @@ void dump_results(router_t *router) {
     }
     fprintf(stderr, "\n");
 }
+#endif
 
 #if 0
 /* WARNING we are not currently storing vehicle_journey IDs so this will segfault */
