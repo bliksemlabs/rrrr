@@ -45,7 +45,14 @@ static bool router_setup_hashgrid(router_t *router) {
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stops * RRRR_DEFAULT_MAX_ROUNDS;
-
+    uint32_t jp_index = 0;
+    // TODO this is a quick hack to get the right max_time, this should move moved elsewhere.
+    tdata->max_time = UNREACHED;
+    for (jp_index = 0; jp_index < tdata->n_journey_patterns; jp_index++){
+        if (tdata->journey_patterns[jp_index].max_time < tdata->max_time){
+            tdata->max_time = tdata->journey_patterns[jp_index].max_time;
+        }
+    }
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
     router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
@@ -196,8 +203,19 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
         router->servicedays[2] = tomorrow;
     }
 
-    /* set day_mask to catch all service days (0, 1, 2) */
-    router->day_mask = yesterday.mask | today.mask | tomorrow.mask;
+    router->day_mask = today.mask;
+    /* Set mask for yesterday if:
+     * Clockwise search: if the start-time overlaps with any vehicle_journey of the previous day that still runs.
+     * Counterclockwise search: if the time_cutoff allows to scan any vehicle_journey of the previous day*/
+    if ((req->arrive_by ? req->time_cutoff : req->time) > router->tdata->max_time){
+        router->day_mask |= yesterday.mask;
+    }
+    /* Set mask for tomorrow if:
+     * Clockwise search: time_cutoff overlaps with tomorrow
+     * Counterclockwise search: departure_time is on the next day */
+    if ((req->arrive_by ? req->time : req->time_cutoff) > tomorrow.midnight){
+        router->day_mask |= tomorrow.mask;
+    }
 
     #ifdef RRRR_DEBUG
     {

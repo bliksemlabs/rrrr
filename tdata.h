@@ -143,6 +143,7 @@ struct tdata {
     uint32_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
     uint8_t  *transfer_dist_meters;
+    rtime_t max_time;
     /* optional data:
      * NULL pointer means it is not available */
     latlon_t *stop_coords;
