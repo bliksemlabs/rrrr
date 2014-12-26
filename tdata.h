@@ -37,8 +37,8 @@ struct journey_pattern {
     uint16_t agency_index;
     uint16_t line_code_index;
     uint16_t productcategory_index;
-    rtime_t  min_time;
-    rtime_t  max_time;
+    rtime16_t  min_time;
+    rtime16_t  max_time;
 };
 
 /* An individual VehicleJourney,
@@ -53,7 +53,7 @@ struct vehicle_journey {
     /* The absolute start time since at the
      * departure of the first stop
      */
-    rtime_t  begin_time;
+    rtime16_t  begin_time;
 
     /* The vj_attributes, including CANCELED flag
      */
@@ -62,8 +62,8 @@ struct vehicle_journey {
 
 typedef struct stoptime stoptime_t;
 struct stoptime {
-    rtime_t arrival;
-    rtime_t departure;
+    rtime16_t arrival;
+    rtime16_t departure;
 };
 
 typedef enum stop_attribute {

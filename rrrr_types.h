@@ -19,7 +19,9 @@
  * to model yesterday, today, and tomorrow for overnight searches, and can
  * also represent the longest rail journeys in Europe.
  */
-typedef uint16_t rtime_t;
+typedef uint32_t rtime_t;
+
+typedef uint16_t rtime16_t;
 
 typedef uint16_t spidx_t;
 
@@ -197,7 +199,7 @@ struct router_request {
 #define RTIME_TWO_DAYS    (SEC_TO_RTIME(SEC_IN_TWO_DAYS))
 #define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
 
-#define UNREACHED UINT16_MAX
+#define UNREACHED UINT32_MAX
 #define NONE      (UINT16_MAX)
 #define WALK      (UINT16_MAX - 1)
 
