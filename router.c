@@ -46,7 +46,7 @@ static bool router_setup_hashgrid(router_t *router) {
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stops * RRRR_DEFAULT_MAX_ROUNDS;
     uint32_t jp_index = 0;
-    // TODO this is a quick hack to get the right max_time, this should move moved elsewhere.
+    /* TODO this is a quick hack to get the right max_time, this should move moved elsewhere.*/
     tdata->max_time = UNREACHED;
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; jp_index++){
         if (tdata->journey_patterns[jp_index].max_time < tdata->max_time){
