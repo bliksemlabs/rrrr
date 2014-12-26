@@ -18,40 +18,12 @@
 /* When associated with a stop index,
  * a router_state_t describes a leg of an itinerary.
  */
-typedef struct router_state router_state_t;
+
 /* We could potentially remove the back_time from router_state,
  * but this requires implementing some lookup functions and storing
  * the back_vj_stop rather than the back_stop (global stop index):
  * a vehicle_journey can pass through a stop more than once.
  */
-struct router_state {
-   /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
-    uint32_t back_journey_pattern;
-
-    /* The index of the vehicle_journey used to travel from back_stop */
-    uint32_t back_vehicle_journey;
-
-    /* The index of the previous stop in the itinerary */
-    spidx_t ride_from;
-
-    /* Second phase footpath/transfer results */
-    /* The stop from which this stop was reached by walking (2nd phase) */
-    spidx_t walk_from;
-
-    /* Second phase footpath/transfer results */
-    /* The time when this stop was reached by walking (2nd phase) */
-    rtime_t  walk_time;
-
-    /* The time when this stop was reached */
-    rtime_t  time;
-    /* The time at which the vehicle_journey within back_journey_pattern left back_stop */
-    rtime_t  board_time;
-
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    uint16_t back_journey_pattern_point;
-    uint16_t journey_pattern_point;
-    #endif
-};
 
 /* Scratch space for use by the routing algorithm.
  * Making this opaque requires more dynamic allocation.
@@ -64,8 +36,32 @@ struct router {
     /* The best known time at each stop */
     rtime_t *best_time;
 
-    /* One router_state_t per stop, per round */
-    router_state_t *states;
+   /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
+    uint32_t *states_back_journey_pattern;
+
+    /* The index of the vehicle_journey used to travel from back_stop */
+    uint32_t *states_back_vehicle_journey;
+
+    /* The index of the previous stop in the itinerary */
+    spidx_t *states_ride_from;
+
+    /* Second phase footpath/transfer results */
+    /* The stop from which this stop was reached by walking (2nd phase) */
+    spidx_t *states_walk_from;
+
+    /* Second phase footpath/transfer results */
+    /* The time when this stop was reached by walking (2nd phase) */
+    rtime_t *states_walk_time;
+
+    /* The time when this stop was reached */
+    rtime_t *states_time;
+    /* The time at which the vehicle_journey within back_journey_pattern left back_stop */
+    rtime_t *states_board_time;
+
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+    uint16_t *states_back_journey_pattern_point;
+    uint16_t *states_journey_pattern_point;
+    #endif
 
     /* Used to track which stops improved during each round */
     bitset_t *updated_stops;

@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-void router_state_dump (router_state_t *state) {
+void router_state_dump (router_t *router, uint64_t i_state) {
     char walk_time[13], time[13], board_time[13];
     fprintf (stderr, "-- Router State --\n"
                      "walk time:    %s\n"
@@ -15,15 +15,15 @@ void router_state_dump (router_state_t *state) {
                      "time:         %s\n"
                      "board time:   %s\n"
                      "back route:   ",
-                     btimetext(state->walk_time, walk_time),
-                     state->walk_from,
-                     btimetext(state->time, time),
-                     btimetext(state->board_time, board_time)
+                     btimetext(router->states_walk_time[i_state], walk_time),
+                     router->states_walk_from[i_state],
+                     btimetext(router->states_time[i_state], time),
+                     btimetext(router->states_board_time[i_state], board_time)
                      );
 
     /* TODO */
-    if (state->back_journey_pattern == NONE) fprintf (stderr, "NONE\n");
-    else fprintf (stderr, "%d\n", state->back_journey_pattern);
+    if (router->states_back_journey_pattern[i_state] == NONE) fprintf (stderr, "NONE\n");
+    else fprintf (stderr, "%d\n", router->states_back_journey_pattern[i_state]);
 }
 
 void dump_results(router_t *router) {
@@ -57,8 +57,8 @@ void dump_results(router_t *router) {
         fprintf(stderr, " [%6d]", i_stop);
         for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
             fprintf(stderr, " %8s %8s",
-                btimetext(router->states[i_round * router->tdata->n_stops + i_stop].time, time),
-                btimetext(router->states[i_round * router->tdata->n_stops + i_stop].walk_time, walk_time));
+                btimetext(router->states_time[i_round * router->tdata->n_stops + i_stop], time),
+                btimetext(router->states_walk_time[i_round * router->tdata->n_stops + i_stop], walk_time));
         }
         fprintf(stderr, "\n");
     }

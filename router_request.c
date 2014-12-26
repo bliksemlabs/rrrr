@@ -199,9 +199,6 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     uint32_t max_transfers = req->max_transfers;
     uint32_t best_stop_index = HASHGRID_NONE;
     uint8_t round = UINT8_MAX;
-    /* Variable Array Length implementation for states[round][stop_index]
-     * router_state_t (*states)[router->tdata->n_stops] = (router_state_t(*)[]) (router->states);
-     */
 
     /* range-check to keep search within states array */
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
@@ -282,7 +279,7 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         /* find the solution with the most transfers and the earliest arrival */
         uint8_t r;
         for (r = 0; r <= max_transfers; ++r) {
-            if (router->states[r * router->tdata->n_stops + best_stop_index].walk_time != UNREACHED) {
+            if (router->states_walk_time[r * router->tdata->n_stops + best_stop_index] != UNREACHED) {
                 round = r;
                 /* Instead of the earliest arrival (most transfers)
                 * use the solution with the least transfers.
@@ -296,11 +293,11 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
     if (round == UINT8_MAX) return false;
 
     req->time_cutoff = req->time;
-    req->time = router->states[round * router->tdata->n_stops +
-                               best_stop_index].walk_time;
+    req->time = router->states_walk_time[round * router->tdata->n_stops +
+                               best_stop_index];
     #if 0
     fprintf (stderr, "State present at round %d \n", round);
-    router_state_dump (&(states[round][stop]));
+    router_state_dump (router, round * router->tdata->n_stops + stop);
     #endif
     req->max_transfers = round;
     req->arrive_by = !(req->arrive_by);
