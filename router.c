@@ -321,10 +321,9 @@ static bool set2_in (const uint32_t *set1, const uint16_t *set2, const uint8_t l
  * using them in routing. We iterate over all of them, because we don't
  * maintain a list of all the stops that might have been added by the hashgrid.
  */
-/* TODO: i_state to uint64_t, uint32_t round to uint8_t */
-static void initialize_transfers_full (router_t *router, const uint32_t round) {
-    uint32_t i_state = router->tdata->n_stops;
-    router_state_t *states = router->states + (round * router->tdata->n_stops);
+static void initialize_transfers_full (router_t *router, const uint8_t round) {
+    spidx_t i_state = router->tdata->n_stops;
+    router_state_t *states = &(router->states[round * router->tdata->n_stops]);
     do {
         i_state--;
         states[i_state].walk_time = UNREACHED;
@@ -344,12 +343,11 @@ static void initialize_transfers_full (router_t *router, const uint32_t round) {
  * initial stop on foot. This will prevent finding circuitous itineraries that
  * return to them.
  */
-/* TODO: round to uint8_t */
 static void initialize_transfers (router_t *router,
-                                  const uint32_t round, const spidx_t stop_index_from) {
-    router_state_t *states = router->states + (round * router->tdata->n_stops);
+                                  const uint8_t round, const spidx_t stop_index_from) {
+    router_state_t *states = &(router->states[round * router->tdata->n_stops]);
     uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
-    uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
+    const uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
     states[stop_index_from].walk_time = UNREACHED;
     for ( ; t < tN ; ++t) {
         spidx_t stop_index_to = router->tdata->transfer_target_stops[t];
@@ -464,9 +462,8 @@ tdata_next (router_t *router, router_request_t *req,
  * Transfer results are computed within the same round, based on arrival time
  * in the ride phase and stored in the walk time member of states.
  */
-/* TODO: round uint32_t to uint8_t */
 static void apply_transfers (router_t *router, const router_request_t *req,
-                      uint32_t round, bool transfer) {
+                      const uint8_t round, const bool transfer) {
     uint32_t stop_index_from; /* uint32_t: because we need to compare to BITSET_NONE */
     router_state_t *states = &(router->states[round * router->tdata->n_stops]);
     /* The transfer process will flag journey_patterns that should be explored in
@@ -1092,9 +1089,8 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     return false;
 }
 
-/* TODO: i_state must be uint64_t here */
 static bool initialize_origin_index (router_t *router, router_request_t *req) {
-    uint32_t i_state;
+    uint64_t i_state;
 
     router->origin = (req->arrive_by ? req->to : req->from);
 
