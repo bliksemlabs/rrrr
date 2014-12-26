@@ -187,15 +187,15 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                 vehicle_journey_t *vj;
                 uint32_t vj_index;
 
-                jp = router->tdata->journey_patterns + ride->back_journey_pattern;
-                vj_index = jp->vj_ids_offset + ride->back_vehicle_journey;
+                jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride];
+                vj_index = jp->vj_ids_offset + router->states_back_journey_pattern[i_ride];
                 vj = router->tdata->vjs + vj_index;
 
                 if (router->tdata->vj_stoptimes[vj_index] &&
-                    router->tdata->stop_times[vj->stop_times_offset + ride->journey_pattern_point].arrival != UNREACHED) {
+                    router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride]].arrival != UNREACHED) {
 
-                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][ride->back_journey_pattern_point].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + ride->back_journey_pattern_point].departure + vj->begin_time);
-                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][ride->journey_pattern_point].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + ride->journey_pattern_point].arrival + vj->begin_time);
+                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_back_journey_pattern_point[i_ride]].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_back_journey_pattern_point[i_ride]].departure + vj->begin_time);
+                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_journey_pattern_point[i_ride]].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride]].arrival + vj->begin_time);
                 } else {
                     l->d0 = 0;
                     l->d1 = 0;
