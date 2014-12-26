@@ -95,19 +95,6 @@ struct router {
      */
 };
 
-struct journey_pattern_cache {
-    journey_pattern_t *this_jp;
-    spidx_t *journey_pattern_points;
-    uint8_t  *journey_pattern_point_attributes;
-    vehicle_journey_t   *vjs_in_journey_pattern;
-    calendar_t *vj_masks;
-    uint32_t jp_index;
-    bool jp_overlap;
-};
-
-typedef struct journey_pattern_cache journey_pattern_cache_t;
-
-
 /* FUNCTION PROTOTYPES */
 
 bool router_setup(router_t*, tdata_t*);

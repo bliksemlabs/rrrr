@@ -599,11 +599,15 @@ static void apply_transfers (router_t *router, router_request_t *req,
 }
 
 static void search_vehicle_journeys_within_days(router_t *router, router_request_t *req,
-        journey_pattern_cache_t *cache,
+        uint32_t jp_index,
         uint16_t jpp_offset,
         rtime_t prev_time,
         serviceday_t **best_serviceday,
         uint32_t *best_vj, rtime_t *best_time) {
+
+    calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
+    vehicle_journey_t *vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
 
     serviceday_t *serviceday;
 
@@ -620,23 +624,24 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
          * running on this day.
          */
         if (req->arrive_by ? prev_time < serviceday->midnight +
-                                         cache->this_jp->min_time
+                                         jp->min_time
                            : prev_time > serviceday->midnight +
-                                         cache->this_jp->max_time) continue;
+                                         jp->max_time) continue;
 
         /* Check whether there's any chance of improvement by
          * scanning additional days. Note that day list is
          * reversed for arrive-by searches.
          */
-        if (*best_vj != NONE && ! cache->jp_overlap) break;
+        if (*best_vj != NONE &&
+            !(jp->min_time < (jp->max_time - RTIME_ONE_DAY))) break;
 
         for (i_vj_offset = 0;
-             i_vj_offset < cache->this_jp->n_vjs;
+             i_vj_offset < jp->n_vjs;
              ++i_vj_offset) {
             rtime_t time;
 
             #ifdef RRRR_DEBUG
-            printBits(4, & (cache->vj_masks[i_vj_offset]));
+            printBits(4, & (vj_masks[i_vj_offset]));
             printBits(4, & (serviceday->mask));
             fprintf(stderr, "\n");
             #endif
@@ -644,25 +649,25 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
             /* skip this vj if it is banned */
             if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
-                        req->n_banned_vjs, cache->jp_index,
+                        req->n_banned_vjs, jp_index,
                     i_vj_offset)) continue;
             #endif
 
             /* skip this vj if it is not running on
              * the current service day
              */
-            if ( ! (serviceday->mask & cache->vj_masks[i_vj_offset])) continue;
+            if ( ! (serviceday->mask & vj_masks[i_vj_offset])) continue;
             /* skip this vj if it doesn't have all our
              * required attributes
              * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
              * is about 4% more efficient for journeys without specific vj attribute requirements.
              */
-            if (req->vj_attributes && ! ((req->vj_attributes & cache->vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
+            if (req->vj_attributes && ! ((req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
 
             /* consider the arrival or departure time on
              * the current service day
              */
-            time = tdata_stoptime (router->tdata, serviceday, cache->jp_index, i_vj_offset, jpp_offset, req->arrive_by);
+            time = tdata_stoptime (router->tdata, serviceday, jp_index, i_vj_offset, jpp_offset, req->arrive_by);
 
             #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
             fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
@@ -732,31 +737,6 @@ write_state(router_t *router, router_request_t *req,
     return true;
 }
 
-static bool fill_jp_cache(router_t *router, router_request_t *req,
-        uint32_t jp_index, struct journey_pattern_cache *cache) {
-    cache->this_jp = &(router->tdata->journey_patterns[jp_index]);
-
-    #ifdef FEATURE_AGENCY_FILTER
-    if (req->agency != AGENCY_UNFILTERED &&
-        req->agency != cache->this_route->agency_index) return false;
-    #else
-    UNUSED (req);
-    #endif
-
-    /* For each stop in this route, its global stop index. */
-    cache->journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-    cache->journey_pattern_point_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, jp_index);
-
-    cache->jp_index = jp_index;
-
-    /* if vehicle_journeys during two servicedays, overlap */
-    cache->jp_overlap = cache->this_jp->min_time < cache->this_jp->max_time - RTIME_ONE_DAY;
-    cache->vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
-    cache->vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
-
-    return true;
-}
-
 static void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
     uint32_t jp_index;
@@ -770,10 +750,12 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
          jp_index != BITSET_NONE;
          jp_index = bitset_next_set_bit (router->updated_journey_patterns, jp_index + 1)) {
 
+        journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
+        spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+        uint8_t *journey_pattern_point_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, jp_index);
+
         /* Service day on which that vj was boarded */
         serviceday_t *board_serviceday = NULL;
-
-        journey_pattern_cache_t cache;
 
         /* vj index within the route. NONE means not yet boarded. */
         uint32_t      vj_index = NONE;
@@ -799,29 +781,32 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         int32_t jpp_index;
 
-        if (!fill_jp_cache(router, req, jp_index, &cache)) continue;
+        #ifdef FEATURE_AGENCY_FILTER
+        if (req->agency != AGENCY_UNFILTERED &&
+            req->agency != jp->agency_index) continue;
+        #endif
 
         #if 0
-        if (cache.jp_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", cache.this_jp->min_time, cache.this_jp->max_time, cache.jp_overlap);
-        fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", jp_index, cache.this_jp->min_time, cache.this_jp->max_time);
+        if (jp_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", jp->min_time, jp->max_time, jp_overlap);
+        fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", jp_index, jp->min_time, jp->max_time);
         fprintf (stderr, "  actual first time: %d \n", tdata_depart(router->tdata, jp_index, 0, 0));
-        fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, jp_index, cache.this_jp->n_vjs - 1, cache.this_jp->n_stops - 1));
+        fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, jp_index, jp->n_vjs - 1, jp->n_stops - 1));
         fprintf(stderr, "  journey_pattern %d: %s;%s\n", jp_index, tdata_line_code_for_journey_pattern(router->tdata, jp_index), tdata_headsign_for_journey_pattern(router->tdata, jp_index));
         tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
         #endif
 
 
-        for (jpp_index = (req->arrive_by ? cache.this_jp->n_stops - 1 : 0);
+        for (jpp_index = (req->arrive_by ? jp->n_stops - 1 : 0);
                 req->arrive_by ? jpp_index >= 0 :
-                jpp_index < cache.this_jp->n_stops;
+                jpp_index < jp->n_stops;
                 req->arrive_by ? --jpp_index :
                                  ++jpp_index) {
 
-            uint32_t stop_index = cache.journey_pattern_points[jpp_index];
+            uint32_t stop_index = journey_pattern_points[jpp_index];
             rtime_t prev_time;
             bool attempt_board = false;
-            bool forboarding = (cache.journey_pattern_point_attributes[jpp_index] & rsa_boarding);
-            bool foralighting = (cache.journey_pattern_point_attributes[jpp_index] & rsa_alighting);
+            bool forboarding = (journey_pattern_point_attributes[jpp_index] & rsa_boarding);
+            bool foralighting = (journey_pattern_point_attributes[jpp_index] & rsa_alighting);
 
             #ifdef RRRR_INFO
             char buf[13];
@@ -922,7 +907,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
                 #endif
 
-                search_vehicle_journeys_within_days(router, req, &cache, (uint16_t) jpp_index,
+                search_vehicle_journeys_within_days(router, req, jp_index, (uint16_t) jpp_index,
                         prev_time, &best_serviceday,
                         &best_vj, &best_time);
 
