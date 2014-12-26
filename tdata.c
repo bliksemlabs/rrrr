@@ -134,14 +134,14 @@ uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32
 #define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index, 0)
 
 const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
-    journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
-    uint32_t char_offset = journey_pattern.vj_ids_offset * td->vj_ids_width;
+    journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
+    uint32_t char_offset = jp->vj_ids_offset * td->vj_ids_width;
     return td->vj_ids + char_offset;
 }
 
 calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
-    journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
-    return td->vj_active + journey_pattern.vj_ids_offset;
+    journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
+    return td->vj_active + jp->vj_ids_offset;
 }
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
@@ -224,15 +224,15 @@ spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
 }
 
 uint8_t *tdata_stop_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
-    journey_pattern_t journey_pattern = td->journey_patterns[jp_index];
-    return td->journey_pattern_point_attributes + journey_pattern.journey_pattern_point_offset;
+    journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
+    return td->journey_pattern_point_attributes + jp->journey_pattern_point_offset;
 }
 
 uint32_t tdata_journey_patterns_for_stop(tdata_t *td, spidx_t stop_index, uint32_t **jp_ret) {
-    stop_t stop0 = td->stops[stop_index];
-    stop_t stop1 = td->stops[stop_index + 1];
-    *jp_ret = td->journey_patterns_at_stop + stop0.journey_patterns_at_stop_offset;
-    return stop1.journey_patterns_at_stop_offset - stop0.journey_patterns_at_stop_offset;
+    stop_t *stop0 = &(td->stops[stop_index]);
+    stop_t *stop1 = &(td->stops[stop_index + 1]);
+    *jp_ret = td->journey_patterns_at_stop + stop0->journey_patterns_at_stop_offset;
+    return stop1->journey_patterns_at_stop_offset - stop0->journey_patterns_at_stop_offset;
 }
 
 stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_index) {
@@ -357,10 +357,10 @@ void tdata_dump(tdata_t *td) {
     }
     printf("\nJOURNEY_PATTERN\n");
     for (i = 0; i < td->n_journey_patterns; i++) {
-        journey_pattern_t r0 = td->journey_patterns[i];
-        journey_pattern_t r1 = td->journey_patterns[i+1];
-        uint32_t j0 = r0.journey_pattern_point_offset;
-        uint32_t j1 = r1.journey_pattern_point_offset;
+        journey_pattern_t *r0 = &(td->journey_patterns[i]);
+        journey_pattern_t *r1 = &(td->journey_patterns[i+1]);
+        uint32_t j0 = r0->journey_pattern_point_offset;
+        uint32_t j1 = r1->journey_pattern_point_offset;
         uint32_t j;
 
         printf("journey_pattern %d\n", i);
