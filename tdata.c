@@ -239,7 +239,7 @@ stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_in
     return td->stop_times + td->vjs[td->journey_patterns[jp_index].vj_ids_offset + vj_index].stop_times_offset;
 }
 
-vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(const tdata_t *td, const uint32_t jp_index) {
     return td->vjs + td->journey_patterns[jp_index].vj_ids_offset;
 }
 

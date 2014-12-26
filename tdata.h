@@ -258,7 +258,7 @@ const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index)
 stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
 
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
-vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index);
+const vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(const tdata_t *td, const uint32_t jp_index);
 
 const char *tdata_stop_desc_for_index(tdata_t *td, spidx_t stop_index);
 
