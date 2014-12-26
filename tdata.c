@@ -82,7 +82,6 @@ const char *tdata_productcategory_for_index(const tdata_t *td, const uint32_t pr
 const char *tdata_platformcode_for_index(const tdata_t *td, const spidx_t stop_index) {
     switch (stop_index) {
     case STOP_NONE :
-        return NULL;
     case ONBOARD :
         return NULL;
     default :
@@ -134,14 +133,14 @@ uint32_t tdata_journey_pattern_idx_by_line_id(const tdata_t *td, const char *lin
 #define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index, 0)
 
 const char *tdata_vehicle_journey_ids_in_journey_pattern(const tdata_t *td, const uint32_t jp_index) {
-    journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
-    uint32_t char_offset = journey_pattern.vj_ids_offset * td->vj_ids_width;
+    const journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
+    const uint32_t char_offset = jp->vj_ids_offset * td->vj_ids_width;
     return td->vj_ids + char_offset;
 }
 
 const calendar_t *tdata_vj_masks_for_journey_pattern(const tdata_t *td, const uint32_t jp_index) {
-    journey_pattern_t journey_pattern = (td->journey_patterns)[jp_index];
-    return td->vj_active + journey_pattern.vj_ids_offset;
+    const journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
+    return td->vj_active + jp->vj_ids_offset;
 }
 
 const char *tdata_headsign_for_journey_pattern(const tdata_t *td, const uint32_t jp_index) {
@@ -224,15 +223,15 @@ const spidx_t *tdata_points_for_journey_pattern(const tdata_t *td, const uint32_
 }
 
 const uint8_t *tdata_stop_attributes_for_journey_pattern(const tdata_t *td, const uint32_t jp_index) {
-    journey_pattern_t journey_pattern = td->journey_patterns[jp_index];
-    return td->journey_pattern_point_attributes + journey_pattern.journey_pattern_point_offset;
+    const journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
+    return td->journey_pattern_point_attributes + jp->journey_pattern_point_offset;
 }
 
 uint32_t tdata_journey_patterns_for_stop(const tdata_t *td, const spidx_t stop_index, uint32_t **jp_ret) {
-    stop_t stop0 = td->stops[stop_index];
-    stop_t stop1 = td->stops[stop_index + 1];
-    *jp_ret = td->journey_patterns_at_stop + stop0.journey_patterns_at_stop_offset;
-    return stop1.journey_patterns_at_stop_offset - stop0.journey_patterns_at_stop_offset;
+    const stop_t *stop0 = &(td->stops[stop_index]);
+    const stop_t *stop1 = &(td->stops[stop_index + 1]);
+    *jp_ret = td->journey_patterns_at_stop + stop0->journey_patterns_at_stop_offset;
+    return stop1->journey_patterns_at_stop_offset - stop0->journey_patterns_at_stop_offset;
 }
 
 const stoptime_t *tdata_timedemand_type(const tdata_t *td, const uint32_t jp_index, const uint32_t vj_index) {
@@ -261,7 +260,7 @@ rtime_t transfer_duration (const tdata_t *tdata, router_request_t *req, const sp
         const uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             if (tdata->transfer_target_stops[t] == stop_index_to) {
-                uint32_t distance_meters = ((uint32_t) tdata->transfer_dist_meters[t]) << 4; /* actually in units of 16 meters */
+                const uint32_t distance_meters = ((uint32_t) tdata->transfer_dist_meters[t]) << 4; /* actually in units of 16 meters */
                 return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
             }
         }
@@ -288,10 +287,10 @@ uint32_t transfer_distance (const tdata_t *tdata, const spidx_t stop_index_from,
 
 #ifdef RRRR_DEBUG
 void tdata_dump_journey_pattern(const tdata_t *td, const uint32_t jp_index, const uint32_t vj_index) {
-    spidx_t *stops = tdata_points_for_journey_pattern(td, jp_index);
+    const spidx_t *stops = tdata_points_for_journey_pattern(td, jp_index);
     uint32_t ti;
     spidx_t si;
-    journey_pattern_t jp = td->journey_patterns[jp_index];
+    journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
     printf("\njourney_pattern details for %s %s %s '%s %s' [%d] (n_stops %d, n_vjs %d)\n"
            "vjid, stop sequence, stop name (index), departures  \n",
         tdata_agency_name_for_journey_pattern(td, jp_index),
@@ -299,17 +298,17 @@ void tdata_dump_journey_pattern(const tdata_t *td, const uint32_t jp_index, cons
         tdata_agency_url_for_journey_pattern(td, jp_index),
         tdata_line_code_for_journey_pattern(td, jp_index),
         tdata_headsign_for_journey_pattern(td, jp_index),
-        jp_index, jp.n_stops, jp.n_vjs);
+        jp_index, jp.n_stops, jp->n_vjs);
 
     for (ti = (vj_index == NONE ? 0 : vj_index);
-         ti < (vj_index == NONE ? jp.n_vjs :
+         ti < (vj_index == NONE ? jp->n_vjs :
                                     vj_index + 1);
          ++ti) {
-        stoptime_t *times = tdata_timedemand_type(td, jp_index, ti);
+        const stoptime_t *times = tdata_timedemand_type(td, jp_index, ti);
         /* TODO should this really be a 2D array ?
         stoptime_t (*times)[jp.n_stops] = (void*) tdata_timedemand_type(td, jp_index, ti); */
 
-        printf("%s\n", tdata_vehicle_journey_id_for_index(td, jp.vj_ids_offset + ti));
+        printf("%s\n", tdata_vehicle_journey_id_for_index(td, jp->vj_ids_offset + ti));
         for (si = 0; si < jp.n_stops; ++si) {
             const char *stop_id = tdata_stop_name_for_index (td, stops[si]);
             char arrival[13], departure[13];
@@ -319,10 +318,10 @@ void tdata_dump_journey_pattern(const tdata_t *td, const uint32_t jp_index, cons
                    btimetext(times[si].departure + td->vjs[jp.vj_ids_offset + ti].begin_time + RTIME_ONE_DAY, departure));
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-            if (td->vj_stoptimes && td->vj_stoptimes[jp.vj_ids_offset + ti]) {
+            if (td->vj_stoptimes && td->vj_stoptimes[jp->vj_ids_offset + ti]) {
                 printf (" %s %s",
-                        btimetext(td->vj_stoptimes[jp.vj_ids_offset + ti][si].arrival + RTIME_ONE_DAY, arrival),
-                        btimetext(td->vj_stoptimes[jp.vj_ids_offset + ti][si].departure + RTIME_ONE_DAY, departure));
+                        btimetext(td->vj_stoptimes[jp->vj_ids_offset + ti][si].arrival + RTIME_ONE_DAY, arrival),
+                        btimetext(td->vj_stoptimes[jp->vj_ids_offset + ti][si].departure + RTIME_ONE_DAY, departure));
             }
             #endif
 
