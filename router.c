@@ -127,7 +127,7 @@ static bool initialize_states (router_t *router) {
  * searches). Note that yesterday's bit flag will be 0 if today is the
  * first day of the calendar.
  */
-static bool initialize_servicedays (router_t *router, const router_request_t *req) {
+static bool initialize_servicedays (router_t *router, router_request_t *req) {
     /* One bit for the calendar day on which realtime data should be
      * applied (applying only on the true current calendar day)
      */
@@ -179,8 +179,8 @@ static bool initialize_servicedays (router_t *router, const router_request_t *re
 }
 
 /* Given a stop index, mark all journey_patterns that serve it as updated. */
-static void flag_journey_patterns_for_stop(router_t *router, const router_request_t *req,
-        const uint32_t stop_index) {
+static void flag_journey_patterns_for_stop(router_t *router, router_request_t *req,
+        uint32_t stop_index) {
     uint32_t *journey_patterns;
     uint32_t i_jp = tdata_journey_patterns_for_stop(router->tdata, stop_index,
                                                     &journey_patterns);
@@ -244,13 +244,13 @@ static void flag_journey_patterns_for_stop(router_t *router, const router_reques
 
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
 #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
-static void unflag_banned_journey_patterns (router_t *router, const router_request_t *req) {
+static void unflag_banned_journey_patterns (router_t *router, router_request_t *req) {
     if (req->n_banned_journey_patterns == 0) return;
 
     bitset_mask_and (router->updated_journey_patterns, router->banned_journey_patterns);
 }
 
-static void initialize_banned_journey_patterns (router_t *router, const router_request_t *req) {
+static void initialize_banned_journey_patterns (router_t *router, router_request_t *req) {
     uint8_t i_banned_jp = req->n_banned_journey_patterns;
 
     bitset_black(router->banned_journey_patterns);
@@ -263,7 +263,7 @@ static void initialize_banned_journey_patterns (router_t *router, const router_r
     } while (i_banned_jp);
 }
 #else
-static void unflag_banned_journey_patterns(router_t *router, const router_request_t *req) {
+static void unflag_banned_journey_patterns(router_t *router, router_request_t *req) {
     uint8_t i_banned_jp = req->n_banned_journey_patterns;
     if (i_banned_jp == 0) return;
     do {
@@ -276,7 +276,7 @@ static void unflag_banned_journey_patterns(router_t *router, const router_reques
 #endif
 
 #if RRRR_MAX_BANNED_STOPS > 0
-static void unflag_banned_stops (router_t *router, const router_request_t *req) {
+static void unflag_banned_stops (router_t *router, router_request_t *req) {
     uint8_t i_banned_stop = req->n_banned_stops;
     if (i_banned_stop == 0) return;
     do {
@@ -288,7 +288,7 @@ static void unflag_banned_stops (router_t *router, const router_request_t *req) 
 #endif
 
 #if RRRR_MAX_BANNED_STOPS > 0 || RRRR_BAX_BANNED_STOPS_HARD > 0
-static bool set_in (const spidx_t *set, const uint8_t length, const spidx_t value) {
+static bool set_in (spidx_t *set, uint8_t length, spidx_t value) {
     uint8_t i = length;
     if (i == 0) return false;
     do {
@@ -300,8 +300,8 @@ static bool set_in (const spidx_t *set, const uint8_t length, const spidx_t valu
 #endif
 
 #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-static bool set2_in (const uint32_t *set1, const uint16_t *set2, const uint8_t length,
-                     const uint32_t value1, const uint16_t value2) {
+static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
+                     uint32_t value1, uint16_t value2) {
     uint8_t i = length;
     if (i == 0) return false;
     do {
@@ -321,9 +321,9 @@ static bool set2_in (const uint32_t *set1, const uint16_t *set2, const uint8_t l
  * using them in routing. We iterate over all of them, because we don't
  * maintain a list of all the stops that might have been added by the hashgrid.
  */
-static void initialize_transfers_full (router_t *router, const uint8_t round) {
-    spidx_t i_state = router->tdata->n_stops;
-    router_state_t *states = &(router->states[round * router->tdata->n_stops]);
+static void initialize_transfers_full (router_t *router, uint32_t round) {
+    uint32_t i_state = router->tdata->n_stops;
+    router_state_t *states = router->states + (round * router->tdata->n_stops);
     do {
         i_state--;
         states[i_state].walk_time = UNREACHED;
@@ -344,10 +344,10 @@ static void initialize_transfers_full (router_t *router, const uint8_t round) {
  * return to them.
  */
 static void initialize_transfers (router_t *router,
-                                  const uint8_t round, const spidx_t stop_index_from) {
-    router_state_t *states = &(router->states[round * router->tdata->n_stops]);
+                                  uint32_t round, spidx_t stop_index_from) {
+    router_state_t *states = router->states + (round * router->tdata->n_stops);
     uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
-    const uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
+    uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
     states[stop_index_from].walk_time = UNREACHED;
     for ( ; t < tN ; ++t) {
         spidx_t stop_index_to = router->tdata->transfer_target_stops[t];
@@ -361,11 +361,11 @@ static void initialize_transfers (router_t *router,
  * service day, applying realtime data as needed.
  */
 static rtime_t
-tdata_stoptime (const tdata_t* tdata, const serviceday_t *serviceday,
-                const uint32_t jp_index, const uint32_t vj_offset, const uint32_t journey_pattern_point,
-                const bool arrive) {
+tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
+                uint32_t jp_index, uint32_t vj_offset, uint32_t journey_pattern_point,
+                bool arrive) {
     rtime_t time, time_adjusted;
-    const stoptime_t *vj_stoptimes;
+    stoptime_t *vj_stoptimes;
 
     /* This code is only required if want realtime support in
      * the journey planner
@@ -387,14 +387,14 @@ tdata_stoptime (const tdata_t* tdata, const serviceday_t *serviceday,
             /* if the expanded stoptimes have not been added,
              * or our source is not time-expanded
              */
-            const vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
+            vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
             vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
             time = vj->begin_time;
         }
     } else
     #endif /* RRRR_FEATURE_REALTIME_EXPANDED */
     {
-        const vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
+        vehicle_journey_t *vj = tdata_vehicle_journeys_in_journey_pattern(tdata, jp_index) + vj_offset;
         vj_stoptimes = &tdata->stop_times[vj->stop_times_offset];
         time = vj->begin_time;
     }
@@ -427,9 +427,8 @@ tdata_next (router_t *router, router_request_t *req,
             uint32_t jp_index, uint32_t vj_offset, rtime_t qtime,
             spidx_t *ret_stop_index, rtime_t *ret_stop_time) {
 
-    const spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-    const journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-
+    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
     uint32_t jpp_i;
 
     *ret_stop_index = STOP_NONE;
@@ -438,7 +437,7 @@ tdata_next (router_t *router, router_request_t *req,
     for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
         /* TODO: check if the arrive = false flag works with req->arrive_by */
 
-        const rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
+        rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
                 jp_index, vj_offset, jpp_i, false);
 
         /* Find stop immediately after the given time on the given vj. */
@@ -462,10 +461,10 @@ tdata_next (router_t *router, router_request_t *req,
  * Transfer results are computed within the same round, based on arrival time
  * in the ride phase and stored in the walk time member of states.
  */
-static void apply_transfers (router_t *router, const router_request_t *req,
-                      const uint8_t round, const bool transfer) {
+static void apply_transfers (router_t *router, router_request_t *req,
+                      uint32_t round, bool transfer) {
     uint32_t stop_index_from; /* uint32_t: because we need to compare to BITSET_NONE */
-    router_state_t *states = &(router->states[round * router->tdata->n_stops]);
+    router_state_t *states = router->states + (round * router->tdata->n_stops);
     /* The transfer process will flag journey_patterns that should be explored in
      * the next round.
      */
@@ -473,7 +472,7 @@ static void apply_transfers (router_t *router, const router_request_t *req,
     for (stop_index_from  = bitset_next_set_bit (router->updated_stops, 0);
          stop_index_from != BITSET_NONE;
          stop_index_from  = bitset_next_set_bit (router->updated_stops, stop_index_from + 1)) {
-        router_state_t *state_from = &(states[stop_index_from]);
+        router_state_t *state_from = states + stop_index_from;
         rtime_t time_from = state_from->time;
         #ifdef RRRR_INFO
         printf ("stop %d was marked as updated \n", stop_index_from);
@@ -524,14 +523,14 @@ static void apply_transfers (router_t *router, const router_request_t *req,
         if (transfer) {
         /* Then apply transfers from the stop to nearby stops */
         uint32_t tr     = router->tdata->stops[stop_index_from    ].transfers_offset;
-        const uint32_t tr_end = router->tdata->stops[stop_index_from + 1].transfers_offset;
+        uint32_t tr_end = router->tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; tr < tr_end ; ++tr) {
             /* Transfer distances are stored in units of 16 meters,
              * rounded not truncated, in a uint8_t
              */
-            const spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
-            const rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr];
-            const rtime_t time_to = req->arrive_by ? time_from - transfer_duration
+            spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
+            rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr];
+            rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
 
             /* Avoid reserved values including UNREACHED */
@@ -599,18 +598,18 @@ static void apply_transfers (router_t *router, const router_request_t *req,
      */
 }
 
-static void search_vehicle_journeys_within_days(const router_t *router, const router_request_t *req,
-        const uint32_t jp_index,
-        const uint16_t jpp_offset,
-        const rtime_t prev_time,
-        const serviceday_t **best_serviceday,
+static void search_vehicle_journeys_within_days(router_t *router, router_request_t *req,
+        uint32_t jp_index,
+        uint16_t jpp_offset,
+        rtime_t prev_time,
+        serviceday_t **best_serviceday,
         uint32_t *best_vj, rtime_t *best_time) {
 
-    const calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
-    const vehicle_journey_t *vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
-    const journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
+    calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
+    vehicle_journey_t *vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
 
-    const serviceday_t *serviceday;
+    serviceday_t *serviceday;
 
     /* Search vehicle_journeys within days.
      * The loop nesting could also be inverted.
@@ -694,11 +693,11 @@ static void search_vehicle_journeys_within_days(const router_t *router, const ro
 }
 
 static bool
-write_state(router_t *router, const router_request_t *req,
-            const uint8_t round, const uint32_t jpp_index, const uint32_t vj_offset,
-            const spidx_t stop_index, const uint16_t jpp_offset, const rtime_t time,
-            const spidx_t board_stop, const uint16_t board_jpp_stop,
-            const rtime_t board_time) {
+write_state(router_t *router, router_request_t *req,
+            uint8_t round, uint32_t jpp_index, uint32_t vj_offset,
+            spidx_t stop_index, uint16_t jpp_offset, rtime_t time,
+            spidx_t board_stop, uint16_t board_jpp_stop,
+            rtime_t board_time) {
 
     router_state_t *this_state = &(router->states[round * router->tdata->n_stops + stop_index]);
 
@@ -738,10 +737,10 @@ write_state(router_t *router, const router_request_t *req,
     return true;
 }
 
-static void router_round(router_t *router, router_request_t *req, const uint8_t round) {
+static void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
     uint32_t jp_index;
-    const uint8_t last_round = (uint8_t) ((round == 0) ? 1 : round - 1);
+    uint8_t last_round = (uint8_t) ((round == 0) ? 1 : round - 1);
 
     #ifdef RRRR_INFO
     fprintf(stderr, "round %d\n", round);
@@ -751,12 +750,12 @@ static void router_round(router_t *router, router_request_t *req, const uint8_t 
          jp_index != BITSET_NONE;
          jp_index = bitset_next_set_bit (router->updated_journey_patterns, jp_index + 1)) {
 
-        const journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-        const spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-        const uint8_t *journey_pattern_point_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, jp_index);
+        journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
+        spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+        uint8_t *journey_pattern_point_attributes = tdata_stop_attributes_for_journey_pattern(router->tdata, jp_index);
 
         /* Service day on which that vj was boarded */
-        const serviceday_t *board_serviceday = NULL;
+        serviceday_t *board_serviceday = NULL;
 
         /* vj index within the route. NONE means not yet boarded. */
         uint32_t      vj_index = NONE;
@@ -803,11 +802,11 @@ static void router_round(router_t *router, router_request_t *req, const uint8_t 
                 req->arrive_by ? --jpp_index :
                                  ++jpp_index) {
 
-            const uint32_t stop_index = journey_pattern_points[jpp_index];
+            uint32_t stop_index = journey_pattern_points[jpp_index];
             rtime_t prev_time;
             bool attempt_board = false;
-            const bool forboarding = (journey_pattern_point_attributes[jpp_index] & rsa_boarding);
-            const bool foralighting = (journey_pattern_point_attributes[jpp_index] & rsa_alighting);
+            bool forboarding = (journey_pattern_point_attributes[jpp_index] & rsa_boarding);
+            bool foralighting = (journey_pattern_point_attributes[jpp_index] & rsa_alighting);
 
             #ifdef RRRR_INFO
             char buf[13];
@@ -896,7 +895,7 @@ static void router_round(router_t *router, router_request_t *req, const uint8_t 
                  * within journey_patterns. Scanning through the whole list of vehicle_journeys
                  * reduces speed by ~20 percent over binary search.
                  */
-                const serviceday_t *best_serviceday = NULL;
+                serviceday_t *best_serviceday = NULL;
                 uint32_t best_vj = NONE;
                 rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UINT16_MAX);
 
@@ -1090,7 +1089,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
 }
 
 static bool initialize_origin_index (router_t *router, router_request_t *req) {
-    uint64_t i_state;
+    uint32_t i_state;
 
     router->origin = (req->arrive_by ? req->to : req->from);
 
@@ -1130,14 +1129,14 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
     return true;
 }
 
-static bool initialize_target_index (router_t *router, const router_request_t *req) {
+static bool initialize_target_index (router_t *router, router_request_t *req) {
     router->target = (req->arrive_by ? req->from : req->to);
 
     return (router->target != STOP_NONE);
 }
 
 #ifdef RRRR_FEATURE_LATLON
-static bool latlon_best_stop_index(router_t *router, const router_request_t *req,
+static bool latlon_best_stop_index(router_t *router, router_request_t *req,
                                    hashgrid_result_t *hg_result) {
     double distance, best_distance = INFINITY;
     uint32_t stop_index, best_stop_index = HASHGRID_NONE;

@@ -39,7 +39,7 @@ struct bitset_s {
 /* Allocate a new bitset of the specified capacity,
  * and return a pointer to the bitset_t struct.
  */
-bitset_t *bitset_new(const uint32_t capacity);
+bitset_t *bitset_new(uint32_t capacity);
 
 /* De-allocate a bitset_t struct as well as the memory it references
  * internally for the bit fields.
@@ -48,7 +48,7 @@ void bitset_destroy(bitset_t *self);
 
 /* Perform a logical AND on this bitset_t using the given mask
 */
-void bitset_mask_and(bitset_t *self, const bitset_t *mask);
+void bitset_mask_and(bitset_t *self, bitset_t *mask);
 
 /* Set all indices in this bitset_t to true. */
 void bitset_black(bitset_t *self);
@@ -57,24 +57,24 @@ void bitset_black(bitset_t *self);
 void bitset_clear(bitset_t *self);
 
 /* Set specified index in this bitset_t. */
-void bitset_set(bitset_t *self, const uint32_t index);
+void bitset_set(bitset_t *self, uint32_t index);
 
 /* Unset specified index in this bitset_t. */
-void bitset_unset(bitset_t *self, const uint32_t index);
+void bitset_unset(bitset_t *self, uint32_t index);
 
 /* Return whether the specified index is set in this bitset_t */
-bool bitset_get(const bitset_t *self, const uint32_t index);
+bool bitset_get(bitset_t *self, uint32_t index);
 
 /* Return the next set index in this bitset_t equal or greater than
  * the specified index. Returns BITSET_NONE if there are no more set bits.
  */
-uint32_t bitset_next_set_bit(const bitset_t*, uint32_t index);
+uint32_t bitset_next_set_bit(bitset_t*, uint32_t index);
 
 #ifdef RRRR_DEBUG
 /* Print a string-representation of this bitset to STDERR */
-void bitset_dump(const bitset_t *self);
+void bitset_dump(bitset_t *self);
 /* Return an enumeration of all the indices set in the bitset_t */
-uint32_t bitset_enumerate(const bitset_t *self);
+uint32_t bitset_enumerate(bitset_t *self);
 #endif /* RRRR_DEBUG */
 
 #endif /* _BITSET_H */

@@ -29,7 +29,7 @@
     td->storage = (char*) (((char *) b) + header->loc_##storage + sizeof(uint32_t))
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
-bool tdata_io_v3_load(tdata_t *td, const char *filename) {
+bool tdata_io_v3_load(tdata_t *td, char *filename) {
     struct stat st;
     tdata_header_t *header;
     int fd;

@@ -64,5 +64,5 @@ struct tdata_header {
     uint32_t loc_vj_ids;
 };
 
-bool tdata_io_v3_load(tdata_t *td, const char* filename);
+bool tdata_io_v3_load(tdata_t *td, char* filename);
 void tdata_io_v3_close(tdata_t *td);
