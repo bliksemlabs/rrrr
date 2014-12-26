@@ -739,8 +739,8 @@ write_state(router_t *router, router_request_t *req,
 
 static void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
+    router_state_t *states = router->states + (((round == 0) ? 1 : round - 1) * router->tdata->n_stops);
     uint32_t jp_index;
-    uint8_t last_round = (uint8_t) ((round == 0) ? 1 : round - 1);
 
     #ifdef RRRR_INFO
     fprintf(stderr, "round %d\n", round);
@@ -852,8 +852,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
              * a better vj on this journey_pattern at this location, indicate that we
              * want to search for a vj.
              */
-            prev_time = router->states[last_round * router->tdata->n_stops +
-                                                    stop_index].walk_time;
+            prev_time = states[stop_index].walk_time;
 
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
