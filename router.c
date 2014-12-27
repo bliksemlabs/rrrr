@@ -583,7 +583,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
              * rounded not truncated, in a uint8_t
              */
             spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
-            rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr];
+            rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr] + req->walk_slack;
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
 

@@ -256,28 +256,13 @@ const char *tdata_stop_name_for_index(tdata_t *td, spidx_t stop_index) {
 
 /* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t stop_index_from, spidx_t stop_index_to) {
+    UNUSED(req);
     if (stop_index_from != stop_index_to) {
         uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
         uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             if (tdata->transfer_target_stops[t] == stop_index_to) {
-                uint32_t distance_meters = ((uint32_t) tdata->transfer_dist_meters[t]) << 4; /* actually in units of 16 meters */
-                return SEC_TO_RTIME((uint32_t)(distance_meters / req->walk_speed + req->walk_slack));
-            }
-        }
-    } else {
-        return 0;
-    }
-    return UNREACHED;
-}
-
-uint32_t transfer_distance (tdata_t *tdata, spidx_t stop_index_from, spidx_t stop_index_to) {
-    if (stop_index_from != stop_index_to) {
-        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
-        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
-        for ( ; t < tN ; ++t) {
-            if (tdata->transfer_target_stops[t] == stop_index_to) {
-                return ((uint32_t) tdata->transfer_dist_meters[t]) << 4; /* actually in units of 16 meters */
+                return (rtime_t) tdata->transfer_dist_meters[t] + req->walk_slack;
             }
         }
     } else {
