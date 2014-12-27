@@ -143,6 +143,7 @@ struct tdata {
     uint32_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
     uint8_t  *transfer_dist_meters;
+    rtime_t max_time;
     /* optional data:
      * NULL pointer means it is not available */
     latlon_t *stop_coords;
@@ -263,8 +264,6 @@ vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32
 const char *tdata_stop_desc_for_index(tdata_t *td, spidx_t stop_index);
 
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t stop_index_from, spidx_t stop_index_to);
-
-uint32_t transfer_distance (tdata_t *tdata, spidx_t stop_index_from, spidx_t stop_index_to);
 
 const char *tdata_stop_name_for_index(tdata_t *td, spidx_t stop_index);
 

@@ -45,7 +45,6 @@ static bool router_setup_hashgrid(router_t *router) {
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stops * RRRR_DEFAULT_MAX_ROUNDS;
-
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
     router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
@@ -164,6 +163,7 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
      * applied (applying only on the true current calendar day)
      */
     serviceday_t yesterday, today, tomorrow;
+    uint8_t day_i = 0;
     calendar_t realtime_mask;
     router->day_mask = req->day_mask;
 
@@ -177,27 +177,47 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
     yesterday.midnight = 0;
     yesterday.mask = router->day_mask >> 1;
-    yesterday.apply_realtime = yesterday.mask & realtime_mask;
+    yesterday.apply_realtime = (bool) (yesterday.mask & realtime_mask);
     today.midnight = RTIME_ONE_DAY;
     today.mask = router->day_mask;
-    today.apply_realtime = today.mask & realtime_mask;
+    today.apply_realtime = (bool) (today.mask & realtime_mask);
     tomorrow.midnight = RTIME_TWO_DAYS;
     tomorrow.mask = router->day_mask << 1;
-    tomorrow.apply_realtime = tomorrow.mask & realtime_mask;
+    tomorrow.apply_realtime = (bool) (tomorrow.mask & realtime_mask);
 
+    router->day_mask = today.mask;
     /* Iterate backward over days for arrive-by searches. */
     if (req->arrive_by) {
-        router->servicedays[0] = tomorrow;
-        router->servicedays[1] = today;
-        router->servicedays[2] = yesterday;
+        if (req->time > tomorrow.midnight) {
+            /* Departuretime includes trips running tomorrow */
+            router->servicedays[day_i] = tomorrow;
+            router->day_mask |= tomorrow.mask;
+            day_i++;
+        }
+        router->servicedays[day_i] = today;
+        day_i++;
+        if (req->time_cutoff < router->tdata->max_time){
+            /* Cut-off request includes vehicle_journey running tomorrow */
+            router->servicedays[day_i] = yesterday;
+            day_i++;
+        }
     } else {
-        router->servicedays[0] = yesterday;
-        router->servicedays[1] = today;
-        router->servicedays[2] = tomorrow;
+        if (req->time < router->tdata->max_time){
+            /* There are still some journeys running of previous day on departure_time of journey */
+            router->day_mask |= yesterday.mask;
+            router->servicedays[day_i] = yesterday;
+            day_i++;
+        }
+        router->servicedays[day_i] = today;
+        day_i++;
+        if (req->time_cutoff > tomorrow.midnight){
+            /* Cut-off request includes vehicle_journey running tomorrow */
+            router->day_mask |= tomorrow.mask;
+            router->servicedays[day_i] = tomorrow;
+            day_i++;
+        }
     }
-
-    /* set day_mask to catch all service days (0, 1, 2) */
-    router->day_mask = yesterday.mask | today.mask | tomorrow.mask;
+    router->n_servicedays = day_i;
 
     #ifdef RRRR_DEBUG
     {
@@ -380,7 +400,7 @@ static void initialize_transfers (router_t *router,
     rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stops);
     uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
     uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
-    states_walk_time[stop_index_from].walk_time = UNREACHED;
+    states_walk_time[stop_index_from] = UNREACHED;
     for ( ; t < tN ; ++t) {
         spidx_t stop_index_to = router->tdata->transfer_target_stops[t];
         states_walk_time[stop_index_to] = UNREACHED;
@@ -549,7 +569,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
              * No improvements from other transfers.
              */
             states_walk_time[stop_index_from] = time_from;
-            states_walk_from[stop_index_from] = stop_index_from;
+            states_walk_from[stop_index_from] = (spidx_t) stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
             bitset_set(router->updated_walk_stops, stop_index_from);
         }
@@ -563,7 +583,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
              * rounded not truncated, in a uint8_t
              */
             spidx_t stop_index_to = router->tdata->transfer_target_stops[tr];
-            rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr];
+            rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr] + req->walk_slack;
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
 
@@ -648,7 +668,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
      * The loop nesting could also be inverted.
      */
     for (serviceday  = router->servicedays;
-         serviceday <= router->servicedays + 2;
+         serviceday <= router->servicedays + router->n_servicedays;
          ++serviceday) {
 
         uint16_t i_vj_offset;

@@ -28,6 +28,17 @@
     td->storage##_width = *((uint32_t *) (((char *) b) + header->loc_##storage)); \
     td->storage = (char*) (((char *) b) + header->loc_##storage + sizeof(uint32_t))
 
+/* Set the maximum drivetime of any day in tdata */
+void set_max_time(tdata_t *td){
+    uint32_t jp_index;
+    td->max_time = UNREACHED;
+    for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
+        if (td->journey_patterns[jp_index].max_time < td->max_time) {
+            td->max_time = td->journey_patterns[jp_index].max_time;
+        }
+    }
+}
+
 /* Map an input file into memory and reconstruct pointers to its contents. */
 bool tdata_io_v3_load(tdata_t *td, char *filename) {
     struct stat st;
@@ -88,6 +99,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap_string (td->base, line_ids);
     load_mmap_string (td->base, productcategories);
 
+    /* Set the maximum drivetime of any day in tdata */
+    set_max_time(td);
     /* We must close the file descriptor otherwise we will
      * leak it. Because mmap has created a reference to it
      * there will not be a problem.

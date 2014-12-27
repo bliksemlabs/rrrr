@@ -82,6 +82,7 @@ struct router {
 
     calendar_t day_mask;
     serviceday_t servicedays[3];
+    uint8_t n_servicedays;
 
 #ifdef RRRR_FEATURE_LATLON
     hashgrid_t hg;
