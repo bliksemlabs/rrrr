@@ -400,7 +400,7 @@ static void initialize_transfers (router_t *router,
     rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stops);
     uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
     uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
-    states_walk_time[stop_index_from].walk_time = UNREACHED;
+    states_walk_time[stop_index_from] = UNREACHED;
     for ( ; t < tN ; ++t) {
         spidx_t stop_index_to = router->tdata->transfer_target_stops[t];
         states_walk_time[stop_index_to] = UNREACHED;
