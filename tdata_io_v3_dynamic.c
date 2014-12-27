@@ -35,6 +35,17 @@
     if (!td->storage) goto fail_close_fd; \
     if (read (fd, td->storage, ((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width) != (ssize_t) (((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width)) goto fail_close_fd;
 
+/* Set the maximum drivetime of any day in tdata */
+void set_max_time(tdata_t *td){
+    uint32_t jp_index;
+    td->max_time = UNREACHED;
+    for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
+        if (td->journey_patterns[jp_index].max_time < td->max_time) {
+            td->max_time = td->journey_patterns[jp_index].max_time;
+        }
+    }
+}
+
 bool tdata_io_v3_load(tdata_t *td, char *filename) {
     tdata_header_t h;
     tdata_header_t *header = &h;
@@ -117,7 +128,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic_string (fd, line_codes);
     load_dynamic_string (fd, line_ids);
     load_dynamic_string (fd, productcategories);
-
+    
+    set_max_time(td);
     close (fd);
 
     return true;

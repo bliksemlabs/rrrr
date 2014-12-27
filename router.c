@@ -45,14 +45,6 @@ static bool router_setup_hashgrid(router_t *router) {
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stops * RRRR_DEFAULT_MAX_ROUNDS;
-    uint32_t jp_index = 0;
-    /* TODO this is a quick hack to get the right max_time, this should move moved elsewhere.*/
-    tdata->max_time = UNREACHED;
-    for (jp_index = 0; jp_index < tdata->n_journey_patterns; jp_index++){
-        if (tdata->journey_patterns[jp_index].max_time < tdata->max_time){
-            tdata->max_time = tdata->journey_patterns[jp_index].max_time;
-        }
-    }
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
     router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
@@ -577,7 +569,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
              * No improvements from other transfers.
              */
             states_walk_time[stop_index_from] = time_from;
-            states_walk_from[stop_index_from] = stop_index_from;
+            states_walk_from[stop_index_from] = (spidx_t) stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
             bitset_set(router->updated_walk_stops, stop_index_from);
         }
