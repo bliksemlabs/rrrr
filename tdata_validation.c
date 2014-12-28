@@ -65,21 +65,21 @@ int tdata_validation_coordinates(tdata_t *tdata) {
 
     int32_t ret_invalid = 0;
 
-    uint32_t i_stop = tdata->n_stops;
+    uint32_t sp_index = tdata->n_stop_points;
 
     do {
         latlon_t ll;
 
-        i_stop--;
+        sp_index--;
 
-        ll = tdata->stop_coords[i_stop];
+        ll = tdata->stop_point_coords[sp_index];
         if (ll.lat < min_lat || ll.lat > max_lat ||
             ll.lon < min_lon || ll.lon > max_lon) {
             fprintf (stderr, "stop lat/lon out of range: lat=%f, lon=%f \n",
                                                 ll.lat, ll.lon);
             ret_invalid--;
         }
-    } while (i_stop);
+    } while (sp_index);
 
     return ret_invalid;
 }
@@ -89,11 +89,11 @@ int tdata_validation_coordinates(tdata_t *tdata) {
  */
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
-    uint32_t jp_index, stop_index, vj_index;
+    uint32_t jp_index, sp_index, vj_index;
     int ret_nonincreasing = 0;
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
-        vehicle_journey_t *vjs = tdata->vjs + jp.vj_ids_offset;
+        vehicle_journey_t *vjs = tdata->vjs + jp.vj_offset;
 
         #ifdef RRRR_DEBUG
         /* statistics on errors, instead of early bail out */
@@ -104,8 +104,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             vehicle_journey_t vj = vjs[vj_index];
             stoptime_t *st = tdata->stop_times + vj.stop_times_offset;
             stoptime_t *prev_st = NULL;
-            for (stop_index = 0; stop_index < jp.n_stops; ++stop_index) {
-                if (stop_index == 0 && st->arrival != 0) {
+            for (sp_index = 0; sp_index < jp.n_stops; ++sp_index) {
+                if (sp_index == 0 && st->arrival != 0) {
                     fprintf (stderr,
                              "timedemand type begins at %d,%d not 0.\n",
                              st->arrival, st->departure);
@@ -117,7 +117,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                 if (st->departure < st->arrival) {
                     fprintf (stderr, "departure before arrival at "
                                      "journey_pattern %d, vj %d, stop %d.\n",
-                            jp_index, vj_index, stop_index);
+                            jp_index, vj_index, sp_index);
                     #ifndef RRRR_DEBUG
                     return -1;
                     #endif
@@ -133,7 +133,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         fprintf (stderr, "negative travel time arriving at "
                                          "journey_pattern %d, vj %d (%s), stop %d.\n",
                                 jp_index, vj_index,
-                                vj_id, stop_index);
+                                vj_id, sp_index);
                         #if 0
                         fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
                                          prev_st->arrival, prev_st->departure,
@@ -149,7 +149,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         #if 0
                         fprintf (stderr, "last departure equals arrival at "
                                          "journey_pattern %d, vj %d, stop %d.\n",
-                                jp_index, vj_index, stop_index);
+                                jp_index, vj_index, sp_index);
 
                         #ifdef RRRR_DEBUG
                         n_nonincreasing_vjs += 1;
@@ -179,41 +179,41 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
  */
 int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     int n_transfers_checked = 0;
-    uint32_t stop_index_from;
-    for (stop_index_from = 0;
-         stop_index_from < tdata->n_stops;
-         ++stop_index_from) {
+    uint32_t sp_index_from;
+    for (sp_index_from = 0;
+         sp_index_from < tdata->n_stop_points;
+         ++sp_index_from) {
 
-        /* Iterate over all transfers going out of this stop */
-        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
-        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
+        /* Iterate over all transfers going out of this stop_point */
+        uint32_t t  = tdata->stop_points[sp_index_from].transfers_offset;
+        uint32_t tN = tdata->stop_points[sp_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
-            uint32_t stop_index_to = tdata->transfer_target_stops[t];
+            uint32_t sp_index_to = tdata->transfer_target_stops[t];
             uint32_t forward_distance = tdata->transfer_dist_meters[t] << 4;
             /*                          actually in units of 2^4 == 16 meters */
 
-            /* Find the reverse transfer (stop_index_to -> stop_index_from) */
-            uint32_t u  = tdata->stops[stop_index_to    ].transfers_offset;
-            uint32_t uN = tdata->stops[stop_index_to + 1].transfers_offset;
+            /* Find the reverse transfer (sp_index_to -> sp_index_from) */
+            uint32_t u  = tdata->stop_points[sp_index_to].transfers_offset;
+            uint32_t uN = tdata->stop_points[sp_index_to + 1].transfers_offset;
             bool found_reverse = false;
 
-            if (stop_index_to == stop_index_from) {
-                fprintf (stderr, "loop transfer from/to stop %d.\n",
-                                 stop_index_from);
+            if (sp_index_to == sp_index_from) {
+                fprintf (stderr, "loop transfer from/to stop_point %d.\n",
+                        sp_index_from);
             }
 
             for ( ; u < uN ; ++u) {
                 n_transfers_checked += 1;
-                if (tdata->transfer_target_stops[u] == stop_index_from) {
+                if (tdata->transfer_target_stops[u] == sp_index_from) {
                     /* this is the same transfer in reverse */
                     uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
                     if (reverse_distance != forward_distance) {
-                        fprintf (stderr, "transfer from %d to %d is "
+                        fprintf (stderr, "transfer from_stop_point %d to %d is "
                                          "not symmetric. "
                                          "forward distance is %d, "
                                          "reverse distance is %d.\n",
-                                         stop_index_from,
-                                         stop_index_to,
+                                sp_index_from,
+                                sp_index_to,
                                          forward_distance,
                                          reverse_distance);
                     }
@@ -222,9 +222,9 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
                 }
             }
             if ( ! found_reverse) {
-                fprintf (stderr, "transfer from %d to %d does not have "
+                fprintf (stderr, "transfer from_stop_point %d to %d does not have "
                                  "an equivalent reverse transfer.\n",
-                                 stop_index_from, stop_index_to);
+                        sp_index_from, sp_index_to);
                 return -1;
             }
         }
@@ -235,13 +235,13 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     return 0;
 }
 
-static bool tdata_validation_check_nstops (tdata_t *tdata) {
-    if (tdata->n_stops < 2) {
-        fprintf (stderr, "n_stops should be at least two, %d found.\n", tdata->n_stops);
+static bool tdata_validation_check_nstop_points(tdata_t *tdata) {
+    if (tdata->n_stop_points < 2) {
+        fprintf (stderr, "n_stop_points should be at least two, %d found.\n", tdata->n_stop_points);
         return false;
     } else
-    if (tdata->n_stops > ONBOARD) {
-        fprintf (stderr, "n_stops %d exceeds compiled spidx_t width.\n", tdata->n_stops);
+    if (tdata->n_stop_points > ONBOARD) {
+        fprintf (stderr, "n_stop_points %d exceeds compiled spidx_t width.\n", tdata->n_stop_points);
         return false;
     }
 
@@ -251,7 +251,7 @@ static bool tdata_validation_check_nstops (tdata_t *tdata) {
 bool tdata_validation_check_coherent (tdata_t *tdata) {
     fprintf (stderr, "checking tdata coherency...\n");
 
-    return  (tdata_validation_check_nstops(tdata) &&
+    return  (tdata_validation_check_nstop_points(tdata) &&
              tdata->n_journey_patterns > 0 &&
              tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&

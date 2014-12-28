@@ -52,7 +52,7 @@ static void set_add_jp (uint32_t *set,
 }
 #endif
 
-#if RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
+#if RRRR_MAX_BANNED_STOP_POINTS > 0 || RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
 static void set_add_sp (spidx_t *set,
                         uint8_t  *length, uint8_t max_length,
                         spidx_t value) {
@@ -126,7 +126,7 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-jp-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_STOPS > 0
+#if RRRR_MAX_BANNED_STOP_POINTS > 0
                         "[ --banned-stop-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_STOP_HARD > 0
@@ -200,7 +200,7 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
-                        req.from = (uint32_t) strtol(&argv[i][11], NULL, 10);
+                        req.from_stop_point = (uint32_t) strtol(&argv[i][11], NULL, 10);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
@@ -236,7 +236,7 @@ int main (int argc, char *argv[]) {
 
                 case 't':
                     if (strncmp(argv[i], "--to-idx=", 9) == 0) {
-                        req.to = (uint32_t) strtol(&argv[i][9], NULL, 10);
+                        req.to_stop_point = (uint32_t) strtol(&argv[i][9], NULL, 10);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
@@ -260,26 +260,26 @@ int main (int argc, char *argv[]) {
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_STOPS > 0
+                    #if RRRR_MAX_BANNED_STOP_POINTS > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
                         uint32_t stop_idx = (uint32_t) strtol(&argv[i][19], NULL, 10);
-                        if (stop_idx < tdata.n_stops) {
+                        if (stop_idx < tdata.n_stop_points) {
                             set_add_sp(req.banned_stops,
                                        &req.n_banned_stops,
-                                       RRRR_MAX_BANNED_STOPS,
+                                    RRRR_MAX_BANNED_STOP_POINTS,
                                        stop_idx);
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_STOPS_HARD > 0
+                    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
                         uint32_t stop_idx = (uint32_t) strtol(&argv[i][23], NULL, 10);
-                        if (stop_idx < tdata.n_stops) {
-                            set_add_sp(req.banned_stops_hard,
-                                       &req.n_banned_stops_hard,
-                                       RRRR_MAX_BANNED_STOPS_HARD,
+                        if (stop_idx < tdata.n_stop_points) {
+                            set_add_sp(req.banned_stop_points_hard,
+                                       &req.n_banned_stop_points_hard,
+                                    RRRR_MAX_BANNED_STOP_POINTS_HARD,
                                        stop_idx);
                         }
                     }
@@ -310,7 +310,7 @@ int main (int argc, char *argv[]) {
                         cli_args.verbose = true;
                     }
                     else if (strncmp(argv[i], "--via=", 6) == 0) {
-                        req.via = (uint32_t) strtol(&argv[i][6], NULL, 10);
+                        req.via_stop_point = (uint32_t) strtol(&argv[i][6], NULL, 10);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
@@ -343,7 +343,7 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
+        tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_point_ids, tdata.stop_point_ids_width, tdata.n_stop_points);
         tdata.vjid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
         tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 

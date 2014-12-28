@@ -15,11 +15,11 @@ struct leg {
     /* vj index */
     uint32_t vj;
 
-    /* from stop index */
-    spidx_t s0;
+    /* from stop_point index */
+    spidx_t sp_from;
 
-    /* to stop index */
-    spidx_t s1;
+    /* to stop_point index */
+    spidx_t sp_to;
 
     /* start time */
     rtime_t  t0;

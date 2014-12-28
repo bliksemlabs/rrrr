@@ -6,15 +6,15 @@
 /* Reverse the times and stops in a leg. Used for creating arrive-by itineraries. */
 static void leg_swap (leg_t *leg) {
     struct leg temp = *leg;
-    leg->s0 = temp.s1;
-    leg->s1 = temp.s0;
+    leg->sp_from = temp.sp_to;
+    leg->sp_to = temp.sp_from;
     leg->t0 = temp.t1;
     leg->t1 = temp.t0;
 }
 
 /* Checks charateristics that should be the same for all vj plans produced by this router:
    All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc.
-   Returns true if any of the checks fail, false if no problems are detected. */
+   Returns true if any of the checks fail, false if no problems are detected. f*/
 static bool check_plan_invariants (plan_t *plan) {
     uint8_t i_itinerary;
     bool fail = false;
@@ -45,11 +45,11 @@ static bool check_plan_invariants (plan_t *plan) {
             prev_target_time = target_time;
             prev_itin = itin;
             /* Check that itinerary does indeed connect the places in the request. */
-            if (leg0->s0 != plan->req.from) {
+            if (leg0->sp_from != plan->req.from_stop_point) {
                 fprintf(stderr, "itinerary does not begin at from location.\n");
                 fail = true;
             }
-            if (legN->s1 != plan->req.to) {
+            if (legN->sp_to != plan->req.to_stop_point) {
                 fprintf(stderr, "itinerary does not end at to location.\n");
                 fail = true;
             }
@@ -85,8 +85,8 @@ static bool check_plan_invariants (plan_t *plan) {
                     fail = true;
                 }
                 if (i_leg > 0) {
-                    if (leg->s0 != prev_leg->s1) {
-                        fprintf(stderr, "legs do not chain: leg %d begins with stop %d, previous leg ends with stop %d.\n", i_leg, leg->s0, prev_leg->s1);
+                    if (leg->sp_from != prev_leg->sp_to) {
+                        fprintf(stderr, "legs do not chain: leg %d begins with stop_point %d, previous leg ends with stop_point %d.\n", i_leg, leg->sp_from, prev_leg->sp_to);
                         fail = true;
                     }
                     if (leg->journey_pattern == WALK && leg->t0 != prev_leg->t1) {
@@ -112,8 +112,8 @@ static bool check_plan_invariants (plan_t *plan) {
 bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     itinerary_t *itin;
     uint8_t i_transfer;
-    /* Router states are a 2D array of stride n_stops */
-    /* router_state_t (*states)[n_stops] = (router_state_t(*)[]) router->states; */
+    /* Router states are a 2D array of stride n_stop_points */
+    /* router_state_t (*states)[n_stop_points] = (router_state_t(*)[]) router->states; */
     plan->n_itineraries = 0;
     plan->req = *req; /* copy the request into the plan for use in rendering */
     itin = plan->itineraries;
@@ -122,10 +122,10 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
         /* Work backward from the target to the origin */
         uint64_t i_state;
         leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward vehicle_journey's */
-        uint32_t stop = router->target; /* Work backward from the target to the origin */
+        spidx_t sp_index = router->target; /* Work backward from the target to the origin */
         int16_t j_transfer; /* signed int because we will be decreasing */
 
-        i_state = (i_transfer * router->tdata->n_stops) + stop;
+        i_state = (i_transfer * router->tdata->n_stop_points) + sp_index;
 
         /* skip rounds that were not reached */
         if (router->states_walk_time[i_state] == UNREACHED) continue;
@@ -135,36 +135,37 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
         /* Follow the chain of states backward */
         for (j_transfer = i_transfer; j_transfer >= 0; --j_transfer) {
             uint64_t i_walk, i_ride;
-            uint32_t walk_stop, ride_stop;
+            spidx_t walk_stop_point;
+            spidx_t ride_stop_point;
 
-            i_state = (((uint8_t) j_transfer) * router->tdata->n_stops);
+            i_state = (((uint8_t) j_transfer) * router->tdata->n_stop_points);
 
-            if (stop > router->tdata->n_stops) {
-                fprintf (stderr, "ERROR: stopid %d out of range.\n", stop);
+            if (sp_index > router->tdata->n_stop_points) {
+                fprintf (stderr, "ERROR: stop_point idx %d out of range.\n", sp_index);
                 return false;
             }
 
             /* Walk phase */
-            i_walk = i_state + stop;
+            i_walk = i_state + sp_index;
             if (router->states_walk_time[i_walk] == UNREACHED) {
-                fprintf (stderr, "ERROR: stop %d was unreached by walking.\n", stop);
+                fprintf (stderr, "ERROR: stop_point idx %d was unreached by walking.\n", sp_index);
                 return false;
             }
-            walk_stop = stop;
-            stop = router->states_walk_from[i_walk];  /* follow the chain of states backward */
+            walk_stop_point = sp_index;
+            sp_index = router->states_walk_from[i_walk];  /* follow the chain of states backward */
 
             /* Ride phase */
-            i_ride = i_state + stop;
+            i_ride = i_state + sp_index;
             if (router->states_time[i_ride] == UNREACHED) {
-                fprintf (stderr, "ERROR: stop %d was unreached by riding.\n", stop);
+                fprintf (stderr, "ERROR: sp %d was unreached by riding.\n", sp_index);
                 return false;
             }
-            ride_stop = stop;
-            stop = router->states_ride_from[i_ride];  /* follow the chain of states backward */
+            ride_stop_point = sp_index;
+            sp_index = router->states_ride_from[i_ride];  /* follow the chain of states backward */
 
             /* Walk phase */
-            l->s0 = router->states_walk_from[i_walk];
-            l->s1 = walk_stop;
+            l->sp_from = router->states_walk_from[i_walk];
+            l->sp_to = walk_stop_point;
             l->t0 = router->states_time[i_ride]; /* Rendering the walk requires already having the ride arrival time */
             l->t1 = router->states_walk_time[i_walk];
             l->journey_pattern = WALK;
@@ -174,8 +175,8 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l += (req->arrive_by ? 1 : -1); /* next leg */
 
             /* Ride phase */
-            l->s0 = router->states_ride_from[i_ride];
-            l->s1 = ride_stop;
+            l->sp_from = router->states_ride_from[i_ride];
+            l->sp_to = ride_stop_point;
             l->t0 = router->states_board_time[i_ride];
             l->t1 = router->states_time[i_ride];
             l->journey_pattern = router->states_back_journey_pattern[i_ride];
@@ -188,7 +189,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                 uint32_t vj_index;
 
                 jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride];
-                vj_index = jp->vj_ids_offset + router->states_back_vehicle_journey[i_ride];
+                vj_index = jp->vj_offset + router->states_back_vehicle_journey[i_ride];
                 vj = router->tdata->vjs + vj_index;
 
                 if (router->tdata->vj_stoptimes[vj_index] &&
@@ -210,11 +211,11 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
         if (req->onboard_journey_pattern_offset != NONE) {
             if (!req->arrive_by) {
                 /* Results starting on board do not have an initial walk leg. */
-                l->s0 = l->s1 = ONBOARD;
+                l->sp_from = l->sp_to = ONBOARD;
                 l->t0 = l->t1 = req->time;
                 l->journey_pattern = l->vj = WALK;
                 l += 1; /* move back to first transit leg */
-                l->s0 = ONBOARD;
+                l->sp_from = ONBOARD;
                 l->t0 = req->time;
             } else {
                 #ifdef RRRR_DEBUG
@@ -224,14 +225,14 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             }
         } else {
             /* The initial walk leg leading out of the search origin. This is inferred, not stored explicitly. */
-            uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
+            spidx_t origin_stop_point = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
             rtime_t duration;
 
-            l->s0 = origin_stop;
-            l->s1 = stop;
+            l->sp_from = origin_stop_point;
+            l->sp_to = sp_index;
             /* It would also be possible to work from s1 to s0 and compress out the wait time. */
-            l->t0 = router->states_time[origin_stop];
-            duration = transfer_duration (router->tdata, req, l->s0, l->s1);
+            l->t0 = router->states_time[origin_stop_point];
+            duration = transfer_duration (router->tdata, req, l->sp_from, l->sp_to);
             l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
             l->journey_pattern = WALK;
             l->vj = WALK;
@@ -256,8 +257,8 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         char ct1[16];
         const char *agency_name, *short_name, *headsign, *productcategory, *leg_mode = NULL;
         char *alert_msg = NULL;
-        const char *s0_id = tdata_stop_name_for_index(tdata, leg->s0);
-        const char *s1_id = tdata_stop_name_for_index(tdata, leg->s1);
+        const char *s0_id = tdata_stop_point_name_for_index(tdata, leg->sp_from);
+        const char *s1_id = tdata_stop_point_name_for_index(tdata, leg->sp_to);
         float d0 = 0.0, d1 = 0.0;
 
         btimetext(leg->t0, ct0);
@@ -272,8 +273,8 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
             productcategory = "";
 
             /* Skip uninformative legs that just tell you to stay in the same place. if (leg->s0 == leg->s1) continue; */
-            if (leg->s0 == ONBOARD) continue;
-            if (leg->s0 == leg->s1) leg_mode = "WAIT";
+            if (leg->sp_from == ONBOARD) continue;
+            if (leg->sp_from == leg->sp_to) leg_mode = "WAIT";
             else leg_mode = "WALK";
         } else {
             agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->journey_pattern);
@@ -309,7 +310,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
                             TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[i_informed_entity];
 
                             if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->journey_pattern) ) &&
-                                ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->s0) ) &&
+                                ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->sp_from) ) &&
                                 ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->vj) )
                                 /* TODO: need to have rtime_to_date  for informed_entity->vj->start_date */
                                 /* TODO: need to have rtime_to_epoch for informed_entity->active_period */
@@ -331,7 +332,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
         b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
-            leg_mode, leg->journey_pattern, leg->vj, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
+            leg_mode, leg->journey_pattern, leg->vj, leg->sp_from, leg->sp_to, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
                         (alert_msg ? alert_msg : ""));
 
         /* EXAMPLE

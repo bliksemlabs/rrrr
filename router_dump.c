@@ -11,7 +11,7 @@ void router_state_dump (router_t *router, uint64_t i_state) {
     char walk_time[13], time[13], board_time[13];
     fprintf (stderr, "-- Router State --\n"
                      "walk time:    %s\n"
-                     "walk from:    %d\n"
+                     "walk from_stop_point:    %d\n"
                      "time:         %s\n"
                      "board time:   %s\n"
                      "back route:   ",
@@ -27,7 +27,7 @@ void router_state_dump (router_t *router, uint64_t i_state) {
 }
 
 void dump_results(router_t *router) {
-    spidx_t i_stop;
+    spidx_t i_sp;
     uint8_t i_round;
     #if 0
     char id_fmt[10];
@@ -45,20 +45,20 @@ void dump_results(router_t *router) {
     }
     fprintf(stderr, "\n");
 
-    for (i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
+    for (i_sp = 0; i_sp < router->tdata->n_stop_points; ++i_sp) {
         const char *stop_id;
         char time[13], walk_time[13];
 
         /* filter out stops which will not be reached */
-        if (router->best_time[i_stop] == UNREACHED) continue;
+        if (router->best_time[i_sp] == UNREACHED) continue;
 
-        stop_id = tdata_stop_name_for_index (router->tdata, i_stop);
+        stop_id = tdata_stop_point_name_for_index(router->tdata, i_sp);
         fprintf(stderr, id_fmt, stop_id);
-        fprintf(stderr, " [%6d]", i_stop);
+        fprintf(stderr, " [%6d]", i_sp);
         for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
             fprintf(stderr, " %8s %8s",
-                btimetext(router->states_time[i_round * router->tdata->n_stops + i_stop], time),
-                btimetext(router->states_walk_time[i_round * router->tdata->n_stops + i_stop], walk_time));
+                btimetext(router->states_time[i_round * router->tdata->n_stop_points + i_sp], time),
+                btimetext(router->states_walk_time[i_round * router->tdata->n_stop_points + i_sp], walk_time));
         }
         fprintf(stderr, "\n");
     }

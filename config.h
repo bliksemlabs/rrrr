@@ -13,14 +13,14 @@
 #define RRRR_DEFAULT_WALK_SPEED 1.5
 
 /* Maximum distance in meters to travel by feet from the
- * origin to the first stop, and from the last stop to
+ * origin to the first stop_point, and from the last stop_point to
  * the destination.
  */
 #define RRRR_DEFAULT_WALK_MAX_DISTANCE 500
 
 #define RRRR_MAX_BANNED_JOURNEY_PATTERNS 1
-#define RRRR_MAX_BANNED_STOPS 1
-#define RRRR_MAX_BANNED_STOPS_HARD 1
+#define RRRR_MAX_BANNED_STOP_POINTS 1
+#define RRRR_MAX_BANNED_STOP_POINTS_HARD 1
 #define RRRR_MAX_BANNED_VEHICLE_JOURNEYS 1
 
 #define RRRR_FEATURE_LATLON 1

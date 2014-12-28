@@ -24,44 +24,44 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-/* rt_journey_patterns_at_stop store the delta to the planned journey_patterns_at_stop */
-static void tdata_rt_journey_patterns_at_stop_append(tdata_t *tdata,
-        uint32_t stop_index,
+/* rt_journey_patterns_at_stop_point store the delta to the planned journey_patterns_at_stop_point */
+static void tdata_rt_journey_patterns_at_stop_point_append(tdata_t *tdata,
+        uint32_t sp_index,
         uint32_t jp_index) {
     uint32_t i;
 
-    if (tdata->rt_journey_patterns_at_stop[stop_index]) {
-        for (i = 0; i < tdata->rt_journey_patterns_at_stop[stop_index]->len; ++i) {
-            if (((uint32_t *) tdata->rt_journey_patterns_at_stop[stop_index]->list)[i] ==
+    if (tdata->rt_journey_patterns_at_stop_point[sp_index]) {
+        for (i = 0; i < tdata->rt_journey_patterns_at_stop_point[sp_index]->len; ++i) {
+            if (((uint32_t *) tdata->rt_journey_patterns_at_stop_point[sp_index]->list)[i] ==
                     jp_index) return;
         }
     } else {
-        tdata->rt_journey_patterns_at_stop[stop_index] =
+        tdata->rt_journey_patterns_at_stop_point[sp_index] =
             (list_t *) calloc(1, sizeof(list_t));
     }
 
-    if (tdata->rt_journey_patterns_at_stop[stop_index]->len ==
-        tdata->rt_journey_patterns_at_stop[stop_index]->size) {
-        tdata->rt_journey_patterns_at_stop[stop_index]->list =
-            realloc(tdata->rt_journey_patterns_at_stop[stop_index]->list,
+    if (tdata->rt_journey_patterns_at_stop_point[sp_index]->len ==
+        tdata->rt_journey_patterns_at_stop_point[sp_index]->size) {
+        tdata->rt_journey_patterns_at_stop_point[sp_index]->list =
+            realloc(tdata->rt_journey_patterns_at_stop_point[sp_index]->list,
                     sizeof(uint32_t) *
-                    (tdata->rt_journey_patterns_at_stop[stop_index]->size + 8));
-        tdata->rt_journey_patterns_at_stop[stop_index]->size += 8;
+                    (tdata->rt_journey_patterns_at_stop_point[sp_index]->size + 8));
+        tdata->rt_journey_patterns_at_stop_point[sp_index]->size += 8;
     }
 
-    ((uint32_t *) tdata->rt_journey_patterns_at_stop[stop_index]->list)[tdata->rt_journey_patterns_at_stop[stop_index]->len++] = jp_index;
+    ((uint32_t *) tdata->rt_journey_patterns_at_stop_point[sp_index]->list)[tdata->rt_journey_patterns_at_stop_point[sp_index]->len++] = jp_index;
 }
 
-static void tdata_rt_journey_patterns_at_stop_remove(tdata_t *tdata,
-        uint32_t stop_index,
+static void tdata_rt_journey_patterns_at_stop_point_remove(tdata_t *tdata,
+        uint32_t sp_index,
         uint32_t jp_index) {
     uint32_t i;
-    for (i = 0; i < tdata->rt_journey_patterns_at_stop[stop_index]->len; ++i) {
-        if (((uint32_t *) tdata->rt_journey_patterns_at_stop[stop_index]->list)[i] ==
+    for (i = 0; i < tdata->rt_journey_patterns_at_stop_point[sp_index]->len; ++i) {
+        if (((uint32_t *) tdata->rt_journey_patterns_at_stop_point[sp_index]->list)[i] ==
                 jp_index) {
-            tdata->rt_journey_patterns_at_stop[stop_index]->len--;
-            ((uint32_t *) tdata->rt_journey_patterns_at_stop[stop_index]->list)[i] =
-                ((uint32_t *) tdata->rt_journey_patterns_at_stop[stop_index]->list)[tdata->rt_journey_patterns_at_stop[stop_index]->len];
+            tdata->rt_journey_patterns_at_stop_point[sp_index]->len--;
+            ((uint32_t *) tdata->rt_journey_patterns_at_stop_point[sp_index]->list)[i] =
+                ((uint32_t *) tdata->rt_journey_patterns_at_stop_point[sp_index]->list)[tdata->rt_journey_patterns_at_stop_point[sp_index]->len];
             return;
         }
     }
@@ -104,12 +104,12 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, uint32_t vj_index) {
 
 
 /* Our datastructure requires us to commit on a fixed number of
- * vehicle_journeys and a fixed number of stops in the journey_pattern.
+ * vehicle_journeys and a fixed number of stop_points in the journey_pattern.
  * Generally speaking, when a new journey_pattern is dynamically added,
- * we will have only one vj, a list of stops in the journey_pattern.
+ * we will have only one vj, a list of stop_points in the journey_pattern.
  *
  * This call will preallocate, and fill the journey_pattern and matching
- * vehicle_journeys, and wire them together. Stops and times will be added
+ * vehicle_journeys, and wire them together. stop_points and times will be added
  * later, they can be completely dynamic up to the allocated
  * length.
  *
@@ -120,7 +120,7 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, uint32_t vj_index) {
  */
 
 static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
-        uint16_t n_stops, uint16_t n_vjs,
+        uint16_t n_sp, uint16_t n_vjs,
         uint16_t attributes, uint32_t headsign_offset,
         uint16_t agency_index, uint16_t line_code_index,
         uint16_t productcategory_index) {
@@ -128,15 +128,15 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
     uint32_t vj_index = tdata->n_vjs;
-    uint16_t i_stop;
+    uint16_t sp_index;
     uint16_t i_vj;
 
     new = &tdata->journey_patterns[tdata->n_journey_patterns];
 
     new->journey_pattern_point_offset = journey_pattern_point_offset;
-    new->vj_ids_offset = vj_index;
+    new->vj_offset = vj_index;
     new->headsign_offset = headsign_offset;
-    new->n_stops = n_stops;
+    new->n_stops = n_sp;
     new->n_vjs = n_vjs;
     new->attributes = attributes;
     new->agency_index = agency_index;
@@ -145,7 +145,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
 
     tdata->vjs[vj_index].stop_times_offset = stop_times_offset;
 
-    for (i_stop = 0; i_stop < n_stops; ++i_stop) {
+    for (sp_index = 0; sp_index < n_sp; ++sp_index) {
         tdata->journey_pattern_points[journey_pattern_point_offset] = NONE;
         journey_pattern_point_offset++;
 
@@ -162,12 +162,12 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
 
     /* add the last journey_pattern index to the lookup table */
     for (i_vj = 0; i_vj < n_vjs; ++i_vj) {
-        tdata->vj_stoptimes[vj_index] = (stoptime_t *) malloc(sizeof(stoptime_t) * n_stops);
+        tdata->vj_stoptimes[vj_index] = (stoptime_t *) malloc(sizeof(stoptime_t) * n_sp);
 
-        for (i_stop = 0; i_stop < n_stops; ++i_stop) {
+        for (sp_index = 0; sp_index < n_sp; ++sp_index) {
             /* Initialise the realtime stoptimes */
-            tdata->vj_stoptimes[vj_index][i_stop].arrival   = UNREACHED;
-            tdata->vj_stoptimes[vj_index][i_stop].departure = UNREACHED;
+            tdata->vj_stoptimes[vj_index][sp_index].arrival   = UNREACHED;
+            tdata->vj_stoptimes[vj_index][sp_index].departure = UNREACHED;
         }
 
         tdata->vjs[vj_index].begin_time = UNREACHED;
@@ -180,9 +180,9 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     }
 
     /* housekeeping in tdata: increment for each new element */
-    tdata->n_stop_times += n_stops;
-    tdata->n_journey_pattern_points += n_stops;
-    tdata->n_journey_pattern_point_attributes += n_stops;
+    tdata->n_stop_times += n_sp;
+    tdata->n_journey_pattern_points += n_sp;
+    tdata->n_journey_pattern_point_attributes += n_sp;
     tdata->n_vjs += n_vjs;
     tdata->n_vj_ids += n_vjs;
     tdata->n_vj_active += n_vjs;
@@ -208,38 +208,38 @@ void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t v
             char *stop_id = rt_stop_time_update->stop_id;
             if (stop_id) {
 
-                uint32_t stop_index = radixtree_find (tdata->stopid_index, stop_id);
-                if (tdata->journey_pattern_points[journey_pattern_point_offset] != stop_index &&
+                uint32_t sp_index = radixtree_find (tdata->stopid_index, stop_id);
+                if (tdata->journey_pattern_points[journey_pattern_point_offset] != sp_index &&
                     tdata->journey_pattern_points[journey_pattern_point_offset] != NONE) {
-                    tdata_rt_journey_patterns_at_stop_remove(tdata, tdata->journey_pattern_points[journey_pattern_point_offset], jp_index);
+                    tdata_rt_journey_patterns_at_stop_point_remove(tdata, tdata->journey_pattern_points[journey_pattern_point_offset], jp_index);
                 }
                 /* TODO: Should this be communicated in GTFS-RT? */
                 tdata->journey_pattern_point_attributes[journey_pattern_point_offset] = (rsa_boarding | rsa_alighting);
-                tdata->journey_pattern_points[journey_pattern_point_offset] = stop_index;
+                tdata->journey_pattern_points[journey_pattern_point_offset] = sp_index;
                 tdata_apply_gtfsrt_time (rt_stop_time_update, &tdata->vj_stoptimes[vj_index][rs]);
-                tdata_rt_journey_patterns_at_stop_append(tdata, stop_index, jp_index);
+                tdata_rt_journey_patterns_at_stop_point_append(tdata, sp_index, jp_index);
                 journey_pattern_point_offset++;
                 rs++;
             }
         }
     }
 
-    /* update the last stop to be alighting only */
+    /* update the last stop_point to be alighting only */
     tdata->journey_pattern_point_attributes[--journey_pattern_point_offset] = rsa_alighting;
 
-    /* update the first stop to be boarding only */
+    /* update the first stop_point to be boarding only */
     journey_pattern_point_offset = tdata->journey_patterns[jp_index].journey_pattern_point_offset;
     tdata->journey_pattern_point_attributes[journey_pattern_point_offset] = rsa_boarding;
 }
 
-static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_index, int16_t cal_day, uint16_t n_stops, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_index, int16_t cal_day, uint16_t n_sp, TransitRealtime__TripUpdate *rt_trip_update) {
     TransitRealtime__TripDescriptor *rt_trip = rt_trip_update->trip;
     journey_pattern_t *jp_new = NULL;
     char *vj_id_new;
     uint32_t jp_index;
 
-    /* Don't ever continue if we found that n_stops == 0. */
-    if (n_stops == 0) return;
+    /* Don't ever continue if we found that n_sp == 0. */
+    if (n_sp == 0) return;
 
     #ifdef RRRR_DEBUG
     fprintf (stderr, "WARNING: this is a changed journey_pattern!\n");
@@ -257,21 +257,21 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
     if (jp_index != RADIXTREE_NONE) {
         /* Fixes the case where a vj changes a second time */
         jp_new = &tdata->journey_patterns[jp_index];
-        if (jp_new->n_stops != n_stops) {
-            uint32_t i_stop_index;
+        if (jp_new->n_stops != n_sp) {
+            uint32_t sp_index;
 
             #ifdef RRRR_DEBUG
             fprintf (stderr, "WARNING: this is changed vehicle_journey %s being CHANGED again!\n", vj_id_new);
             #endif
-            tdata->vj_stoptimes[jp_new->vj_ids_offset] = (stoptime_t *) realloc(tdata->vj_stoptimes[jp_new->vj_ids_offset], sizeof(stoptime_t) * n_stops);
+            tdata->vj_stoptimes[jp_new->vj_offset] = (stoptime_t *) realloc(tdata->vj_stoptimes[jp_new->vj_offset], sizeof(stoptime_t) * n_sp);
 
             /* Only initialises if the length of the list increased */
-            for (i_stop_index = jp_new->n_stops;
-                 i_stop_index < n_stops;
-                 ++i_stop_index) {
-                tdata->journey_pattern_points[jp_new->journey_pattern_point_offset + i_stop_index] = NONE;
+            for (sp_index = jp_new->n_stops;
+                 sp_index < n_sp;
+                 ++sp_index) {
+                tdata->journey_pattern_points[jp_new->journey_pattern_point_offset + sp_index] = NONE;
             }
-            jp_new->n_stops = n_stops;
+            jp_new->n_stops = n_sp;
         }
     }
 
@@ -286,7 +286,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
         /* we fork a new journey_pattern with all of its old properties
          * having one single vj, which is the modification.
          */
-        jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_stops, 1,
+        jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_sp, 1,
                 jp->attributes,
                 jp->headsign_offset,
                 jp->agency_index,
@@ -299,7 +299,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
          * NOTE: if we would have allocated multiple vehicle_journeys this
          * should be a for loop over n_vjs.
          */
-        vj_index = jp_new->vj_ids_offset;
+        vj_index = jp_new->vj_offset;
 
         for (i_vj = 0; i_vj < 1; ++i_vj) {
             tdata->vjs[vj_index].vj_attributes = vj->vj_attributes;
@@ -309,7 +309,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
         }
 
         /* Restore the first vj_index again */
-        vj_index = jp_new->vj_ids_offset;
+        vj_index = jp_new->vj_offset;
     }
 
     tdata_apply_stop_time_update (tdata, jp_index, vj_index, rt_trip_update);
@@ -317,14 +317,14 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
     /* being blissfully naive, a journey_pattern having only one vehicle_journey,
      * will have the same start and end time as its vehicle_journey
      */
-    jp_new->min_time = tdata->vj_stoptimes[jp_new->vj_ids_offset][0].arrival;
+    jp_new->min_time = tdata->vj_stoptimes[jp_new->vj_offset][0].arrival;
     jp_new->max_time = tdata->vj_stoptimes[vj_index][jp_new->n_stops - 1].departure;
 
 }
 
-static void tdata_realtime_journey_pattern_type(TransitRealtime__TripUpdate *rt_trip_update, uint16_t *n_stops, bool *changed_jp, bool *nodata_jp) {
+static void tdata_realtime_journey_pattern_type(TransitRealtime__TripUpdate *rt_trip_update, uint16_t *n_sp, bool *changed_jp, bool *nodata_jp) {
     size_t i_stu;
-    *n_stops = 0;
+    *n_sp = 0;
     *changed_jp = false;
     *nodata_jp = true;
 
@@ -337,7 +337,7 @@ static void tdata_realtime_journey_pattern_type(TransitRealtime__TripUpdate *rt_
                            rt_stop_time_update->schedule_relationship == TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SKIPPED);
         *nodata_jp &= (rt_stop_time_update->schedule_relationship == TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__NO_DATA);
 
-        *n_stops += (rt_stop_time_update->schedule_relationship != TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SKIPPED &&
+        *n_sp += (rt_stop_time_update->schedule_relationship != TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SKIPPED &&
                      rt_stop_time_update->stop_id != NULL);
     }
 }
@@ -375,14 +375,14 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t vj_index,
     for (i_stu = 0; i_stu < rt_trip_update->n_stop_time_update; ++i_stu) {
         spidx_t *journey_pattern_points = tdata->journey_pattern_points + jp->journey_pattern_point_offset;
         char *stop_id;
-        uint32_t stop_index;
+        uint32_t sp_index;
 
         rt_stop_time_update = rt_trip_update->stop_time_update[i_stu];
         stop_id = rt_stop_time_update->stop_id;
-        stop_index = radixtree_find (tdata->stopid_index, stop_id);
+        sp_index = radixtree_find (tdata->stopid_index, stop_id);
 
 
-        if (journey_pattern_points[rs] == stop_index) {
+        if (journey_pattern_points[rs] == sp_index) {
             if (rt_stop_time_update->schedule_relationship == TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SCHEDULED) {
                 tdata_apply_gtfsrt_time (rt_stop_time_update, &tdata->vj_stoptimes[vj_index][rs]);
             }
@@ -393,8 +393,8 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t vj_index,
             /* we do not align up with the realtime messages */
             if (rt_stop_time_update->schedule_relationship == TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SCHEDULED) {
                 uint32_t propagate = rs;
-                while (journey_pattern_points[++rs] != stop_index && rs < jp->n_stops);
-                if (journey_pattern_points[rs] == stop_index) {
+                while (journey_pattern_points[++rs] != sp_index && rs < jp->n_stops);
+                if (journey_pattern_points[rs] == sp_index) {
                     if (rt_stop_time_update_prev) {
                         if (rt_stop_time_update_prev->schedule_relationship == TRANSIT_REALTIME__TRIP_UPDATE__STOP_TIME_UPDATE__SCHEDULE_RELATIONSHIP__SCHEDULED &&
                             rt_stop_time_update_prev->departure && rt_stop_time_update_prev->departure->has_delay) {
@@ -406,7 +406,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t vj_index,
                     }
                     tdata_apply_gtfsrt_time (rt_stop_time_update, &tdata->vj_stoptimes[vj_index][rs]);
                 } else {
-                    /* we couldn't find the stop at all */
+                    /* we couldn't find the stop_point at all */
                     rs = propagate;
                 }
                 rs++;
@@ -441,12 +441,12 @@ bool tdata_alloc_expanded(tdata_t *td) {
     for (i_jp = 0; i_jp < td->n_journey_patterns; ++i_jp) {
         uint32_t i_vj;
         for (i_vj = 0; i_vj < td->journey_patterns[i_jp].n_vjs; ++i_vj) {
-            td->vjs_in_journey_pattern[td->journey_patterns[i_jp].vj_ids_offset + i_vj] =
+            td->vjs_in_journey_pattern[td->journey_patterns[i_jp].vj_offset + i_vj] =
                     i_jp;
         }
     }
 
-    td->rt_journey_patterns_at_stop = (list_t **) calloc(td->n_stops, sizeof(list_t *));
+    td->rt_journey_patterns_at_stop_point = (list_t **) calloc(td->n_stop_points, sizeof(list_t *));
 
     td->vj_active_orig = (calendar_t *) malloc(sizeof(calendar_t) * td->n_vjs);
 
@@ -458,7 +458,7 @@ bool tdata_alloc_expanded(tdata_t *td) {
     memcpy (td->journey_pattern_active_orig, td->journey_pattern_active,
             sizeof(calendar_t) * td->n_journey_patterns);
 
-    if (!td->rt_journey_patterns_at_stop) return false;
+    if (!td->rt_journey_patterns_at_stop_point) return false;
 
     return true;
 }
@@ -475,15 +475,15 @@ void tdata_free_expanded(tdata_t *td) {
         free (td->vj_stoptimes);
     }
 
-    if (td->rt_journey_patterns_at_stop) {
-        uint32_t i_stop;
-        for (i_stop = 0; i_stop < td->n_stops; ++i_stop) {
-            if (td->rt_journey_patterns_at_stop[i_stop]) {
-                free (td->rt_journey_patterns_at_stop[i_stop]->list);
+    if (td->rt_journey_patterns_at_stop_point) {
+        uint32_t i_sp;
+        for (i_sp = 0; i_sp < td->n_stop_points; ++i_sp) {
+            if (td->rt_journey_patterns_at_stop_point[i_sp]) {
+                free (td->rt_journey_patterns_at_stop_point[i_sp]->list);
             }
         }
 
-        free (td->rt_journey_patterns_at_stop);
+        free (td->rt_journey_patterns_at_stop_point);
     }
 
     free (td->vj_active_orig);
