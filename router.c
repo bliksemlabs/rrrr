@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#define RRRR_N_STATES (((uint64_t) tdata->n_stops) * RRRR_DEFAULT_MAX_ROUNDS)
+#define RRRR_N_STATES (((uint64_t) router->tdata->n_stops) * RRRR_DEFAULT_MAX_ROUNDS)
 
 #ifdef RRRR_FEATURE_LATLON
 static bool router_setup_hashgrid(router_t *router) {
@@ -132,7 +132,7 @@ void router_teardown(router_t *router) {
 }
 
 void router_reset(router_t *router) {
-    uint32_t i_state;
+    uint64_t i_state;
 
     /* Make sure both origin and target are initialised with NONE, so it
      * becomes possible to validate that they have been set to a valid
@@ -146,11 +146,14 @@ void router_reset(router_t *router) {
      * search.
      */
     rrrr_memset (router->best_time, UNREACHED, router->tdata->n_stops);
-
-    for (i_state = 0; i_state < (router->n_states + 1); ++i_state) {
-        router->states_time[i_state] = UNREACHED;
-        router->states_walk_time[i_state] = UNREACHED;
-    }
+    i_state = RRRR_N_STATES;
+    do {
+        i_state--;
+        router->states_pointer[i_state] = 0;
+    } while (i_state);
+    router->states_time[0] = UNREACHED;
+    router->states_walk_time[0] = UNREACHED;
+    router->n_states = 0;
 }
 
 static uint32_t initialize_state (router_t *router, uint64_t i_state) {
@@ -387,14 +390,10 @@ static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
  * return to them.
  */
 static void initialize_transfers (router_t *router) {
-    uint64_t i_state = router->tdata->n_stops << 1;
+    uint64_t i_state;
 
     for (i_state = router->tdata->n_stops; i_state < (router->tdata->n_stops << 1); ++i_state) {
-        uint32_t i_state_pointer;
-        i_state_pointer = router->states_pointer[i_state];
-        if (i_state_pointer != 0) {
-            router->states_walk_time[i_state_pointer] = UNREACHED;
-        }
+        router->states_walk_time[router->states_pointer[i_state]] = UNREACHED;
     }
 }
 
