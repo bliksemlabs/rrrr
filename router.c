@@ -46,11 +46,11 @@ static bool router_setup_hashgrid(router_t *router) {
 #endif
 
 bool router_setup(router_t *router, tdata_t *tdata) {
-    uint64_t n_states = 80000;
+    uint64_t n_states = UINT16_MAX;
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
     router->n_states = 0;
-    router->states_pointer = (uint32_t *) malloc(sizeof(uint32_t) * RRRR_N_STATES);
+    router->states_pointer = (uint16_t *) malloc(sizeof(uint16_t) * RRRR_N_STATES);
     router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_back_vehicle_journey = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_ride_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
