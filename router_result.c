@@ -128,13 +128,13 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
         i_state = (i_transfer * router->tdata->n_stops) + stop;
 
         /* skip rounds that were not reached */
-        if (router->states_walk_time[i_state] == UNREACHED) continue;
+        if (router->states_walk_time[router->states_pointer[i_state]] == UNREACHED) continue;
         itin->n_rides = i_transfer + 1;
         itin->n_legs = itin->n_rides * 2 + 1; /* always same number of legs for same number of transfers */
         if ( ! req->arrive_by) l += itin->n_legs - 1;
         /* Follow the chain of states backward */
         for (j_transfer = i_transfer; j_transfer >= 0; --j_transfer) {
-            uint64_t i_walk, i_ride;
+            uint64_t i_walk_pointer, i_ride_pointer;
             uint32_t walk_stop, ride_stop;
 
             i_state = (((uint8_t) j_transfer) * router->tdata->n_stops);
@@ -145,28 +145,28 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             }
 
             /* Walk phase */
-            i_walk = i_state + stop;
-            if (router->states_walk_time[i_walk] == UNREACHED) {
+            i_walk_pointer = router->states_pointer[i_state + stop];
+            if (router->states_walk_time[i_walk_pointer] == UNREACHED) {
                 fprintf (stderr, "ERROR: stop %d was unreached by walking.\n", stop);
                 return false;
             }
             walk_stop = stop;
-            stop = router->states_walk_from[i_walk];  /* follow the chain of states backward */
+            stop = router->states_walk_from[i_walk_pointer];  /* follow the chain of states backward */
 
             /* Ride phase */
-            i_ride = i_state + stop;
-            if (router->states_time[i_ride] == UNREACHED) {
+            i_ride_pointer = router->states_pointer[i_state + stop];
+            if (router->states_time[i_ride_pointer] == UNREACHED) {
                 fprintf (stderr, "ERROR: stop %d was unreached by riding.\n", stop);
                 return false;
             }
             ride_stop = stop;
-            stop = router->states_ride_from[i_ride];  /* follow the chain of states backward */
+            stop = router->states_ride_from[i_ride_pointer];  /* follow the chain of states backward */
 
             /* Walk phase */
-            l->s0 = router->states_walk_from[i_walk];
+            l->s0 = router->states_walk_from[i_walk_pointer];
             l->s1 = walk_stop;
-            l->t0 = router->states_time[i_ride]; /* Rendering the walk requires already having the ride arrival time */
-            l->t1 = router->states_walk_time[i_walk];
+            l->t0 = router->states_time[i_ride_pointer]; /* Rendering the walk requires already having the ride arrival time */
+            l->t1 = router->states_walk_time[i_walk_pointer];
             l->journey_pattern = WALK;
             l->vj = WALK;
 
@@ -174,12 +174,12 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l += (req->arrive_by ? 1 : -1); /* next leg */
 
             /* Ride phase */
-            l->s0 = router->states_ride_from[i_ride];
+            l->s0 = router->states_ride_from[i_ride_pointer];
             l->s1 = ride_stop;
-            l->t0 = router->states_board_time[i_ride];
-            l->t1 = router->states_time[i_ride];
-            l->journey_pattern = router->states_back_journey_pattern[i_ride];
-            l->vj = router->states_back_vehicle_journey[i_ride];
+            l->t0 = router->states_board_time[i_ride_pointer];
+            l->t1 = router->states_time[i_ride_pointer];
+            l->journey_pattern = router->states_back_journey_pattern[i_ride_pointer];
+            l->vj = router->states_back_vehicle_journey[i_ride_pointer];
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
@@ -187,15 +187,15 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                 vehicle_journey_t *vj;
                 uint32_t vj_index;
 
-                jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride];
-                vj_index = jp->vj_ids_offset + router->states_back_journey_pattern[i_ride];
+                jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride_pointer];
+                vj_index = jp->vj_ids_offset + router->states_back_vehicle_journey[i_ride_pointer];
                 vj = router->tdata->vjs + vj_index;
 
                 if (router->tdata->vj_stoptimes[vj_index] &&
-                    router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride]].arrival != UNREACHED) {
+                    router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride_pointer]].arrival != UNREACHED) {
 
-                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_back_journey_pattern_point[i_ride]].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_back_journey_pattern_point[i_ride]].departure + vj->begin_time);
-                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_journey_pattern_point[i_ride]].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride]].arrival + vj->begin_time);
+                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_back_journey_pattern_point[i_ride_pointer]].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_back_journey_pattern_point[i_ride_pointer]].departure + vj->begin_time);
+                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_journey_pattern_point[i_ride_pointer]].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride_pointer]].arrival + vj->begin_time);
                 } else {
                     l->d0 = 0;
                     l->d1 = 0;
@@ -230,7 +230,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->s0 = origin_stop;
             l->s1 = stop;
             /* It would also be possible to work from s1 to s0 and compress out the wait time. */
-            l->t0 = router->states_time[origin_stop];
+            l->t0 = router->states_time[router->states_pointer[origin_stop]];
             duration = transfer_duration (router->tdata, req, l->s0, l->s1);
             l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
             l->journey_pattern = WALK;

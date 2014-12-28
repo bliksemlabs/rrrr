@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 void router_state_dump (router_t *router, uint64_t i_state) {
+    uint32_t i_state_pointer = router->states_pointer[i_state];
     char walk_time[13], time[13], board_time[13];
     fprintf (stderr, "-- Router State --\n"
                      "walk time:    %s\n"
@@ -15,15 +16,15 @@ void router_state_dump (router_t *router, uint64_t i_state) {
                      "time:         %s\n"
                      "board time:   %s\n"
                      "back route:   ",
-                     btimetext(router->states_walk_time[i_state], walk_time),
-                     router->states_walk_from[i_state],
-                     btimetext(router->states_time[i_state], time),
-                     btimetext(router->states_board_time[i_state], board_time)
+                     btimetext(router->states_walk_time[i_state_pointer], walk_time),
+                     router->states_walk_from[i_state_pointer],
+                     btimetext(router->states_time[i_state_pointer], time),
+                     btimetext(router->states_board_time[i_state_pointer], board_time)
                      );
 
     /* TODO */
-    if (router->states_back_journey_pattern[i_state] == NONE) fprintf (stderr, "NONE\n");
-    else fprintf (stderr, "%d\n", router->states_back_journey_pattern[i_state]);
+    if (router->states_back_journey_pattern[i_state_pointer] == NONE) fprintf (stderr, "NONE\n");
+    else fprintf (stderr, "%d\n", router->states_back_journey_pattern[i_state_pointer]);
 }
 
 void dump_results(router_t *router) {
@@ -56,9 +57,10 @@ void dump_results(router_t *router) {
         fprintf(stderr, id_fmt, stop_id);
         fprintf(stderr, " [%6d]", i_stop);
         for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
+            uint32_t i_state_pointer = router->states_pointer[i_round * router->tdata->n_stops + i_stop];
             fprintf(stderr, " %8s %8s",
-                btimetext(router->states_time[i_round * router->tdata->n_stops + i_stop], time),
-                btimetext(router->states_walk_time[i_round * router->tdata->n_stops + i_stop], walk_time));
+                btimetext(router->states_time[i_state_pointer], time),
+                btimetext(router->states_walk_time[i_state_pointer], walk_time));
         }
         fprintf(stderr, "\n");
     }

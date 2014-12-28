@@ -36,6 +36,11 @@ struct router {
     /* The best known time at each stop */
     rtime_t *best_time;
 
+    /* The location of the state in the smaller malloc */
+    uint32_t *states_pointer;
+
+    uint32_t n_states;
+
    /* The index of the journey_pattern used to travel from back_stop to here, or WALK  */
     uint32_t *states_back_journey_pattern;
 

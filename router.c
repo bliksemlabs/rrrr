@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <math.h>
 
+#define RRRR_N_STATES (((uint64_t) tdata->n_stops) * RRRR_DEFAULT_MAX_ROUNDS)
+
 #ifdef RRRR_FEATURE_LATLON
 static bool router_setup_hashgrid(router_t *router) {
     coord_t *coords;
@@ -44,9 +46,11 @@ static bool router_setup_hashgrid(router_t *router) {
 #endif
 
 bool router_setup(router_t *router, tdata_t *tdata) {
-    uint64_t n_states = tdata->n_stops * RRRR_DEFAULT_MAX_ROUNDS;
+    uint64_t n_states = 80000;
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
+    router->n_states = 0;
+    router->states_pointer = (uint32_t *) calloc(RRRR_N_STATES, sizeof(uint32_t));
     router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_back_vehicle_journey = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_ride_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
@@ -69,6 +73,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 #endif
 
     if ( ! (router->best_time
+            && router->states_pointer
             && router->states_back_journey_pattern
             && router->states_back_vehicle_journey
             && router->states_ride_from
@@ -91,6 +96,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
         fprintf(stderr, "failed to allocate router scratch space");
         return false;
     }
+
 
 #ifdef RRRR_FEATURE_LATLON
     return router_setup_hashgrid (router);
@@ -126,6 +132,7 @@ void router_teardown(router_t *router) {
 }
 
 void router_reset(router_t *router) {
+    uint32_t i_state;
 
     /* Make sure both origin and target are initialised with NONE, so it
      * becomes possible to validate that they have been set to a valid
@@ -139,20 +146,22 @@ void router_reset(router_t *router) {
      * search.
      */
     rrrr_memset (router->best_time, UNREACHED, router->tdata->n_stops);
-}
 
-static bool initialize_states (router_t *router) {
-    uint64_t i_state = ((uint64_t) RRRR_DEFAULT_MAX_ROUNDS) * router->tdata->n_stops;
-
-    do {
-        i_state--;
+    for (i_state = 0; i_state < (router->n_states + 1); ++i_state) {
         router->states_time[i_state] = UNREACHED;
         router->states_walk_time[i_state] = UNREACHED;
-    } while (i_state);
-
-    return true;
+    }
 }
 
+static uint32_t initialize_state (router_t *router, uint64_t i_state) {
+    if (router->states_pointer[i_state] == 0) {
+        uint32_t i_state_pointer = ++router->n_states;
+        router->states_pointer[i_state] = i_state_pointer;
+        router->states_time[i_state_pointer] = UNREACHED;
+        router->states_walk_time[i_state_pointer] = UNREACHED;
+    }
+    return router->states_pointer[i_state];
+}
 
 /* One serviceday_t for each of: yesterday, today, tomorrow (for overnight
  * searches). Note that yesterday's bit flag will be 0 if today is the
@@ -365,24 +374,6 @@ static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
 }
 #endif
 
-#ifdef RRRR_FEATURE_LATLON
-/* Because the first round begins with so few reached stops, the initial state
- * doesn't get its own full array of states
- * Instead we reuse one of the later rounds (round 1) for the initial state.
- * This means we need to reset the walks in round 1 back to UNREACHED before
- * using them in routing. We iterate over all of them, because we don't
- * maintain a list of all the stops that might have been added by the hashgrid.
- */
-static void initialize_transfers_full (router_t *router, uint32_t round) {
-    uint32_t i_state = router->tdata->n_stops;
-    rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stops);
-    do {
-        i_state--;
-        states_walk_time[i_state] = UNREACHED;
-    } while (i_state);
-}
-#else
-
 /* Because the first round begins with so few reached stops, the initial state
  * doesn't get its own full array of states. Instead we reuse one of the later
  * rounds (round 1) for the initial state. This means we need to reset the
@@ -395,19 +386,17 @@ static void initialize_transfers_full (router_t *router, uint32_t round) {
  * initial stop on foot. This will prevent finding circuitous itineraries that
  * return to them.
  */
-static void initialize_transfers (router_t *router,
-                                  uint32_t round, spidx_t stop_index_from) {
-    rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stops);
-    uint32_t t  = router->tdata->stops[stop_index_from    ].transfers_offset;
-    uint32_t tN = router->tdata->stops[stop_index_from + 1].transfers_offset;
-    states_walk_time[stop_index_from] = UNREACHED;
-    for ( ; t < tN ; ++t) {
-        spidx_t stop_index_to = router->tdata->transfer_target_stops[t];
-        states_walk_time[stop_index_to] = UNREACHED;
+static void initialize_transfers (router_t *router) {
+    uint64_t i_state = router->tdata->n_stops << 1;
+
+    for (i_state = router->tdata->n_stops; i_state < (router->tdata->n_stops << 1); ++i_state) {
+        uint32_t i_state_pointer;
+        i_state_pointer = router->states_pointer[i_state];
+        if (i_state_pointer != 0) {
+            router->states_walk_time[i_state_pointer] = UNREACHED;
+        }
     }
 }
-#endif
-
 
 /* Get the departure or arrival time of the given vj on the given
  * service day, applying realtime data as needed.
@@ -515,9 +504,7 @@ tdata_next (router_t *router, router_request_t *req,
  */
 static void apply_transfers (router_t *router, router_request_t *req,
                       uint32_t round, bool transfer) {
-    rtime_t *states_time = router->states_time + (round * router->tdata->n_stops);
-    rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stops);
-    spidx_t *states_walk_from = router->states_walk_from + (round * router->tdata->n_stops);
+    uint64_t i_state = (round * router->tdata->n_stops);
     uint32_t stop_index_from; /* uint32_t: because we need to compare to BITSET_NONE */
 
     /* The transfer process will flag journey_patterns that should be explored in
@@ -527,7 +514,8 @@ static void apply_transfers (router_t *router, router_request_t *req,
     for (stop_index_from  = bitset_next_set_bit (router->updated_stops, 0);
          stop_index_from != BITSET_NONE;
          stop_index_from  = bitset_next_set_bit (router->updated_stops, stop_index_from + 1)) {
-        rtime_t time_from = states_time[stop_index_from];
+        uint32_t i_state_pointer = initialize_state(router, i_state + stop_index_from);
+        rtime_t time_from = router->states_time[i_state_pointer];
         #ifdef RRRR_INFO
         printf ("stop %d was marked as updated \n", stop_index_from);
         #endif
@@ -550,7 +538,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
             fprintf (stderr, "    from time %s \n",
                      btimetext(time_from, buf));
             fprintf (stderr, "    walk time %s \n",
-                     btimetext(states_walk_time[stop_index_from], buf));
+                     btimetext(router->states_walk_time[i_state_pointer], buf));
             fprintf (stderr, "    best time %s \n",
                      btimetext(router->best_time[stop_index_from], buf));
             continue;
@@ -564,12 +552,12 @@ static void apply_transfers (router_t *router, router_request_t *req,
         /* First apply a transfer from the stop to itself,
          * if case that's the best way.
          */
-        if (states_time[stop_index_from] == router->best_time[stop_index_from]) {
+        if (router->states_time[i_state_pointer] == router->best_time[stop_index_from]) {
             /* This state's best time is still its own.
              * No improvements from other transfers.
              */
-            states_walk_time[stop_index_from] = time_from;
-            states_walk_from[stop_index_from] = (spidx_t) stop_index_from;
+            router->states_walk_time[i_state_pointer] = time_from;
+            router->states_walk_from[i_state_pointer] = (spidx_t) stop_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
             bitset_set(router->updated_walk_stops, stop_index_from);
         }
@@ -586,6 +574,8 @@ static void apply_transfers (router_t *router, router_request_t *req,
             rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr] + req->walk_slack;
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
+
+            i_state_pointer = initialize_state(router, i_state + stop_index_to);
 
             /* Avoid reserved values including UNREACHED */
             if (time_to > RTIME_THREE_DAYS) continue;
@@ -623,8 +613,8 @@ static void apply_transfers (router_t *router, router_request_t *req,
                 fprintf (stderr, "      setting %d to %s\n",
                          stop_index_to, btimetext(time_to, buf));
                 #endif
-                states_walk_time[stop_index_to] = time_to;
-                states_walk_from[stop_index_to] = stop_index_from;
+                router->states_walk_time[i_state_pointer] = time_to;
+                router->states_walk_from[i_state_pointer] = stop_index_from;
                 router->best_time[stop_index_to] = time_to;
                 bitset_set(router->updated_walk_stops, stop_index_to);
             }
@@ -753,6 +743,10 @@ write_state(router_t *router, router_request_t *req,
             rtime_t board_time) {
 
     uint64_t i_state = ((uint64_t) round) * router->tdata->n_stops + stop_index;
+    uint32_t i_state_pointer;
+
+    i_state_pointer = initialize_state(router, i_state);
+    if (i_state_pointer == 0) return false;
 
     #ifndef RRRR_REALTIME
     UNUSED (jpp_offset);
@@ -767,14 +761,14 @@ write_state(router_t *router, router_request_t *req,
     #endif
 
     router->best_time[stop_index]    = time;
-    router->states_time[i_state]                 = time;
-    router->states_back_journey_pattern[i_state] = jpp_index;
-    router->states_back_vehicle_journey[i_state] = vj_offset;
-    router->states_ride_from[i_state]            = board_stop;
-    router->states_board_time[i_state]           = board_time;
+    router->states_time[i_state_pointer]                 = time;
+    router->states_back_journey_pattern[i_state_pointer] = jpp_index;
+    router->states_back_vehicle_journey[i_state_pointer] = vj_offset;
+    router->states_ride_from[i_state_pointer]            = board_stop;
+    router->states_board_time[i_state_pointer]           = board_time;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    router->states_back_journey_pattern_point[i_state] = board_jpp_stop;
-    router->states_journey_pattern_point[i_state]      = jpp_offset;
+    router->states_back_journey_pattern_point[i_state_pointer] = board_jpp_stop;
+    router->states_journey_pattern_point[i_state_pointer]      = jpp_offset;
     #endif
 
     #ifdef RRRR_STRICT
@@ -792,7 +786,7 @@ write_state(router_t *router, router_request_t *req,
 
 static void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
-    rtime_t *states_walk_time = router->states_walk_time + (((round == 0) ? 1 : round - 1) * router->tdata->n_stops);
+    uint64_t i_state = (round == 0 ? 1 : round - 1) * router->tdata->n_stops;
     uint32_t jp_index;
 
     #ifdef RRRR_INFO
@@ -856,6 +850,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                                  ++jpp_index) {
 
             uint32_t stop_index = journey_pattern_points[jpp_index];
+            uint32_t i_state_pointer = router->states_pointer[i_state + stop_index];
             rtime_t prev_time;
             bool attempt_board = false;
             bool forboarding = (journey_pattern_point_attributes[jpp_index] & rsa_boarding);
@@ -905,7 +900,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
              * a better vj on this journey_pattern at this location, indicate that we
              * want to search for a vj.
              */
-            prev_time = states_walk_time[stop_index];
+            prev_time = router->states_walk_time[i_state_pointer];
 
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
@@ -1080,19 +1075,10 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
      */
     apply_transfers(router, req, round, true);
 
-    /* Initialize the stops in round 1 that were used as
-     * starting points for round 0.
-     */
-    /*  TODO: also must be done for the hashgrid */
-    if (round == 0) {
-        #ifdef RRRR_FEATURE_LATLON
-        initialize_transfers_full (router, 1);
-        #else
-        initialize_transfers (router, 1, router->origin);
-        #endif
-    }
-
      /*  TODO add arrival hashgrid timings */
+    if (round == 0) {
+        initialize_transfers (router);
+    }
 
     #ifdef RRRR_DEBUG
     dump_results(router);
@@ -1114,7 +1100,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     if (tdata_next (router, req,
                     req->onboard_vj_journey_pattern, req->onboard_journey_pattern_offset,
                     req->time, &stop_index, &stop_time) ){
-        uint64_t i_state;
+        uint32_t i_state_pointer;
 
         req->from = ONBOARD;
 
@@ -1123,9 +1109,11 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
         router->best_time[router->origin] = stop_time;
 
         /* Set the origin stop in the "2nd round" */
-        i_state = router->tdata->n_stops + router->origin;
-        router->states_time[i_state]      = stop_time;
-        router->states_walk_time[i_state] = stop_time;
+        i_state_pointer = initialize_state(router, router->tdata->n_stops + router->origin);
+        if (i_state_pointer == 0) return false;
+
+        router->states_time[i_state_pointer]      = stop_time;
+        router->states_walk_time[i_state_pointer] = stop_time;
 
         /* When starting on board, only flag one journey_pattern and
          * do not apply transfers, only a single walk.
@@ -1141,7 +1129,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
 }
 
 static bool initialize_origin_index (router_t *router, router_request_t *req) {
-    uint32_t i_state;
+    uint32_t i_state_pointer;
 
     router->origin = (req->arrive_by ? req->to : req->from);
 
@@ -1153,7 +1141,9 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
      * renderer. It would be better to just include rtime_t in request
      * structs.  eliminate this now that we have rtimes in requests.
      */
-    router->states_time[router->origin] = req->time;
+    i_state_pointer = initialize_state(router, router->origin);
+    if (i_state_pointer == 0) return false;
+    router->states_time[i_state_pointer] = req->time;
     bitset_clear(router->updated_stops);
 
     /* This is inefficient, as it depends on iterating over
@@ -1164,14 +1154,16 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
     /* We will use round 1 to hold the initial state for round 0.
      * Round 1 must then be re-initialized before use.
      */
-    i_state = router->tdata->n_stops + router->origin;
-    router->states_time[i_state] = req->time;
+    i_state_pointer = initialize_state(router, router->tdata->n_stops + router->origin);
+    if (i_state_pointer == 0) return false;
+
+    router->states_time[i_state_pointer] = req->time;
 
     /* the rest of these should be unnecessary */
-    router->states_ride_from[i_state] = STOP_NONE;
-    router->states_back_journey_pattern[i_state] = NONE;
-    router->states_back_vehicle_journey[i_state] = NONE;
-    router->states_board_time[i_state] = UNREACHED;
+    router->states_ride_from[i_state_pointer] = STOP_NONE;
+    router->states_back_journey_pattern[i_state_pointer] = NONE;
+    router->states_back_vehicle_journey[i_state_pointer] = NONE;
+    router->states_board_time[i_state_pointer] = UNREACHED;
 
     /* Apply transfers to initial state,
      * which also initializes the updated journey_patterns bitset.
@@ -1192,12 +1184,12 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
                                    hashgrid_result_t *hg_result) {
     double distance, best_distance = INFINITY;
     uint32_t stop_index, best_stop_index = HASHGRID_NONE;
+    uint32_t i_state_pointer;
 
     hashgrid_result_reset(hg_result);
     stop_index = hashgrid_result_next_filtered(hg_result, &distance);
 
     while (stop_index != HASHGRID_NONE) {
-        uint32_t i_state;
         rtime_t extra_walktime;
 
         /* TODO: this is terrible. For each result we explicitly remove if it
@@ -1218,23 +1210,25 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
                     stop_index)) continue;
         #endif
 
-        i_state = router->tdata->n_stops + stop_index;
+        i_state_pointer = initialize_state(router, router->tdata->n_stops + stop_index);
+        if (i_state_pointer == 0) return false;
+
         extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
                                                      req->walk_speed));
 
         if (req->arrive_by) {
             router->best_time[stop_index] = req->time - extra_walktime;
-            router->states_time[i_state]  = req->time - extra_walktime;
+            router->states_time[i_state_pointer]  = req->time - extra_walktime;
         } else {
             router->best_time[stop_index] = req->time + extra_walktime;
-            router->states_time[i_state]  = req->time + extra_walktime;
+            router->states_time[i_state_pointer]  = req->time + extra_walktime;
         }
 
         /*  the rest of these should be unnecessary */
-        router->states_ride_from[i_state] = STOP_NONE;
-        router->states_back_journey_pattern[i_state] = NONE;
-        router->states_back_vehicle_journey[i_state] = NONE;
-        router->states_board_time[i_state] = UNREACHED;
+        router->states_ride_from[i_state_pointer] = STOP_NONE;
+        router->states_back_journey_pattern[i_state_pointer] = NONE;
+        router->states_back_vehicle_journey[i_state_pointer] = NONE;
+        router->states_board_time[i_state_pointer] = UNREACHED;
 
         bitset_set(router->updated_stops, stop_index);
 
@@ -1260,7 +1254,8 @@ static bool latlon_best_stop_index(router_t *router, router_request_t *req,
     if (router->origin == STOP_NONE) return false;
 
     /*  TODO eliminate this now that we have rtimes in requests */
-    router->states_time[router->origin] = req->time;
+    i_state_pointer = initialize_state(router, router->origin);
+    router->states_time[i_state_pointer] = req->time;
 
     return true;
 }
@@ -1424,12 +1419,6 @@ static bool initialize_target (router_t *router, router_request_t *req) {
 
 bool router_route(router_t *router, router_request_t *req) {
     uint8_t i_round, n_rounds;
-
-    /* populate router->states */
-    if (!initialize_states (router)) {
-        fprintf(stderr, "States could not be initialised.\n");
-        return false;
-    }
 
     /* populate router->servicedays */
     if (!initialize_servicedays (router, req)) {
