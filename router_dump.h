@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "config.h"
 void router_state_dump (router_t *router, uint64_t i_state);
-bool stop_is_reached(router_t *router, uint32_t stop_index);
+bool stop_is_reached(router_t *router, uint32_t sp_index);
 void dump_results(router_t *router);
 void day_mask_dump (uint32_t mask);
 void service_day_dump (struct service_day *sd);

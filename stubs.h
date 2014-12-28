@@ -32,7 +32,7 @@ void memset32(uint32_t *s, uint32_t u, size_t n);
 char * strcasestr(const char *s, const char *find);
 uint32_t rrrrandom(uint32_t limit);
 
-char *tdata_stop_name_for_index(tdata_t *td, uint32_t stop_index);
+char *tdata_stop_name_for_index(tdata_t *td, uint32_t sp_index);
 char *btimetext(rtime_t t, char *buf);
 
 void router_request_randomize (router_request_t *req, tdata_t *tdata);

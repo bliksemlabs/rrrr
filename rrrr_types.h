@@ -85,14 +85,14 @@ struct router_request {
     latlon_t via_latlon;
     hashgrid_result_t via_hg_result;
 #endif
-    /* (nearest) start stop index from the users perspective */
-    spidx_t from;
+    /* (nearest) start stop_point index from the users perspective */
+    spidx_t from_stop_point;
 
-    /* (nearest) destination stop index from the users perspective */
-    spidx_t to;
+    /* (nearest) destination stop_point index from the users perspective */
+    spidx_t to_stop_point;
 
-    /* preferred transfer stop index from the users perspective */
-    spidx_t via;
+    /* preferred transfer stop_point index from the users perspective */
+    spidx_t via_stop_point;
 
     /* onboard departure, journey_pattern index from the users perspective */
     uint32_t onboard_vj_journey_pattern;
@@ -104,11 +104,11 @@ struct router_request {
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     uint32_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
-    #if RRRR_MAX_BANNED_STOPS > 0
-    spidx_t banned_stops[RRRR_MAX_BANNED_STOPS];
+    #if RRRR_MAX_BANNED_STOP_POINTS > 0
+    spidx_t banned_stops[RRRR_MAX_BANNED_STOP_POINTS];
     #endif
-    #if RRRR_MAX_BANNED_STOPS_HARD > 0
-    spidx_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
+    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
+    spidx_t banned_stop_points_hard[RRRR_MAX_BANNED_STOP_POINTS_HARD];
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     uint32_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
@@ -151,11 +151,11 @@ struct router_request {
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     uint8_t n_banned_journey_patterns;
     #endif
-    #if RRRR_MAX_BANNED_STOPS > 0
+    #if RRRR_MAX_BANNED_STOP_POINTS > 0
     uint8_t n_banned_stops;
     #endif
-    #if RRRR_MAX_BANNED_STOPS_HARD > 0
-    uint8_t n_banned_stops_hard;
+    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
+    uint8_t n_banned_stop_points_hard;
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     uint8_t n_banned_vjs;

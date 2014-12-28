@@ -67,16 +67,16 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
             }
 
             if (informed_entity->stop_id) {
-                uint32_t stop_index = radixtree_find (tdata->stopid_index,
+                uint32_t sp_index = radixtree_find (tdata->stopid_index,
                                                       informed_entity->stop_id);
                 #ifdef RRRR_DEBUG
-                if (stop_index == RADIXTREE_NONE) {
+                if (sp_index == RADIXTREE_NONE) {
                      fprintf (stderr,
                      "    stop id was not found in the radix tree.\n");
                 }
                 #endif
 
-                *(informed_entity->stop_id) = stop_index;
+                *(informed_entity->stop_id) = sp_index;
             }
 
             if (informed_entity->trip && informed_entity->trip->trip_id) {
