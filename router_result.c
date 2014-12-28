@@ -188,7 +188,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
                 uint32_t vj_index;
 
                 jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride];
-                vj_index = jp->vj_ids_offset + router->states_back_journey_pattern[i_ride];
+                vj_index = jp->vj_ids_offset + router->states_back_vehicle_journey[i_ride];
                 vj = router->tdata->vjs + vj_index;
 
                 if (router->tdata->vj_stoptimes[vj_index] &&
