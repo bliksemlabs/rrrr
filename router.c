@@ -50,7 +50,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stops);
     router->n_states = 0;
-    router->states_pointer = (uint32_t *) calloc(RRRR_N_STATES, sizeof(uint32_t));
+    router->states_pointer = (uint32_t *) malloc(sizeof(uint32_t) * RRRR_N_STATES);
     router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_back_vehicle_journey = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_ride_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
