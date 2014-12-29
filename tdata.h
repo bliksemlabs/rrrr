@@ -109,8 +109,11 @@ struct tdata {
     /* Dates within the active calendar which have DST. */
     calendar_t dst_active;
     uint32_t n_stop_points;
+    uint32_t n_stop_areas;
     uint32_t n_stop_point_attributes;
     uint32_t n_stop_point_coords;
+    uint32_t n_stop_area_coords;
+    uint32_t n_stop_area_for_stop_point;
     uint32_t n_journey_patterns;
     uint32_t n_journey_pattern_points;
     uint32_t n_journey_pattern_point_attributes;
@@ -124,10 +127,11 @@ struct tdata {
     uint32_t n_platformcodes;
     uint32_t n_stop_point_names;
     uint32_t n_stop_point_nameidx;
+    uint32_t n_stop_area_nameidx;
     uint32_t n_agency_ids;
     uint32_t n_agency_names;
     uint32_t n_agency_urls;
-    uint32_t n_headsigns;
+    uint32_t n_string_pool;
     uint32_t n_line_codes;
     uint32_t n_productcategories;
     uint32_t n_line_ids;
@@ -147,17 +151,19 @@ struct tdata {
     /* optional data:
      * NULL pointer means it is not available */
     latlon_t *stop_point_coords;
+    latlon_t *stop_area_coords;
+    spidx_t *stop_area_for_stop_point;
     uint32_t platformcodes_width;
     char *platformcodes;
-    char *stop_point_names;
     uint32_t *stop_point_nameidx;
+    uint32_t *stop_area_nameidx;
     uint32_t agency_ids_width;
     char *agency_ids;
     uint32_t agency_names_width;
     char *agency_names;
     uint32_t agency_urls_width;
     char *agency_urls;
-    char *headsigns;
+    char *string_pool;
     uint32_t line_codes_width;
     char *line_codes;
     uint32_t productcategories_width;
@@ -230,9 +236,13 @@ const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategor
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
+const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sp_index);
+
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
 
 spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
+
+spidx_t tdata_stop_pointidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
 
 spidx_t tdata_stop_pointidx_by_stop_point_idx(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 

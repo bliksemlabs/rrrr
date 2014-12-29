@@ -1,6 +1,7 @@
 import psycopg2
 from model.transit import *
 from exporter.timetable3 import export
+import exporter.timetable4
 
 def parse_gtfs_time(timestr):
     return (lambda x:int(x[0])*3600+int(x[1])*60+int(x[2]))(timestr.split(":")) #oh yes I did
@@ -72,3 +73,4 @@ ORDER BY trip_id,stop_sequence
     return tdata
 tdata = convert('ridprod')
 export(tdata)
+exporter.timetable4.export(tdata)

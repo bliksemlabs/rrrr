@@ -68,7 +68,7 @@ const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
 }
 
 const char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset) {
-    return td->headsigns + headsign_offset;
+    return td->string_pool + headsign_offset;
 }
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
@@ -95,9 +95,26 @@ spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_nam
     for (sp_index = sp_index_offset;
          sp_index < td->n_stop_points;
          ++sp_index) {
-        if (strcasestr(td->stop_point_names + td->stop_point_nameidx[sp_index],
+        if (strcasestr(td->string_pool + td->stop_point_nameidx[sp_index],
                 stop_point_name)) {
             return sp_index;
+        }
+    }
+    return STOP_NONE;
+}
+
+spidx_t tdata_stop_areaidx_for_index(tdata_t *td, spidx_t sp_index) {
+    return td->stop_area_for_stop_point[sp_index];
+}
+
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sa_index_offset) {
+    spidx_t sa_index;
+    for (sa_index = sa_index_offset;
+         sa_index < td->n_stop_areas;
+         ++sa_index) {
+        if (strcasestr(td->string_pool + td->stop_area_nameidx[sa_index],
+                stop_point_name)) {
+            return sa_index;
         }
     }
     return STOP_NONE;
@@ -146,7 +163,7 @@ calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->headsigns + (td->journey_patterns)[jp_index].headsign_offset;
+    return td->string_pool + (td->journey_patterns)[jp_index].headsign_offset;
 }
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
@@ -250,8 +267,12 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index) {
     case ONBOARD :
         return "ONBOARD";
     default :
-        return td->stop_point_names + td->stop_point_nameidx[sp_index];
+        return td->string_pool + td->stop_point_nameidx[sp_index];
     }
+}
+
+const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index) {
+    return td->string_pool + td->stop_area_nameidx[sa_index];
 }
 
 /* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
