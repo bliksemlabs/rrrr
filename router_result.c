@@ -183,10 +183,10 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t1 = router->states_time[i_ride];
             l->journey_pattern = router->states_back_journey_pattern[i_ride];
             l->vj = router->states_back_vehicle_journey[i_ride];
+            #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             l->jpp0 = router->states_back_journey_pattern_point[i_ride];
             l->jpp1 = router->states_journey_pattern_point[i_ride];
 
-            #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
                 journey_pattern_t *jp;
                 vehicle_journey_t *vj;
@@ -283,11 +283,13 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         } else {
             agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->journey_pattern);
             short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
-            headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
             productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->journey_pattern);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+            headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
             d0 = leg->d0 / 60.0f;
             d1 = leg->d1 / 60.0f;
+            #else
+            headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
             #endif
 
             if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
