@@ -208,7 +208,7 @@ void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t v
             char *stop_id = rt_stop_time_update->stop_id;
             if (stop_id) {
 
-                uint32_t sp_index = radixtree_find (tdata->stopid_index, stop_id);
+                uint32_t sp_index = radixtree_find (tdata->stop_point_id_index, stop_id);
                 if (tdata->journey_pattern_points[journey_pattern_point_offset] != sp_index &&
                     tdata->journey_pattern_points[journey_pattern_point_offset] != NONE) {
                     tdata_rt_journey_patterns_at_stop_point_remove(tdata, tdata->journey_pattern_points[journey_pattern_point_offset], jp_index);
@@ -379,7 +379,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t vj_index,
 
         rt_stop_time_update = rt_trip_update->stop_time_update[i_stu];
         stop_id = rt_stop_time_update->stop_id;
-        sp_index = radixtree_find (tdata->stopid_index, stop_id);
+        sp_index = radixtree_find (tdata->stop_point_id_index, stop_id);
 
 
         if (journey_pattern_points[rs] == sp_index) {

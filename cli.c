@@ -343,12 +343,12 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_point_ids, tdata.stop_point_ids_width, tdata.n_stop_points);
+        tdata.stop_point_id_index = radixtree_load_strings_from_tdata (tdata.stop_point_ids, tdata.stop_point_ids_width, tdata.n_stop_points);
         tdata.vjid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
         tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
 
         /* Validate the radixtrees are actually created. */
-        if (!(tdata.stopid_index &&
+        if (!(tdata.stop_point_id_index &&
               tdata.vjid_index &&
               tdata.lineid_index)) {
             status = EXIT_FAILURE;
@@ -515,7 +515,7 @@ clean_exit:
     router_teardown (&router);
 
     #ifdef RRRR_FEATURE_REALTIME
-    if (tdata.stopid_index) radixtree_destroy (tdata.stopid_index);
+    if (tdata.stop_point_id_index) radixtree_destroy (tdata.stop_point_id_index);
     if (tdata.vjid_index) radixtree_destroy (tdata.vjid_index);
     if (tdata.lineid_index) radixtree_destroy (tdata.lineid_index);
     #endif
