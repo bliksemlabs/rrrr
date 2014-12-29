@@ -2,6 +2,7 @@ from model.transit import *
 from gtfsdb import GTFSDatabase
 import sys
 from exporter.timetable3 import export
+import exporter.timetable4
 from datetime import timedelta, date
 
 MAX_DAYS = 32
@@ -104,6 +105,7 @@ def main():
         print "No valid trips in this GTFS file!"
         sys.exit(1)
     export(tdata)
+    exporter.timetable4.export(tdata)
 
 if __name__=='__main__': 
     main()

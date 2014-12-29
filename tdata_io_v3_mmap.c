@@ -64,17 +64,19 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     }
 
     header = (tdata_header_t *) td->base;
-    if( strncmp("TTABLEV3", header->version_string, 8) ) {
+    if( strncmp("TTABLEV4", header->version_string, 8) ) {
         fprintf(stderr, "The input file %s does not appear to be a timetable or is of the wrong version.\n", filename);
         goto fail_munmap_base;
     }
 
     td->calendar_start_time = header->calendar_start_time;
     td->dst_active = header->dst_active;
+    td->n_stop_areas = header->n_stop_areas;
 
     load_mmap (td->base, stop_points, stop_point_t);
     load_mmap (td->base, stop_point_attributes, uint8_t);
     load_mmap (td->base, stop_point_coords, latlon_t);
+    load_mmap (td->base, stop_area_coords, latlon_t);
     load_mmap (td->base, journey_patterns, journey_pattern_t);
     load_mmap (td->base, journey_pattern_points, spidx_t);
     load_mmap (td->base, journey_pattern_point_attributes, uint8_t);
@@ -85,9 +87,10 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, transfer_dist_meters, uint8_t);
     load_mmap (td->base, vj_active, calendar_t);
     load_mmap (td->base, journey_pattern_active, calendar_t);
-    load_mmap (td->base, headsigns, char);
-    load_mmap (td->base, stop_point_names, char);
+    load_mmap (td->base, string_pool, char);
     load_mmap (td->base, stop_point_nameidx, uint32_t);
+    load_mmap (td->base, stop_area_nameidx, uint32_t);
+    load_mmap (td->base, stop_area_for_stop_point, spidx_t);
 
     load_mmap_string (td->base, platformcodes);
     load_mmap_string (td->base, stop_point_ids);

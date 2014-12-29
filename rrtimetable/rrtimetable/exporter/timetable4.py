@@ -27,23 +27,33 @@ class Index():
         self.connections_from_stop_point = {}
         self.connections_point_to_point = {}
 
-        self.loc_for_headsign = {}
-        self.headsigns = []
-        self.headsign_length = 0
-
         self.idx_for_productcategory = {}
         self.productcategories = []
 
         self.idx_for_linecode = {}
         self.linecodes = []
 
-    def put_headsign(self,headsign):
-        if headsign in self.loc_for_headsign:
-            return self.loc_for_headsign[headsign]
-        self.loc_for_headsign[headsign] = self.headsign_length
-        self.headsign_length += (len(headsign) + 1)
-        self.headsigns.append(headsign)
-        return self.loc_for_headsign[headsign]
+        self.idx_for_operator = {}
+        self.operators = []
+
+        self.loc_for_string = {}
+        self.strings = []
+        self.string_length = 0
+        
+    def put_operator(self,operator):
+        if operator in self.idx_for_operator:
+            return self.idx_for_operator[operator]
+        self.idx_for_operator[operator] = len(self.idx_for_operator)
+        self.operators.append(operator)
+        return self.idx_for_operator[operator]
+
+    def put_string(self,string):
+        if string in self.loc_for_string:
+            return self.loc_for_string[string]
+        self.loc_for_string[string] = self.string_length
+        self.string_length += (len(string) + 1)
+        self.strings.append(string)
+        return self.loc_for_string[string]
 
     def put_productcategory(self,productcategory):
         if productcategory in self.idx_for_productcategory:
@@ -114,16 +124,29 @@ def make_idx(tdata):
     print '--------------------------'
     return index
 
-def write_stop_point_idx(out,index,stop_uri):
+def write_stop_point_idx(out,index,stop_point_uri):
     if len(index.stop_points) <= 65535:
-        writeshort(out,index.idx_for_stop_point_uri[stop_uri])
+        writeshort(out,index.idx_for_stop_point_uri[stop_point_uri])
     else:
-        writeint(out,index.idx_for_stop_point_uri[stop_uri])
+        writeint(out,index.idx_for_stop_point_uri[stop_point_uri])
+
+def write_stop_area_idx(out,index,stop_area_uri):
+    if len(index.stop_points) <= 65535:
+        writeshort(out,index.idx_for_stop_area_uri[stop_area_uri])
+    else:
+        writeint(out,index.idx_for_stop_area_uri[stop_area_uri])
 
 def export_sp_coords(tdata,index,out):
-    index.loc_stop_coords = out.tell()
+    write_text_comment(out,"STOP POINT COORDS")
+    index.loc_stop_point_coords = out.tell()
     for sp in index.stop_points:
         write2floats(out,sp.latitude or 0.0, sp.longitude or 0.0)
+
+def export_sa_coords(tdata,index,out):
+    write_text_comment(out,"STOP AREA COORDS")
+    index.loc_stop_area_coords = out.tell()
+    for sa in index.stop_areas:
+        write2floats(out,sa.latitude or 0.0, sa.longitude or 0.0)
 
 def export_journey_pattern_point_stop(tdata,index,out):
     write_text_comment(out,"JOURNEY_PATTERN_POINT STOP")
@@ -196,6 +219,12 @@ def export_jpp_at_sp(tdata,index,out):
     index.jpp_at_sp_offsets.append(n_offset) #sentinel
     index.n_jpp_at_sp = n_offset
 
+def export_sa_for_sp(tdata,index,out):
+    write_text_comment(out,"STOP_POINT -> STOP_AREA")
+    index.loc_sa_for_sp = tell(out)
+    for sp in index.stop_points:
+        write_stop_area_idx(out,index,sp.stop_area.uri)
+
 def export_transfers(tdata,index,out):
     print "saving transfer stops (footpaths)"
     write_text_comment(out,"TRANSFER TARGET STOPS")
@@ -228,7 +257,7 @@ def export_transfers(tdata,index,out):
 def export_stop_indices(tdata,index,out):
     print "saving stop indexes"
     write_text_comment(out,"STOP STRUCTS")
-    index.loc_stops = tell(out)
+    index.loc_stop_points = tell(out)
     struct_2i = Struct('II')
     print len(index.jpp_at_sp_offsets),len(index.transfers_offsets)
     assert len(index.jpp_at_sp_offsets) == len(index.transfers_offsets)
@@ -273,14 +302,10 @@ def export_jp_structs(tdata,index,out):
         jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
 
         productcategory_offsets.append(index.put_productcategory(jp.productcategory or '')) 
-        headsign_offsets.append(index.put_headsign(jp.headsign or '')) 
-        linecode_offsets.append(index.put_linecode(jp.route.line.code or '')) 
+        headsign_offsets.append(index.put_string(jp.headsign or '')) 
+        linecode_offsets.append(index.put_linecode(jp.route.line.code or ''))
+        operator_offsets.append(index.put_operator(jp.route.line.operator))
 
-        operator = jp.route.line.operator.uri
-        if operator not in index.idx_for_operator:
-            index.idx_for_operator[operator] = len(index.idx_for_operator)
-            index.jp_operators.append(operator)
-        operator_offsets.append(index.idx_for_operator[operator]) 
         jp_attributes.append(1 << jp.route.route_type)
     jp_t_fields = [jpp_offsets, trip_ids_offsets,headsign_offsets, jp_n_jpp, jp_n_vj,jp_attributes,operator_offsets,linecode_offsets,productcategory_offsets,jp_min_time, jp_max_time]
     for l in jp_t_fields :
@@ -322,61 +347,40 @@ def export_platform_codes(tdata,index,out):
     write_text_comment(out,"PLATFORM CODES")
     index.loc_platformcodes = write_string_table(out,[sp.platformcode or '' for sp in index.stop_points])
 
-def export_stop_point_names(tdata,index,out):
-
-    nameloc_for_name = {}
-    index.sp_nameloc_for_idx = []
-    index.sp_namesize = 0
-    idx = 0
-    for sp in index.stop_points:
-        name = sp.name or ''
-        if name in nameloc_for_name:
-            nameloc = nameloc_for_name[name]
-        else:
-            nameloc = index.sp_namesize
-            nameloc_for_name[name] = nameloc
-            index.sp_namesize += 1 + len(name)
-        index.sp_nameloc_for_idx.append(nameloc)
-        idx += 1
-    nstops = idx
-    assert len(index.sp_nameloc_for_idx) == idx
-
-    print "writing out stop names to string table"
-    write_text_comment(out,"STOP NAME")
-    stop_names = sorted(nameloc_for_name.iteritems(), key=operator.itemgetter(1))
-    index.loc_stop_names = tell(out)
-    for stop_name,nameloc in stop_names:
-        assert nameloc == out.tell() - index.loc_stop_names
-        out.write(stop_name+'\0')
-
+def export_stop_pointnames(tdata,index,out):
     print "writing out locations for stopnames"
     write_text_comment(out,"STOP NAME LOCATIONS")
     index.loc_stop_nameidx = tell(out)
-    for nameloc in index.sp_nameloc_for_idx:
-        writeint(out,nameloc)
+    for sp in index.stop_points:
+        writeint(out,index.put_string(sp.name or ''))
+    writeint(out,0)
+
+def export_stop_areanames(tdata,index,out):
+    print "writing out locations for stopareas"
+    write_text_comment(out,"STOP AREA LOCATIONS")
+    index.loc_stop_areaidx = tell(out)
+    for sa in index.stop_areas:
+        writeint(out,index.put_string(sa.name or ''))
     writeint(out,0)
 
 def export_operators(tdata,index,out):
     print "writing out agencies to string table"
     write_text_comment(out,"OPERATOR IDS")
-    uris = index.jp_operators
-    index.n_operators = len(uris)
-    index.loc_operator_ids = write_string_table(out,[index.operators[index.idx_for_operator_uri[uri]].uri for uri in uris])
+    index.loc_operator_ids = write_string_table(out,[op.uri or '' for op in index.operators])
     write_text_comment(out,"OPERATOR NAMES")
-    index.loc_operator_names = write_string_table(out,[index.operators[index.idx_for_operator_uri[uri]].name or '' for uri in uris])
+    index.loc_operator_names = write_string_table(out,[op.name or '' for op in index.operators])
     write_text_comment(out,"OPERATOR URLS")
-    index.loc_operator_urls = write_string_table(out,[index.operators[index.idx_for_operator_uri[uri]].url or '' for uri in uris])
+    index.loc_operator_urls = write_string_table(out,[op.url or '' for op in index.operators])
 
-def export_headsigns(tdata,index,out):
-    print "writing out headsigns to string table"
-    write_text_comment(out,"HEADSIGNS")
-    sorted_headsigns = sorted(index.loc_for_headsign.iteritems(), key=operator.itemgetter(1))
-    index.loc_headsign = tell(out)
+def export_stringpool(tdata,index,out):
+    print "writing out sheadsignstringpool"
+    write_text_comment(out,"STIRNGPOOL")
+    index.loc_stringpool = tell(out)
     written_length = 0
-    for headsign in index.headsigns:
-        out.write(headsign+'\0')
-        written_length += len(headsign) + 1
-    assert written_length == index.headsign_length
+    for string in index.strings:
+        out.write(string+'\0')
+        written_length += len(string) + 1
+    assert written_length == index.string_length
 
 
 def export_linecodes(tdata,index,out):
@@ -415,15 +419,17 @@ def write_header (out,index) :
     """ Write out a file header containing offsets to the beginning of each subsection.
     Must match struct transit_data_header in transitdata.c """
     out.seek(0)
-    htext = "TTABLEV3"
-
+    htext = "TTABLEV4"
 
     packed = struct_header.pack(htext,
         index.calendar_start_time,
         index.dst_mask,
         index.n_stops, # n_stops
+        len(index.stop_areas), #n_stop_areas
         index.n_stops, # n_stop_attributes
-        index.n_stops, # n_stop_coords
+        index.n_stops, # n_stop_point_coords
+        len(index.stop_areas), # n_stop_area_coords
+        len(index.stop_points), # n_sa_for_ap
         index.n_jp, # n_routes
         index.n_jpp, # n_route_stops
         index.n_jpp, # n_route_stop_attributes
@@ -435,21 +441,21 @@ def write_header (out,index) :
         index.n_vj, #n_trip_active
         index.n_jp, # n_route_active
         index.n_stops, # n_platformcodes
-        index.sp_namesize, # n_stop_names (length of the object)
-        len(index.sp_nameloc_for_idx) + 1, # n_stop_nameidx
-        index.n_operators, # n_agency_ids
-        index.n_operators, # n_agency_names
-        index.n_operators, # n_agency_urls
-        index.headsign_length, # n_headsigns (length of the object)
+        len(index.stop_points), # n_stop_nameidx
+        len(index.stop_areas), # n_stop_nameidx
+        len(index.operators), # n_operator_id
+        len(index.operators), # n_operator_names
+        len(index.operators), # n_operator_urls
+        index.string_length, # n_headsigns (length of the object)
         len(index.idx_for_linecode), # n_route_shortnames
         len(index.idx_for_productcategory), # n_productcategories
         len(index.journey_patterns), # n_route_ids
         index.n_stops, # n_stop_ids
         index.n_vj, # n_trip_ids
 
-        index.loc_stops,
+        index.loc_stop_points,
         index.loc_stop_point_attributes,
-        index.loc_stop_coords,
+        index.loc_stop_point_coords,
         index.loc_journey_patterns,
         index.loc_journey_pattern_points,
         index.loc_journey_pattern_point_attributes, 
@@ -461,24 +467,23 @@ def write_header (out,index) :
         index.loc_vj_active,
         index.loc_jp_active,
         index.loc_platformcodes,
-        index.loc_stop_names,
         index.loc_stop_nameidx,
+        index.loc_stop_areaidx,
         index.loc_operator_ids,
         index.loc_operator_names,
         index.loc_operator_urls,
-        index.loc_headsign,
+        index.loc_stringpool,
         index.loc_line_codes,
         index.loc_productcategories,
         index.loc_line_uris,
         index.loc_stop_point_uris,
         index.loc_vj_uris,
+        index.loc_stop_area_coords,
+        index.loc_sa_for_sp,
     )
-    print 
     out.write(packed)
 
-
-
-struct_header = Struct('8sQ51I')
+struct_header = Struct('8sQ56I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -486,7 +491,7 @@ def export(tdata):
     index.calendar_start_time = time.mktime((tdata.validfrom).timetuple())
     index.n_stops = len(index.stop_points)
     index.n_jp = len(index.journey_patterns)
-    out = open('timetable.dat','wb')
+    out = open('timetable4.dat','wb')
     out.seek(struct_header.size)
 
     export_sp_coords(tdata,index,out)
@@ -502,16 +507,19 @@ def export(tdata):
     export_vj_validities(tdata,index,out)
     export_jp_validities(tdata,index,out)
     export_platform_codes(tdata,index,out)
-    export_stop_point_names(tdata,index,out)
+    export_stop_pointnames(tdata,index,out)
+    export_stop_areanames(tdata,index,out)
     export_operators(tdata,index,out)
-    export_headsigns(tdata,index,out)
+    export_stringpool(tdata,index,out)
     export_linecodes(tdata,index,out)
     export_productcategories(tdata,index,out)
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)
     export_vj_uris(tdata,index,out)
+    export_sa_coords(tdata,index,out)
+    export_sa_for_sp(tdata,index,out)
     print "reached end of timetable file"
-    write_text_comment(out,"END TTABLEV2")
+    write_text_comment(out,"END TTABLEV4")
     index.loc_eof = tell(out)
     print "rewinding and writing header... ",
     write_header(out,index)
