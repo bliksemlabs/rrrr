@@ -67,10 +67,6 @@ const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
     return td->agency_urls + (td->agency_urls_width * agency_index);
 }
 
-const char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset) {
-    return td->string_pool + headsign_offset;
-}
-
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
     return td->line_codes + (td->line_codes_width * line_code_index);
 }
@@ -163,7 +159,12 @@ calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->string_pool + (td->journey_patterns)[jp_index].headsign_offset;
+    return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset]);
+}
+
+const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_index, uint32_t jpp_index) {
+    if (jp_index == NONE) return "NONE";
+    return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset + jpp_index]);
 }
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {

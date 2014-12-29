@@ -30,7 +30,6 @@ typedef struct journey_pattern journey_pattern_t;
 struct journey_pattern {
     uint32_t journey_pattern_point_offset;
     uint32_t vj_offset;
-    uint32_t headsign_offset;
     uint16_t n_stops;
     uint16_t n_vjs;
     uint16_t attributes;
@@ -117,6 +116,7 @@ struct tdata {
     uint32_t n_journey_patterns;
     uint32_t n_journey_pattern_points;
     uint32_t n_journey_pattern_point_attributes;
+    uint32_t n_journey_pattern_point_headsigns;
     uint32_t n_stop_times;
     uint32_t n_vjs;
     uint32_t n_journey_patterns_at_stop;
@@ -171,6 +171,7 @@ struct tdata {
     char *productcategories;
     calendar_t *vj_active;
     calendar_t *journey_pattern_active;
+    uint32_t *journey_pattern_point_headsigns;
     uint32_t line_ids_width;
     char *line_ids;
     uint32_t stop_point_ids_width;
@@ -231,8 +232,6 @@ const char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
 
 const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
 
-const char *tdata_headsign_for_offset(tdata_t *td, uint32_t headsign_offset);
-
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
 const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
@@ -256,6 +255,8 @@ const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, uint32_t j
 calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+
+const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_index,uint32_t jpp_index);
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 

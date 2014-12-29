@@ -104,7 +104,7 @@ def freeze(o):
   return o
 
 class JourneyPatternPoint:
-    def __init__(self,timetable,stop_point_uri,forboarding=True,foralighting=True,timingpoint=False,destination=None):
+    def __init__(self,timetable,stop_point_uri,forboarding=True,foralighting=True,timingpoint=False,headsign=None):
         if stop_point_uri not in timetable.stop_points:
             raise ValueError('Violation of foreign key, StopPoint not found')
         self.type = 'journey_pattern_point'
@@ -112,7 +112,7 @@ class JourneyPatternPoint:
         self.forboarding = forboarding
         self.foralighting = foralighting
         self.timingpoint = timingpoint
-        self.destination = destination
+        self.headsign = headsign
 
     def __hash__(self):
         return hash(freeze(self.__dict__))
@@ -190,7 +190,7 @@ class VehicleJourney:
         self.validity_pattern.add((validdate-self.timetable.validfrom).days)
         return True
 
-    def add_stop(self,stop_point_uri,arrival_time,departure_time,forboarding=True,foralighting=True,timingpoint=False,destination=None):
+    def add_stop(self,stop_point_uri,arrival_time,departure_time,forboarding=True,foralighting=True,timingpoint=False,headsign=None):
         if self.__isfinished__:
             raise AttributeError('VehicleJourney was previously completed')
         if stop_point_uri not in self.timetable.stop_points:
@@ -208,7 +208,7 @@ class VehicleJourney:
             if drivetime < self.timedemandgroup[-1].totaldrivetime:
                 raise ValueError('Timetravel from latest stop')
             self.timedemandgroup.append(TimeDemandGroupPoint(drivetime,totaldrivetime))
-        self.points.append(JourneyPatternPoint(self.timetable,stop_point_uri,forboarding,foralighting,timingpoint,destination))
+        self.points.append(JourneyPatternPoint(self.timetable,stop_point_uri,forboarding,foralighting,timingpoint,headsign=(headsign or self.headsign)))
 
     def finish(self):
         self.__isfinished__ = True

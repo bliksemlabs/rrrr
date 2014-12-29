@@ -80,6 +80,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, journey_patterns, journey_pattern_t);
     load_mmap (td->base, journey_pattern_points, spidx_t);
     load_mmap (td->base, journey_pattern_point_attributes, uint8_t);
+    load_mmap (td->base, journey_pattern_point_headsigns, uint32_t);
     load_mmap (td->base, stop_times, stoptime_t);
     load_mmap (td->base, vjs, vehicle_journey_t);
     load_mmap (td->base, journey_patterns_at_stop, uint32_t);
