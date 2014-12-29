@@ -27,10 +27,6 @@ def convert(dbname):
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
     cur.execute("SELECT from_stop_id,to_stop_id,min_transfer_time,transfer_type FROM fusio.transfers")
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in cur.fetchall():
-        if from_stop_id == to_stop_id:
-            continue
-        if (int(min_transfer_time) >> 2) > 255:
-            min_transfer_time = 255
         try:
             Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
             Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)

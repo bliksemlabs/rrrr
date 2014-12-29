@@ -189,33 +189,27 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
         uint32_t tN = tdata->stop_points[sp_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             uint32_t sp_index_to = tdata->transfer_target_stops[t];
-            uint32_t forward_distance = tdata->transfer_dist_meters[t] << 4;
-            /*                          actually in units of 2^4 == 16 meters */
+            rtime_t forward_duration = tdata->transfer_durations[t];
 
             /* Find the reverse transfer (sp_index_to -> sp_index_from) */
             uint32_t u  = tdata->stop_points[sp_index_to].transfers_offset;
             uint32_t uN = tdata->stop_points[sp_index_to + 1].transfers_offset;
             bool found_reverse = false;
 
-            if (sp_index_to == sp_index_from) {
-                fprintf (stderr, "loop transfer from/to stop_point %d.\n",
-                        sp_index_from);
-            }
-
             for ( ; u < uN ; ++u) {
                 n_transfers_checked += 1;
                 if (tdata->transfer_target_stops[u] == sp_index_from) {
                     /* this is the same transfer in reverse */
-                    uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
-                    if (reverse_distance != forward_distance) {
+                    rtime_t reverse_duration = tdata->transfer_durations[u];
+                    if (reverse_duration != forward_duration) {
                         fprintf (stderr, "transfer from_stop_point %d to %d is "
                                          "not symmetric. "
-                                         "forward distance is %d, "
-                                         "reverse distance is %d.\n",
+                                         "forward duration is %d, "
+                                         "reverse duration is %d.\n",
                                 sp_index_from,
                                 sp_index_to,
-                                         forward_distance,
-                                         reverse_distance);
+                                         forward_duration,
+                                         reverse_duration);
                     }
                     found_reverse = true;
                     break;

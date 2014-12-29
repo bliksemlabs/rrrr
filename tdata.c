@@ -284,7 +284,7 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_ind
         uint32_t tN = tdata->stop_points[sp_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
             if (tdata->transfer_target_stops[t] == sp_index_to) {
-                return (rtime_t) tdata->transfer_dist_meters[t] + req->walk_slack;
+                return (rtime_t) tdata->transfer_durations[t] + req->walk_slack;
             }
         }
     } else {

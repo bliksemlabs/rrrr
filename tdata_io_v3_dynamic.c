@@ -83,7 +83,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_vjs < (UINT32_MAX) &&
             header->n_journey_patterns_at_stop < (UINT32_MAX) &&
             header->n_transfer_target_stops < (UINT32_MAX) &&
-            header->n_transfer_dist_meters < (UINT32_MAX) &&
+            header->n_transfer_durations < (UINT32_MAX) &&
             header->n_vj_active < (UINT32_MAX) &&
             header->n_journey_pattern_active < (UINT32_MAX) &&
             header->n_platformcodes < (UINT32_MAX) &&
@@ -119,7 +119,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, vjs, vehicle_journey_t);
     load_dynamic (fd, journey_patterns_at_stop, uint32_t);
     load_dynamic (fd, transfer_target_stops, spidx_t);
-    load_dynamic (fd, transfer_dist_meters, uint8_t);
+    load_dynamic (fd, transfer_durations, uint16_t);
     load_dynamic (fd, vj_active, calendar_t);
     load_dynamic (fd, journey_pattern_active, calendar_t);
     load_dynamic (fd, string_pool, char);
@@ -160,7 +160,7 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->vjs);
     free (td->journey_patterns_at_stop);
     free (td->transfer_target_stops);
-    free (td->transfer_dist_meters);
+    free (td->transfer_durations);
     free (td->vj_active);
     free (td->journey_pattern_active);
     free (td->string_pool);
