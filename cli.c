@@ -205,7 +205,7 @@ int main (int argc, char *argv[]) {
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         /* TODO: check return value */
-                        strtolatlon(&argv[i][12], &req.from_latlon);
+                        strtolatlon(&argv[i][14], &req.from_latlon);
                     }
                     #endif
                     break;
