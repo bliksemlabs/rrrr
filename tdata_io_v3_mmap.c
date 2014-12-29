@@ -94,6 +94,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     load_mmap_string (td->base, platformcodes);
     load_mmap_string (td->base, stop_point_ids);
+    load_mmap_string (td->base, stop_area_ids);
     load_mmap_string (td->base, vj_ids);
     load_mmap_string (td->base, agency_ids);
     load_mmap_string (td->base, agency_names);

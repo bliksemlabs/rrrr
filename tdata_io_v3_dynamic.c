@@ -95,6 +95,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_productcategories < (UINT16_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
+            header->n_stop_area_ids < ((spidx_t) -2) &&
             header->n_vj_ids < (UINT32_MAX) ) ) {
 
         fprintf(stderr, "The input file %s does not appear to be a valid timetable.\n", filename);
@@ -125,6 +126,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     load_dynamic_string (fd, platformcodes);
     load_dynamic_string (fd, stop_point_ids);
+    load_dynamic_string (fd, stop_area_ids);
     load_dynamic_string (fd, vj_ids);
     load_dynamic_string (fd, agency_ids);
     load_dynamic_string (fd, agency_names);
@@ -165,6 +167,7 @@ void tdata_io_v3_close(tdata_t *td) {
 
     free (td->platformcodes);
     free (td->stop_point_ids);
+    free (td->stop_area_ids);
     free (td->vj_ids);
     free (td->agency_ids);
     free (td->agency_names);

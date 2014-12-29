@@ -136,6 +136,7 @@ struct tdata {
     uint32_t n_productcategories;
     uint32_t n_line_ids;
     uint32_t n_stop_point_ids;
+    uint32_t n_stop_area_ids;
     uint32_t n_vj_ids;
     stop_point_t *stop_points;
     uint8_t *stop_point_attributes;
@@ -174,11 +175,13 @@ struct tdata {
     char *line_ids;
     uint32_t stop_point_ids_width;
     char *stop_point_ids;
+    uint32_t stop_area_ids_width;
+    char *stop_area_ids;
     uint32_t vj_ids_width;
     char *vj_ids;
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;
-    radixtree_t *stopid_index;
+    radixtree_t *stop_point_id_index;
     radixtree_t *vjid_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     stoptime_t **vj_stoptimes;

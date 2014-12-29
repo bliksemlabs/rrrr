@@ -398,10 +398,16 @@ def export_line_uris(tdata,index,out):
     index.loc_line_uris = write_string_table(out,[jp.route.line.uri for jp in index.journey_patterns])
 
 def export_sp_uris(tdata,index,out):
-    print "writing out sorted stop ids to string table"
+    print "writing out sorted stop_point ids to string table"
     # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
-    write_text_comment(out,"STOP IDS")
+    write_text_comment(out,"STOP_POINT IDS")
     index.loc_stop_point_uris = write_string_table(out,[sp.uri for sp in index.stop_points])
+
+def export_sa_uris(tdata,index,out):
+    print "writing out sorted stop_area ids to string table"
+    write_text_comment(out,"STOP_AREA IDS")
+    index.loc_stop_area_uris = write_string_table(out,[sa.uri for sa in index.stop_areas])
+
 
 def export_vj_uris(tdata,index,out):
      all_vj_ids = [] 
@@ -450,7 +456,8 @@ def write_header (out,index) :
         len(index.idx_for_linecode), # n_route_shortnames
         len(index.idx_for_productcategory), # n_productcategories
         len(index.journey_patterns), # n_route_ids
-        index.n_stops, # n_stop_ids
+        len(index.stop_points), # n_stop_point_ids
+        len(index.stop_areas), # n_stop_area_ids
         index.n_vj, # n_trip_ids
 
         index.loc_stop_points,
@@ -477,13 +484,14 @@ def write_header (out,index) :
         index.loc_productcategories,
         index.loc_line_uris,
         index.loc_stop_point_uris,
+        index.loc_stop_area_uris,
         index.loc_vj_uris,
         index.loc_stop_area_coords,
         index.loc_sa_for_sp,
     )
     out.write(packed)
 
-struct_header = Struct('8sQ56I')
+struct_header = Struct('8sQ58I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -516,6 +524,7 @@ def export(tdata):
     export_productcategories(tdata,index,out)
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)
+    export_sa_uris(tdata,index,out)
     export_vj_uris(tdata,index,out)
     export_stringpool(tdata,index,out)
     print "reached end of timetable file"

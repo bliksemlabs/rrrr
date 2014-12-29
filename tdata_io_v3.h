@@ -38,6 +38,7 @@ struct tdata_header {
     uint32_t n_productcategories;
     uint32_t n_line_ids;
     uint32_t n_stop_point_ids;
+    uint32_t n_stop_area_ids;
     uint32_t n_vj_ids;
     uint32_t loc_stop_points;
     uint32_t loc_stop_point_attributes;
@@ -63,6 +64,7 @@ struct tdata_header {
     uint32_t loc_productcategories;
     uint32_t loc_line_ids;
     uint32_t loc_stop_point_ids;
+    uint32_t loc_stop_area_ids;
     uint32_t loc_vj_ids;
     uint32_t loc_stop_area_coords;
     uint32_t loc_stop_area_for_stop_point;
