@@ -121,8 +121,7 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, uint32_t vj_index) {
 
 static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
         uint16_t n_sp, uint16_t n_vjs,
-        uint16_t attributes, uint32_t headsign_offset,
-        uint16_t agency_index, uint16_t line_code_index,
+        uint16_t attributes, uint16_t agency_index, uint16_t line_code_index,
         uint16_t productcategory_index) {
     journey_pattern_t *new;
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
@@ -135,7 +134,6 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
 
     new->journey_pattern_point_offset = journey_pattern_point_offset;
     new->vj_offset = vj_index;
-    new->headsign_offset = headsign_offset;
     new->n_stops = n_sp;
     new->n_vjs = n_vjs;
     new->attributes = attributes;
@@ -183,6 +181,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     tdata->n_stop_times += n_sp;
     tdata->n_journey_pattern_points += n_sp;
     tdata->n_journey_pattern_point_attributes += n_sp;
+    tdata->n_journey_pattern_point_headsigns += n_sp;
     tdata->n_vjs += n_vjs;
     tdata->n_vj_ids += n_vjs;
     tdata->n_vj_active += n_vjs;
@@ -215,6 +214,8 @@ void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t v
                 }
                 /* TODO: Should this be communicated in GTFS-RT? */
                 tdata->journey_pattern_point_attributes[journey_pattern_point_offset] = (rsa_boarding | rsa_alighting);
+                /* TODO: We dont know headsign, set to string_idx of last stop in jp?? */
+                tdata->journey_pattern_point_headsigns[journey_pattern_point_offset] = 0;
                 tdata->journey_pattern_points[journey_pattern_point_offset] = sp_index;
                 tdata_apply_gtfsrt_time (rt_stop_time_update, &tdata->vj_stoptimes[vj_index][rs]);
                 tdata_rt_journey_patterns_at_stop_point_append(tdata, sp_index, jp_index);
@@ -288,7 +289,6 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
          */
         jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_sp, 1,
                 jp->attributes,
-                jp->headsign_offset,
                 jp->agency_index,
                 jp->line_code_index,
                 jp->productcategory_index);

@@ -10,6 +10,8 @@ static void leg_swap (leg_t *leg) {
     leg->sp_to = temp.sp_from;
     leg->t0 = temp.t1;
     leg->t1 = temp.t0;
+    leg->jpp0 = temp.jpp1;
+    leg->jpp1 = temp.jpp0;
 }
 
 /* Checks charateristics that should be the same for all vj plans produced by this router:
@@ -181,6 +183,8 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l->t1 = router->states_time[i_ride];
             l->journey_pattern = router->states_back_journey_pattern[i_ride];
             l->vj = router->states_back_vehicle_journey[i_ride];
+            l->jpp0 = router->states_back_journey_pattern_point[i_ride];
+            l->jpp1 = router->states_journey_pattern_point[i_ride];
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
@@ -279,7 +283,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         } else {
             agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->journey_pattern);
             short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
-            headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
+            headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
             productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->journey_pattern);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             d0 = leg->d0 / 60.0f;

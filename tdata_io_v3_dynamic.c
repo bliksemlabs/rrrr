@@ -78,6 +78,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_journey_patterns < (UINT32_MAX - 1) &&
             header->n_journey_pattern_points < (UINT32_MAX) &&
             header->n_journey_pattern_point_attributes < (UINT32_MAX) &&
+            header->n_journey_pattern_point_headsigns < (UINT32_MAX) &&
             header->n_stop_times < (UINT32_MAX) &&
             header->n_vjs < (UINT32_MAX) &&
             header->n_journey_patterns_at_stop < (UINT32_MAX) &&
@@ -113,6 +114,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, journey_patterns, journey_pattern_t);
     load_dynamic (fd, journey_pattern_points, spidx_t);
     load_dynamic (fd, journey_pattern_point_attributes, uint8_t);
+    load_dynamic (fd, journey_pattern_point_headsigns, uint32_t);
     load_dynamic (fd, stop_times, stoptime_t);
     load_dynamic (fd, vjs, vehicle_journey_t);
     load_dynamic (fd, journey_patterns_at_stop, uint32_t);

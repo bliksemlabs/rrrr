@@ -343,7 +343,7 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
     def stop_times(self):
         c = self.get_cursor()
         c.execute( """
-SELECT trip_id,service_id,route_id||':'||coalesce(direction_id,0) as route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type
+SELECT trip_id,service_id,route_id||':'||coalesce(direction_id,0) as route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign
 FROM trips JOIN stop_times USING (trip_id)
 ORDER BY trip_id,stop_sequence
 """)
