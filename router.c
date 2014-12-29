@@ -568,19 +568,6 @@ static void apply_transfers (router_t *router, router_request_t *req,
                  tdata_stop_point_name_for_index(router->tdata, sp_index_from));
         #endif
 
-        /* First apply a transfer from the stop_point to itself,
-         * if case that's the best way.
-         */
-        if (states_time[sp_index_from] == router->best_time[sp_index_from]) {
-            /* This state's best time is still its own.
-             * No improvements from other transfers.
-             */
-            states_walk_time[sp_index_from] = time_from;
-            states_walk_from[sp_index_from] = (spidx_t) sp_index_from;
-            /* assert (router->best_time[sp_index_from] == time_from); */
-            bitset_set(router->updated_walk_stop_points, sp_index_from);
-        }
-
         if (transfer) {
         /* Then apply transfers from the stop_point to nearby stops */
         uint32_t tr     = router->tdata->stop_points[sp_index_from].transfers_offset;
@@ -590,7 +577,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
              * rounded not truncated, in a uint8_t
              */
             spidx_t sp_index_to = router->tdata->transfer_target_stops[tr];
-            rtime_t transfer_duration = router->tdata->transfer_dist_meters[tr] + req->walk_slack;
+            rtime_t transfer_duration = router->tdata->transfer_durations[tr] + req->walk_slack;
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
 

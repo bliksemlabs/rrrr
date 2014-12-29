@@ -250,8 +250,6 @@ def export_transfers(tdata,index,out):
         if sp.uri not in index.connections_from_stop_point:
             continue
         for conn in index.connections_from_stop_point[sp.uri]:
-            if (int(conn.min_transfer_time) >> 2) > 255:
-                continue
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
             transfertimes.append(conn.min_transfer_time)
             offset += 1
@@ -264,7 +262,7 @@ def export_transfers(tdata,index,out):
     index.loc_transfer_dist_meters = tell(out)
 
     for transfer_time in transfertimes:
-        writebyte(out,(int(transfer_time) >> 2))
+        writeshort(out,(int(transfer_time) >> 2))
 
 def export_stop_indices(tdata,index,out):
     print "saving stop indexes"

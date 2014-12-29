@@ -28,8 +28,6 @@ def convert(gtfsdb):
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in gtfsdb.transfers():
         if from_stop_id == to_stop_id:
             continue
-        if (int(min_transfer_time) >> 2) > 255:
-            min_transfer_time = 255
         try:
             Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
             Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)
@@ -41,6 +39,13 @@ def convert(gtfsdb):
         try:
             Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
             Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)
+        except:
+            pass
+
+    for sp in tdata.stop_points:
+        min_transfer_time = 120 #Create loop-transfers
+        try:
+            Connection(tdata,sp.uri,sp.uri,min_transfer_time,type=transfer_type)
         except:
             pass
 

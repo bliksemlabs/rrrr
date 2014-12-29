@@ -22,7 +22,7 @@ struct tdata_header {
     uint32_t n_vjs;
     uint32_t n_journey_patterns_at_stop;
     uint32_t n_transfer_target_stops;
-    uint32_t n_transfer_dist_meters;
+    uint32_t n_transfer_durations;
     uint32_t n_vj_active;
     uint32_t n_journey_pattern_active;
     uint32_t n_platformcodes;
@@ -52,7 +52,7 @@ struct tdata_header {
     uint32_t loc_vjs;
     uint32_t loc_journey_patterns_at_stop;
     uint32_t loc_transfer_target_stops;
-    uint32_t loc_transfer_dist_meters;
+    uint32_t loc_transfer_durations;
     uint32_t loc_vj_active;
     uint32_t loc_journey_pattern_active;
     uint32_t loc_platformcodes;

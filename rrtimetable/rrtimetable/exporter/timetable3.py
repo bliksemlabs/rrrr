@@ -211,6 +211,9 @@ def export_transfers(tdata,index,out):
         for conn in index.connections_from_stop_point[sp.uri]:
             if (int(conn.min_transfer_time) >> 2) > 255:
                 continue
+            if conn.from_stop_point.uri == conn.to_stop_point.uri:
+                continue
+            min_transfer_time = 255
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
             transfertimes.append(conn.min_transfer_time)
             offset += 1
