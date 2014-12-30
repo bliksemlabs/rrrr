@@ -573,9 +573,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
         uint32_t tr     = router->tdata->stop_points[sp_index_from].transfers_offset;
         uint32_t tr_end = router->tdata->stop_points[sp_index_from + 1].transfers_offset;
         for ( ; tr < tr_end ; ++tr) {
-            /* Transfer distances are stored in units of 16 meters,
-             * rounded not truncated, in a uint8_t
-             */
+            /* Transfer durations are stored in r_time */
             spidx_t sp_index_to = router->tdata->transfer_target_stops[tr];
             rtime_t transfer_duration = router->tdata->transfer_durations[tr] + req->walk_slack;
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
