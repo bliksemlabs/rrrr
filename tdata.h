@@ -33,7 +33,7 @@ struct journey_pattern {
     uint16_t n_stops;
     uint16_t n_vjs;
     uint16_t attributes;
-    uint16_t agency_index;
+    uint16_t operator_index;
     uint16_t line_code_index;
     uint16_t productcategory_index;
     rtime_t  min_time;
@@ -128,9 +128,9 @@ struct tdata {
     uint32_t n_stop_point_names;
     uint32_t n_stop_point_nameidx;
     uint32_t n_stop_area_nameidx;
-    uint32_t n_agency_ids;
-    uint32_t n_agency_names;
-    uint32_t n_agency_urls;
+    uint32_t n_operator_ids;
+    uint32_t n_operator_names;
+    uint32_t n_operator_urls;
     uint32_t n_string_pool;
     uint32_t n_line_codes;
     uint32_t n_productcategories;
@@ -158,12 +158,12 @@ struct tdata {
     char *platformcodes;
     uint32_t *stop_point_nameidx;
     uint32_t *stop_area_nameidx;
-    uint32_t agency_ids_width;
-    char *agency_ids;
-    uint32_t agency_names_width;
-    char *agency_names;
-    uint32_t agency_urls_width;
-    char *agency_urls;
+    uint32_t operator_ids_width;
+    char *operator_ids;
+    uint32_t operator_names_width;
+    char *operator_names;
+    uint32_t operator_urls_width;
+    char *operator_urls;
     char *string_pool;
     uint32_t line_codes_width;
     char *line_codes;
@@ -228,13 +228,13 @@ const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
 
 const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
 
-uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t start_index);
+uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
 
-const char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index);
+const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index);
 
-const char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index);
+const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index);
 
-const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index);
+const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
@@ -266,11 +266,11 @@ const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 const char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-const char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-const char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 /* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */

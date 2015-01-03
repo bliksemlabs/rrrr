@@ -121,7 +121,7 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, uint32_t vj_index) {
 
 static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
         uint16_t n_sp, uint16_t n_vjs,
-        uint16_t attributes, uint16_t agency_index, uint16_t line_code_index,
+        uint16_t attributes, uint16_t operator_index, uint16_t line_code_index,
         uint16_t productcategory_index) {
     journey_pattern_t *new;
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
@@ -137,7 +137,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     new->n_stops = n_sp;
     new->n_vjs = n_vjs;
     new->attributes = attributes;
-    new->agency_index = agency_index;
+    new->operator_index = operator_index;
     new->productcategory_index = productcategory_index;
     new->line_code_index = line_code_index;
 
@@ -289,7 +289,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
          */
         jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_sp, 1,
                 jp->attributes,
-                jp->agency_index,
+                jp->operator_index,
                 jp->line_code_index,
                 jp->productcategory_index);
 

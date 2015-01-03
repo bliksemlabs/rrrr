@@ -28,9 +28,9 @@ struct tdata_header {
     uint32_t n_platformcodes;
     uint32_t n_stop_point_nameidx;
     uint32_t n_stop_area_nameidx;
-    uint32_t n_agency_ids;
-    uint32_t n_agency_names;
-    uint32_t n_agency_urls;
+    uint32_t n_operator_ids;
+    uint32_t n_operator_names;
+    uint32_t n_operator_urls;
 
 
     /* length of the object in bytes */
@@ -58,9 +58,9 @@ struct tdata_header {
     uint32_t loc_platformcodes;
     uint32_t loc_stop_point_nameidx;
     uint32_t loc_stop_area_nameidx;
-    uint32_t loc_agency_ids;
-    uint32_t loc_agency_names;
-    uint32_t loc_agency_urls;
+    uint32_t loc_operator_ids;
+    uint32_t loc_operator_names;
+    uint32_t loc_operator_urls;
     uint32_t loc_string_pool;
     uint32_t loc_line_codes;
     uint32_t loc_productcategories;

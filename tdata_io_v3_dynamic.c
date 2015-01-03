@@ -88,9 +88,9 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_journey_pattern_active < (UINT32_MAX) &&
             header->n_platformcodes < (UINT32_MAX) &&
             header->n_stop_point_nameidx < ((spidx_t) -2) &&
-            header->n_agency_ids < (UINT16_MAX) &&
-            header->n_agency_names < (UINT16_MAX) &&
-            header->n_agency_urls < (UINT16_MAX) &&
+            header->n_operator_ids < (UINT16_MAX) &&
+            header->n_operator_names < (UINT16_MAX) &&
+            header->n_operator_urls < (UINT16_MAX) &&
             header->n_string_pool < (UINT32_MAX) &&
             header->n_line_codes < (UINT16_MAX) &&
             header->n_productcategories < (UINT16_MAX) &&
@@ -130,9 +130,9 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic_string (fd, stop_point_ids);
     load_dynamic_string (fd, stop_area_ids);
     load_dynamic_string (fd, vj_ids);
-    load_dynamic_string (fd, agency_ids);
-    load_dynamic_string (fd, agency_names);
-    load_dynamic_string (fd, agency_urls);
+    load_dynamic_string (fd, operator_ids);
+    load_dynamic_string (fd, operator_names);
+    load_dynamic_string (fd, operator_urls);
     load_dynamic_string (fd, line_codes);
     load_dynamic_string (fd, line_ids);
     load_dynamic_string (fd, productcategories);
@@ -171,9 +171,9 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->stop_point_ids);
     free (td->stop_area_ids);
     free (td->vj_ids);
-    free (td->agency_ids);
-    free (td->agency_names);
-    free (td->agency_urls);
+    free (td->operator_ids);
+    free (td->operator_names);
+    free (td->operator_urls);
     free (td->line_codes);
     free (td->line_ids);
     free (td->productcategories);

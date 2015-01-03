@@ -37,8 +37,8 @@ char *btimetext(rtime_t t, char *buf);
 
 void router_request_randomize (router_request_t *req, tdata_t *tdata);
 
-#ifdef RRRR_FEATURE_AGENCY_FILTER
-uint32_t rrrrandom_stop_by_agency(tdata_t *tdata, uint16_t agency_index);
+#ifdef RRRR_FEATURE_OPERATOR_FILTER
+uint32_t rrrrandom_stop_by_operator(tdata_t *tdata, uint16_t operator_index);
 #endif
 
 #endif

@@ -826,9 +826,9 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         int32_t jpp_index;
 
-        #ifdef FEATURE_AGENCY_FILTER
-        if (req->agency != AGENCY_UNFILTERED &&
-            req->agency != jp->agency_index) continue;
+        #ifdef FEATURE_OPERATOR_FILTER
+        if (req->operator != OPERATOR_UNFILTERED &&
+            req->operator != jp->operator_index) continue;
         #endif
 
         #if 0

@@ -91,8 +91,8 @@ void router_request_initialize(router_request_t *req) {
     req->to_latlon.lon = 0.0;
     #endif
 
-    #ifdef RRRR_FEATURE_AGENCY_FILTER
-    req->agency = AGENCY_UNFILTERED;
+    #ifdef RRRR_FEATURE_OPERATOR_FILTER
+    req->operator = OPERATOR_UNFILTERED;
     #endif
 }
 
@@ -169,8 +169,8 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->to_stop_point = STOP_NONE;
     #endif
 
-    #ifdef RRRR_FEATURE_AGENCY_FILTER
-    req->agency = AGENCY_UNFILTERED;
+    #ifdef RRRR_FEATURE_OPERATOR_FILTER
+    req->operator = OPERATOR_UNFILTERED;
     #endif
 }
 

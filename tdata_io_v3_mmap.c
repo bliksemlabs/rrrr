@@ -97,9 +97,9 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap_string (td->base, stop_point_ids);
     load_mmap_string (td->base, stop_area_ids);
     load_mmap_string (td->base, vj_ids);
-    load_mmap_string (td->base, agency_ids);
-    load_mmap_string (td->base, agency_names);
-    load_mmap_string (td->base, agency_urls);
+    load_mmap_string (td->base, operator_ids);
+    load_mmap_string (td->base, operator_names);
+    load_mmap_string (td->base, operator_urls);
     load_mmap_string (td->base, line_codes);
     load_mmap_string (td->base, line_ids);
     load_mmap_string (td->base, productcategories);

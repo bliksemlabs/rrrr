@@ -28,7 +28,7 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
         if ((rsa[0] & rsa_alighting) == rsa_alighting ||
             (rsa[jp->n_stops - 1] & rsa_boarding) == rsa_boarding) {
             fprintf(stderr, "journey_pattern index %d %s %s %s has:\n%s%s", i_jp,
-                    tdata_agency_name_for_journey_pattern(tdata, i_jp),
+                    tdata_operator_name_for_journey_pattern(tdata, i_jp),
                     tdata_line_code_for_journey_pattern(tdata, i_jp),
                     tdata_headsign_for_journey_pattern(tdata, i_jp),
               ((rsa[0] & rsa_alighting) == rsa_alighting ?

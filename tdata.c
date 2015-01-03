@@ -55,16 +55,16 @@ const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_in
     return td->vj_ids + (td->vj_ids_width * (td->journey_patterns[jp_index].vj_offset + vj_index));
 }
 
-const char *tdata_agency_id_for_index(tdata_t *td, uint32_t agency_index) {
-    return td->agency_ids + (td->agency_ids_width * agency_index);
+const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index) {
+    return td->operator_ids + (td->operator_ids_width * operator_index);
 }
 
-const char *tdata_agency_name_for_index(tdata_t *td, uint32_t agency_index) {
-    return td->agency_names + (td->agency_names_width * agency_index);
+const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index) {
+    return td->operator_names + (td->operator_names_width * operator_index);
 }
 
-const char *tdata_agency_url_for_index(tdata_t *td, uint32_t agency_index) {
-    return td->agency_urls + (td->agency_urls_width * agency_index);
+const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index) {
+    return td->operator_urls + (td->operator_urls_width * operator_index);
 }
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
@@ -144,7 +144,7 @@ uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32
     return NONE;
 }
 
-#define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index, 0)
+#define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index_offset, 0)
 
 const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
     journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
@@ -177,32 +177,32 @@ const char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_i
     return td->productcategories + (td->productcategories_width * (td->journey_patterns)[jp_index].productcategory_index);
 }
 
-uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, uint32_t agency_index_offset) {
-    uint32_t agency_index;
-    for (agency_index = agency_index_offset;
-         agency_index < td->n_agency_names;
-         ++agency_index) {
-        if (strcasestr(td->agency_names + (td->agency_names_width * agency_index),
-                       agency_name)) {
-            return agency_index;
+uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t operator_index_offset) {
+    uint32_t operator_index;
+    for (operator_index = operator_index_offset;
+         operator_index < td->n_operator_names;
+         ++operator_index) {
+        if (strcasestr(td->operator_names + (td->operator_names_width * operator_index),
+                operator_name)) {
+            return operator_index;
         }
     }
     return NONE;
 }
 
-const char *tdata_agency_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->agency_ids + (td->agency_ids_width * (td->journey_patterns)[jp_index].agency_index);
+    return td->operator_ids + (td->operator_ids_width * (td->journey_patterns)[jp_index].operator_index);
 }
 
-const char *tdata_agency_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->agency_names + (td->agency_names_width * (td->journey_patterns)[jp_index].agency_index);
+    return td->operator_names + (td->operator_names_width * (td->journey_patterns)[jp_index].operator_index);
 }
 
-const char *tdata_agency_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->agency_urls + (td->agency_urls_width * (td->journey_patterns)[jp_index].agency_index);
+    return td->operator_urls + (td->operator_urls_width * (td->journey_patterns)[jp_index].operator_index);
 }
 
 bool tdata_load(tdata_t *td, char *filename) {
@@ -301,9 +301,9 @@ void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t vj_inde
     journey_pattern_t jp = td->journey_patterns[jp_index];
     printf("\njourney_pattern details for %s %s %s '%s %s' [%d] (n_stops %d, n_vjs %d)\n"
            "vjid, stop sequence, stop name (index), departures  \n",
-        tdata_agency_name_for_journey_pattern(td, jp_index),
-        tdata_agency_id_for_journey_pattern(td, jp_index),
-        tdata_agency_url_for_journey_pattern(td, jp_index),
+            tdata_operator_name_for_journey_pattern(td, jp_index),
+            tdata_operator_id_for_journey_pattern(td, jp_index),
+            tdata_operator_url_for_journey_pattern(td, jp_index),
         tdata_line_code_for_journey_pattern(td, jp_index),
         tdata_headsign_for_journey_pattern(td, jp_index),
         jp_index, jp.n_stops, jp.n_vjs);
