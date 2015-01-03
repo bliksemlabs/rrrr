@@ -201,7 +201,9 @@ bool tdata_load(tdata_t *td, char *filename);
 
 void tdata_close(tdata_t *td);
 
+#ifdef RRRR_DEBUG
 void tdata_dump(tdata_t *td);
+#endif
 
 spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -212,7 +214,9 @@ uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, ui
 
 stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
+#ifdef RRRR_DEBUG
 void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
+#endif
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
@@ -274,8 +278,6 @@ stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_in
 
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
 vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index);
-
-const char *tdata_stop_desc_for_index(tdata_t *td, spidx_t sp_index);
 
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_index_from, spidx_t sp_index_to);
 
