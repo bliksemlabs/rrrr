@@ -12,14 +12,14 @@ struct leg {
     /* journey_pattern index */
     uint32_t journey_pattern;
 
-    /* trip index */
-    uint32_t trip;
+    /* vj index */
+    uint32_t vj;
 
     /* from stop index */
-    uint32_t s0;
+    spidx_t s0;
 
     /* to stop index */
-    uint32_t s1;
+    spidx_t s1;
 
     /* start time */
     rtime_t  t0;
@@ -48,9 +48,9 @@ struct itinerary {
 /* A plan is several pareto-optimal itineraries connecting the same two stops. */
 typedef struct plan plan_t;
 struct plan {
-    router_request_t req;
     uint32_t n_itineraries;
     itinerary_t itineraries[RRRR_DEFAULT_MAX_ROUNDS];
+    router_request_t req;
 };
 
 

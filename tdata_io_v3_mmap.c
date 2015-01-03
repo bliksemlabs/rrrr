@@ -9,6 +9,7 @@
 
 #include "tdata_io_v3.h"
 #include "tdata.h"
+#include "rrrr_types.h"
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -26,6 +27,17 @@
     td->n_##storage = header->n_##storage; \
     td->storage##_width = *((uint32_t *) (((char *) b) + header->loc_##storage)); \
     td->storage = (char*) (((char *) b) + header->loc_##storage + sizeof(uint32_t))
+
+/* Set the maximum drivetime of any day in tdata */
+void set_max_time(tdata_t *td){
+    uint32_t jp_index;
+    td->max_time = UNREACHED;
+    for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
+        if (td->journey_patterns[jp_index].max_time < td->max_time) {
+            td->max_time = td->journey_patterns[jp_index].max_time;
+        }
+    }
+}
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
 bool tdata_io_v3_load(tdata_t *td, char *filename) {
@@ -64,14 +76,14 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, stop_attributes, uint8_t);
     load_mmap (td->base, stop_coords, latlon_t);
     load_mmap (td->base, journey_patterns, journey_pattern_t);
-    load_mmap (td->base, journey_pattern_points, uint32_t);
+    load_mmap (td->base, journey_pattern_points, spidx_t);
     load_mmap (td->base, journey_pattern_point_attributes, uint8_t);
     load_mmap (td->base, stop_times, stoptime_t);
-    load_mmap (td->base, trips, trip_t);
+    load_mmap (td->base, vjs, vehicle_journey_t);
     load_mmap (td->base, journey_patterns_at_stop, uint32_t);
-    load_mmap (td->base, transfer_target_stops, uint32_t);
+    load_mmap (td->base, transfer_target_stops, spidx_t);
     load_mmap (td->base, transfer_dist_meters, uint8_t);
-    load_mmap (td->base, trip_active, calendar_t);
+    load_mmap (td->base, vj_active, calendar_t);
     load_mmap (td->base, journey_pattern_active, calendar_t);
     load_mmap (td->base, headsigns, char);
     load_mmap (td->base, stop_names, char);
@@ -79,14 +91,16 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     load_mmap_string (td->base, platformcodes);
     load_mmap_string (td->base, stop_ids);
-    load_mmap_string (td->base, trip_ids);
+    load_mmap_string (td->base, vj_ids);
     load_mmap_string (td->base, agency_ids);
     load_mmap_string (td->base, agency_names);
     load_mmap_string (td->base, agency_urls);
-    load_mmap_string (td->base, route_shortnames);
-    load_mmap_string (td->base, route_ids);
+    load_mmap_string (td->base, line_codes);
+    load_mmap_string (td->base, line_ids);
     load_mmap_string (td->base, productcategories);
 
+    /* Set the maximum drivetime of any day in tdata */
+    set_max_time(td);
     /* We must close the file descriptor otherwise we will
      * leak it. Because mmap has created a reference to it
      * there will not be a problem.

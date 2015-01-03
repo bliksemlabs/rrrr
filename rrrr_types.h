@@ -21,11 +21,13 @@
  */
 typedef uint16_t rtime_t;
 
+typedef uint16_t spidx_t;
+
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
-    rtime_t  midnight;
     calendar_t mask;
+    rtime_t  midnight;
     bool     apply_realtime;
 } serviceday_t;
 
@@ -36,12 +38,12 @@ struct list {
     uint32_t len;
 };
 
-typedef enum trip_attributes {
-    ta_none = 0,
-    ta_accessible = 1,
-    ta_toilet = 2,
-    ta_wifi = 4
-} trip_attributes_t;
+typedef enum vehicle_journey_attributes {
+    vja_none = 0,
+    vja_accessible = 1,
+    vja_toilet = 2,
+    vja_wifi = 4
+} vehicle_journey_attributes_t;
 
 
 typedef enum optimise {
@@ -73,29 +75,29 @@ struct router_request {
 #ifdef RRRR_FEATURE_LATLON
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
-    HashGridResult from_hg_result;
+    hashgrid_result_t from_hg_result;
 
     /* actual destination in wgs84 presented to the planner */
     latlon_t to_latlon;
-    HashGridResult to_hg_result;
+    hashgrid_result_t to_hg_result;
 
     /* actual intermediate in wgs84 presented to the planner */
     latlon_t via_latlon;
-    HashGridResult via_hg_result;
+    hashgrid_result_t via_hg_result;
 #endif
     /* (nearest) start stop index from the users perspective */
-    uint32_t from;
+    spidx_t from;
 
     /* (nearest) destination stop index from the users perspective */
-    uint32_t to;
+    spidx_t to;
 
     /* preferred transfer stop index from the users perspective */
-    uint32_t via;
+    spidx_t via;
 
     /* onboard departure, journey_pattern index from the users perspective */
-    uint32_t onboard_trip_journey_pattern;
+    uint32_t onboard_vj_journey_pattern;
 
-    /* onboard departure, trip offset within the journey_pattern */
+    /* onboard departure, vehicle_journey offset within the journey_pattern */
     uint32_t onboard_journey_pattern_offset;
 
     /* TODO comment on banning */
@@ -103,14 +105,14 @@ struct router_request {
     uint32_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
     #if RRRR_MAX_BANNED_STOPS > 0
-    uint32_t banned_stops[RRRR_MAX_BANNED_STOPS];
+    spidx_t banned_stops[RRRR_MAX_BANNED_STOPS];
     #endif
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
-    uint32_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
+    spidx_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    uint32_t banned_trips_route[RRRR_MAX_BANNED_TRIPS];
-    uint16_t banned_trips_offset[RRRR_MAX_BANNED_TRIPS];
+    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+    uint32_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    uint16_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
     #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */
@@ -129,7 +131,7 @@ struct router_request {
     uint16_t walk_max_distance;
 
 #ifdef FEATURE_AGENCY_FILTER
-    /* Filter the routes by the operating agency */
+    /* Filter the journey_patterns by the operating agency */
     uint16_t agency;
 #endif
 
@@ -142,8 +144,8 @@ struct router_request {
     /* an extra delay per transfer, in seconds */
     uint8_t walk_slack;
 
-    /* select the required trip attributes by a bitfield */
-    uint8_t trip_attributes;
+    /* select the required vehicle_journey attributes by a bitfield */
+    uint8_t vj_attributes;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -155,8 +157,8 @@ struct router_request {
     #if RRRR_MAX_BANNED_STOPS_HARD > 0
     uint8_t n_banned_stops_hard;
     #endif
-    #if RRRR_MAX_BANNED_TRIPS > 0
-    uint8_t n_banned_trips;
+    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+    uint8_t n_banned_vjs;
     #endif
 
     /* restrict the output to specific optimisation flags */
@@ -196,8 +198,10 @@ struct router_request {
 #define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
 
 #define UNREACHED UINT16_MAX
-#define NONE      (UINT32_MAX)
-#define WALK      (UINT32_MAX - 1)
-#define ONBOARD   (UINT32_MAX - 2)
+#define NONE      (UINT16_MAX)
+#define WALK      (UINT16_MAX - 1)
+
+#define STOP_NONE ((spidx_t) -1)
+#define ONBOARD   ((spidx_t) -2)
 
 #endif /* _RRRR_TYPES */

@@ -13,18 +13,23 @@
  */
 int tdata_validation_boarding_alighting(tdata_t *tdata) {
     int32_t ret_invalid = 0;
-    uint32_t i_jp;
+    uint32_t i_jp = tdata->n_journey_patterns;
 
-    for (i_jp = 0; i_jp < tdata->n_journey_patterns; ++i_jp) {
-        journey_pattern_t *jp = &(tdata->journey_patterns[i_jp]);
-        uint8_t *rsa = tdata->journey_pattern_point_attributes +
-                       jp->journey_pattern_point_offset;
+    do {
+        journey_pattern_t *jp;
+        uint8_t *rsa;
+
+        i_jp--;
+
+        jp = &(tdata->journey_patterns[i_jp]);
+        rsa = tdata->journey_pattern_point_attributes +
+              jp->journey_pattern_point_offset;
 
         if ((rsa[0] & rsa_alighting) == rsa_alighting ||
             (rsa[jp->n_stops - 1] & rsa_boarding) == rsa_boarding) {
             fprintf(stderr, "journey_pattern index %d %s %s %s has:\n%s%s", i_jp,
                     tdata_agency_name_for_journey_pattern(tdata, i_jp),
-                    tdata_shortname_for_journey_pattern(tdata, i_jp),
+                    tdata_line_code_for_journey_pattern(tdata, i_jp),
                     tdata_headsign_for_journey_pattern(tdata, i_jp),
               ((rsa[0] & rsa_alighting) == rsa_alighting ?
                 "  alighting on the first stop\n" : ""),
@@ -39,7 +44,7 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
             fprintf(stderr, "Too many boarding/alighting problems.\n");
             break;
         }
-    }
+    } while (i_jp);
 
     return ret_invalid;
 }
@@ -60,16 +65,21 @@ int tdata_validation_coordinates(tdata_t *tdata) {
 
     int32_t ret_invalid = 0;
 
-    uint32_t stop_index;
-    for (stop_index = 0; stop_index < tdata->n_stops; ++stop_index) {
-        latlon_t ll = tdata->stop_coords[stop_index];
+    uint32_t i_stop = tdata->n_stops;
+
+    do {
+        latlon_t ll;
+
+        i_stop--;
+
+        ll = tdata->stop_coords[i_stop];
         if (ll.lat < min_lat || ll.lat > max_lat ||
             ll.lon < min_lon || ll.lon > max_lon) {
             fprintf (stderr, "stop lat/lon out of range: lat=%f, lon=%f \n",
                                                 ll.lat, ll.lon);
             ret_invalid--;
         }
-    }
+    } while (i_stop);
 
     return ret_invalid;
 }
@@ -79,21 +89,20 @@ int tdata_validation_coordinates(tdata_t *tdata) {
  */
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
-    uint32_t jp_index, stop_index, trip_index;
+    uint32_t jp_index, stop_index, vj_index;
     int ret_nonincreasing = 0;
-
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
-        trip_t *trips = tdata->trips + jp.trip_ids_offset;
+        vehicle_journey_t *vjs = tdata->vjs + jp.vj_ids_offset;
 
         #ifdef RRRR_DEBUG
         /* statistics on errors, instead of early bail out */
-        int n_nonincreasing_trips = 0;
+        int n_nonincreasing_vjs = 0;
         #endif
 
-        for (trip_index = 0; trip_index < jp.n_trips; ++trip_index) {
-            trip_t trip = trips[trip_index];
-            stoptime_t *st = tdata->stop_times + trip.stop_times_offset;
+        for (vj_index = 0; vj_index < jp.n_vjs; ++vj_index) {
+            vehicle_journey_t vj = vjs[vj_index];
+            stoptime_t *st = tdata->stop_times + vj.stop_times_offset;
             stoptime_t *prev_st = NULL;
             for (stop_index = 0; stop_index < jp.n_stops; ++stop_index) {
                 if (stop_index == 0 && st->arrival != 0) {
@@ -107,8 +116,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (st->departure < st->arrival) {
                     fprintf (stderr, "departure before arrival at "
-                                     "journey_pattern %d, trip %d, stop %d.\n",
-                            jp_index, trip_index, stop_index);
+                                     "journey_pattern %d, vj %d, stop %d.\n",
+                            jp_index, vj_index, stop_index);
                     #ifndef RRRR_DEBUG
                     return -1;
                     #endif
@@ -116,15 +125,15 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
-                        char *trip_id = "";
-                        if (tdata->trip_ids) {
-                            trip_id = tdata->trip_ids + (trip_index * tdata->trip_ids_width);
+                        char *vj_id = "";
+                        if (tdata->vj_ids) {
+                            vj_id = tdata->vj_ids + (vj_index * tdata->vj_ids_width);
                         }
 
                         fprintf (stderr, "negative travel time arriving at "
-                                         "journey_pattern %d, trip %d (%s), stop %d.\n",
-                                jp_index, trip_index,
-                                         trip_id, stop_index);
+                                         "journey_pattern %d, vj %d (%s), stop %d.\n",
+                                jp_index, vj_index,
+                                vj_id, stop_index);
                         #if 0
                         fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
                                          prev_st->arrival, prev_st->departure,
@@ -132,18 +141,18 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         #endif
 
                         #ifdef RRRR_DEBUG
-                        n_nonincreasing_trips += 1;
+                        n_nonincreasing_vjs += 1;
                         #else
                         return -1;
                         #endif
                     } else if (st->arrival == prev_st->departure) {
                         #if 0
                         fprintf (stderr, "last departure equals arrival at "
-                                         "journey_pattern %d, trip %d, stop %d.\n",
-                                jp_index, trip_index, stop_index);
+                                         "journey_pattern %d, vj %d, stop %d.\n",
+                                jp_index, vj_index, stop_index);
 
                         #ifdef RRRR_DEBUG
-                        n_nonincreasing_trips += 1;
+                        n_nonincreasing_vjs += 1;
                         #else
                         return -1;
                         #endif
@@ -154,11 +163,11 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             }
         }
         #ifdef RRRR_DEBUG
-        if (n_nonincreasing_trips > 0) {
-            fprintf (stderr, "journey_pattern %d has %d trips with "
+        if (n_nonincreasing_vjs > 0) {
+            fprintf (stderr, "journey_pattern %d has %d vehicle_journeys with "
                              "negative travel times\n",
-                    jp_index, n_nonincreasing_trips);
-            ret_nonincreasing -= n_nonincreasing_trips;
+                    jp_index, n_nonincreasing_vjs);
+            ret_nonincreasing -= n_nonincreasing_vjs;
         }
         #endif
     }
@@ -226,10 +235,25 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     return 0;
 }
 
+static bool tdata_validation_check_nstops (tdata_t *tdata) {
+    if (tdata->n_stops < 2) {
+        fprintf (stderr, "n_stops should be at least two, %d found.\n", tdata->n_stops);
+        return false;
+    } else
+    if (tdata->n_stops > ONBOARD) {
+        fprintf (stderr, "n_stops %d exceeds compiled spidx_t width.\n", tdata->n_stops);
+        return false;
+    }
+
+    return true;
+}
+
 bool tdata_validation_check_coherent (tdata_t *tdata) {
     fprintf (stderr, "checking tdata coherency...\n");
 
-    return  (tdata_validation_boarding_alighting(tdata) == 0 &&
+    return  (tdata_validation_check_nstops(tdata) &&
+             tdata->n_journey_patterns > 0 &&
+             tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&
              tdata_validation_increasing_times(tdata) == 0 &&
              tdata_validation_symmetric_transfers(tdata) == 0);

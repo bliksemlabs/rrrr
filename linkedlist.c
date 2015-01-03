@@ -3,33 +3,33 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
-/* list.h */
+/* linkedlist.c */
 
-#include "list.h"
+#include "linkedlist.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 
-void LinkedList_init (LinkedList *list) {
+void linkedlist_init (linkedlist_t *list) {
     list->head = NULL;
     list->tail = NULL;
     list->size = 0;
 }
 
-LinkedList *LinkedList_new () {
-    LinkedList *list = malloc (sizeof(LinkedList));
-    LinkedList_init (list);
+linkedlist_t *linkedlist_new () {
+    linkedlist_t *list = malloc (sizeof(linkedlist_t));
+    linkedlist_init (list);
     return list;
 }
 
-void LinkedList_destroy (LinkedList **list) {
+void linkedlist_destroy (linkedlist_t **list) {
     free (*list);
     *list = NULL;
 }
 
 /* Add to head */
-void LinkedList_push (LinkedList *list, void *payload) {
-    ListNode *node = malloc (sizeof(ListNode));
+void linkedlist_push (linkedlist_t *list, void *payload) {
+    listnode_t *node = malloc (sizeof(listnode_t));
     node->payload = payload;
     node->next = list->head;
     list->head = node;
@@ -38,8 +38,8 @@ void LinkedList_push (LinkedList *list, void *payload) {
 }
 
 /* Add to tail */
-void LinkedList_enqueue (LinkedList *list, void *payload) {
-    ListNode *node = malloc (sizeof(ListNode));
+void linkedlist_enqueue (linkedlist_t *list, void *payload) {
+    listnode_t *node = malloc (sizeof(listnode_t));
     node->payload = payload;
     node->next = NULL;
     if (list->tail == NULL) {
@@ -53,10 +53,10 @@ void LinkedList_enqueue (LinkedList *list, void *payload) {
 }
 
 /* Remove from head of list */
-void *LinkedList_pop (LinkedList *list) {
+void *linkedlist_pop (linkedlist_t *list) {
     if (list->head != NULL) {
         void *payload = list->head->payload;
-        ListNode *old_head = list->head;
+        listnode_t *old_head = list->head;
         list->head = list->head->next;
         free (old_head);
         list->size -= 1;

@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 2.8.4)
 project(ansi)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -ansi -pedantic -DVALGRIND")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -ansi -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT")
+if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
+endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Werror")
@@ -40,8 +43,8 @@ set(SOURCE_FILES
     gtfs-realtime.pb-c.h
     hashgrid.c
     hashgrid.h
-    list.c
-    list.h
+    linkedlist.c
+    linkedlist.h
     radixtree.c
     radixtree.h
     router.c

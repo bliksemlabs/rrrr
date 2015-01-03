@@ -10,8 +10,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "stubs.h"
 #include "router_request.h"
+#include "router_result.h"
 
 #ifdef RRRR_FEATURE_REALTIME
 
@@ -35,10 +35,10 @@ struct cli_arguments {
     bool verbose;
 };
 
-#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0 || RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
-static void set_add (uint32_t *set,
-                     uint8_t  *length, uint8_t max_length,
-                     uint32_t value) {
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+static void set_add_jp (uint32_t *set,
+                        uint8_t  *length, uint8_t max_length,
+                        uint32_t value) {
     uint8_t i;
 
     if (*length >= max_length) return;
@@ -52,10 +52,28 @@ static void set_add (uint32_t *set,
 }
 #endif
 
-#if RRRR_MAX_BANNED_TRIPS > 0
-static void set2_add (uint32_t *set1, uint16_t *set2,
-                      uint8_t  *length, uint8_t max_length,
-                      uint32_t value1, uint16_t value2) {
+#if RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
+static void set_add_sp (spidx_t *set,
+                        uint8_t  *length, uint8_t max_length,
+                        spidx_t value) {
+    uint8_t i;
+
+    if (*length >= max_length) return;
+
+    for (i = 0; i < *length; ++i) {
+        if (set[i] == value) return;
+    }
+
+    set[*length] = value;
+    (*length)++;
+}
+#endif
+
+
+#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+static void set_add_trip (uint32_t *set1, uint16_t *set2,
+                          uint8_t  *length, uint8_t max_length,
+                          uint32_t value1, uint16_t value2) {
     uint8_t i;
 
     if (*length >= max_length) return;
@@ -106,7 +124,7 @@ int main (int argc, char *argv[]) {
                         "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-                        "[ --banned-route-idx=idx ]\n"
+                        "[ --banned-jp-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_STOPS > 0
                         "[ --banned-stop-idx=idx ]\n"
@@ -114,8 +132,8 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_STOP_HARD > 0
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_TRIPS > 0
-                        "[ --banned-trip-offset=route_idx,trip_offset ]\n"
+#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+                        "[ --banned-vj-offset=jp_idx,trip_offset ]\n"
 #endif
 #if RRRR_FEATURE_REALTIME_ALERTS == 1
                         "[ --gtfsrt-alerts=filename.pb ]\n"
@@ -187,7 +205,7 @@ int main (int argc, char *argv[]) {
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         /* TODO: check return value */
-                        strtolatlon(&argv[i][12], &req.from_latlon);
+                        strtolatlon(&argv[i][14], &req.from_latlon);
                     }
                     #endif
                     break;
@@ -232,11 +250,14 @@ int main (int argc, char *argv[]) {
                     if (false) {}
                     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                     else
-                    if (strncmp(argv[i], "--banned-route-idx=", 19) == 0) {
-                        set_add(req.banned_journey_patterns,
-                                &req.n_banned_journey_patterns,
-                                RRRR_MAX_BANNED_JOURNEY_PATTERNS,
-                                (uint32_t) strtol(&argv[i][19], NULL, 10));
+                    if (strncmp(argv[i], "--banned-jp-idx=", 16) == 0) {
+                        uint32_t jp_index = (uint32_t) strtol(&argv[i][16], NULL, 10);
+                        if (jp_index < tdata.n_journey_patterns) {
+                            set_add_jp(req.banned_journey_patterns,
+                                       &req.n_banned_journey_patterns,
+                                       RRRR_MAX_BANNED_JOURNEY_PATTERNS,
+                                       jp_index);
+                        }
                     }
                     #endif
                     #if RRRR_MAX_BANNED_STOPS > 0
@@ -244,10 +265,10 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
                         uint32_t stop_idx = (uint32_t) strtol(&argv[i][19], NULL, 10);
                         if (stop_idx < tdata.n_stops) {
-                            set_add(req.banned_stops,
-                                    &req.n_banned_stops,
-                                    RRRR_MAX_BANNED_STOPS,
-                                    stop_idx);
+                            set_add_sp(req.banned_stops,
+                                       &req.n_banned_stops,
+                                       RRRR_MAX_BANNED_STOPS,
+                                       stop_idx);
                         }
                     }
                     #endif
@@ -256,27 +277,28 @@ int main (int argc, char *argv[]) {
                     if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
                         uint32_t stop_idx = (uint32_t) strtol(&argv[i][23], NULL, 10);
                         if (stop_idx < tdata.n_stops) {
-                            set_add(req.banned_stops_hard,
-                                    &req.n_banned_stops_hard,
-                                    RRRR_MAX_BANNED_STOPS_HARD,
-                                    stop_idx);
+                            set_add_sp(req.banned_stops_hard,
+                                       &req.n_banned_stops_hard,
+                                       RRRR_MAX_BANNED_STOPS_HARD,
+                                       stop_idx);
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_TRIPS > 0
+                    #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
                     else
-                    if (strncmp(argv[i], "--banned-trip-offset=", 21) == 0) {
+                    if (strncmp(argv[i], "--banned-vj-offset=", 19) == 0) {
                         char *endptr;
-                        uint32_t route_idx;
+                        uint32_t jp_index;
 
-                        route_idx = (uint32_t) strtol(&argv[i][21], &endptr, 10);
-                        if (route_idx < tdata.n_journey_patterns && endptr[0] == ',') {
-                            uint16_t trip_offset = strtol(++endptr, NULL, 10);
-                            if (trip_offset < tdata.journey_patterns[route_idx].n_trips) {
-                                set2_add(req.banned_trips_route, req.banned_trips_offset,
-                                         &req.n_banned_trips,
-                                         RRRR_MAX_BANNED_TRIPS,
-                                         route_idx, trip_offset);
+                        jp_index = (uint32_t) strtol(&argv[i][21], &endptr, 10);
+                        if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
+                            uint16_t vj_offset = strtol(++endptr, NULL, 10);
+                            if (vj_offset < tdata.journey_patterns[jp_index].n_vjs) {
+                                set_add_trip(req.banned_vjs_journey_pattern,
+                                             req.banned_vjs_offset,
+                                             &req.n_banned_vjs,
+                                        RRRR_MAX_BANNED_VEHICLE_JOURNEYS,
+                                             jp_index, vj_offset);
                             }
                         }
                     }
@@ -321,9 +343,17 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stopid_index  = rxt_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
-        tdata.tripid_index  = rxt_load_strings_from_tdata (tdata.trip_ids, tdata.trip_ids_width, tdata.n_trips);
-        tdata.routeid_index = rxt_load_strings_from_tdata (tdata.route_ids, tdata.route_ids_width, tdata.n_journey_patterns);
+        tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
+        tdata.vjid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
+        tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
+
+        /* Validate the radixtrees are actually created. */
+        if (!(tdata.stopid_index &&
+              tdata.vjid_index &&
+              tdata.lineid_index)) {
+            status = EXIT_FAILURE;
+            goto clean_exit;
+        }
 
         #ifdef RRRR_FEATURE_REALTIME_ALERTS
         if (cli_args.gtfsrt_alerts_filename != NULL) {
@@ -396,7 +426,7 @@ plan:
         puts(result_buf);
     }
 
-    /* When searching clockwise we will board any trip that will bring us at
+    /* When searching clockwise we will board any vehicle_journey that will bring us at
      * the earliest time at any destination location. If we have to wait at
      * some stage for a connection, and this wait time exceeds the frequency
      * of the ingress network, we may suggest a later departure decreases
@@ -404,13 +434,13 @@ plan:
      *
      * To compress waitingtime we employ a reversal. A clockwise search
      * departing at 9:00am and arriving at 10:00am is observed as was
-     * requested: what trip allows to arrive at 10:00am? The counter clockwise
+     * requested: what vehicle_journey allows to arrive at 10:00am? The counter clockwise
      * search starts at 10:00am and offers the last possible arrival at 9:15am.
      * This bounds our searchspace between 9:15am and 10:00am.
      *
      * Because of the memory structure. We are not able to render an arrive-by
      * search, therefore the second arrival will start at 9:15am and should
-     * render exactly the same trip. This is not always true, especially not
+     * render exactly the same vehicle_journey. This is not always true, especially not
      * when there are multiple paths with exactly the same transittime.
      *
      *
@@ -421,8 +451,8 @@ plan:
      */
 
     {
-        uint32_t i;
-        uint32_t n_reversals = req.arrive_by ? 1 : 2;
+        uint8_t i;
+        uint8_t n_reversals = req.arrive_by ? 1 : 2;
         for (i = 0; i < n_reversals; ++i) {
             if ( ! router_request_reverse (&router, &req)) {
                 /* if the reversal fails we must exit */
@@ -485,9 +515,9 @@ clean_exit:
     router_teardown (&router);
 
     #ifdef RRRR_FEATURE_REALTIME
-    if (tdata.stopid_index)  rxt_destroy (tdata.stopid_index);
-    if (tdata.tripid_index)  rxt_destroy (tdata.tripid_index);
-    if (tdata.routeid_index) rxt_destroy (tdata.routeid_index);
+    if (tdata.stopid_index) radixtree_destroy (tdata.stopid_index);
+    if (tdata.vjid_index) radixtree_destroy (tdata.vjid_index);
+    if (tdata.lineid_index) radixtree_destroy (tdata.lineid_index);
     #endif
 
     /* Unmap the memory and/or deallocate the memory on the heap */

@@ -2,11 +2,12 @@
 #include "router_dump.h"
 #include "router.h"
 #include "util.h"
+#include "rrrr_types.h"
 #include "tdata.h"
 
 #include <stdio.h>
 
-void router_state_dump (router_state_t *state) {
+void router_state_dump (router_t *router, uint64_t i_state) {
     char walk_time[13], time[13], board_time[13];
     fprintf (stderr, "-- Router State --\n"
                      "walk time:    %s\n"
@@ -14,19 +15,20 @@ void router_state_dump (router_state_t *state) {
                      "time:         %s\n"
                      "board time:   %s\n"
                      "back route:   ",
-                     btimetext(state->walk_time, walk_time),
-                     state->walk_from,
-                     btimetext(state->time, time),
-                     btimetext(state->board_time, board_time)
+                     btimetext(router->states_walk_time[i_state], walk_time),
+                     router->states_walk_from[i_state],
+                     btimetext(router->states_time[i_state], time),
+                     btimetext(router->states_board_time[i_state], board_time)
                      );
 
     /* TODO */
-    if (state->back_journey_pattern == NONE) fprintf (stderr, "NONE\n");
-    else fprintf (stderr, "%d\n", state->back_journey_pattern);
+    if (router->states_back_journey_pattern[i_state] == NONE) fprintf (stderr, "NONE\n");
+    else fprintf (stderr, "%d\n", router->states_back_journey_pattern[i_state]);
 }
 
 void dump_results(router_t *router) {
-    uint32_t i_round, i_stop;
+    spidx_t i_stop;
+    uint8_t i_round;
     #if 0
     char id_fmt[10];
     sprintf(id_fmt, "%%%ds", router.tdata.stop_id_width);
@@ -44,7 +46,7 @@ void dump_results(router_t *router) {
     fprintf(stderr, "\n");
 
     for (i_stop = 0; i_stop < router->tdata->n_stops; ++i_stop) {
-        char *stop_id;
+        const char *stop_id;
         char time[13], walk_time[13];
 
         /* filter out stops which will not be reached */
@@ -55,8 +57,8 @@ void dump_results(router_t *router) {
         fprintf(stderr, " [%6d]", i_stop);
         for (i_round = 0; i_round < RRRR_DEFAULT_MAX_ROUNDS; ++i_round) {
             fprintf(stderr, " %8s %8s",
-                btimetext(router->states[i_round * router->tdata->n_stops + i_stop].time, time),
-                btimetext(router->states[i_round * router->tdata->n_stops + i_stop].walk_time, walk_time));
+                btimetext(router->states_time[i_round * router->tdata->n_stops + i_stop], time),
+                btimetext(router->states_walk_time[i_round * router->tdata->n_stops + i_stop], walk_time));
         }
         fprintf(stderr, "\n");
     }
@@ -64,19 +66,19 @@ void dump_results(router_t *router) {
 }
 
 #if 0
-/* WARNING we are not currently storing trip IDs so this will segfault */
-void dump_trips(router_t *router) {
+/* WARNING we are not currently storing vehicle_journey IDs so this will segfault */
+void dump_vehicle_journeys(router_t *router) {
     uint32_t jp_index;
     for (jp_index = 0; jp_index < router->tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-        char *trip_ids = tdata_trip_ids_in_journey_pattern(router->tdata, jp_index);
-        uint32_t *trip_masks = tdata_trip_masks_for_journey_pattern(router->tdata, jp_index);
-        uint32_t i_trip;
+        char *vj_ids = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
+        uint32_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
+        uint32_t i_vj;
 
-        printf ("journey_pattern %d (of %d), n trips %d, n stops %d\n", jp_index, router->tdata->n_journey_patterns, jp->n_trips, jp->n_stops);
-        for (i_trip = 0; i_trip < jp->n_trips; ++i_trip) {
-            printf ("trip index %d trip_id %s mask ", i_trip, trip_ids[i_trip * router->tdata->trip_ids_width]);
-            printBits (4, & (trip_masks[i_trip]));
+        printf ("journey_pattern %d (of %d), n vehicle_journeys %d, n stops %d\n", jp_index, router->tdata->n_journey_patterns, jp->n_vjs, jp->n_stops);
+        for (i_vj = 0; i_vj < jp->n_vjs; ++i_vj) {
+            printf ("vj index %d vj_id %s mask ", i_vj, vj_ids[i_vj * router->tdata->vj_ids_width]);
+            printBits (4, & (vj_masks[i_vj]));
             printf ("\n");
         }
     }

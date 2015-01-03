@@ -21,26 +21,37 @@
 #define RRRR_MAX_BANNED_JOURNEY_PATTERNS 1
 #define RRRR_MAX_BANNED_STOPS 1
 #define RRRR_MAX_BANNED_STOPS_HARD 1
-#define RRRR_MAX_BANNED_TRIPS 1
+#define RRRR_MAX_BANNED_VEHICLE_JOURNEYS 1
 
 #define RRRR_FEATURE_LATLON 1
-
-#define RRRR_FEATURE_REALTIME_EXPANDED 1
-#define RRRR_FEATURE_REALTIME_ALERTS 1
-#define RRRR_FEATURE_REALTIME 1
-
-#define RRRR_DYNAMIC_SLACK 1.0f
 
 #define RRRR_WALK_COMP 1.2
 
 #define RRRR_BANNED_JOURNEY_PATTERNS_BITMASK 0
 
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS == 0
-#define RRRR_BANNED_JOURNEY_PATTERNS_BITMASK
+#undef RRRR_BANNED_JOURNEY_PATTERNS_BITMASK
 #endif
 
-#if !defined(RRRR_TDATA_IO_MMAP) && !defined(RRRR_TDATA_IO_DYNAMIC)
+#if (defined(RRRR_TDATA_IO_MMAP) && defined(RRRR_TDATA_IO_DYNAMIC)) || (!defined(RRRR_TDATA_IO_MMAP) && !defined(RRRR_TDATA_IO_DYNAMIC))
 #define RRRR_TDATA_IO_DYNAMIC 1
 #endif
+
+#ifndef RRRR_TDATA_IO_MMAP
+#define RRRR_FEATURE_REALTIME_EXPANDED 1
+#define RRRR_FEATURE_REALTIME_ALERTS 1
+#define RRRR_FEATURE_REALTIME 1
+
+#define RRRR_DYNAMIC_SLACK 2
+#endif
+
+/* roughly the length of common prefixes in IDs */
+#define RRRR_RADIXTREE_PREFIX_SIZE 4
+
+/* with prefix size of 4 and -m32, edge size is 16 bytes, total 11.9MB
+ * with prefix size of 4 and -m64, edge size is 24 bytes, total 17.8MB
+ * total size of all ids is 15.6 MB
+ * could use int indexes into a fixed-size, pre-allocated edge pool.
+ */
 
 #endif

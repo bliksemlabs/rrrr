@@ -29,52 +29,52 @@ typedef uint32_t bits_t;
 #define BS_SHIFT 5
 #endif
 
-typedef struct bitset_s BitSet;
+typedef struct bitset_s bitset_t;
 struct bitset_s {
     bits_t  *chunks;
-    uint32_t nchunks;
+    uint32_t n_chunks;
     uint32_t capacity;
 };
 
 /* Allocate a new bitset of the specified capacity,
- * and return a pointer to the BitSet struct.
+ * and return a pointer to the bitset_t struct.
  */
-BitSet *bitset_new(uint32_t capacity);
+bitset_t *bitset_new(uint32_t capacity);
 
-/* De-allocate a BitSet struct as well as the memory it references
+/* De-allocate a bitset_t struct as well as the memory it references
  * internally for the bit fields.
  */
-void bitset_destroy(BitSet *self);
+void bitset_destroy(bitset_t *self);
 
-/* Perform a logical AND on this BitSet using the given mask
+/* Perform a logical AND on this bitset_t using the given mask
 */
-void bitset_mask_and(BitSet *self, BitSet *mask);
+void bitset_mask_and(bitset_t *self, bitset_t *mask);
 
-/* Set all indices in this BitSet to true. */
-void bitset_black(BitSet *self);
+/* Set all indices in this bitset_t to true. */
+void bitset_black(bitset_t *self);
 
-/* Unset all indices in this BitSet. */
-void bitset_clear(BitSet *self);
+/* Unset all indices in this bitset_t. */
+void bitset_clear(bitset_t *self);
 
-/* Set specified index in this BitSet. */
-void bitset_set(BitSet *self, uint32_t index);
+/* Set specified index in this bitset_t. */
+void bitset_set(bitset_t *self, uint32_t index);
 
-/* Unset specified index in this BitSet. */
-void bitset_unset(BitSet *self, uint32_t index);
+/* Unset specified index in this bitset_t. */
+void bitset_unset(bitset_t *self, uint32_t index);
 
-/* Return whether the specified index is set in this BitSet */
-bool bitset_get(BitSet *self, uint32_t index);
+/* Return whether the specified index is set in this bitset_t */
+bool bitset_get(bitset_t *self, uint32_t index);
 
-/* Return the next set index in this BitSet equal or greater than
+/* Return the next set index in this bitset_t equal or greater than
  * the specified index. Returns BITSET_NONE if there are no more set bits.
  */
-uint32_t bitset_next_set_bit(BitSet*, uint32_t index);
+uint32_t bitset_next_set_bit(bitset_t*, uint32_t index);
 
 #ifdef RRRR_DEBUG
 /* Print a string-representation of this bitset to STDERR */
-void bitset_dump(BitSet *self);
-/* Return an enumeration of all the indices set in the BitSet */
-uint32_t bitset_enumerate(BitSet *self);
+void bitset_dump(bitset_t *self);
+/* Return an enumeration of all the indices set in the bitset_t */
+uint32_t bitset_enumerate(bitset_t *self);
 #endif /* RRRR_DEBUG */
 
 #endif /* _BITSET_H */

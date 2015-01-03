@@ -16,57 +16,65 @@
 /* Initialize a pre-allocated bitset struct,
  * allocating memory for bits_t holding the bits.
  */
-static void bitset_init(BitSet *self, uint32_t capacity) {
+static void bitset_init(bitset_t *self, uint32_t capacity) {
     self->capacity = capacity;
     /* round upwards */
-    self->nchunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
-    self->chunks = (bits_t *) calloc(self->nchunks, sizeof(bits_t));
-    if (self->chunks == NULL) {
-        fprintf(stderr, "bitset chunk allocation failure.");
-        exit(1);
-    }
+    self->n_chunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
+    self->chunks = (bits_t *) calloc(self->n_chunks, sizeof(bits_t));
 }
 
 /* Allocate a new bitset of the specified capacity,
- * and return a pointer to the BitSet struct.
+ * and return a pointer to the bitset_t struct.
  */
-BitSet *bitset_new(uint32_t capacity) {
-    BitSet *bs = (BitSet *) malloc(sizeof(BitSet));
-    if (bs != NULL)
-        bitset_init(bs, capacity);
+bitset_t *bitset_new(uint32_t capacity) {
+    bitset_t *bs = (bitset_t *) malloc(sizeof(bitset_t));
+    if (bs == NULL) return NULL;
+
+    bitset_init(bs, capacity);
+    if (bs->chunks == NULL) {
+        fprintf(stderr, "bitset chunk allocation failure.");
+        free (bs);
+        return NULL;
+    }
 
     return bs;
 }
 
-/* De-allocate a BitSet struct as well as the memory it references
+/* De-allocate a bitset_t struct as well as the memory it references
  * internally for the bit fields.
  */
-void bitset_destroy(BitSet *self) {
+void bitset_destroy(bitset_t *self) {
     if (!self) return;
 
     free(self->chunks);
     free(self);
 }
 
-void bitset_clear(BitSet *self) {
-    uint32_t i_chunk;
-    for (i_chunk = 0; i_chunk < self->nchunks; ++i_chunk)
+void bitset_clear(bitset_t *self) {
+    uint32_t i_chunk = self->n_chunks;
+    do {
+        i_chunk--;
         self->chunks[i_chunk] = (bits_t) 0;
+    } while (i_chunk);
 }
 
-void bitset_black(BitSet *self) {
-    uint32_t i_chunk;
-    for (i_chunk = 0; i_chunk < self->nchunks; ++i_chunk)
+void bitset_black(bitset_t *self) {
+    uint32_t i_chunk = self->n_chunks;
+    do {
+        i_chunk--;
         self->chunks[i_chunk] = ~((bits_t) 0);
+    } while (i_chunk);
 }
 
-void bitset_mask_and(BitSet *self, BitSet *mask) {
-    uint32_t i_chunk;
+void bitset_mask_and(bitset_t *self, bitset_t *mask) {
+    uint32_t i_chunk = self->n_chunks;
 
     assert (self->capacity == mask->capacity);
 
-    for (i_chunk = 0; i_chunk < self->nchunks; ++i_chunk)
+    do {
+        i_chunk--;
         self->chunks[i_chunk] &= mask->chunks[i_chunk];
+    } while (i_chunk);
 }
 
 /* Our bitset code is storing a long number of bits by packing an array of
@@ -94,29 +102,29 @@ void bitset_mask_and(BitSet *self, BitSet *mask) {
  * 00001001      =   9
  */
 
-void bitset_set(BitSet *self, uint32_t index) {
+void bitset_set(bitset_t *self, uint32_t index) {
     assert (index < self->capacity);
 
     self->chunks[index >> BS_SHIFT] |= ((bits_t) 1) << (index & (BS_BITS - 1));
 }
 
-void bitset_unset(BitSet *self, uint32_t index) {
+void bitset_unset(bitset_t *self, uint32_t index) {
     assert (index < self->capacity);
 
     self->chunks[index >> BS_SHIFT] &= ~(((bits_t) 1) << (index & (BS_BITS - 1)));
 }
 
-bool bitset_get(BitSet *self, uint32_t index) {
+bool bitset_get(bitset_t *self, uint32_t index) {
     assert (index < self->capacity);
 
     return self->chunks[index >> BS_SHIFT] & ((bits_t) 1) << (index & (BS_BITS - 1));
 }
 
 
-/* Return the next set index in this BitSet greater than or equal to
+/* Return the next set index in this bitset_t greater than or equal to
  * the specified index. Returns BITSET_NONE if there are no more set bits.
  */
-uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
+uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
     bits_t *chunk = bs->chunks + (index >> BS_SHIFT);
     bits_t mask = ((bits_t) 1) << (index & (BS_BITS - 1));
     while (index < bs->capacity) {
@@ -148,7 +156,7 @@ uint32_t bitset_next_set_bit(BitSet *bs, uint32_t index) {
 
 #ifdef RRRR_DEBUG
 
-void bitset_dump(BitSet *self) {
+void bitset_dump(bitset_t *self) {
     uint32_t i;
     for (i = 0; i < self->capacity; ++i)
         if (bitset_get(self, i))
@@ -156,7 +164,7 @@ void bitset_dump(BitSet *self) {
     fprintf(stderr, "\n\n");
 }
 
-uint32_t bitset_enumerate(BitSet *self) {
+uint32_t bitset_enumerate(bitset_t *self) {
     uint32_t total = 0;
     uint32_t elem;
     for (elem = bitset_next_set_bit(self, 0);

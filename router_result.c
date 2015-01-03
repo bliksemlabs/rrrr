@@ -12,7 +12,7 @@ static void leg_swap (leg_t *leg) {
     leg->t1 = temp.t0;
 }
 
-/* Checks charateristics that should be the same for all trip plans produced by this router:
+/* Checks charateristics that should be the same for all vj plans produced by this router:
    All stops should chain, all times should be increasing, all waits should be at the ends of walk legs, etc.
    Returns true if any of the checks fail, false if no problems are detected. */
 static bool check_plan_invariants (plan_t *plan) {
@@ -120,82 +120,82 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
     /* Loop over the rounds to get ending states of itineraries using different numbers of vehicles */
     for (i_transfer = 0; i_transfer < RRRR_DEFAULT_MAX_ROUNDS; ++i_transfer) {
         /* Work backward from the target to the origin */
-        router_state_t *state;
-        leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward trips */
+        uint64_t i_state;
+        leg_t *l = itin->legs; /* the slot in which record a leg, reversing them for forward vehicle_journey's */
         uint32_t stop = router->target; /* Work backward from the target to the origin */
-        int8_t j_transfer; /* signed int because we will be decreasing */
+        int16_t j_transfer; /* signed int because we will be decreasing */
 
-        state = router->states + (i_transfer * router->tdata->n_stops) + stop;
+        i_state = (i_transfer * router->tdata->n_stops) + stop;
 
         /* skip rounds that were not reached */
-        if (state->walk_time == UNREACHED) continue;
+        if (router->states_walk_time[i_state] == UNREACHED) continue;
         itin->n_rides = i_transfer + 1;
         itin->n_legs = itin->n_rides * 2 + 1; /* always same number of legs for same number of transfers */
         if ( ! req->arrive_by) l += itin->n_legs - 1;
         /* Follow the chain of states backward */
         for (j_transfer = i_transfer; j_transfer >= 0; --j_transfer) {
-            router_state_t *walk, *ride;
+            uint64_t i_walk, i_ride;
             uint32_t walk_stop, ride_stop;
 
-            state = router->states + (j_transfer * router->tdata->n_stops);
+            i_state = (((uint8_t) j_transfer) * router->tdata->n_stops);
 
             if (stop > router->tdata->n_stops) {
-                printf ("ERROR: stopid %d out of range.\n", stop);
-                break;
+                fprintf (stderr, "ERROR: stopid %d out of range.\n", stop);
+                return false;
             }
 
             /* Walk phase */
-            walk = state + stop;
-            if (walk->walk_time == UNREACHED) {
-                printf ("ERROR: stop %d was unreached by walking.\n", stop);
-                break;
+            i_walk = i_state + stop;
+            if (router->states_walk_time[i_walk] == UNREACHED) {
+                fprintf (stderr, "ERROR: stop %d was unreached by walking.\n", stop);
+                return false;
             }
             walk_stop = stop;
-            stop = walk->walk_from;  /* follow the chain of states backward */
+            stop = router->states_walk_from[i_walk];  /* follow the chain of states backward */
 
             /* Ride phase */
-            ride = state + stop;
-            if (ride->time == UNREACHED) {
-                printf ("ERROR: stop %d was unreached by riding.\n", stop);
-                break;
+            i_ride = i_state + stop;
+            if (router->states_time[i_ride] == UNREACHED) {
+                fprintf (stderr, "ERROR: stop %d was unreached by riding.\n", stop);
+                return false;
             }
             ride_stop = stop;
-            stop = ride->ride_from;  /* follow the chain of states backward */
+            stop = router->states_ride_from[i_ride];  /* follow the chain of states backward */
 
             /* Walk phase */
-            l->s0 = walk->walk_from;
+            l->s0 = router->states_walk_from[i_walk];
             l->s1 = walk_stop;
-            l->t0 = ride->time; /* Rendering the walk requires already having the ride arrival time */
-            l->t1 = walk->walk_time;
+            l->t0 = router->states_time[i_ride]; /* Rendering the walk requires already having the ride arrival time */
+            l->t1 = router->states_walk_time[i_walk];
             l->journey_pattern = WALK;
-            l->trip  = WALK;
+            l->vj = WALK;
 
             if (req->arrive_by) leg_swap (l);
             l += (req->arrive_by ? 1 : -1); /* next leg */
 
             /* Ride phase */
-            l->s0 = ride->ride_from;
+            l->s0 = router->states_ride_from[i_ride];
             l->s1 = ride_stop;
-            l->t0 = ride->board_time;
-            l->t1 = ride->time;
-            l->journey_pattern = ride->back_journey_pattern;
-            l->trip  = ride->back_trip;
+            l->t0 = router->states_board_time[i_ride];
+            l->t1 = router->states_time[i_ride];
+            l->journey_pattern = router->states_back_journey_pattern[i_ride];
+            l->vj = router->states_back_vehicle_journey[i_ride];
 
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             {
                 journey_pattern_t *jp;
-                trip_t *trip;
-                uint32_t trip_index;
+                vehicle_journey_t *vj;
+                uint32_t vj_index;
 
-                jp = router->tdata->journey_patterns + ride->back_journey_pattern;
-                trip_index = jp->trip_ids_offset + ride->back_trip;
-                trip = router->tdata->trips + trip_index;
+                jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride];
+                vj_index = jp->vj_ids_offset + router->states_back_vehicle_journey[i_ride];
+                vj = router->tdata->vjs + vj_index;
 
-                if (router->tdata->trip_stoptimes[trip_index] &&
-                    router->tdata->stop_times[trip->stop_times_offset + ride->journey_pattern_point].arrival != UNREACHED) {
+                if (router->tdata->vj_stoptimes[vj_index] &&
+                    router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride]].arrival != UNREACHED) {
 
-                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->back_journey_pattern_point].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->back_journey_pattern_point].departure + trip->begin_time);
-                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->trip_stoptimes[trip_index][ride->journey_pattern_point].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[trip->stop_times_offset + ride->journey_pattern_point].arrival + trip->begin_time);
+                    l->d0 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_back_journey_pattern_point[i_ride]].departure) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_back_journey_pattern_point[i_ride]].departure + vj->begin_time);
+                    l->d1 = RTIME_TO_SEC_SIGNED(router->tdata->vj_stoptimes[vj_index][router->states_journey_pattern_point[i_ride]].arrival) - RTIME_TO_SEC_SIGNED(router->tdata->stop_times[vj->stop_times_offset + router->states_journey_pattern_point[i_ride]].arrival + vj->begin_time);
                 } else {
                     l->d0 = 0;
                     l->d1 = 0;
@@ -208,28 +208,33 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
 
         }
         if (req->onboard_journey_pattern_offset != NONE) {
-            /* Results starting on board do not have an initial walk leg. */
-            l->s0 = l->s1 = ONBOARD;
-            l->t0 = l->t1 = req->time;
-            l->journey_pattern = l->trip = WALK;
-            l += 1; /* move back to first transit leg */
-            l->s0 = ONBOARD;
-            l->t0 = req->time;
-
+            if (!req->arrive_by) {
+                /* Results starting on board do not have an initial walk leg. */
+                l->s0 = l->s1 = ONBOARD;
+                l->t0 = l->t1 = req->time;
+                l->journey_pattern = l->vj = WALK;
+                l += 1; /* move back to first transit leg */
+                l->s0 = ONBOARD;
+                l->t0 = req->time;
+            } else {
+                #ifdef RRRR_DEBUG
+                fprintf(stderr, "We observed an onboard departure with an arrive by.\n");
+                #endif
+                return false;
+            }
         } else {
             /* The initial walk leg leading out of the search origin. This is inferred, not stored explicitly. */
             uint32_t origin_stop = (req->arrive_by ? req->to : req->from);
             rtime_t duration;
 
-            state = router->states + origin_stop; /* first round, final walk */
             l->s0 = origin_stop;
             l->s1 = stop;
             /* It would also be possible to work from s1 to s0 and compress out the wait time. */
-            l->t0 = state->time;
+            l->t0 = router->states_time[origin_stop];
             duration = transfer_duration (router->tdata, req, l->s0, l->s1);
             l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
             l->journey_pattern = WALK;
-            l->trip  = WALK;
+            l->vj = WALK;
             if (req->arrive_by) leg_swap (l);
         }
         /* Move to the next itinerary in the plan. */
@@ -239,7 +244,8 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
     return check_plan_invariants (plan);
 }
 
-static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
+static char *
+plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_end) {
     leg_t *leg;
 
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
@@ -248,9 +254,10 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
     for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
         char ct0[16];
         char ct1[16];
-        char *agency_name, *short_name, *headsign, *productcategory, *leg_mode = NULL,  *alert_msg = NULL;
-        char *s0_id = tdata_stop_name_for_index(tdata, leg->s0);
-        char *s1_id = tdata_stop_name_for_index(tdata, leg->s1);
+        const char *agency_name, *short_name, *headsign, *productcategory, *leg_mode = NULL;
+        char *alert_msg = NULL;
+        const char *s0_id = tdata_stop_name_for_index(tdata, leg->s0);
+        const char *s1_id = tdata_stop_name_for_index(tdata, leg->s1);
         float d0 = 0.0, d1 = 0.0;
 
         btimetext(leg->t0, ct0);
@@ -270,7 +277,7 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
             else leg_mode = "WALK";
         } else {
             agency_name = tdata_agency_name_for_journey_pattern(tdata, leg->journey_pattern);
-            short_name = tdata_shortname_for_journey_pattern(tdata, leg->journey_pattern);
+            short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
             headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
             productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->journey_pattern);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -303,8 +310,8 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
 
                             if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->journey_pattern) ) &&
                                 ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->s0) ) &&
-                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->trip ) )
-                                /* TODO: need to have rtime_to_date  for informed_entity->trip->start_date */
+                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->vj) )
+                                /* TODO: need to have rtime_to_date  for informed_entity->vj->start_date */
                                 /* TODO: need to have rtime_to_epoch for informed_entity->active_period */
                             ) {
                                 alert_msg = alert->header_text->translation[0]->text;
@@ -324,7 +331,7 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
         b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
-            leg_mode, leg->journey_pattern, leg->trip, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
+            leg_mode, leg->journey_pattern, leg->vj, leg->s0, leg->s1, ct0, d0, ct1, d1, agency_name, short_name, headsign, productcategory, s0_id, s1_id,
                         (alert_msg ? alert_msg : ""));
 
         /* EXAMPLE
@@ -343,7 +350,8 @@ static char *plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char
 }
 
 /* Write a plan structure out to a text buffer in tabular format. */
-uint32_t plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
+static uint32_t
+plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
 
