@@ -194,11 +194,15 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
             router->day_mask |= tomorrow.mask;
             day_i++;
         }
-        router->servicedays[day_i] = today;
-        day_i++;
+        if (req->time_cutoff < tomorrow.midnight && req->time > today.midnight) {
+            router->servicedays[day_i] = today;
+            router->day_mask |= today.mask;
+            day_i++;
+        }
         if (req->time_cutoff < router->tdata->max_time){
             /* Cut-off request includes vehicle_journey running tomorrow */
             router->servicedays[day_i] = yesterday;
+            router->day_mask |= yesterday.mask;
             day_i++;
         }
     } else {
@@ -208,8 +212,11 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
             router->servicedays[day_i] = yesterday;
             day_i++;
         }
-        router->servicedays[day_i] = today;
-        day_i++;
+        if (req->time_cutoff > today.midnight && req->time < tomorrow.midnight) {
+            router->servicedays[day_i] = today;
+            router->day_mask |= today.mask;
+            day_i++;
+        }
         if (req->time_cutoff > tomorrow.midnight){
             /* Cut-off request includes vehicle_journey running tomorrow */
             router->day_mask |= tomorrow.mask;
