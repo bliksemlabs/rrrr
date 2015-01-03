@@ -33,9 +33,7 @@ struct journey_pattern {
     uint16_t n_stops;
     uint16_t n_vjs;
     uint16_t attributes;
-    uint16_t operator_index;
-    uint16_t line_code_index;
-    uint16_t productcategory_index;
+    uint16_t route_index;
     rtime_t  min_time;
     rtime_t  max_time;
 };
@@ -138,6 +136,8 @@ struct tdata {
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
     uint32_t n_vj_ids;
+    uint32_t n_line_for_route;
+    uint32_t n_operator_for_line;
     stop_point_t *stop_points;
     uint8_t *stop_point_attributes;
     journey_pattern_t *journey_patterns;
@@ -164,6 +164,8 @@ struct tdata {
     char *operator_names;
     uint32_t operator_urls_width;
     char *operator_urls;
+    uint16_t *line_for_route;
+    uint8_t *operator_for_line;
     char *string_pool;
     uint32_t line_codes_width;
     char *line_codes;

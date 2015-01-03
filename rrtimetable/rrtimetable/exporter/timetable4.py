@@ -170,7 +170,6 @@ def export_journey_pattern_point_headsigns(tdata,index,out):
         index.offset_jpp.append(offset)
         for jpp in jp.points:
             writeint(out,index.put_string(jpp.headsign or jp.headsign or ''))
-            print index.put_string(jpp.headsign or jp.headsign or '')
             offset += 1
 
 def export_journey_pattern_point_attributes(tdata,index,out):
@@ -286,7 +285,7 @@ def export_jp_structs(tdata,index,out):
     print "saving route indexes"
     write_text_comment(out,"ROUTE STRUCTS")
     index.loc_journey_patterns = tell(out)
-    route_t = Struct('2I8H')
+    route_t = Struct('2I6H')
     jpp_offsets = index.offset_jpp
     trip_ids_offsets = index.vj_ids_offsets
     jp_attributes = []
@@ -296,34 +295,27 @@ def export_jp_structs(tdata,index,out):
     jp_n_jpp = []
     jp_n_vj = []
 
-    index.idx_for_operator = {}
-    index.jp_operators = []
-    operator_offsets = []
-
-    linecode_offsets = []
-    productcategory_offsets = []
+    routeidx_offsets = []
     headsign_offsets=[]
     jp_min_time = []
     jp_max_time = []
+    dummy = []
     for jp in index.journey_patterns:
         jp_n_jpp.append(len(jp.points))
         jp_n_vj.append(len(index.vehicle_journeys_in_journey_pattern[jp.uri]))
         jp_min_time.append(min([vj.departure_time for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
         jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
-
-        productcategory_offsets.append(index.put_productcategory(jp.productcategory or '')) 
-        linecode_offsets.append(index.put_linecode(jp.route.line.code or ''))
-        operator_offsets.append(index.put_operator(jp.route.line.operator))
+        routeidx_offsets.append(index.idx_for_route_uri[jp.route.uri])
 
         jp_attributes.append(1 << jp.route.route_type)
-    jp_t_fields = [jpp_offsets, trip_ids_offsets,jp_n_jpp, jp_n_vj,jp_attributes,operator_offsets,linecode_offsets,productcategory_offsets,jp_min_time, jp_max_time]
+    jp_t_fields = [jpp_offsets, trip_ids_offsets,jp_n_jpp, jp_n_vj,jp_attributes,routeidx_offsets,jp_min_time, jp_max_time]
     for l in jp_t_fields :
         # the extra last route is a sentinel so we can derive list lengths for the last true route.
         assert len(l) == nroutes
     for route in zip (*jp_t_fields) :
         # print route
         out.write(route_t.pack(*route));
-    out.write(route_t.pack(jpp_offsets[-1]+1,0,0,0,0,0,0,0,0, 0)) #Sentinel
+    out.write(route_t.pack(jpp_offsets[-1]+1,0,0,0,0,0,0,0)) #Sentinel
 
 def validity_mask(days):
     mask = 0
@@ -389,7 +381,6 @@ def export_stringpool(tdata,index,out):
     for string in index.strings:
         out.write(string+'\0')
         written_length += len(string) + 1
-        print string
     assert written_length == index.string_length
 
 def export_linecodes(tdata,index,out):
@@ -429,6 +420,16 @@ def export_vj_uris(tdata,index,out):
      index.loc_vj_uris = write_string_table(out,all_vj_ids)
      index.n_vj = len(all_vj_ids)
 
+def export_routes(tdata,index,out):
+    index.loc_line_for_route = tell(out)
+    for r in index.routes:
+        writeshort(out,index.idx_for_line_uri[r.line.uri])
+
+def export_lines(tdata,index,out):
+    index.loc_operator_for_line = tell(out)
+    for l in index.lines:
+        writebyte(out,index.idx_for_operator_uri[l.operator.uri])
+
 def write_header (out,index) :
     """ Write out a file header containing offsets to the beginning of each subsection.
     Must match struct transit_data_header in transitdata.c """
@@ -467,7 +468,9 @@ def write_header (out,index) :
         len(index.journey_patterns), # n_route_ids
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
-        index.n_vj, # n_trip_ids
+        index.n_vj, # n_vj_ids
+        len(index.routes), #n_line_for_route
+        len(index.lines), #n_operator_for_line
 
         index.loc_stop_points,
         index.loc_stop_point_attributes,
@@ -486,6 +489,8 @@ def write_header (out,index) :
         index.loc_platformcodes,
         index.loc_stop_nameidx,
         index.loc_stop_areaidx,
+        index.loc_line_for_route,
+        index.loc_operator_for_line,
         index.loc_operator_ids,
         index.loc_operator_names,
         index.loc_operator_urls,
@@ -501,7 +506,7 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQ60I')
+struct_header = Struct('8sQ64I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -530,6 +535,8 @@ def export(tdata):
     export_stop_pointnames(tdata,index,out)
     export_stop_areanames(tdata,index,out)
     export_operators(tdata,index,out)
+    export_routes(tdata,index,out)
+    export_lines(tdata,index,out)
     export_linecodes(tdata,index,out)
     export_productcategories(tdata,index,out)
     export_journey_pattern_point_headsigns(tdata,index,out)

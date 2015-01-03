@@ -88,13 +88,14 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_journey_pattern_active < (UINT32_MAX) &&
             header->n_platformcodes < (UINT32_MAX) &&
             header->n_stop_point_nameidx < ((spidx_t) -2) &&
-            header->n_operator_ids < (UINT16_MAX) &&
-            header->n_operator_names < (UINT16_MAX) &&
-            header->n_operator_urls < (UINT16_MAX) &&
+            header->n_operator_ids < (UINT8_MAX) &&
+            header->n_operator_names < (UINT8_MAX) &&
+            header->n_operator_urls < (UINT8_MAX) &&
             header->n_string_pool < (UINT32_MAX) &&
             header->n_line_codes < (UINT16_MAX) &&
             header->n_productcategories < (UINT16_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
+            header->n_line_for_route < (UINT16_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
             header->n_stop_area_ids < ((spidx_t) -2) &&
             header->n_vj_ids < (UINT32_MAX) ) ) {
@@ -125,6 +126,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, string_pool, char);
     load_dynamic (fd, stop_point_nameidx, uint32_t);
     load_dynamic (fd, stop_area_nameidx, uint32_t);
+    load_dynamic (fd, line_for_route, uint16_t);
+    load_dynamic (fd, operator_for_line, uint8_t);
 
     load_dynamic_string (fd, platformcodes);
     load_dynamic_string (fd, stop_point_ids);

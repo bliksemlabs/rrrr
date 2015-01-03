@@ -72,7 +72,8 @@ const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index) {
 }
 
 const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index) {
-    return td->productcategories + (td->productcategories_width * productcategory_index);
+    return "TODO";
+    /*return td->productcategories + (td->productcategories_width * productcategory_index);*/
 }
 
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index) {
@@ -168,13 +169,15 @@ const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_in
 }
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    uint16_t route_index;
     if (jp_index == NONE) return "NONE";
-    return td->line_codes + (td->line_codes_width * (td->journey_patterns)[jp_index].line_code_index);
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    return td->line_codes + (td->line_codes_width * (td->line_for_route)[route_index]);
 }
 
 const char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
-    return td->productcategories + (td->productcategories_width * (td->journey_patterns)[jp_index].productcategory_index);
+    /*return td->productcategories + (td->productcategories_width * (td->journey_patterns)[jp_index].productcategory_index);*/
 }
 
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t operator_index_offset) {
@@ -191,18 +194,27 @@ uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, ui
 }
 
 const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
-    return td->operator_ids + (td->operator_ids_width * (td->journey_patterns)[jp_index].operator_index);
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    line_index = (td->line_for_route)[route_index];
+    return td->operator_ids + (td->operator_ids_width * td->operator_for_line[line_index]);
 }
 
 const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
-    return td->operator_names + (td->operator_names_width * (td->journey_patterns)[jp_index].operator_index);
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    line_index = (td->line_for_route)[route_index];
+    return td->operator_names + (td->operator_names_width * td->operator_for_line[line_index]);
 }
 
 const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
-    return td->operator_urls + (td->operator_urls_width * (td->journey_patterns)[jp_index].operator_index);
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    line_index = (td->line_for_route)[route_index];
+    return td->operator_urls + (td->operator_urls_width * td->operator_for_line[line_index]);
 }
 
 bool tdata_load(tdata_t *td, char *filename) {
