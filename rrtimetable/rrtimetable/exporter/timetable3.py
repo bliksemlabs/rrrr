@@ -275,7 +275,7 @@ def export_jp_structs(tdata,index,out):
         jp_min_time.append(min([vj.departure_time for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
         jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
 
-        productcategory_offsets.append(index.put_productcategory(jp.productcategory or '')) 
+        productcategory_offsets.append(index.put_productcategory('')) 
         headsign_offsets.append(index.put_headsign(jp.headsign or '')) 
         linecode_offsets.append(index.put_linecode(jp.route.line.code or '')) 
 

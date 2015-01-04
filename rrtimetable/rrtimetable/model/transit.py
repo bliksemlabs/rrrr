@@ -16,6 +16,8 @@ class Timetable:
         self.signature_to_jp = {}
         self.timedemandgroups = {}
         self.signature_to_timedemandgroup = {}
+        self.physical_modes = {}
+        self.commercial_modes = {}
 
 class StopArea:
     def __init__(self,timetable,uri,name=None,latitude=None,longitude=None):
@@ -27,6 +29,42 @@ class StopArea:
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
+
+class CommercialMode:
+    def __init__(self,timetable,uri,name=None):
+        self.type = 'commercial_mode'
+        self.uri = uri
+        if uri in timetable.commercial_modes:
+            raise ValueError('Violation of unique CommercialMode key') 
+        timetable.commercial_modes[uri] = self
+        self.name = name
+
+    def __hash__(self):
+        return hash(freeze(self.__dict__))
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+class PhysicalMode:
+    def __init__(self,timetable,uri,name=None):
+        self.type = 'physical_mode'
+        self.uri = uri
+        if uri in timetable.physical_modes:
+            raise ValueError('Violation of unique PhysicalMode key') 
+        timetable.physical_modes[uri] = self
+        self.name = name
+
+    def __hash__(self):
+        return hash(freeze(self.__dict__))
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
 
 class StopPoint:
     def __init__(self,timetable,uri,stop_area_uri,name=None,platformcode=None,latitude=None,longitude=None):
@@ -69,12 +107,15 @@ class Operator:
         self.url = url
 
 class Line:
-    def __init__(self,timetable,uri,operator_uri,name=None,code=None):
+    def __init__(self,timetable,uri,operator_uri,physical_mode_uri,name=None,code=None):
         self.type = 'line'
         self.uri = uri
         if operator_uri not in timetable.operators:
             raise ValueError('Violation of foreign key, operator not found')
         self.operator = timetable.operators[operator_uri]
+        if physical_mode_uri not in timetable.physical_modes:
+            raise ValueError('Violation of foreign key, physical_mode not found')
+        self.physical_mode = timetable.physical_modes[physical_mode_uri]
         if uri in timetable.lines:
             raise ValueError('Violation of unique Line key') 
         timetable.lines[uri] = self
@@ -145,14 +186,14 @@ class TimeDemandGroup:
         self.points = points
 
 class JourneyPattern:
-    def __init__(self,timetable,uri,route_uri,points,headsign=None,productcategory=None):
+    def __init__(self,timetable,uri,route_uri,points,headsign=None,commercial_mode=None):
         if route_uri not in timetable.routes:
             raise ValueError('Violation of foreign key, route not found')
         self.route = timetable.routes[route_uri]
         self.type = 'journey_pattern'
         self.uri = uri
         self.points = points
-        self.productcategory = productcategory
+        self.commercial_mode = commercial_mode
         self.headsign = headsign
 
     def __hash__(self):
@@ -165,11 +206,10 @@ class JourneyPattern:
             return False
 
 class VehicleJourney:
-    def __init__(self,timetable,uri,route_uri,headsign=None,productcategory=None):
+    def __init__(self,timetable,uri,route_uri,commercial_mode_uri,headsign=None):
         self.timetable = timetable
         self.type = 'vehicle_journey'
         self.uri = uri
-        self.productcategory = productcategory
         self.headsign = headsign
         self.validity_pattern = set([])
         if uri in timetable.vehicle_journeys:
@@ -177,6 +217,9 @@ class VehicleJourney:
         timetable.vehicle_journeys[uri] = self
         if route_uri not in timetable.routes:
             raise ValueError('Violation of foreign key, route not found')
+        if commercial_mode_uri not in timetable.commercial_modes:
+            raise ValueError('Violation of foreign key, commercial_mode not found')
+        self.commercial_mode = timetable.commercial_modes[commercial_mode_uri]
         self.route = timetable.routes[route_uri]
         self.points = []
         self.timedemandgroup = []
@@ -219,11 +262,11 @@ class VehicleJourney:
         self.timedemandgroup = tuple(self.timedemandgroup)
         self.points[-1].forboarding = False #Do not allow boarding at final stop
         self.points = tuple(self.points)
-        pattern_signature = (self.route.uri,self.productcategory or '',self.headsign or '',self.points)
+        pattern_signature = (self.route.uri,self.commercial_mode,self.headsign or '',self.points)
         if pattern_signature in self.timetable.signature_to_jp:
             self.journey_pattern = self.timetable.signature_to_jp[pattern_signature]
         else:
-            jp = JourneyPattern(self.timetable,str(len(self.timetable.signature_to_jp)),self.route.uri,self.points,self.headsign,self.productcategory)
+            jp = JourneyPattern(self.timetable,str(len(self.timetable.signature_to_jp)),self.route.uri,self.points,self.headsign,self.commercial_mode)
             self.timetable.signature_to_jp[pattern_signature] = jp
             self.timetable.journey_patterns[jp.uri] = jp
             self.journey_pattern = jp

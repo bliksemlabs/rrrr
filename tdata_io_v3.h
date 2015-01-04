@@ -31,16 +31,21 @@ struct tdata_header {
     uint32_t n_operator_ids;
     uint32_t n_operator_names;
     uint32_t n_operator_urls;
+    uint32_t n_commercial_mode_ids;
+    uint32_t n_commercial_mode_names;
+    uint32_t n_physical_mode_ids;
+    uint32_t n_physical_mode_names;
     /* length of the object in bytes */
     uint32_t n_string_pool;
     uint32_t n_line_codes;
-    uint32_t n_productcategories;
     uint32_t n_line_ids;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
     uint32_t n_vj_ids;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
+    uint32_t n_commercial_mode_for_jp;
+    uint32_t n_physical_mode_for_line;
 
     uint32_t loc_stop_points;
     uint32_t loc_stop_point_attributes;
@@ -64,9 +69,14 @@ struct tdata_header {
     uint32_t loc_operator_ids;
     uint32_t loc_operator_names;
     uint32_t loc_operator_urls;
+    uint32_t loc_commercial_mode_ids;
+    uint32_t loc_commercial_mode_names;
+    uint32_t loc_commercial_mode_for_jp;
+    uint32_t loc_physical_mode_ids;
+    uint32_t loc_physical_mode_names;
+    uint32_t loc_physical_mode_for_line;
     uint32_t loc_string_pool;
     uint32_t loc_line_codes;
-    uint32_t loc_productcategories;
     uint32_t loc_line_ids;
     uint32_t loc_stop_point_ids;
     uint32_t loc_stop_area_ids;

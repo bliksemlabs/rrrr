@@ -7,12 +7,32 @@ from datetime import timedelta, date
 
 MAX_DAYS = 32
 
+def put_gtfs_modes(tdata):
+    PhysicalMode(tdata,'0',name='Tram')
+    PhysicalMode(tdata,'1',name='Metro')
+    PhysicalMode(tdata,'2',name='Rail')
+    PhysicalMode(tdata,'3',name='Bus')
+    PhysicalMode(tdata,'4',name='Ferry')
+    PhysicalMode(tdata,'5',name='Cable car')
+    PhysicalMode(tdata,'6',name='Gondola')
+    PhysicalMode(tdata,'7',name='Funicular')
+
+    CommercialMode(tdata,'0',name='Tram')
+    CommercialMode(tdata,'1',name='Metro')
+    CommercialMode(tdata,'2',name='Rail')
+    CommercialMode(tdata,'3',name='Bus')
+    CommercialMode(tdata,'4',name='Ferry')
+    CommercialMode(tdata,'5',name='Cable car')
+    CommercialMode(tdata,'6',name='Gondola')
+    CommercialMode(tdata,'7',name='Funicular')
+
 def convert(gtfsdb):
 
     from_date,to_date = gtfsdb.date_range()
     tdata = Timetable(from_date)
     print "Timetable valid from "+str(from_date)
-
+    
+    put_gtfs_modes(tdata)
     for stop_id,stop_name,stop_lat,stop_lon in gtfsdb.stop_areas():
         StopArea(tdata,stop_id,name=stop_name,latitude=stop_lat,longitude=stop_lon)
 
@@ -52,11 +72,11 @@ def convert(gtfsdb):
     for agency_id,agency_name,agency_url in gtfsdb.agencies():
         Operator(tdata,agency_id,name=agency_name,url=agency_url)
 
-    for line_id,line_name,line_code,agency_id in gtfsdb.lines():
+    for line_id,line_name,line_code,agency_id,route_type in gtfsdb.lines():
         if agency_id is None:
             if len(index.operators) == 1:
                 agency_id = list(index.operators.keys())[0]
-        Line(tdata,line_id,agency_id,name=line_name,code=line_code)
+        Line(tdata,line_id,agency_id,str(route_type),name=line_name,code=line_code)
 
     for route_id,line_id,route_type in gtfsdb.routes():
         Route(tdata,route_id,line_id,route_type=route_type)
@@ -72,7 +92,7 @@ def convert(gtfsdb):
     
     vj = None
     last_trip_id = None
-    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign in gtfsdb.stop_times():
+    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type in gtfsdb.stop_times():
         if trip_id != last_trip_id:
             if vj is not None:
                 vj.finish()
@@ -80,7 +100,7 @@ def convert(gtfsdb):
             if service_id not in calendars:
                 continue
             last_trip_id = trip_id
-            vj = VehicleJourney(tdata,trip_id,route_id,headsign=trip_headsign)
+            vj = VehicleJourney(tdata,trip_id,route_id,str(route_type),headsign=trip_headsign)
             for date in calendars[service_id]:
                 vj.setIsValidOn(date)
         vj.add_stop(stop_id,arrival_time,departure_time,forboarding=(pickup_type != 1),foralighting=(drop_off_type != 1),headsign=stop_headsign)

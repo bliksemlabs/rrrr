@@ -129,15 +129,20 @@ struct tdata {
     uint32_t n_operator_ids;
     uint32_t n_operator_names;
     uint32_t n_operator_urls;
+    uint32_t n_commercial_mode_ids;
+    uint32_t n_commercial_mode_names;
+    uint32_t n_physical_mode_ids;
+    uint32_t n_physical_mode_names;
     uint32_t n_string_pool;
     uint32_t n_line_codes;
-    uint32_t n_productcategories;
     uint32_t n_line_ids;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
     uint32_t n_vj_ids;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
+    uint32_t n_commercial_mode_for_jp;
+    uint32_t n_physical_mode_for_line;
     stop_point_t *stop_points;
     uint8_t *stop_point_attributes;
     journey_pattern_t *journey_patterns;
@@ -164,13 +169,21 @@ struct tdata {
     char *operator_names;
     uint32_t operator_urls_width;
     char *operator_urls;
+    uint32_t commercial_mode_ids_width;
+    char *commercial_mode_ids;
+    uint32_t commercial_mode_names_width;
+    char *commercial_mode_names;
+    uint32_t physical_mode_ids_width;
+    char *physical_mode_ids;
+    uint32_t physical_mode_names_width;
+    char *physical_mode_names;
+    uint16_t *commercial_mode_for_jp;
+    uint16_t *physical_mode_for_line;
     uint16_t *line_for_route;
     uint8_t *operator_for_line;
     char *string_pool;
     uint32_t line_codes_width;
     char *line_codes;
-    uint32_t productcategories_width;
-    char *productcategories;
     calendar_t *vj_active;
     calendar_t *journey_pattern_active;
     uint32_t *journey_pattern_point_headsigns;
@@ -240,7 +253,9 @@ const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
-const char *tdata_productcategory_for_index(tdata_t *td, uint32_t productcategory_index);
+const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
+
+const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
@@ -266,7 +281,9 @@ const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_in
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
-const char *tdata_productcategory_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+
+const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 

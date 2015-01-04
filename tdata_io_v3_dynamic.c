@@ -93,7 +93,12 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_operator_urls < (UINT8_MAX) &&
             header->n_string_pool < (UINT32_MAX) &&
             header->n_line_codes < (UINT16_MAX) &&
-            header->n_productcategories < (UINT16_MAX) &&
+            header->n_commercial_mode_ids < (UINT16_MAX) &&
+            header->n_commercial_mode_names < (UINT16_MAX) &&
+            header->n_commercial_mode_for_jp < (UINT32_MAX) &&
+            header->n_physical_mode_ids < (UINT16_MAX) &&
+            header->n_physical_mode_names < (UINT16_MAX) &&
+            header->n_physical_mode_for_line < (UINT16_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
             header->n_line_for_route < (UINT16_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
@@ -128,6 +133,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, stop_area_nameidx, uint32_t);
     load_dynamic (fd, line_for_route, uint16_t);
     load_dynamic (fd, operator_for_line, uint8_t);
+    load_dynamic (fd, commercial_mode_for_jp, uint16_t);
+    load_dynamic (fd, physical_mode_for_line, uint16_t);
 
     load_dynamic_string (fd, platformcodes);
     load_dynamic_string (fd, stop_point_ids);
@@ -138,8 +145,10 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic_string (fd, operator_urls);
     load_dynamic_string (fd, line_codes);
     load_dynamic_string (fd, line_ids);
-    load_dynamic_string (fd, productcategories);
-    
+    load_dynamic_string (fd, commercial_mode_ids);
+    load_dynamic_string (fd, commercial_mode_names);
+    load_dynamic_string (fd, physical_mode_ids);
+    load_dynamic_string (fd, physical_mode_names);
     set_max_time(td);
     close (fd);
 
@@ -169,6 +178,10 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->string_pool);
     free (td->stop_point_nameidx);
     free (td->stop_area_nameidx);
+    free (td->line_for_route);
+    free (td->operator_for_line);
+    free (td->commercial_mode_for_jp);
+    free (td->physical_mode_for_line);
 
     free (td->platformcodes);
     free (td->stop_point_ids);
@@ -179,7 +192,10 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->operator_urls);
     free (td->line_codes);
     free (td->line_ids);
-    free (td->productcategories);
+    free (td->commercial_mode_ids);
+    free (td->commercial_mode_names);
+    free (td->physical_mode_ids);
+    free (td->physical_mode_names);
 }
 
 #else

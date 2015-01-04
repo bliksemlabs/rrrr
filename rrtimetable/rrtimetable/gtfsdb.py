@@ -335,7 +335,7 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
 
     def lines(self):
         c = self.get_cursor()
-        c.execute( "SELECT route_id as line_id, route_long_name as line_name, route_short_name as line_code, agency_id FROM routes" )
+        c.execute( "SELECT route_id as line_id, route_long_name as line_name, route_short_name as line_code, agency_id,route_type FROM routes" )
         ret = list(c)
         c.close()
         return ret
@@ -343,8 +343,8 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
     def stop_times(self):
         c = self.get_cursor()
         c.execute( """
-SELECT trip_id,service_id,route_id||':'||coalesce(direction_id,0) as route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign
-FROM trips JOIN stop_times USING (trip_id)
+SELECT trip_id,service_id,route_id||':'||coalesce(direction_id,0) as route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type
+FROM trips JOIN stop_times USING (trip_id) JOIN routes USING (route_id)
 ORDER BY trip_id,stop_sequence
 """)
         ret = list(c)

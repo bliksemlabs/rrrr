@@ -94,6 +94,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, stop_area_for_stop_point, spidx_t);
     load_mmap (td->base, line_for_route, uint16_t);
     load_mmap (td->base, operator_for_line, uint8_t);
+    load_mmap (td->base, commercial_mode_for_jp, uint16_t);
 
     load_mmap_string (td->base, platformcodes);
     load_mmap_string (td->base, stop_point_ids);
@@ -104,7 +105,10 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap_string (td->base, operator_urls);
     load_mmap_string (td->base, line_codes);
     load_mmap_string (td->base, line_ids);
-    load_mmap_string (td->base, productcategories);
+    load_mmap_string (td->base, commercial_mode_ids);
+    load_mmap_string (td->base, commercial_mode_names);
+    load_mmap_string (td->base, physical_mode_ids);
+    load_mmap_string (td->base, physical_mode_names);
 
     /* Set the maximum drivetime of any day in tdata */
     set_max_time(td);

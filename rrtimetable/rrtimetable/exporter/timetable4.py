@@ -22,13 +22,15 @@ class Index():
         self.validity_pattern_for_journey_pattern_uri = {}
         self.timedemandgroups = []
         self.idx_for_timedemandgroup_uri = {}
+        self.commercial_modes = []
+        self.idx_for_commercial_mode_uri = {}
+        self.physical_modes = []
+        self.idx_for_physical_mode_uri = {}
+
         self.journey_patterns_at_stop_point = {}
         self.vehicle_journeys_in_journey_pattern = {}
         self.connections_from_stop_point = {}
         self.connections_point_to_point = {}
-
-        self.idx_for_productcategory = {}
-        self.productcategories = []
 
         self.idx_for_linecode = {}
         self.linecodes = []
@@ -55,13 +57,6 @@ class Index():
         self.strings.append(string)
         return self.loc_for_string[string]
 
-    def put_productcategory(self,productcategory):
-        if productcategory in self.idx_for_productcategory:
-            return self.idx_for_productcategory[productcategory]
-        self.idx_for_productcategory[productcategory] = len(self.idx_for_productcategory)
-        self.productcategories.append(productcategory)
-        return self.idx_for_productcategory[productcategory]
-
     def put_linecode(self,linecode):
         if linecode in self.idx_for_linecode:
             return self.idx_for_linecode[linecode]
@@ -85,6 +80,10 @@ def make_idx(tdata):
         if vj.journey_pattern.route.line.uri not in index.idx_for_line_uri:
             index.idx_for_line_uri[vj.journey_pattern.route.line.uri] = len(index.idx_for_line_uri)
             index.lines.append(vj.journey_pattern.route.line)
+            line = vj.journey_pattern.route.line
+            if line.physical_mode.uri not in index.idx_for_physical_mode_uri:
+                index.idx_for_physical_mode_uri[line.physical_mode.uri] = len(index.idx_for_physical_mode_uri)
+                index.physical_modes.append(line.physical_mode)
 
         if vj.journey_pattern.route.uri not in index.idx_for_route_uri:
             index.idx_for_route_uri[vj.journey_pattern.route.uri] = len(index.idx_for_route_uri)
@@ -97,6 +96,10 @@ def make_idx(tdata):
         if vj.journey_pattern.uri not in index.vehicle_journeys_in_journey_pattern:
             index.vehicle_journeys_in_journey_pattern[vj.journey_pattern.uri] = []
         index.vehicle_journeys_in_journey_pattern[vj.journey_pattern.uri].append(vj)
+
+        if vj.journey_pattern.commercial_mode.uri not in index.idx_for_commercial_mode_uri:
+            index.idx_for_commercial_mode_uri[vj.journey_pattern.commercial_mode.uri] = len(index.idx_for_commercial_mode_uri)
+            index.commercial_modes.append(vj.journey_pattern.commercial_mode)
 
         if vj.timedemandgroup.uri not in index.idx_for_timedemandgroup_uri:
             index.idx_for_timedemandgroup_uri[vj.timedemandgroup.uri] = len(index.idx_for_timedemandgroup_uri)
@@ -365,13 +368,33 @@ def export_stop_areanames(tdata,index,out):
     writeint(out,0)
 
 def export_operators(tdata,index,out):
-    print "writing out agencies to string table"
+    print "writing out opreators to string table"
     write_text_comment(out,"OPERATOR IDS")
     index.loc_operator_ids = write_string_table(out,[op.uri or '' for op in index.operators])
     write_text_comment(out,"OPERATOR NAMES")
     index.loc_operator_names = write_string_table(out,[op.name or '' for op in index.operators])
     write_text_comment(out,"OPERATOR URLS")
     index.loc_operator_urls = write_string_table(out,[op.url or '' for op in index.operators])
+
+def export_commercialmodes(tdata,index,out):
+    print "writing out commercial_mode to string table"
+    write_text_comment(out,"CCMODE IDS")
+    index.loc_commercialmode_ids = write_string_table(out,[cc.uri or '' for cc in index.commercial_modes])
+    write_text_comment(out,"CCMODE NAMES")
+    index.loc_commercialmode_names = write_string_table(out,[cc.name or '' for cc in index.commercial_modes])
+    index.loc_commercial_mode_for_jp = tell(out)
+    for jp in index.journey_patterns:
+        writeshort(out,index.idx_for_commercial_mode_uri[jp.commercial_mode.uri])
+
+def export_physicalmodes(tdata,index,out):
+    print "writing out commercial_mode to string table"
+    write_text_comment(out,"CCMODE IDS")
+    index.loc_physicalmode_ids = write_string_table(out,[cc.uri or '' for cc in index.commercial_modes])
+    write_text_comment(out,"CCMODE NAMES")
+    index.loc_physicalmode_names = write_string_table(out,[cc.name or '' for cc in index.commercial_modes])
+    index.loc_physical_mode_for_line = tell(out)
+    for l in index.lines:
+        writeshort(out,index.idx_for_physical_mode_uri[l.physical_mode.uri])
 
 def export_stringpool(tdata,index,out):
     print "writing out stringpool"
@@ -386,10 +409,6 @@ def export_stringpool(tdata,index,out):
 def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
     index.loc_line_codes = write_string_table(out,index.linecodes)
-
-def export_productcategories(tdata,index,out):
-    write_text_comment(out,"PRODUCT CATEGORIES")
-    index.loc_productcategories = write_string_table(out,index.productcategories)
 
 def export_line_uris(tdata,index,out):
     # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
@@ -462,15 +481,20 @@ def write_header (out,index) :
         len(index.operators), # n_operator_id
         len(index.operators), # n_operator_names
         len(index.operators), # n_operator_urls
-        index.string_length, # n_headsigns (length of the object)
-        len(index.idx_for_linecode), # n_route_shortnames
-        len(index.idx_for_productcategory), # n_productcategories
-        len(index.journey_patterns), # n_route_ids
+        len(index.commercial_modes), # n_commercialmode_id
+        len(index.commercial_modes), # n_commercialmode_names
+        len(index.physical_modes), # n_physicalmode_id
+        len(index.physical_modes), # n_physicalmode_names
+        index.string_length, # n_string_pool (length of the object)
+        len(index.idx_for_linecode), # n_line_codes
+        len(index.journey_patterns), # n_line_ids
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
         index.n_vj, # n_vj_ids
         len(index.routes), #n_line_for_route
         len(index.lines), #n_operator_for_line
+        len(index.journey_patterns), #n_commerical_mode_for_jp
+        len(index.lines), #n_commerical_mode_for_line
 
         index.loc_stop_points,
         index.loc_stop_point_attributes,
@@ -494,9 +518,14 @@ def write_header (out,index) :
         index.loc_operator_ids,
         index.loc_operator_names,
         index.loc_operator_urls,
+        index.loc_commercialmode_ids,
+        index.loc_commercialmode_names,
+        index.loc_commercial_mode_for_jp,
+        index.loc_physicalmode_ids,
+        index.loc_physicalmode_names,
+        index.loc_physical_mode_for_line,
         index.loc_stringpool,
         index.loc_line_codes,
-        index.loc_productcategories,
         index.loc_line_uris,
         index.loc_stop_point_uris,
         index.loc_stop_area_uris,
@@ -506,7 +535,7 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQ64I')
+struct_header = Struct('8sQ74I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -535,10 +564,11 @@ def export(tdata):
     export_stop_pointnames(tdata,index,out)
     export_stop_areanames(tdata,index,out)
     export_operators(tdata,index,out)
+    export_commercialmodes(tdata,index,out)
+    export_physicalmodes(tdata,index,out)
     export_routes(tdata,index,out)
     export_lines(tdata,index,out)
     export_linecodes(tdata,index,out)
-    export_productcategories(tdata,index,out)
     export_journey_pattern_point_headsigns(tdata,index,out)
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)

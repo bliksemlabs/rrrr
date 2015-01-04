@@ -259,7 +259,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
     for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
         char ct0[16];
         char ct1[16];
-        const char *operator_name, *short_name, *headsign, *productcategory, *leg_mode = NULL;
+        const char *operator_name, *short_name, *headsign, *commercial_mode, *leg_mode = NULL;
         char *alert_msg = NULL;
         const char *s0_id = tdata_stop_point_name_for_index(tdata, leg->sp_from);
         const char *s1_id = tdata_stop_point_name_for_index(tdata, leg->sp_to);
@@ -274,7 +274,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
             operator_name = "";
             short_name = "walk";
             headsign = "walk";
-            productcategory = "";
+            commercial_mode = "";
 
             /* Skip uninformative legs that just tell you to stay in the same place. if (leg->s0 == leg->s1) continue; */
             if (leg->sp_from == ONBOARD) continue;
@@ -283,7 +283,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         } else {
             operator_name = tdata_operator_name_for_journey_pattern(tdata, leg->journey_pattern);
             short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
-            productcategory = tdata_productcategory_for_journey_pattern(tdata, leg->journey_pattern);
+            commercial_mode = tdata_commercial_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
             d0 = leg->d0 / 60.0f;
@@ -338,7 +338,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
         b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
-            leg_mode, leg->journey_pattern, leg->vj, leg->sp_from, leg->sp_to, ct0, d0, ct1, d1, operator_name, short_name, headsign, productcategory, s0_id, s1_id,
+            leg_mode, leg->journey_pattern, leg->vj, leg->sp_from, leg->sp_to, ct0, d0, ct1, d1, operator_name, short_name, headsign, commercial_mode, s0_id, s1_id,
                         (alert_msg ? alert_msg : ""));
 
         /* EXAMPLE
