@@ -283,14 +283,7 @@ def export_jp_structs(tdata,index,out):
 
     jp_n_jpp = []
     jp_n_vj = []
-
-    index.idx_for_operator = {}
-    index.jp_operators = []
-    operator_offsets = []
-
-    linecode_offsets = []
-    productcategory_offsets = []
-    headsign_offsets=[]
+    routeidx_offsets = []
     jp_min_time = []
     jp_max_time = []
     for jp in index.journey_patterns:
