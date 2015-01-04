@@ -42,13 +42,6 @@ class Index():
         self.strings = []
         self.string_length = 0
         
-    def put_operator(self,operator):
-        if operator in self.idx_for_operator:
-            return self.idx_for_operator[operator]
-        self.idx_for_operator[operator] = len(self.idx_for_operator)
-        self.operators.append(operator)
-        return self.idx_for_operator[operator]
-
     def put_string(self,string):
         if string in self.loc_for_string:
             return self.loc_for_string[string]
@@ -56,13 +49,6 @@ class Index():
         self.string_length += (len(string) + 1)
         self.strings.append(string)
         return self.loc_for_string[string]
-
-    def put_linecode(self,linecode):
-        if linecode in self.idx_for_linecode:
-            return self.idx_for_linecode[linecode]
-        self.idx_for_linecode[linecode] = len(self.idx_for_linecode)
-        self.linecodes.append(linecode)
-        return self.idx_for_linecode[linecode]
 
 def make_idx(tdata):
     index = Index()
@@ -298,11 +284,15 @@ def export_jp_structs(tdata,index,out):
     jp_n_jpp = []
     jp_n_vj = []
 
-    routeidx_offsets = []
+    index.idx_for_operator = {}
+    index.jp_operators = []
+    operator_offsets = []
+
+    linecode_offsets = []
+    productcategory_offsets = []
     headsign_offsets=[]
     jp_min_time = []
     jp_max_time = []
-    dummy = []
     for jp in index.journey_patterns:
         jp_n_jpp.append(len(jp.points))
         jp_n_vj.append(len(index.vehicle_journeys_in_journey_pattern[jp.uri]))

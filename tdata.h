@@ -259,6 +259,8 @@ const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
+const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
+
 const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
@@ -267,7 +269,7 @@ spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_nam
 
 spidx_t tdata_stop_pointidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
 
-spidx_t tdata_stop_pointidx_by_stop_point_idx(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
+spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
 uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t start_index);
 

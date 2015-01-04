@@ -120,7 +120,7 @@ spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_point_name,
     return STOP_NONE;
 }
 
-spidx_t tdata_stop_pointidx_by_stop_point_idx(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset) {
+spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset) {
     spidx_t sp_index;
     for (sp_index = sp_index_offset;
          sp_index < td->n_stop_points;
