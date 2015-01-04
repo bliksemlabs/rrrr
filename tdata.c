@@ -79,6 +79,14 @@ const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_
     return td->commercial_mode_ids + (td->commercial_mode_ids_width * commercial_mode_index);
 }
 
+const char *tdata_name_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index) {
+    return td->physical_mode_names + (td->physical_mode_names_width * physical_mode_index);
+}
+
+const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index) {
+    return td->physical_mode_ids + (td->physical_mode_ids_width * physical_mode_index);
+}
+
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index) {
     switch (sp_index) {
     case STOP_NONE :
@@ -186,6 +194,22 @@ const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, uint32_t
 const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return tdata_id_for_commercial_mode_index(td,(td->commercial_mode_for_jp)[jp_index]);
+}
+
+const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    uint16_t route_index,line_index;
+    if (jp_index == NONE) return "NONE";
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    line_index = (td->line_for_route)[route_index];
+    return tdata_name_for_physical_mode_index(td,(td->physical_mode_for_line)[line_index]);
+}
+
+const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+    uint16_t route_index,line_index;
+    if (jp_index == NONE) return "NONE";
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    line_index = (td->line_for_route)[route_index];
+    return tdata_id_for_physical_mode_index(td,(td->physical_mode_for_line)[line_index]);
 }
 
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t operator_index_offset) {

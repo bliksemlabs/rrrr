@@ -292,15 +292,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, char *b, char *b_
             headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
             #endif
 
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_tram)      == m_tram)      leg_mode = "TRAM";      else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_subway)    == m_subway)    leg_mode = "SUBWAY";    else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_rail)      == m_rail)      leg_mode = "RAIL";      else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_bus)       == m_bus)       leg_mode = "BUS";       else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_ferry)     == m_ferry)     leg_mode = "FERRY";     else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_cablecar)  == m_cablecar)  leg_mode = "CABLE_CAR"; else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_gondola)   == m_gondola)   leg_mode = "GONDOLA";   else
-            if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_funicular) == m_funicular) leg_mode = "FUNICULAR"; else
-            leg_mode = "INVALID";
+            leg_mode = tdata_physical_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
 
             #ifdef RRRR_FEATURE_REALTIME_ALERTS
             if (leg->journey_pattern != WALK && tdata->alerts) {
