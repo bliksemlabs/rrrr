@@ -13,6 +13,14 @@ def convert(dbname):
     cur.execute("SELECT MIN(date)::date FROM fusio.calendar_dates")
     tdata = Timetable(cur.fetchone()[0])
 
+    cur.execute("select physical_mode_id,physical_mode_name from fusio.physical_modes")
+    for id,name in cur.fetchall():
+        PhysicalMode(tdata,id,name=name)
+
+    cur.execute("select commercial_mode_id,commercial_mode_name from fusio.commercial_modes")
+    for id,name in cur.fetchall():
+        CommercialMode(tdata,id,name=name)
+
     cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon FROM fusio.stops WHERE location_type = 1")
     for stop_id,stop_name,stop_lat,stop_lon in cur.fetchall():
         StopArea(tdata,stop_id,name=stop_name,latitude=stop_lat,longitude=stop_lon)
@@ -35,9 +43,13 @@ def convert(dbname):
     cur.execute("SELECT agency_id,agency_name,agency_url FROM fusio.agency")
     for agency_id,agency_name,agency_url in cur.fetchall():
         Operator(tdata,agency_id,name=agency_name,url=agency_url)
-    cur.execute("SELECT line_id,line_name,line_code,network_id FROM fusio.lines")
-    for line_id,line_name,line_code,network_id in cur.fetchall():
-        Line(tdata,line_id,network_id,name=line_name,code=line_code)
+    cur.execute("""
+SELECT DISTINCT ON (line_id)
+line_id,line_name,line_code,network_id,physical_mode_id
+FROM fusio.lines JOIN fusio.routes USING (line_id) JOIN fusio.trips USING (route_id)
+""")
+    for line_id,line_name,line_code,network_id,physical_mode_id in cur.fetchall():
+        Line(tdata,line_id,network_id,physical_mode_id,name=line_name,code=line_code)
     cur.execute("SELECT route_id,line_id,route_type FROM fusio.routes")
     for route_id,line_id,route_type in cur.fetchall():
         Route(tdata,route_id,line_id,route_type=route_type)
@@ -49,18 +61,18 @@ def convert(dbname):
 
     trip_id = None
     cur.execute("""
-SELECT trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign
-FROM fusio.trips JOIN fusio.stop_times USING (trip_id)
+SELECT trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,commercial_mode_id
+FROM fusio.trips JOIN fusio.stop_times USING (trip_id) JOIN fusio.routes USING (route_id) JOIN fusio.lines USING (line_id)
 ORDER BY trip_id,stop_sequence
 """)
     vj = None
     last_trip_id = None
-    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign in cur.fetchall():
+    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,ccmode_id in cur.fetchall():
         if trip_id != last_trip_id:
             if vj is not None:
                 vj.finish()
             last_trip_id = trip_id
-            vj = VehicleJourney(tdata,trip_id,route_id,headsign=trip_headsign)
+            vj = VehicleJourney(tdata,trip_id,route_id,ccmode_id,headsign=trip_headsign)
             for date in calendars[service_id]:
                 vj.setIsValidOn(date)
         vj.add_stop(stop_id,parse_gtfs_time(arrival_time),parse_gtfs_time(departure_time),forboarding=(pickup_type != 1),foralighting=(drop_off_type != 1),headsign=stop_headsign)
