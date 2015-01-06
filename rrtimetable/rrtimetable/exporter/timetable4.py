@@ -225,6 +225,17 @@ def export_sa_for_sp(tdata,index,out):
     for sp in index.stop_points:
         write_stop_area_idx(out,index,sp.stop_area.uri)
 
+vjref_t = Struct('HH')
+def export_vj_transfers(tdata,index,out):
+    index.loc_vj_transfers_backward = tell(out)
+    for jp in index.journey_patterns:
+        for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
+            out.write(vjref_t.pack(index.n_jp,0))
+    index.loc_vj_transfers_forward = tell(out)
+    for jp in index.journey_patterns:
+        for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
+            out.write(vjref_t.pack(index.n_jp,0))
+
 def export_transfers(tdata,index,out):
     print "saving transfer stops (footpaths)"
     write_text_comment(out,"TRANSFER TARGET STOPS")
@@ -478,6 +489,8 @@ def write_header (out,index) :
         len(index.lines), #n_operator_for_line
         len(index.journey_patterns), #n_commerical_mode_for_jp
         len(index.lines), #n_commerical_mode_for_line
+        index.n_vj, #n_vj_transfers_backward
+        index.n_vj, #n_vj_transfers_foward
 
         index.loc_stop_points,
         index.loc_stop_point_attributes,
@@ -491,6 +504,8 @@ def write_header (out,index) :
         index.loc_jp_at_sp,
         index.loc_transfer_target_stop_points,
         index.loc_transfer_dist_meters,
+        index.loc_vj_transfers_backward,
+        index.loc_vj_transfers_forward,
         index.loc_vj_active,
         index.loc_jp_active,
         index.loc_platformcodes,
@@ -518,7 +533,7 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQ74I')
+struct_header = Struct('8sQ78I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -536,6 +551,7 @@ def export(tdata):
     export_vj_in_jp(tdata,index,out)
     export_jpp_at_sp(tdata,index,out)
     export_transfers(tdata,index,out)
+    export_vj_transfers(tdata,index,out)
     export_stop_indices(tdata,index,out)
     export_stop_point_attributes(tdata,index,out)
     export_jp_structs(tdata,index,out)

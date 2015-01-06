@@ -57,6 +57,12 @@ struct vehicle_journey {
     uint16_t vj_attributes;
 };
 
+typedef struct vehicle_journey_ref vehicle_journey_ref_t;
+struct vehicle_journey_ref {
+    uint16_t journey_pattern_index;
+    uint16_t vehicle_journey_index;
+};
+
 typedef struct stoptime stoptime_t;
 struct stoptime {
     rtime_t arrival;
@@ -143,6 +149,8 @@ struct tdata {
     uint32_t n_operator_for_line;
     uint32_t n_commercial_mode_for_jp;
     uint32_t n_physical_mode_for_line;
+    uint32_t n_vehicle_journey_transfers_backward;
+    uint32_t n_vehicle_journey_transfers_forward;
     stop_point_t *stop_points;
     uint8_t *stop_point_attributes;
     journey_pattern_t *journey_patterns;
@@ -181,6 +189,8 @@ struct tdata {
     uint16_t *physical_mode_for_line;
     uint16_t *line_for_route;
     uint8_t *operator_for_line;
+    vehicle_journey_ref_t *vehicle_journey_transfers_backward;
+    vehicle_journey_ref_t *vehicle_journey_transfers_forward;
     char *string_pool;
     uint32_t line_codes_width;
     char *line_codes;
