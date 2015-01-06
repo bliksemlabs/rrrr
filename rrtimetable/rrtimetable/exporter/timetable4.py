@@ -396,7 +396,7 @@ def export_stringpool(tdata,index,out):
 
 def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
-    index.loc_line_codes = write_string_table(out,[line.code or '' in index.lines])
+    index.loc_line_codes = write_string_table(out,[line.code or '' for line in index.lines])
 
 def export_line_uris(tdata,index,out):
     # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
