@@ -32,12 +32,6 @@ class Index():
         self.connections_from_stop_point = {}
         self.connections_point_to_point = {}
 
-        self.idx_for_linecode = {}
-        self.linecodes = []
-
-        self.idx_for_operator = {}
-        self.operators = []
-
         self.loc_for_string = {}
         self.strings = []
         self.string_length = 0
@@ -402,7 +396,7 @@ def export_stringpool(tdata,index,out):
 
 def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
-    index.loc_line_codes = write_string_table(out,index.linecodes)
+    index.loc_line_codes = write_string_table(out,[line.code or '' in index.lines])
 
 def export_line_uris(tdata,index,out):
     # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
