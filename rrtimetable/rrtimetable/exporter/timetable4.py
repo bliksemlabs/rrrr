@@ -383,9 +383,9 @@ def export_commercialmodes(tdata,index,out):
 def export_physicalmodes(tdata,index,out):
     print "writing out commercial_mode to string table"
     write_text_comment(out,"CCMODE IDS")
-    index.loc_physicalmode_ids = write_string_table(out,[cc.uri or '' for cc in index.commercial_modes])
+    index.loc_physicalmode_ids = write_string_table(out,[cc.uri or '' for cc in index.physical_modes])
     write_text_comment(out,"CCMODE NAMES")
-    index.loc_physicalmode_names = write_string_table(out,[cc.name or '' for cc in index.commercial_modes])
+    index.loc_physicalmode_names = write_string_table(out,[cc.name or '' for cc in index.physical_modes])
     index.loc_physical_mode_for_line = tell(out)
     for l in index.lines:
         writeshort(out,index.idx_for_physical_mode_uri[l.physical_mode.uri])
