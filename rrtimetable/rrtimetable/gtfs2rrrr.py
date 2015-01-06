@@ -46,8 +46,6 @@ def convert(gtfsdb):
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
 
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in gtfsdb.transfers():
-        if from_stop_id == to_stop_id:
-            continue
         try:
             Connection(tdata,from_stop_id,to_stop_id,min_transfer_time,type=transfer_type)
             Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)
@@ -62,7 +60,7 @@ def convert(gtfsdb):
         except:
             pass
 
-    for sp in tdata.stop_points:
+    for sp in tdata.stop_points.values():
         min_transfer_time = 120 #Create loop-transfers
         try:
             Connection(tdata,sp.uri,sp.uri,min_transfer_time,type=transfer_type)
