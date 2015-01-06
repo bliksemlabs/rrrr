@@ -474,7 +474,7 @@ def write_header (out,index) :
         len(index.physical_modes), # n_physicalmode_id
         len(index.physical_modes), # n_physicalmode_names
         index.string_length, # n_string_pool (length of the object)
-        len(index.idx_for_linecode), # n_line_codes
+        len(index.lines), # n_line_codes
         len(index.journey_patterns), # n_line_ids
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
