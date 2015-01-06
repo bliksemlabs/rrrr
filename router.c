@@ -590,14 +590,12 @@ static void apply_transfers (router_t *router, router_request_t *req,
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
 
-            /* Avoid reserved values including UNREACHED */
-            if (time_to > RTIME_THREE_DAYS) continue;
-            /* Catch wrapping/overflow due to limited range of rtime_t
+            /* Avoid reserved values including UNREACHED 
+             * and catch wrapping/overflow due to limited range of rtime_t
              * this happens normally on overnight routing but should
              * be avoided rather than caught.
              */
-            if (req->arrive_by ? time_to > time_from :
-                                 time_to < time_from) continue;
+            if (time_to > RTIME_THREE_DAYS || (req->arrive_by ? time_to > time_from :time_to < time_from)) continue;
 
             #ifdef RRRR_INFO
             {
