@@ -68,7 +68,7 @@ const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index) {
 }
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_index) {
-    return td->string_pool + td->line_names[line_index];
+    return td->string_pool + td->line_codes[line_index];
 }
 
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_index) {
