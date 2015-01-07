@@ -400,6 +400,12 @@ def export_linecodes(tdata,index,out):
     for line in index.lines:
         writeint(out,index.put_string(line.code or ''))
 
+def export_linenames(tdata,index,out):
+    write_text_comment(out,"LINE NAMES")
+    index.loc_line_names = tell(out)
+    for line in index.lines:
+        writeint(out,index.put_string(line.name or ''))
+
 def export_line_uris(tdata,index,out):
     # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
     print "writing line ids to string table"
@@ -477,7 +483,8 @@ def write_header (out,index) :
         len(index.physical_modes), # n_physicalmode_names
         index.string_length, # n_string_pool (length of the object)
         len(index.lines), # n_line_codes
-        len(index.journey_patterns), # n_line_ids
+        len(index.lines), # n_line_ids
+        len(index.lines), # n_line_names
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
         index.n_vj, # n_vj_ids
@@ -520,6 +527,7 @@ def write_header (out,index) :
         index.loc_physical_mode_for_line,
         index.loc_stringpool,
         index.loc_line_codes,
+        index.loc_line_names,
         index.loc_line_uris,
         index.loc_stop_point_uris,
         index.loc_stop_area_uris,
@@ -529,7 +537,7 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQ78I')
+struct_header = Struct('8sQ80I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -564,6 +572,7 @@ def export(tdata):
     export_routes(tdata,index,out)
     export_lines(tdata,index,out)
     export_linecodes(tdata,index,out)
+    export_linenames(tdata,index,out)
     export_journey_pattern_point_headsigns(tdata,index,out)
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)

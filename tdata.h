@@ -141,6 +141,7 @@ struct tdata {
     uint32_t n_physical_mode_names;
     uint32_t n_string_pool;
     uint32_t n_line_codes;
+    uint32_t n_line_names;
     uint32_t n_line_ids;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
@@ -193,6 +194,7 @@ struct tdata {
     vehicle_journey_ref_t *vehicle_journey_transfers_forward;
     char *string_pool;
     uint32_t *line_codes;
+    uint32_t *line_names;
     calendar_t *vj_active;
     calendar_t *journey_pattern_active;
     uint32_t *journey_pattern_point_headsigns;
@@ -262,6 +264,8 @@ const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
+const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_name_index);
+
 const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
 
 const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
@@ -295,6 +299,8 @@ const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_index,uint32_t jpp_index);
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+
+const char *tdata_line_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
