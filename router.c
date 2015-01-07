@@ -521,7 +521,7 @@ tdata_next (router_t *router, router_request_t *req,
  * in the ride phase and stored in the walk time member of states.
  */
 static void apply_transfers (router_t *router, router_request_t *req,
-                      uint32_t round, bool transfer) {
+                      uint32_t round, bool transfer, bool initial) {
     rtime_t *states_time = router->states_time + (round * router->tdata->n_stop_points);
     rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stop_points);
     spidx_t *states_walk_from = router->states_walk_from + (round * router->tdata->n_stop_points);
@@ -569,10 +569,17 @@ static void apply_transfers (router_t *router, router_request_t *req,
         #endif
 
         if (states_time[sp_index_from] == router->best_time[sp_index_from]) {
+            rtime_t sp_waittime = tdata_stop_point_waittime(router->tdata, sp_index_from);
             /* This state's best time is still its own.
              * No improvements from other transfers.
              */
-            states_walk_time[sp_index_from] = time_from;
+            if (initial){
+                states_walk_time[sp_index_from] = time_from;
+            }else if (req->arrive_by){
+                states_walk_time[sp_index_from] = time_from - sp_waittime;
+            }else{
+                states_walk_time[sp_index_from] = time_from + sp_waittime;
+            }
             states_walk_from[sp_index_from] = (spidx_t) sp_index_from;
             /* assert (router->best_time[stop_index_from] == time_from); */
             bitset_set(router->updated_walk_stop_points, sp_index_from);
@@ -1079,7 +1086,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
     /* Also updates the list of journey_patterns for next round
      * based on stops that were touched in this round.
      */
-    apply_transfers(router, req, round, true);
+    apply_transfers(router, req, round, true,false);
 
     /* Initialize the stops in round 1 that were used as
      * starting points for round 0.
@@ -1177,7 +1184,7 @@ static bool initialize_origin_index (router_t *router, router_request_t *req) {
     /* Apply transfers to initial state,
      * which also initializes the updated journey_patterns bitset.
      */
-    apply_transfers(router, req, 1, true);
+    apply_transfers(router, req, 1, true,true);
 
     return true;
 }

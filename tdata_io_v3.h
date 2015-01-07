@@ -49,6 +49,7 @@ struct tdata_header {
     uint32_t n_physical_mode_for_line;
     uint32_t n_vehicle_journey_transfers_backward;
     uint32_t n_vehicle_journey_transfers_forward;
+    uint32_t n_stop_point_waittime;
     uint32_t loc_stop_points;
     uint32_t loc_stop_point_attributes;
     uint32_t loc_stop_point_coords;
@@ -61,6 +62,7 @@ struct tdata_header {
     uint32_t loc_journey_patterns_at_stop;
     uint32_t loc_transfer_target_stops;
     uint32_t loc_transfer_durations;
+    uint32_t loc_stop_point_waittime;
     uint32_t loc_vehicle_journey_transfers_backward;
     uint32_t loc_vehicle_journey_transfers_forward;
     uint32_t loc_vj_active;

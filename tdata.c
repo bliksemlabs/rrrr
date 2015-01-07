@@ -331,6 +331,10 @@ const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index) {
     return td->string_pool + td->stop_area_nameidx[sa_index];
 }
 
+rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index) {
+    return tdata->stop_point_waittime[sp_index];
+}
+
 /* Rather than reserving a place to store the transfers used to create the initial state, we look them up as needed. */
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_index_from, spidx_t sp_index_to) {
     UNUSED(req);

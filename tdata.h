@@ -152,6 +152,7 @@ struct tdata {
     uint32_t n_physical_mode_for_line;
     uint32_t n_vehicle_journey_transfers_backward;
     uint32_t n_vehicle_journey_transfers_forward;
+    uint32_t n_stop_point_waittime;
     stop_point_t *stop_points;
     uint8_t *stop_point_attributes;
     journey_pattern_t *journey_patterns;
@@ -162,6 +163,7 @@ struct tdata {
     uint32_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
     rtime_t  *transfer_durations;
+    rtime_t  *stop_point_waittime;
     rtime_t max_time;
     /* optional data:
      * NULL pointer means it is not available */
@@ -315,6 +317,8 @@ stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_in
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
 vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index);
 
+/* Get the minimum waittime a passenger has to wait before transferring to another vehicle */
+rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index);
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_index_from, spidx_t sp_index_to);
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);

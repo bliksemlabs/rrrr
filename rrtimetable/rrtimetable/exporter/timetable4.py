@@ -4,7 +4,7 @@ import operator
 import sys
 
 NUMBER_OF_DAYS = 32
-
+MIN_WAITTIME = 120
 class Index():
     def __init__(self):
         self.operators = []
@@ -244,11 +244,15 @@ def export_transfers(tdata,index,out):
     index.transfers_offsets = []
     offset = 0
     transfertimes = []
+    stop_point_waittimes = {}
     for sp in index.stop_points:
         index.transfers_offsets.append(offset)
         if sp.uri not in index.connections_from_stop_point:
             continue
         for conn in index.connections_from_stop_point[sp.uri]:
+            if conn.from_stop_point.uri == conn.to_stop_point.uri:
+                stop_point_waittimes[conn.from_stop_point.uri] = conn.min_transfer_time
+                continue
             write_stop_point_idx(out,index,conn.to_stop_point.uri)
             transfertimes.append(conn.min_transfer_time)
             offset += 1
@@ -262,6 +266,13 @@ def export_transfers(tdata,index,out):
 
     for transfer_time in transfertimes:
         writeshort(out,(int(transfer_time) >> 2))
+
+    index.loc_stop_point_waittime = tell(out)
+    for sp in index.stop_points:
+        if sp.uri in stop_point_waittimes:
+            writeshort(out,(int(stop_point_waittimes[sp.uri]) >> 2))
+        else:
+            writeshort(out,(int(MIN_WAITTIME) >> 2))
 
 def export_stop_indices(tdata,index,out):
     print "saving stop indexes"
@@ -494,6 +505,7 @@ def write_header (out,index) :
         len(index.lines), #n_commerical_mode_for_line
         index.n_vj, #n_vj_transfers_backward
         index.n_vj, #n_vj_transfers_foward
+        len(index.stop_points), #n_stop_point_waittime
 
         index.loc_stop_points,
         index.loc_stop_point_attributes,
@@ -507,6 +519,7 @@ def write_header (out,index) :
         index.loc_jp_at_sp,
         index.loc_transfer_target_stop_points,
         index.loc_transfer_dist_meters,
+        index.loc_stop_point_waittime,
         index.loc_vj_transfers_backward,
         index.loc_vj_transfers_forward,
         index.loc_vj_active,
@@ -537,7 +550,7 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQ80I')
+struct_header = Struct('8sQ82I')
 
 def export(tdata):
     index = make_idx(tdata)
