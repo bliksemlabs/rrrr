@@ -21,12 +21,6 @@ struct leg {
     /* to stop_point index */
     spidx_t sp_to;
 
-    /* start journey_pattern_point index */
-    uint16_t jpp0;
-
-    /* end journey_pattern_point index */
-    uint16_t jpp1;
-
     /* start time */
     rtime_t  t0;
 
@@ -34,6 +28,12 @@ struct leg {
     rtime_t  t1;
 
     #ifdef RRRR_FEATURE_REALTIME
+    /* start journey_pattern_point index */
+    uint16_t jpp0;
+
+    /* end journey_pattern_point index */
+    uint16_t jpp1;
+
     /* start delay */
     int16_t d0;
 
