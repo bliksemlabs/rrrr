@@ -161,7 +161,7 @@ struct tdata {
     vehicle_journey_t *vjs;
     uint32_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
-    uint16_t  *transfer_durations;
+    rtime_t  *transfer_durations;
     rtime_t max_time;
     /* optional data:
      * NULL pointer means it is not available */

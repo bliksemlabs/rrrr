@@ -125,7 +125,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, vjs, vehicle_journey_t);
     load_dynamic (fd, journey_patterns_at_stop, uint32_t);
     load_dynamic (fd, transfer_target_stops, spidx_t);
-    load_dynamic (fd, transfer_durations, uint16_t);
+    load_dynamic (fd, transfer_durations, rtime_t);
     load_dynamic (fd, vehicle_journey_transfers_backward, vehicle_journey_ref_t);
     load_dynamic (fd, vehicle_journey_transfers_forward, vehicle_journey_ref_t);
     load_dynamic (fd, vj_active, calendar_t);
