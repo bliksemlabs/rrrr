@@ -146,8 +146,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, commercial_mode_names, uint32_t);
     load_dynamic (fd, physical_mode_ids, uint32_t);
     load_dynamic (fd, physical_mode_names, uint32_t);
+    load_dynamic (fd, platformcodes, uint32_t);
 
-    load_dynamic_string (fd, platformcodes);
     load_dynamic_string (fd, stop_point_ids);
     load_dynamic_string (fd, stop_area_ids);
     load_dynamic_string (fd, vj_ids);

@@ -104,8 +104,8 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, commercial_mode_names, uint32_t);
     load_mmap (td->base, physical_mode_ids, uint32_t);
     load_mmap (td->base, physical_mode_names, uint32_t);
+    load_mmap (td->base, platformcodes, uint32_t);
 
-    load_mmap_string (td->base, platformcodes);
     load_mmap_string (td->base, stop_point_ids);
     load_mmap_string (td->base, stop_area_ids);
     load_mmap_string (td->base, vj_ids);

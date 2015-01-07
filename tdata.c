@@ -98,7 +98,7 @@ const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index) {
     case ONBOARD :
         return NULL;
     default :
-        return td->platformcodes + (td->platformcodes_width * sp_index);
+        return td->string_pool + td->platformcodes[sp_index];
     }
 }
 

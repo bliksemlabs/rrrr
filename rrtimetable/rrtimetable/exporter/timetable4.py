@@ -119,6 +119,12 @@ def write_stop_area_idx(out,index,stop_area_uri):
     else:
         writeint(out,index.idx_for_stop_area_uri[stop_area_uri])
 
+def write_list_of_strings(out,index,list):
+    loc = tell(out)
+    for x in list:
+        writeint(out,index.put_string(x or ''))
+    return loc
+
 def export_sp_coords(tdata,index,out):
     write_text_comment(out,"STOP POINT COORDS")
     index.loc_stop_point_coords = out.tell()
@@ -337,29 +343,17 @@ def export_jp_validities(tdata,index,out):
 def export_platform_codes(tdata,index,out):
     print "writing out platformcodes for stops"
     write_text_comment(out,"PLATFORM CODES")
-    index.loc_platformcodes = write_string_table(out,[sp.platformcode or '' for sp in index.stop_points])
+    index.loc_platformcodes = write_list_of_strings(out,index,[sp.platformcode or '' for sp in index.stop_points])
 
 def export_stop_pointnames(tdata,index,out):
     print "writing out locations for stopnames"
-    write_text_comment(out,"STOP NAME LOCATIONS")
-    index.loc_stop_nameidx = tell(out)
-    for sp in index.stop_points:
-        writeint(out,index.put_string(sp.name or ''))
-    writeint(out,0)
+    write_text_comment(out,"STOP POINT NAMES")
+    index.loc_stop_nameidx = write_list_of_strings(out,index,[sp.name or '' for sp in index.stop_points])
 
 def export_stop_areanames(tdata,index,out):
     print "writing out locations for stopareas"
-    write_text_comment(out,"STOP AREA LOCATIONS")
-    index.loc_stop_areaidx = tell(out)
-    for sa in index.stop_areas:
-        writeint(out,index.put_string(sa.name or ''))
-    writeint(out,0)
-
-def write_list_of_strings(out,index,list):
-    loc = tell(out)
-    for x in list:
-        writeint(out,index.put_string(x or ''))
-    return loc
+    write_text_comment(out,"STOP AREA NAMES")
+    index.loc_stop_areaidx = write_list_of_strings(out,index,[sa.name or '' for sa in index.stop_areas])
 
 def export_operators(tdata,index,out):
     print "writing out opreators to string pool"

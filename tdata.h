@@ -168,8 +168,7 @@ struct tdata {
     latlon_t *stop_point_coords;
     latlon_t *stop_area_coords;
     spidx_t *stop_area_for_stop_point;
-    uint32_t platformcodes_width;
-    char *platformcodes;
+    uint32_t *platformcodes;
     uint32_t *stop_point_nameidx;
     uint32_t *stop_area_nameidx;
     uint32_t *operator_ids;
