@@ -355,21 +355,27 @@ def export_stop_areanames(tdata,index,out):
         writeint(out,index.put_string(sa.name or ''))
     writeint(out,0)
 
+def write_list_of_strings(out,index,list):
+    loc = tell(out)
+    for x in list:
+        writeint(out,index.put_string(x or ''))
+    return loc
+
 def export_operators(tdata,index,out):
-    print "writing out opreators to string table"
+    print "writing out opreators to string pool"
     write_text_comment(out,"OPERATOR IDS")
-    index.loc_operator_ids = write_string_table(out,[op.uri or '' for op in index.operators])
+    index.loc_operator_ids = write_list_of_strings(out,index,[op.uri or '' for op in index.operators])
     write_text_comment(out,"OPERATOR NAMES")
-    index.loc_operator_names = write_string_table(out,[op.name or '' for op in index.operators])
+    index.loc_operator_names = write_list_of_strings(out,index,[op.name or '' for op in index.operators])
     write_text_comment(out,"OPERATOR URLS")
-    index.loc_operator_urls = write_string_table(out,[op.url or '' for op in index.operators])
+    index.loc_operator_urls = write_list_of_strings(out,index,[op.url or '' for op in index.operators])
 
 def export_commercialmodes(tdata,index,out):
     print "writing out commercial_mode to string table"
     write_text_comment(out,"CCMODE IDS")
-    index.loc_commercialmode_ids = write_string_table(out,[cc.uri or '' for cc in index.commercial_modes])
+    index.loc_commercialmode_ids = write_list_of_strings(out,index,[cc.uri or '' for cc in index.commercial_modes])
     write_text_comment(out,"CCMODE NAMES")
-    index.loc_commercialmode_names = write_string_table(out,[cc.name or '' for cc in index.commercial_modes])
+    index.loc_commercialmode_names = write_list_of_strings(out,index,[cc.name or '' for cc in index.commercial_modes])
     index.loc_commercial_mode_for_jp = tell(out)
     for jp in index.journey_patterns:
         writeshort(out,index.idx_for_commercial_mode_uri[jp.commercial_mode.uri])
@@ -377,9 +383,9 @@ def export_commercialmodes(tdata,index,out):
 def export_physicalmodes(tdata,index,out):
     print "writing out commercial_mode to string table"
     write_text_comment(out,"CCMODE IDS")
-    index.loc_physicalmode_ids = write_string_table(out,[cc.uri or '' for cc in index.physical_modes])
+    index.loc_physicalmode_ids = write_list_of_strings(out,index,[cc.uri or '' for cc in index.physical_modes])
     write_text_comment(out,"CCMODE NAMES")
-    index.loc_physicalmode_names = write_string_table(out,[cc.name or '' for cc in index.physical_modes])
+    index.loc_physicalmode_names = write_list_of_strings(out,index,[cc.name or '' for cc in index.physical_modes])
     index.loc_physical_mode_for_line = tell(out)
     for l in index.lines:
         writeshort(out,index.idx_for_physical_mode_uri[l.physical_mode.uri])

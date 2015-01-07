@@ -56,15 +56,15 @@ const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_in
 }
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index) {
-    return td->operator_ids + (td->operator_ids_width * operator_index);
+    return td->string_pool + (td->operator_ids[operator_index]);
 }
 
 const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index) {
-    return td->operator_names + (td->operator_names_width * operator_index);
+    return td->string_pool + (td->operator_names[operator_index]);
 }
 
 const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index) {
-    return td->operator_urls + (td->operator_urls_width * operator_index);
+    return td->string_pool + (td->operator_urls[operator_index]);
 }
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_index) {
@@ -76,19 +76,19 @@ const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_index) {
 }
 
 const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index) {
-    return td->commercial_mode_names + (td->commercial_mode_names_width * commercial_mode_index);
+    return td->string_pool + (td->commercial_mode_names[commercial_mode_index]);
 }
 
 const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index) {
-    return td->commercial_mode_ids + (td->commercial_mode_ids_width * commercial_mode_index);
+    return td->string_pool + (td->commercial_mode_ids[commercial_mode_index]);
 }
 
 const char *tdata_name_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index) {
-    return td->physical_mode_names + (td->physical_mode_names_width * physical_mode_index);
+    return td->string_pool + (td->physical_mode_names[physical_mode_index]);
 }
 
 const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index) {
-    return td->physical_mode_ids + (td->physical_mode_ids_width * physical_mode_index);
+    return td->string_pool + (td->physical_mode_ids[physical_mode_index]);
 }
 
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index) {
@@ -228,7 +228,7 @@ uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, ui
     for (operator_index = operator_index_offset;
          operator_index < td->n_operator_names;
          ++operator_index) {
-        if (strcasestr(td->operator_names + (td->operator_names_width * operator_index),
+        if (strcasestr(tdata_operator_name_for_index(td, operator_index),
                 operator_name)) {
             return operator_index;
         }
@@ -241,7 +241,7 @@ const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
-    return td->operator_ids + (td->operator_ids_width * td->operator_for_line[line_index]);
+    return tdata_operator_id_for_index(td, td->operator_for_line[line_index]);
 }
 
 const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
@@ -249,7 +249,7 @@ const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_ind
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
-    return td->operator_names + (td->operator_names_width * td->operator_for_line[line_index]);
+    return tdata_operator_name_for_index(td, td->operator_for_line[line_index]);
 }
 
 const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
@@ -257,7 +257,7 @@ const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_inde
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
-    return td->operator_urls + (td->operator_urls_width * td->operator_for_line[line_index]);
+    return tdata_operator_url_for_index(td, td->operator_for_line[line_index]);
 }
 
 bool tdata_load(tdata_t *td, char *filename) {
