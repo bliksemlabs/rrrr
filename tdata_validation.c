@@ -179,7 +179,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
  */
 int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     int n_transfers_checked = 0;
-    uint32_t sp_index_from;
+    spidx_t sp_index_from;
     for (sp_index_from = 0;
          sp_index_from < tdata->n_stop_points;
          ++sp_index_from) {
@@ -188,7 +188,7 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
         uint32_t t  = tdata->stop_points[sp_index_from].transfers_offset;
         uint32_t tN = tdata->stop_points[sp_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
-            uint32_t sp_index_to = tdata->transfer_target_stops[t];
+            spidx_t sp_index_to = tdata->transfer_target_stops[t];
             rtime_t forward_duration = tdata->transfer_durations[t];
 
             /* Find the reverse transfer (sp_index_to -> sp_index_from) */
