@@ -192,8 +192,7 @@ struct tdata {
     vehicle_journey_ref_t *vehicle_journey_transfers_backward;
     vehicle_journey_ref_t *vehicle_journey_transfers_forward;
     char *string_pool;
-    uint32_t line_codes_width;
-    char *line_codes;
+    uint32_t *line_codes;
     calendar_t *vj_active;
     calendar_t *journey_pattern_active;
     uint32_t *journey_pattern_point_headsigns;

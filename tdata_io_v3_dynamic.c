@@ -137,6 +137,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, operator_for_line, uint8_t);
     load_dynamic (fd, commercial_mode_for_jp, uint16_t);
     load_dynamic (fd, physical_mode_for_line, uint16_t);
+    load_dynamic (fd, line_codes, uint32_t);
 
     load_dynamic_string (fd, platformcodes);
     load_dynamic_string (fd, stop_point_ids);
@@ -145,7 +146,6 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic_string (fd, operator_ids);
     load_dynamic_string (fd, operator_names);
     load_dynamic_string (fd, operator_urls);
-    load_dynamic_string (fd, line_codes);
     load_dynamic_string (fd, line_ids);
     load_dynamic_string (fd, commercial_mode_ids);
     load_dynamic_string (fd, commercial_mode_names);
