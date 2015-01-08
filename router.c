@@ -695,9 +695,10 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
         if (*best_vj != NONE &&
             !(jp->min_time < (jp->max_time - RTIME_ONE_DAY))) break;
 
-        for (i_vj_offset = 0;
-             i_vj_offset < jp->n_vjs;
-             ++i_vj_offset) {
+        for (i_vj_offset = req->arrive_by ? jp->n_vjs - 1: 0;
+             req->arrive_by ? i_vj_offset >= 0
+                            : i_vj_offset < jp->n_vjs;
+             req->arrive_by ? --i_vj_offset : ++i_vj_offset) {
             rtime_t time;
 
             #ifdef RRRR_DEBUG
@@ -736,6 +737,11 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             /* rtime overflow due to long overnight vehicle_journey's on day 2 */
             if (time == UNREACHED) continue;
 
+            if (req->arrive_by ? time < req->time_cutoff
+                               : time > req->time_cutoff){
+                goto end;
+            }
+
             /* Mark vj for boarding if it improves on the last round's
              * post-walk time at this stop. Note: we should /not/ be comparing
              * to the current best known time at this stop, because it may have
@@ -750,6 +756,8 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             }
         }  /*  end for (vehicle_journey's within this route) */
     }  /*  end for (service days: yesterday, today, tomorrow) */
+    end:
+    return;
 }
 
 static bool
