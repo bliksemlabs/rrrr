@@ -328,40 +328,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
      */
 }
 
-/* Returns the unix timestamp for the request date */
-time_t
-req_to_date (router_request_t *req, tdata_t *tdata,
-             struct tm *tm_out) {
-    time_t seconds;
-    uint32_t day_mask = req->day_mask;
-    uint8_t cal_day = 0;
-
-    while (day_mask >>= 1) cal_day++;
-
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY);
-    rrrr_localtime_r(&seconds, tm_out);
-
-    return seconds;
-}
-
-/* Returns the unix timestamp for the request time */
-time_t
-req_to_epoch (router_request_t *req, tdata_t *tdata,
-              struct tm *tm_out) {
-    time_t seconds;
-    uint32_t day_mask = req->day_mask;
-    uint8_t cal_day = 0;
-
-    while (day_mask >>= 1) cal_day++;
-
-    seconds = tdata->calendar_start_time +
-              (cal_day * SEC_IN_ONE_DAY) +
-              RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
-    rrrr_localtime_r(&seconds, tm_out);
-
-    return seconds;
-}
-
 /* Check the given request against the characteristics of the router that will
  * be used. Indexes larger than array lengths for the given router, signed
  * values less than zero, etc. can and will cause segfaults and present
