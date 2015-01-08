@@ -7,8 +7,9 @@
 /* router_request_to_epoch returns the time-date
  * used in the request in seconds since epoch.
  */
-
-time_t router_request_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+time_t
+router_request_to_epoch (router_request_t *req, tdata_t *tdata,
+                         struct tm *tm_out) {
     time_t seconds;
     calendar_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
@@ -28,8 +29,9 @@ time_t router_request_to_epoch (router_request_t *req, tdata_t *tdata, struct tm
 /* router_request_to_date returns the date used
  * in the request in seconds since epoch.
  */
-
-time_t router_request_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+time_t
+router_request_to_date (router_request_t *req, tdata_t *tdata,
+                        struct tm *tm_out) {
     time_t seconds;
     calendar_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
@@ -48,8 +50,8 @@ time_t router_request_to_date (router_request_t *req, tdata_t *tdata, struct tm 
  * it will not set required arguments such as arrival and departure
  * stops, not it will set the time.
  */
-
-void router_request_initialize(router_request_t *req) {
+void
+router_request_initialize(router_request_t *req) {
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
@@ -96,9 +98,13 @@ void router_request_initialize(router_request_t *req) {
     #endif
 }
 
-/* Initializes the router request then fills in its time and datemask fields from the given epoch time. */
+/* Initializes the router request then fills in its time and datemask fields
+ * from the given epoch time.
+ */
 /* TODO: if we set the date mask in the router itself we wouldn't need the tdata here. */
-void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime) {
+void
+router_request_from_epoch(router_request_t *req, tdata_t *tdata,
+                          time_t epochtime) {
     #if 0
     char etime[32];
     strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
@@ -113,8 +119,9 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
     /* TODO not DST-proof, use noons */
     cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
     if (cal_day > 31 ) {
-        /* date not within validity period of the timetable file, wrap to validity range
-         * 28 is a multiple of 7, so we always wrap up to the same day of the week
+        /* date not within validity period of the timetable file,
+         * wrap to validity range 28 is a multiple of 7, so we always wrap
+         * up to the same day of the week.
          */
         cal_day %= 28;
         fprintf (stderr, "calendar day out of range. wrapping to %d, "
@@ -126,8 +133,8 @@ void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epo
 
 /* router_request_randomize creates a completely filled in, working request.
  */
-
-void router_request_randomize (router_request_t *req, tdata_t *tdata) {
+void
+router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
@@ -177,8 +184,8 @@ void router_request_randomize (router_request_t *req, tdata_t *tdata) {
 /* router_request_next updates the current request structure with
  * the next request using the rtime_t resolution (4s)
  */
-
-void router_request_next(router_request_t *req, rtime_t inc) {
+void
+router_request_next(router_request_t *req, rtime_t inc) {
     req->time += inc;
 
     if (req->time >= 21600) {
@@ -191,13 +198,15 @@ void router_request_next(router_request_t *req, rtime_t inc) {
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 }
 
-/* Reverse the direction of the search leaving most request parameters unchanged but applying time
- * and transfer cutoffs based on an existing result for the same request.
- * Returns a boolean value indicating whether the request was successfully reversed.
+/* Reverse the direction of the search leaving most request parameters
+ * unchanged but applying time and transfer cutoffs based on an existing
+ * result for the same request. Returns a boolean value indicating whether
+ * the request was successfully reversed.
  */
-bool router_request_reverse(router_t *router, router_request_t *req) {
-    uint32_t max_transfers = req->max_transfers;
+bool
+router_request_reverse(router_t *router, router_request_t *req) {
     uint32_t best_sp_index = HASHGRID_NONE;
+    uint8_t max_transfers = req->max_transfers;
     uint8_t round = UINT8_MAX;
 
     /* range-check to keep search within states array */
@@ -205,7 +214,8 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     #ifdef RRRR_FEATURE_LATLON
-    if ((req->arrive_by ? req->from_stop_point == STOP_NONE : req->to_stop_point == STOP_NONE)) {
+    if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
+                          req->to_stop_point == STOP_NONE)) {
         hashgrid_result_t *hg_result;
         uint32_t sp_index;
         double distance;
@@ -264,8 +274,9 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
             req->to_stop_point = (spidx_t) best_sp_index;
         }
 
-        /* TODO: Ideally we should implement a o_transfers option here to find the stop_point that requires the
-         * least transfers and is the best with respect to arrival time. This might be a different stop
+        /* TODO: Ideally we should implement a o_transfers option here to find
+         * the stop_point that requires the least transfers and is the best
+         * with respect to arrival time. This might be a different stop
          * than the stop_point that is the best with most transfers.
          */
 
@@ -289,7 +300,9 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
         }
     }
 
-    /* In the case that no solution was found, the request will remain unchanged. */
+    /* In the case that no solution was found,
+     * the request will remain unchanged.
+     */
     if (round == UINT8_MAX) return false;
 
     req->time_cutoff = req->time;
@@ -315,7 +328,10 @@ bool router_request_reverse(router_t *router, router_request_t *req) {
      */
 }
 
-time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+/* Returns the unix timestamp for the request date */
+time_t
+req_to_date (router_request_t *req, tdata_t *tdata,
+             struct tm *tm_out) {
     time_t seconds;
     uint32_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
@@ -328,7 +344,10 @@ time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
     return seconds;
 }
 
-time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
+/* Returns the unix timestamp for the request time */
+time_t
+req_to_epoch (router_request_t *req, tdata_t *tdata,
+              struct tm *tm_out) {
     time_t seconds;
     uint32_t day_mask = req->day_mask;
     uint8_t cal_day = 0;
@@ -343,13 +362,16 @@ time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out) {
     return seconds;
 }
 
-/* Check the given request against the characteristics of the router that will be used.
- * Indexes larger than array lengths for the given router, signed values less than zero, etc.
- * can and will cause segfaults and present security risks.
+/* Check the given request against the characteristics of the router that will
+ * be used. Indexes larger than array lengths for the given router, signed
+ * values less than zero, etc. can and will cause segfaults and present
+ * security risks.
  *
- * We could also infer departure stop_point etc. from start vehicle_journey here, "missing start point" and reversal problems.
+ * We could also infer departure stop_point etc. from start vehicle_journey
+ * here, "missing start point" and reversal problems.
  */
-bool range_check(router_request_t *req, tdata_t *tdata) {
+bool
+range_check(router_request_t *req, tdata_t *tdata) {
     return !(req->walk_speed < 0.1 ||
              req->from_stop_point >= tdata->n_stop_points ||
              req->to_stop_point   >= tdata->n_stop_points
@@ -357,8 +379,8 @@ bool range_check(router_request_t *req, tdata_t *tdata) {
 }
 
 /* router_request_dump prints the current request structure to the screen */
-
-void router_request_dump(router_request_t *req, tdata_t *tdata) {
+void
+router_request_dump(router_request_t *req, tdata_t *tdata) {
     const char *from_stop_id = tdata_stop_point_name_for_index(tdata, req->from_stop_point);
     const char *to_stop_id   = tdata_stop_point_name_for_index(tdata, req->to_stop_point);
     char time[32], time_cutoff[32], date[11];
