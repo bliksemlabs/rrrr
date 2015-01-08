@@ -1,5 +1,6 @@
 #include "rrrr_types.h"
 #include "router_result.h"
+#include "router_request.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -303,8 +304,51 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
     return check_plan_invariants (plan);
 }
 
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
+static void
+leg_add_alerts (leg_t *leg, tdata_t *tdata, time_t date, char **alert_msg) {
+    size_t i_entity;
+    uint64_t t0 = date + RTIME_TO_SEC(leg->t0 - RTIME_ONE_DAY);
+    uint64_t t1 = date + RTIME_TO_SEC(leg->t1 - RTIME_ONE_DAY);
+    for (i_entity = 0; i_entity < tdata->alerts->n_entity; ++i_entity) {
+        if (tdata->alerts->entity[i_entity] &&
+            tdata->alerts->entity[i_entity]->alert) {
+            TransitRealtime__Alert *alert = tdata->alerts->entity[i_entity]->alert;
+
+            if (alert->n_active_period > 0) {
+                size_t i_active_period;
+                for (i_active_period = 0; i_active_period < alert->n_active_period; ++i_active_period) {
+                    TransitRealtime__TimeRange *active_period = alert->active_period[i_active_period];
+                    size_t i_informed_entity;
+
+                    if (active_period->start >= t1 || active_period->end <= t0) continue;
+
+                    for (i_informed_entity = 0; i_informed_entity < alert->n_informed_entity; ++i_informed_entity) {
+                        TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[i_informed_entity];
+
+                        if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->journey_pattern) ) &&
+                            ( (!informed_entity->stop_id)  || (
+                                ((uint32_t) *(informed_entity->stop_id) == leg->sp_from && active_period->start <= t0 && active_period->end >= t0 ) ||
+                                ((uint32_t) *(informed_entity->stop_id) == leg->sp_to   && active_period->start <= t1 && active_period->end >= t1 )
+                            ) ) &&
+                            ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->vj) )
+                            /* TODO: need to have the start date for a trip_id for informed_entity->trip->start_date */
+                        ) {
+                            *alert_msg = alert->header_text->translation[0]->text;
+                        }
+
+                        /* TODO: theoretically we could have multiple alert messages */
+                        if (*alert_msg) return;
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
 static char *
-plan_render_itinerary (struct itinerary *itin, tdata_t *tdata,
+plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
                        char *b, char *b_end) {
     leg_t *leg;
 
@@ -352,34 +396,10 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata,
 
             #ifdef RRRR_FEATURE_REALTIME_ALERTS
             if (leg->journey_pattern != WALK && tdata->alerts) {
-                size_t i_entity;
-                for (i_entity = 0; i_entity < tdata->alerts->n_entity; ++i_entity) {
-                    if (tdata->alerts->entity[i_entity] &&
-                        tdata->alerts->entity[i_entity]->alert) {
-
-                        TransitRealtime__Alert *alert = tdata->alerts->entity[i_entity]->alert;
-                        size_t i_informed_entity;
-
-                        for (i_informed_entity = 0; i_informed_entity < alert->n_informed_entity; ++i_informed_entity) {
-                            TransitRealtime__EntitySelector *informed_entity = alert->informed_entity[i_informed_entity];
-
-                            if ( ( (!informed_entity->route_id) || ((uint32_t) *(informed_entity->route_id) == leg->journey_pattern) ) &&
-                                ( (!informed_entity->stop_id)  || ((uint32_t) *(informed_entity->stop_id) == leg->sp_from) ) &&
-                                ( (!informed_entity->trip)     || (!informed_entity->trip->trip_id) || ((uint32_t) *(informed_entity->trip->trip_id) == leg->vj) )
-                                /* TODO: need to have rtime_to_date  for informed_entity->vj->start_date */
-                                /* TODO: need to have rtime_to_epoch for informed_entity->active_period */
-                            ) {
-                                alert_msg = alert->header_text->translation[0]->text;
-                            }
-
-                            if (alert_msg) break;
-                        }
-
-                        /* TODO: theoretically we could have multiple alert messages */
-                        if (alert_msg) break;
-                    }
-                }
+                leg_add_alerts (leg, tdata, date, &alert_msg);
             }
+            #else
+            UNUSED(date);
             #endif
         }
 
@@ -410,6 +430,7 @@ plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req,
             char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
+    time_t date = router_request_to_date (req, tdata, NULL);
 
     if ((req->optimise & o_all) == o_all) {
         /* Iterate over itineraries in this plan,
@@ -419,21 +440,21 @@ plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req,
         for (itin = plan->itineraries;
              itin < plan->itineraries + plan->n_itineraries;
              ++itin) {
-            b = plan_render_itinerary (itin, tdata, b, b_end);
+            b = plan_render_itinerary (itin, tdata, date, b, b_end);
         }
     } else if (plan->n_itineraries > 0) {
         /* only render the first itinerary,
          * which has the least transfers
          */
         if ((req->optimise & o_transfers) == o_transfers) {
-           b = plan_render_itinerary (plan->itineraries, tdata, b, b_end);
+           b = plan_render_itinerary (plan->itineraries, tdata, date, b, b_end);
         }
 
         /* only render the last itinerary,
          * which has the most rides and is the shortest in time
          */
         if ((req->optimise & o_shortest) == o_shortest) {
-            b = plan_render_itinerary (&plan->itineraries[plan->n_itineraries - 1], tdata, b, b_end);
+            b = plan_render_itinerary (&plan->itineraries[plan->n_itineraries - 1], tdata, date, b, b_end);
         }
     }
     *b = '\0';
