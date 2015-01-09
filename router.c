@@ -739,7 +739,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
 
             if (req->arrive_by ? time < req->time_cutoff
                                : time > req->time_cutoff){
-                goto end;
+                return;
             }
 
             /* Mark vj for boarding if it improves on the last round's
@@ -753,12 +753,10 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
                 *best_vj = i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
-                goto end;
+                return;
             }
         }  /*  end for (vehicle_journey's within this route) */
     }  /*  end for (service days: yesterday, today, tomorrow) */
-    end:
-    return;
 }
 
 static bool
