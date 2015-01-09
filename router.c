@@ -678,7 +678,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
          serviceday <= router->servicedays + router->n_servicedays;
          ++serviceday) {
 
-        uint16_t i_vj_offset;
+        int32_t i_vj_offset;
 
         /* Check that this journey_pattern still has any vehicle_journeys
          * running on this day.
