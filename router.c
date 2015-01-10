@@ -753,10 +753,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
                 *best_vj = i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
-/* BUG: GCC is significantly slower with this return, clang improves a lot. */
-#ifdef __clang__
                 return;
-#endif
             }
         }  /*  end for (vehicle_journey's within this route) */
     }  /*  end for (service days: yesterday, today, tomorrow) */
