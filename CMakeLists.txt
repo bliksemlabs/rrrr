@@ -7,6 +7,11 @@ if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
 endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Werror")
+endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+
+
 SET(PROTO_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/gtfs-realtime.proto
 )
