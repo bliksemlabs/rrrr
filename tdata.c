@@ -308,7 +308,7 @@ uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jp
     return stop1->journey_patterns_at_stop_point_offset - stop0->journey_patterns_at_stop_point_offset;
 }
 
-stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
+stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index) {
     return td->stop_times + td->vjs[td->journey_patterns[jp_index].vj_offset + vj_index].stop_times_offset;
 }
 
