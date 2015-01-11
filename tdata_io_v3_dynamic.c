@@ -37,7 +37,7 @@
 
 /* Set the maximum drivetime of any day in tdata */
 void set_max_time(tdata_t *td){
-    uint32_t jp_index;
+    jpidx_t jp_index;
     td->max_time = UNREACHED;
     for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
         if (td->journey_patterns[jp_index].max_time < td->max_time) {

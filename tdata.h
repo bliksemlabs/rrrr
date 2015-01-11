@@ -30,8 +30,8 @@ typedef struct journey_pattern journey_pattern_t;
 struct journey_pattern {
     uint32_t journey_pattern_point_offset;
     uint32_t vj_offset;
-    uint16_t n_stops;
-    uint16_t n_vjs;
+    jppidx_t n_stops;
+    jp_vjoffset_t n_vjs;
     uint16_t attributes;
     uint16_t route_index;
     rtime_t  min_time;
@@ -290,7 +290,7 @@ calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,uint32_t jpp_index);
+const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,jppidx_t jpp_index);
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 

@@ -36,11 +36,11 @@ struct router {
     /* The best known time at each stop_point */
     rtime_t *best_time;
 
-   /* The index of the journey_pattern used to travel from back_stop_point to here, or WALK  */
-   jpidx_t *states_back_journey_pattern;
+    /* The index of the journey_pattern used to travel from back_stop_point to here, or WALK  */
+    jpidx_t *states_back_journey_pattern;
 
     /* The index of the vehicle_journey used to travel from back_stop_point */
-    uint32_t *states_back_vehicle_journey;
+    jp_vjoffset_t *states_back_vehicle_journey;
 
     /* The index of the previous stop_point in the itinerary */
     spidx_t *states_ride_from;
@@ -59,8 +59,8 @@ struct router {
     rtime_t *states_board_time;
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    uint16_t *states_back_journey_pattern_point;
-    uint16_t *states_journey_pattern_point;
+    jppidx_t *states_back_journey_pattern_point;
+    jppidx_t *states_journey_pattern_point;
     #endif
 
     /* Used to track which stop_points improved during each round */

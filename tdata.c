@@ -178,7 +178,7 @@ const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset]);
 }
 
-const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index, uint32_t jpp_index) {
+const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_index) {
     if (jp_index == NONE) return "NONE";
     return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset + jpp_index]);
 }

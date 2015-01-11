@@ -25,6 +25,10 @@ typedef uint16_t spidx_t;
 
 typedef uint16_t jpidx_t;
 
+typedef uint16_t jp_vjoffset_t;
+
+typedef uint16_t jppidx_t;
+
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
