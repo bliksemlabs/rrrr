@@ -37,7 +37,7 @@
 
 /* Set the maximum drivetime of any day in tdata */
 void set_max_time(tdata_t *td){
-    uint32_t jp_index;
+    jpidx_t jp_index;
     td->max_time = UNREACHED;
     for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
         if (td->journey_patterns[jp_index].max_time < td->max_time) {
@@ -75,7 +75,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_stop_point_coords < ((spidx_t) -2) &&
             header->n_stop_area_coords < ((spidx_t) -2) &&
             header->n_stop_area_coords < ((spidx_t) -2) &&
-            header->n_journey_patterns < (UINT32_MAX - 1) &&
+            header->n_journey_patterns < ((jpidx_t) -1) &&
             header->n_journey_pattern_points < (UINT32_MAX) &&
             header->n_journey_pattern_point_attributes < (UINT32_MAX) &&
             header->n_journey_pattern_point_headsigns < (UINT32_MAX) &&
@@ -123,7 +123,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, journey_pattern_point_headsigns, uint32_t);
     load_dynamic (fd, stop_times, stoptime_t);
     load_dynamic (fd, vjs, vehicle_journey_t);
-    load_dynamic (fd, journey_patterns_at_stop, uint32_t);
+    load_dynamic (fd, journey_patterns_at_stop, jpidx_t);
     load_dynamic (fd, transfer_target_stops, spidx_t);
     load_dynamic (fd, transfer_durations, rtime_t);
     load_dynamic (fd, stop_point_waittime, rtime_t);

@@ -30,7 +30,7 @@
 
 /* Set the maximum drivetime of any day in tdata */
 void set_max_time(tdata_t *td){
-    uint32_t jp_index;
+    jpidx_t jp_index;
     td->max_time = UNREACHED;
     for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
         if (td->journey_patterns[jp_index].max_time < td->max_time) {
@@ -83,7 +83,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, journey_pattern_point_headsigns, uint32_t);
     load_mmap (td->base, stop_times, stoptime_t);
     load_mmap (td->base, vjs, vehicle_journey_t);
-    load_mmap (td->base, journey_patterns_at_stop, uint32_t);
+    load_mmap (td->base, journey_patterns_at_stop, jpidx_t);
     load_mmap (td->base, transfer_target_stops, spidx_t);
     load_mmap (td->base, transfer_durations, rtime_t);
     load_mmap (td->base, stop_point_waittime, rtime_t);

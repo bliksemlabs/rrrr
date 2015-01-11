@@ -263,7 +263,7 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
             l += (req->arrive_by ? 1 : -1);   /* next leg */
 
         }
-        if (req->onboard_journey_pattern_offset != NONE) {
+        if (req->onboard_journey_pattern_vjoffset != NONE) {
             if (!req->arrive_by) {
                 /* Results starting on board do not have an initial walk leg. */
                 l->sp_from = l->sp_to = ONBOARD;

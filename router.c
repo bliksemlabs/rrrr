@@ -20,6 +20,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <math.h>
+#include <sys/types.h>
 
 #ifdef RRRR_FEATURE_LATLON
 static bool router_setup_hashgrid(router_t *router) {
@@ -47,8 +48,8 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
-    router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
-    router->states_back_vehicle_journey = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
+    router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
+    router->states_back_vehicle_journey = (jp_vjoffset_t *) malloc(sizeof(jp_vjoffset_t) * n_states);
     router->states_ride_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
     router->states_walk_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
     router->states_walk_time = (rtime_t *) malloc(sizeof(rtime_t) * n_states);
@@ -56,8 +57,8 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     router->states_board_time = (rtime_t *) malloc(sizeof(rtime_t) * n_states);
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    router->states_back_journey_pattern_point = (uint16_t *) malloc(sizeof(uint16_t) * n_states);
-    router->states_journey_pattern_point = (uint16_t *) malloc(sizeof(uint16_t) * n_states);
+    router->states_back_journey_pattern_point = (jppidx_t *) malloc(sizeof(jppidx_t) * n_states);
+    router->states_journey_pattern_point = (jppidx_t *) malloc(sizeof(jppidx_t) * n_states);
     #endif
 
     router->updated_stop_points = bitset_new(tdata->n_stop_points);
@@ -239,8 +240,8 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
 /* Given a stop_point index, mark all journey_patterns that serve it as updated. */
 static void flag_journey_patterns_for_stop_point(router_t *router, router_request_t *req,
-        uint32_t sp_index) {
-    uint32_t *journey_patterns;
+        spidx_t sp_index) {
+    jpidx_t *journey_patterns;
     uint32_t i_jp = tdata_journey_patterns_for_stop_point(router->tdata, sp_index,
             &journey_patterns);
 
@@ -421,7 +422,7 @@ static void initialize_transfers (router_t *router,
  */
 static rtime_t
 tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
-                uint32_t jp_index, uint32_t vj_offset, uint32_t journey_pattern_point,
+                jpidx_t jp_index, jp_vjoffset_t vj_offset, jppidx_t journey_pattern_point,
                 bool arrive) {
     rtime_t time, time_adjusted;
     stoptime_t *vj_stoptimes;
@@ -483,7 +484,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 /* TODO: change the function name of tdata_next */
 static bool
 tdata_next (router_t *router, router_request_t *req,
-            uint32_t jp_index, uint32_t vj_offset, rtime_t qtime,
+            jpidx_t jp_index, jp_vjoffset_t vj_offset, rtime_t qtime,
             spidx_t *ret_sp_index, rtime_t *ret_stop_time) {
 
     spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
@@ -497,7 +498,7 @@ tdata_next (router_t *router, router_request_t *req,
         /* TODO: check if the arrive = false flag works with req->arrive_by */
 
         rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
-                jp_index, vj_offset, jpp_i, false);
+                jp_index, vj_offset, (jppidx_t) jpp_i, false);
 
         /* Find stop_point immediately after the given time on the given vj. */
         if (req->arrive_by ? time > qtime : time < qtime) {
@@ -569,7 +570,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
         #endif
 
         if (states_time[sp_index_from] == router->best_time[sp_index_from]) {
-            rtime_t sp_waittime = tdata_stop_point_waittime(router->tdata, sp_index_from);
+            rtime_t sp_waittime = tdata_stop_point_waittime(router->tdata, (spidx_t) sp_index_from);
             /* This state's best time is still its own.
              * No improvements from other transfers.
              */
@@ -632,7 +633,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
                          sp_index_to, btimetext(time_to, buf));
                 #endif
                 states_walk_time[sp_index_to] = time_to;
-                states_walk_from[sp_index_to] = sp_index_from;
+                states_walk_from[sp_index_to] = (spidx_t) sp_index_from;
                 router->best_time[sp_index_to] = time_to;
                 bitset_set(router->updated_walk_stop_points, sp_index_to);
             }
@@ -643,7 +644,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
     for (sp_index_from = bitset_next_set_bit (router->updated_walk_stop_points, 0);
          sp_index_from != BITSET_NONE;
          sp_index_from = bitset_next_set_bit (router->updated_walk_stop_points, sp_index_from + 1)) {
-        flag_journey_patterns_for_stop_point(router, req, sp_index_from);
+        flag_journey_patterns_for_stop_point(router, req, (spidx_t) sp_index_from);
     }
 
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -660,11 +661,11 @@ static void apply_transfers (router_t *router, router_request_t *req,
 }
 
 static void search_vehicle_journeys_within_days(router_t *router, router_request_t *req,
-        uint32_t jp_index,
-        uint16_t jpp_offset,
+        jpidx_t jp_index,
+        jppidx_t jpp_offset,
         rtime_t prev_time,
         serviceday_t **best_serviceday,
-        uint32_t *best_vj, rtime_t *best_time) {
+        jp_vjoffset_t *best_vj, rtime_t *best_time) {
 
     calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
     vehicle_journey_t *vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
@@ -693,8 +694,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
          * scanning additional days. Note that day list is
          * reversed for arrive-by searches.
          */
-        if (*best_vj != NONE &&
-            !(jp->min_time < (jp->max_time - RTIME_ONE_DAY))) break;
+        if (*best_vj != NONE && jp->min_time >= jp->max_time - RTIME_ONE_DAY) break;
 
         for (i_vj_offset = req->arrive_by ? jp->n_vjs - 1: 0;
              req->arrive_by ? i_vj_offset >= 0
@@ -712,7 +712,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             /* skip this vj if it is banned */
             if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
                         req->n_banned_vjs, jp_index,
-                    i_vj_offset)) continue;
+                    (jp_vjoffset_t) i_vj_offset)) continue;
             #endif
 
             /* skip this vj if it is not running on
@@ -729,7 +729,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             /* consider the arrival or departure time on
              * the current service day
              */
-            time = tdata_stoptime (router->tdata, serviceday, jp_index, i_vj_offset, jpp_offset, req->arrive_by);
+            time = tdata_stoptime (router->tdata, serviceday, jp_index, (jp_vjoffset_t) i_vj_offset, jpp_offset, req->arrive_by);
 
             #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
             fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
@@ -751,7 +751,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
              */
             if (req->arrive_by ? time <= prev_time && time > *best_time
                                : time >= prev_time && time < *best_time) {
-                *best_vj = i_vj_offset;
+                *best_vj = (jp_vjoffset_t) i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
                 return;
@@ -762,16 +762,16 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
 
 static bool
 write_state(router_t *router, router_request_t *req,
-            uint8_t round, uint32_t jpp_index, uint32_t vj_offset,
-            spidx_t sp_index, uint16_t jpp_offset, rtime_t time,
-            spidx_t board_stop, uint16_t board_jpp_stop,
+            uint8_t round, jpidx_t jp_index, jp_vjoffset_t vj_offset,
+            spidx_t sp_index, jppidx_t jpp_offset, rtime_t time,
+            spidx_t board_stop, jppidx_t board_jpp_offset,
             rtime_t board_time) {
 
     uint64_t i_state = ((uint64_t) round) * router->tdata->n_stop_points + sp_index;
 
     #ifndef RRRR_REALTIME
     UNUSED (jpp_offset);
-    UNUSED (board_jpp_stop);
+    UNUSED (board_jpp_offset);
     #endif
 
     #ifdef RRRR_INFO
@@ -783,12 +783,12 @@ write_state(router_t *router, router_request_t *req,
 
     router->best_time[sp_index]    = time;
     router->states_time[i_state]                 = time;
-    router->states_back_journey_pattern[i_state] = jpp_index;
+    router->states_back_journey_pattern[i_state] = jp_index;
     router->states_back_vehicle_journey[i_state] = vj_offset;
     router->states_ride_from[i_state]            = board_stop;
     router->states_board_time[i_state]           = board_time;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    router->states_back_journey_pattern_point[i_state] = board_jpp_stop;
+    router->states_back_journey_pattern_point[i_state] = board_jpp_offset;
     router->states_journey_pattern_point[i_state]      = jpp_offset;
     #endif
 
@@ -819,20 +819,20 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
          jp_index = bitset_next_set_bit (router->updated_journey_patterns, jp_index + 1)) {
 
         journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-        spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+        spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, (jpidx_t) jp_index);
         uint8_t *journey_pattern_point_attributes = tdata_stop_point_attributes_for_journey_pattern(router->tdata, jp_index);
 
         /* Service day on which that vj was boarded */
         serviceday_t *board_serviceday = NULL;
 
-        /* vj index within the route. NONE means not yet boarded. */
-        uint32_t      vj_index = NONE;
+        /* vj index within the journey_pattern. NONE means not yet boarded. */
+        jp_vjoffset_t vj_index = NONE;
 
         /* stop_point index where that vj was boarded */
         spidx_t       board_sp  = 0;
 
         /* journey_pattern_point index where that vj was boarded */
-        uint16_t      board_jpp = 0;
+        jppidx_t      board_jpp = 0;
 
         /* time when that vj was boarded */
         rtime_t       board_time = 0;
@@ -840,14 +840,14 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         /* Iterate over stop_point indexes within the route. Each one corresponds to
          * a global stop_point index. Note that the stop times array should be
-         * accessed with [vj_index][jpp_index] not [vj_index][jpp_index].
+         * accessed with [vj_index][jpp_offset] not [vj_index][jpp_offset].
          *
          * The iteration variable is signed to allow ending the iteration at
          * the beginning of the route, hence we decrement to 0 and need to
          * test for >= 0. An unsigned variable would always be true.
          */
 
-        int32_t jpp_index;
+        int32_t jpp_offset;
 
         #ifdef FEATURE_OPERATOR_FILTER
         if (req->operator != OPERATOR_UNFILTERED &&
@@ -864,21 +864,21 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         #endif
 
 
-        for (jpp_index = (req->arrive_by ? jp->n_stops - 1 : 0);
-                req->arrive_by ? jpp_index >= 0 :
-                jpp_index < jp->n_stops;
-                req->arrive_by ? --jpp_index :
-                                 ++jpp_index) {
+        for (jpp_offset = (req->arrive_by ? jp->n_stops - 1 : 0);
+                req->arrive_by ? jpp_offset >= 0 :
+                jpp_offset < jp->n_stops;
+                req->arrive_by ? --jpp_offset :
+                                 ++jpp_offset) {
 
-            uint32_t sp_index = journey_pattern_points[jpp_index];
+            uint32_t sp_index = journey_pattern_points[jpp_offset];
             rtime_t prev_time;
             bool attempt_board = false;
-            bool forboarding = (journey_pattern_point_attributes[jpp_index] & rsa_boarding);
-            bool foralighting = (journey_pattern_point_attributes[jpp_index] & rsa_alighting);
+            bool forboarding = (journey_pattern_point_attributes[jpp_offset] & rsa_boarding);
+            bool foralighting = (journey_pattern_point_attributes[jpp_offset] & rsa_alighting);
 
             #ifdef RRRR_INFO
             char buf[13];
-            fprintf(stderr, "    sp %2d [%d] %c%c %s %s\n", jpp_index,
+            fprintf(stderr, "    sp %2d [%d] %c%c %s %s\n", jpp_offset,
                             sp_index,
                             forboarding ? 'B' : ' ',
                             foralighting ? 'A' : ' ',
@@ -910,7 +910,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
              * and forces a re-board afterwards.
              */
             if (set_in (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                    sp_index)) {
+                    (spidx_t) sp_index)) {
                 vj_index = NONE;
                 continue;
             }
@@ -936,8 +936,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                      */
                     rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
-                            jp_index, vj_index,
-                                                        (uint16_t) jpp_index,
+                            (jpidx_t) jp_index, vj_index, (jppidx_t) jpp_offset,
                                                         req->arrive_by);
                     if (vj_stoptime == UNREACHED) {
                         attempt_board = false;
@@ -963,7 +962,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                  * reduces speed by ~20 percent over binary search.
                  */
                 serviceday_t *best_serviceday = NULL;
-                uint32_t best_vj = NONE;
+                jp_vjoffset_t best_vj = NONE;
                 rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
                 #ifdef RRRR_INFO
@@ -974,7 +973,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
                 #endif
 
-                search_vehicle_journeys_within_days(router, req, jp_index, (uint16_t) jpp_index,
+                search_vehicle_journeys_within_days(router, req, (jpidx_t) jp_index, (jppidx_t) jpp_offset,
                         prev_time, &best_serviceday,
                         &best_vj, &best_time);
 
@@ -993,8 +992,8 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     } else {
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
-                        board_sp = sp_index;
-                        board_jpp = (uint16_t) jpp_index;
+                        board_sp = (spidx_t) sp_index;
+                        board_jpp = (jppidx_t) jpp_offset;
                         board_serviceday = best_serviceday;
                         vj_index = best_vj;
                     }
@@ -1009,7 +1008,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             } else if (vj_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
                                                jp_index, vj_index,
-                                               (uint16_t) jpp_index,
+                                               (jppidx_t ) jpp_offset,
                                                !req->arrive_by);
 
                 /* overflow due to long overnight vehicle_journeys on day 2 */
@@ -1073,7 +1072,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     #endif
                 } else {
                     write_state(router, req, round, jp_index, vj_index,
-                            sp_index, (uint16_t) jpp_index, time,
+                            sp_index, (jppidx_t) jpp_offset, time,
                             board_sp, board_jpp, board_time);
 
                     /*  mark stop_point for next round. */
@@ -1127,7 +1126,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     rtime_t stop_time;
 
     if (tdata_next (router, req,
-                    req->onboard_vj_journey_pattern, req->onboard_journey_pattern_offset,
+                    req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
                     req->time, &sp_index, &stop_time) ){
         uint64_t i_state;
 
@@ -1147,7 +1146,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
          */
         bitset_clear (router->updated_stop_points);
         bitset_clear (router->updated_journey_patterns);
-        bitset_set (router->updated_journey_patterns, req->onboard_vj_journey_pattern);
+        bitset_set (router->updated_journey_patterns, req->onboard_journey_pattern);
 
         return true;
     }
@@ -1224,13 +1223,13 @@ static bool latlon_best_stop_point_index(router_t *router, router_request_t *req
         #if RRRR_MAX_BANNED_STOP_POINTS > 0
         /* if a stop_point is banned, we should not act upon it here */
         if (set_in (req->banned_stops, req->n_banned_stops,
-                sp_index)) continue;
+                (spidx_t) sp_index)) continue;
         #endif
 
         #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
         /* if a stop_point is banned hard, we should not act upon it here */
         if (set_in (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                sp_index)) continue;
+                (spidx_t) sp_index)) continue;
         #endif
 
         i_state = router->tdata->n_stop_points + sp_index;
@@ -1328,7 +1327,7 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
                             coord, req->walk_max_distance);
         }
         hashgrid_result_reset (&req->from_hg_result);
-        router->target = hashgrid_result_closest (&req->from_hg_result);
+        router->target = (spidx_t) hashgrid_result_closest (&req->from_hg_result);
     } else {
         if (req->to_latlon.lat == 0.0 &&
             req->to_latlon.lon == 0.0) {
@@ -1342,7 +1341,7 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
                             coord, req->walk_max_distance);
         }
         hashgrid_result_reset (&req->to_hg_result);
-        router->target = hashgrid_result_closest (&req->to_hg_result);
+        router->target = (spidx_t) hashgrid_result_closest (&req->to_hg_result);
     }
 
     return (router->target != STOP_NONE);
@@ -1388,7 +1387,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      */
 
     /* We are starting on board a vj, not at a station. */
-    if (req->onboard_vj_journey_pattern != NONE && req->onboard_journey_pattern_offset != NONE) {
+    if (req->onboard_journey_pattern != NONE && req->onboard_journey_pattern_vjoffset != NONE) {
 
         /* On-board departure only makes sense for depart-after requests. */
         if (!req->arrive_by) {

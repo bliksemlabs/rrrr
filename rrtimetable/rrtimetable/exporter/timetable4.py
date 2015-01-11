@@ -213,8 +213,8 @@ def export_jpp_at_sp(tdata,index,out):
     for sp in index.stop_points:
         jp_uris = index.journey_patterns_at_stop_point[sp.uri]
         index.jpp_at_sp_offsets.append(n_offset)
-        for jp_uri in jp_uris:
-            writeint(out,index.idx_for_journey_pattern_uri[jp_uri])
+        for jp_uri in set(jp_uris):
+            writeshort(out,index.idx_for_journey_pattern_uri[jp_uri])
             n_offset += 1
     index.jpp_at_sp_offsets.append(n_offset) #sentinel
     index.n_jpp_at_sp = n_offset
