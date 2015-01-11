@@ -34,7 +34,7 @@
 #include "config.h"
 #include "bitset.h"
 
-const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->line_ids + (td->line_ids_width * jp_index);
 }
@@ -51,7 +51,7 @@ const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index) {
     return td->vj_ids + (td->vj_ids_width * vj_index);
 }
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t vj_index) {
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
     return td->vj_ids + (td->vj_ids_width * (td->journey_patterns[jp_index].vj_offset + vj_index));
 }
 
@@ -147,8 +147,8 @@ spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, s
 
 #define tdata_stop_pointidx_by_stop_point_id(td, stop_id) tdata_stopidx_by_stop_id(td, stop_id, 0)
 
-uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t jp_index_offset) {
-    uint32_t jp_index;
+jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t jp_index_offset) {
+    jpidx_t jp_index;
     for (jp_index = jp_index_offset;
          jp_index < td->n_journey_patterns;
          ++jp_index) {
@@ -162,52 +162,52 @@ uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32
 
 #define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index_offset, 0)
 
-const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
     uint32_t char_offset = jp->vj_offset * td->vj_ids_width;
     return td->vj_ids + char_offset;
 }
 
-calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
     return td->vj_active + jp->vj_offset;
 }
 
-const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset]);
 }
 
-const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_index, uint32_t jpp_index) {
+const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index, uint32_t jpp_index) {
     if (jp_index == NONE) return "NONE";
     return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset + jpp_index]);
 }
 
-const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_code_for_index(td, td->line_for_route[route_index]);
 }
 
-const char *tdata_line_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_name_for_index(td, td->line_for_route[route_index]);
 }
 
-const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return tdata_name_for_commercial_mode_index(td,(td->commercial_mode_for_jp)[jp_index]);
 }
 
-const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     if (jp_index == NONE) return "NONE";
     return tdata_id_for_commercial_mode_index(td,(td->commercial_mode_for_jp)[jp_index]);
 }
 
-const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
@@ -215,7 +215,7 @@ const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, uint32_t j
     return tdata_name_for_physical_mode_index(td,(td->physical_mode_for_line)[line_index]);
 }
 
-const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
@@ -236,7 +236,7 @@ uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, ui
     return NONE;
 }
 
-const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
@@ -244,7 +244,7 @@ const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index
     return tdata_operator_id_for_index(td, td->operator_for_line[line_index]);
 }
 
-const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
@@ -252,7 +252,7 @@ const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_ind
     return tdata_operator_name_for_index(td, td->operator_for_line[line_index]);
 }
 
-const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
@@ -292,11 +292,11 @@ void tdata_close(tdata_t *td) {
     tdata_io_v3_close (td);
 }
 
-spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+spidx_t *tdata_points_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     return td->journey_pattern_points + td->journey_patterns[jp_index].journey_pattern_point_offset;
 }
 
-uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index) {
+uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
     return td->journey_pattern_point_attributes + jp->journey_pattern_point_offset;
 }
@@ -308,11 +308,11 @@ uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jp
     return stop1->journey_patterns_at_stop_point_offset - stop0->journey_patterns_at_stop_point_offset;
 }
 
-stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_index) {
+stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
     return td->stop_times + td->vjs[td->journey_patterns[jp_index].vj_offset + vj_index].stop_times_offset;
 }
 
-vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index) {
+vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     return td->vjs + td->journey_patterns[jp_index].vj_offset;
 }
 
@@ -353,7 +353,7 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_ind
 }
 
 #ifdef RRRR_DEBUG
-void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t vj_index) {
+void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
     spidx_t *stops = tdata_points_for_journey_pattern(td, jp_index);
     uint32_t ti;
     spidx_t si;

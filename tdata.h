@@ -225,20 +225,20 @@ void tdata_close(tdata_t *td);
 void tdata_dump(tdata_t *td);
 #endif
 
-spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+spidx_t *tdata_points_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
 
-stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 #ifdef RRRR_DEBUG
-void tdata_dump_journey_pattern(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
+void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
 #endif
 
-const char *tdata_line_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index);
 
@@ -246,7 +246,7 @@ uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
 
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
 
@@ -282,40 +282,40 @@ spidx_t tdata_stop_pointidx_by_stop_area_name(tdata_t *td, char *stop_point_name
 
 spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
-uint32_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, uint32_t start_index);
+jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t start_index);
 
-const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_headsign_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, uint32_t jp_index,uint32_t jpp_index);
+const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,uint32_t jpp_index);
 
-const char *tdata_line_code_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_line_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_operator_id_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_operator_name_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_operator_url_for_journey_pattern(tdata_t *td, uint32_t jp_index);
+const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 /* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
-stoptime_t *tdata_timedemand_type(tdata_t *td, uint32_t jp_index, uint32_t vj_index);
+stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
 
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
-vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, uint32_t jp_index);
+vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 /* Get the minimum waittime a passenger has to wait before transferring to another vehicle */
 rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index);
