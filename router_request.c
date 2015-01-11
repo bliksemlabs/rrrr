@@ -82,8 +82,8 @@ router_request_initialize(router_request_t *req) {
     rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
-    req->onboard_vj_journey_pattern = NONE;
-    req->onboard_journey_pattern_offset = NONE;
+    req->onboard_journey_pattern = NONE;
+    req->onboard_journey_pattern_vjoffset = NONE;
     req->intermediatestops = false;
 
     #ifdef RRRR_FEATURE_LATLON

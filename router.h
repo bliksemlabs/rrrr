@@ -37,7 +37,7 @@ struct router {
     rtime_t *best_time;
 
    /* The index of the journey_pattern used to travel from back_stop_point to here, or WALK  */
-    uint32_t *states_back_journey_pattern;
+   jpidx_t *states_back_journey_pattern;
 
     /* The index of the vehicle_journey used to travel from back_stop_point */
     uint32_t *states_back_vehicle_journey;

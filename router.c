@@ -47,7 +47,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
-    router->states_back_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
+    router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
     router->states_back_vehicle_journey = (uint32_t *) malloc(sizeof(uint32_t) * n_states);
     router->states_ride_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
     router->states_walk_from = (spidx_t *) malloc(sizeof(spidx_t) * n_states);
@@ -819,7 +819,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
          jp_index = bitset_next_set_bit (router->updated_journey_patterns, jp_index + 1)) {
 
         journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-        spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+        spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, (jpidx_t) jp_index);
         uint8_t *journey_pattern_point_attributes = tdata_stop_point_attributes_for_journey_pattern(router->tdata, jp_index);
 
         /* Service day on which that vj was boarded */
@@ -993,7 +993,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     } else {
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
-                        board_sp = sp_index;
+                        board_sp = (spidx_t) sp_index;
                         board_jpp = (uint16_t) jpp_index;
                         board_serviceday = best_serviceday;
                         vj_index = best_vj;
@@ -1127,7 +1127,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     rtime_t stop_time;
 
     if (tdata_next (router, req,
-                    req->onboard_vj_journey_pattern, req->onboard_journey_pattern_offset,
+                    req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
                     req->time, &sp_index, &stop_time) ){
         uint64_t i_state;
 
@@ -1147,7 +1147,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
          */
         bitset_clear (router->updated_stop_points);
         bitset_clear (router->updated_journey_patterns);
-        bitset_set (router->updated_journey_patterns, req->onboard_vj_journey_pattern);
+        bitset_set (router->updated_journey_patterns, req->onboard_journey_pattern);
 
         return true;
     }
@@ -1388,7 +1388,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      */
 
     /* We are starting on board a vj, not at a station. */
-    if (req->onboard_vj_journey_pattern != NONE && req->onboard_journey_pattern_offset != NONE) {
+    if (req->onboard_journey_pattern != NONE && req->onboard_journey_pattern_vjoffset != NONE) {
 
         /* On-board departure only makes sense for depart-after requests. */
         if (!req->arrive_by) {

@@ -97,10 +97,10 @@ struct router_request {
     spidx_t via_stop_point;
 
     /* onboard departure, journey_pattern index from the users perspective */
-    uint32_t onboard_vj_journey_pattern;
+    jpidx_t onboard_journey_pattern;
 
     /* onboard departure, vehicle_journey offset within the journey_pattern */
-    uint32_t onboard_journey_pattern_offset;
+    uint32_t onboard_journey_pattern_vjoffset;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
