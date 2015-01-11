@@ -430,7 +430,8 @@ plan_render(plan_t *plan, tdata_t *tdata, router_request_t *req,
             char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
-    time_t date = router_request_to_date (req, tdata, NULL);
+    struct tm ltm;
+    time_t date = router_request_to_date (req, tdata, &ltm);
 
     if ((req->optimise & o_all) == o_all) {
         /* Iterate over itineraries in this plan,
