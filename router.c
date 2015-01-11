@@ -239,8 +239,8 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
 
 /* Given a stop_point index, mark all journey_patterns that serve it as updated. */
 static void flag_journey_patterns_for_stop_point(router_t *router, router_request_t *req,
-        uint32_t sp_index) {
-    uint32_t *journey_patterns;
+        spidx_t sp_index) {
+    jpidx_t *journey_patterns;
     uint32_t i_jp = tdata_journey_patterns_for_stop_point(router->tdata, sp_index,
             &journey_patterns);
 

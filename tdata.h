@@ -160,7 +160,7 @@ struct tdata {
     uint8_t  *journey_pattern_point_attributes;
     stoptime_t *stop_times;
     vehicle_journey_t *vjs;
-    uint32_t *journey_patterns_at_stop;
+    jpidx_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
     rtime_t  *transfer_durations;
     rtime_t  *stop_point_waittime;
@@ -230,7 +230,7 @@ spidx_t *tdata_points_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, uint32_t **jp_ret);
+uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
 
 stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, uint32_t jp_index);
 

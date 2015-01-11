@@ -301,7 +301,7 @@ uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, uint32_t j
     return td->journey_pattern_point_attributes + jp->journey_pattern_point_offset;
 }
 
-uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, uint32_t **jp_ret) {
+uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret) {
     stop_point_t *stop0 = &(td->stop_points[sp_index]);
     stop_point_t *stop1 = &(td->stop_points[sp_index + 1]);
     *jp_ret = td->journey_patterns_at_stop + stop0->journey_patterns_at_stop_point_offset;
