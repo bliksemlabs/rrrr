@@ -23,7 +23,7 @@ typedef uint16_t rtime_t;
 
 typedef uint16_t spidx_t;
 
-typedef uint32_t jpidx_t;
+typedef uint16_t jpidx_t;
 
 typedef uint32_t calendar_t;
 
