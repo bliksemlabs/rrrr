@@ -800,6 +800,8 @@ write_state(router_t *router, router_request_t *req,
         fprintf (stderr, "board time non-increasing\n");
         return false;
     }
+    #else
+    UNUSED (req);
     #endif
 
     return true;
