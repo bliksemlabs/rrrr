@@ -763,15 +763,15 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
 static bool
 write_state(router_t *router, router_request_t *req,
             uint8_t round, jpidx_t jp_index, jp_vjoffset_t vj_offset,
-            spidx_t sp_index, jppidx_t jpp_index, rtime_t time,
-            spidx_t board_stop, jppidx_t board_jpp_stop,
+            spidx_t sp_index, jppidx_t jpp_offset, rtime_t time,
+            spidx_t board_stop, jppidx_t board_jpp_offset,
             rtime_t board_time) {
 
     uint64_t i_state = ((uint64_t) round) * router->tdata->n_stop_points + sp_index;
 
     #ifndef RRRR_REALTIME
-    UNUSED (jpp_index);
-    UNUSED (board_jpp_stop);
+    UNUSED (jpp_offset);
+    UNUSED (board_jpp_offset);
     #endif
 
     #ifdef RRRR_INFO
@@ -788,8 +788,8 @@ write_state(router_t *router, router_request_t *req,
     router->states_ride_from[i_state]            = board_stop;
     router->states_board_time[i_state]           = board_time;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    router->states_back_journey_pattern_point[i_state] = board_jpp_stop;
-    router->states_journey_pattern_point[i_state]      = jpp_index;
+    router->states_back_journey_pattern_point[i_state] = board_jpp_offset;
+    router->states_journey_pattern_point[i_state]      = jpp_offset;
     #endif
 
     #ifdef RRRR_STRICT
@@ -840,14 +840,14 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         /* Iterate over stop_point indexes within the route. Each one corresponds to
          * a global stop_point index. Note that the stop times array should be
-         * accessed with [vj_index][jpp_index] not [vj_index][jpp_index].
+         * accessed with [vj_index][jpp_offset] not [vj_index][jpp_offset].
          *
          * The iteration variable is signed to allow ending the iteration at
          * the beginning of the route, hence we decrement to 0 and need to
          * test for >= 0. An unsigned variable would always be true.
          */
 
-        int32_t jpp_index;
+        int32_t jpp_offset;
 
         #ifdef FEATURE_OPERATOR_FILTER
         if (req->operator != OPERATOR_UNFILTERED &&
@@ -864,21 +864,21 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         #endif
 
 
-        for (jpp_index = (req->arrive_by ? jp->n_stops - 1 : 0);
-                req->arrive_by ? jpp_index >= 0 :
-                jpp_index < jp->n_stops;
-                req->arrive_by ? --jpp_index :
-                                 ++jpp_index) {
+        for (jpp_offset = (req->arrive_by ? jp->n_stops - 1 : 0);
+                req->arrive_by ? jpp_offset >= 0 :
+                jpp_offset < jp->n_stops;
+                req->arrive_by ? --jpp_offset :
+                                 ++jpp_offset) {
 
-            uint32_t sp_index = journey_pattern_points[jpp_index];
+            uint32_t sp_index = journey_pattern_points[jpp_offset];
             rtime_t prev_time;
             bool attempt_board = false;
-            bool forboarding = (journey_pattern_point_attributes[jpp_index] & rsa_boarding);
-            bool foralighting = (journey_pattern_point_attributes[jpp_index] & rsa_alighting);
+            bool forboarding = (journey_pattern_point_attributes[jpp_offset] & rsa_boarding);
+            bool foralighting = (journey_pattern_point_attributes[jpp_offset] & rsa_alighting);
 
             #ifdef RRRR_INFO
             char buf[13];
-            fprintf(stderr, "    sp %2d [%d] %c%c %s %s\n", jpp_index,
+            fprintf(stderr, "    sp %2d [%d] %c%c %s %s\n", jpp_offset,
                             sp_index,
                             forboarding ? 'B' : ' ',
                             foralighting ? 'A' : ' ',
@@ -936,7 +936,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                      */
                     rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
-                            (jpidx_t) jp_index, vj_index, (jppidx_t) jpp_index,
+                            (jpidx_t) jp_index, vj_index, (jppidx_t) jpp_offset,
                                                         req->arrive_by);
                     if (vj_stoptime == UNREACHED) {
                         attempt_board = false;
@@ -973,7 +973,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
                 #endif
 
-                search_vehicle_journeys_within_days(router, req, (jpidx_t) jp_index, (jppidx_t) jpp_index,
+                search_vehicle_journeys_within_days(router, req, (jpidx_t) jp_index, (jppidx_t) jpp_offset,
                         prev_time, &best_serviceday,
                         &best_vj, &best_time);
 
@@ -993,7 +993,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
                         board_sp = (spidx_t) sp_index;
-                        board_jpp = (jppidx_t) jpp_index;
+                        board_jpp = (jppidx_t) jpp_offset;
                         board_serviceday = best_serviceday;
                         vj_index = best_vj;
                     }
@@ -1008,7 +1008,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             } else if (vj_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
                                                jp_index, vj_index,
-                                               (jppidx_t ) jpp_index,
+                                               (jppidx_t ) jpp_offset,
                                                !req->arrive_by);
 
                 /* overflow due to long overnight vehicle_journeys on day 2 */
@@ -1072,7 +1072,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     #endif
                 } else {
                     write_state(router, req, round, jp_index, vj_index,
-                            sp_index, (jppidx_t) jpp_index, time,
+                            sp_index, (jppidx_t) jpp_offset, time,
                             board_sp, board_jpp, board_time);
 
                     /*  mark stop_point for next round. */
