@@ -59,8 +59,8 @@ struct vehicle_journey {
 
 typedef struct vehicle_journey_ref vehicle_journey_ref_t;
 struct vehicle_journey_ref {
-    uint16_t journey_pattern_index;
-    uint16_t vehicle_journey_index;
+    jppidx_t journey_pattern_index;
+    jp_vjoffset_t vehicle_journey_index;
 };
 
 typedef struct stoptime stoptime_t;
@@ -312,7 +312,7 @@ const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index
 
 /* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
-stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
+stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
 
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
 vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, jpidx_t jp_index);

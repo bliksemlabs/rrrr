@@ -712,7 +712,7 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
             /* skip this vj if it is banned */
             if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
                         req->n_banned_vjs, jp_index,
-                    (uint16_t) i_vj_offset)) continue;
+                    (jp_vjoffset_t) i_vj_offset)) continue;
             #endif
 
             /* skip this vj if it is not running on
@@ -764,7 +764,7 @@ static bool
 write_state(router_t *router, router_request_t *req,
             uint8_t round, jpidx_t jp_index, jp_vjoffset_t vj_offset,
             spidx_t sp_index, jppidx_t jpp_index, rtime_t time,
-            spidx_t board_stop, uint16_t board_jpp_stop,
+            spidx_t board_stop, jppidx_t board_jpp_stop,
             rtime_t board_time) {
 
     uint64_t i_state = ((uint64_t) round) * router->tdata->n_stop_points + sp_index;
@@ -832,7 +832,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         spidx_t       board_sp  = 0;
 
         /* journey_pattern_point index where that vj was boarded */
-        uint16_t      board_jpp = 0;
+        jppidx_t      board_jpp = 0;
 
         /* time when that vj was boarded */
         rtime_t       board_time = 0;
@@ -936,8 +936,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                      */
                     rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
-                            (jpidx_t) jp_index, vj_index,
-                                                        (uint16_t) jpp_index,
+                            (jpidx_t) jp_index, vj_index, (jppidx_t) jpp_index,
                                                         req->arrive_by);
                     if (vj_stoptime == UNREACHED) {
                         attempt_board = false;
@@ -994,7 +993,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
                         board_sp = (spidx_t) sp_index;
-                        board_jpp = (uint16_t) jpp_index;
+                        board_jpp = (jppidx_t) jpp_index;
                         board_serviceday = best_serviceday;
                         vj_index = best_vj;
                     }
@@ -1009,7 +1008,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             } else if (vj_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
                                                jp_index, vj_index,
-                                               (uint16_t) jpp_index,
+                                               (jppidx_t ) jpp_index,
                                                !req->arrive_by);
 
                 /* overflow due to long overnight vehicle_journeys on day 2 */
@@ -1073,7 +1072,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     #endif
                 } else {
                     write_state(router, req, round, jp_index, vj_index,
-                            sp_index, (uint16_t) jpp_index, time,
+                            sp_index, (jppidx_t) jpp_index, time,
                             board_sp, board_jpp, board_time);
 
                     /*  mark stop_point for next round. */
