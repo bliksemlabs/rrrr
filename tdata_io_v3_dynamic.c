@@ -75,7 +75,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
             header->n_stop_point_coords < ((spidx_t) -2) &&
             header->n_stop_area_coords < ((spidx_t) -2) &&
             header->n_stop_area_coords < ((spidx_t) -2) &&
-            header->n_journey_patterns < (UINT16_MAX - 1) &&
+            header->n_journey_patterns < ((jpidx_t)- 1) &&
             header->n_journey_pattern_points < (UINT32_MAX) &&
             header->n_journey_pattern_point_attributes < (UINT32_MAX) &&
             header->n_journey_pattern_point_headsigns < (UINT32_MAX) &&
