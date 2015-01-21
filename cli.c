@@ -406,11 +406,15 @@ plan:
      * reinitialisation of this memory.
      */
     router_reset (&router);
-    
-    /* Reset the cutoff time to UNREACHED to simulate a complete new request,
+
+    /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
      * this erases the set cutoff time from reversals in previous requests in the repeat function
      */
-    req.time_cutoff = UNREACHED;
+    if (req.arrive_by) {
+        req.time_cutoff = 0;
+    } else {
+        req.time_cutoff = UNREACHED;
+    }
 
     /* The router is now able to take a request, and to search
      * the first arrival time at the target, given the requests
