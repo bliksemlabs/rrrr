@@ -42,6 +42,7 @@ struct leg {
     #endif
 };
 
+
 /* An itinerary is a chain of legs leading from one place to another. */
 typedef struct itinerary itinerary_t;
 struct itinerary {
@@ -59,6 +60,27 @@ struct plan {
     router_request_t req;
 };
 
+/* Structure to temporary store abstracted plans */
+typedef struct result result_t;
+struct result {
+    /* from stop_point index */
+    spidx_t sp_from;
+
+    /* to stop_point index */
+    spidx_t sp_to;
+
+    /* start time */
+    rtime_t  t0;
+
+    /* end time */
+    rtime_t  t1;
+
+    /* modes in trip */
+    uint8_t mode;
+
+    /* transfers in trip */
+    uint8_t n_transfers;
+};
 
 bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req);
 
