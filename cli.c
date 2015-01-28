@@ -31,7 +31,7 @@ typedef struct cli_arguments cli_arguments_t;
 struct cli_arguments {
     char *gtfsrt_alerts_filename;
     char *gtfsrt_tripupdates_filename;
-    uint32_t repeat;
+    long repeat;
     bool verbose;
 };
 
@@ -172,7 +172,7 @@ int main (int argc, char *argv[]) {
     router_request_initialize (&req);
 
     /* initialise the random function */
-    srand(time(NULL));
+    srand((unsigned int) time(NULL));
 
 
     {
@@ -200,7 +200,10 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
-                        req.from_stop_point = (uint32_t) strtol(&argv[i][11], NULL, 10);
+                        long stop_idx = strtol(&argv[i][11], NULL, 10);
+                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
+                            req.from_stop_point = (spidx_t) stop_idx;
+                        }
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
@@ -230,13 +233,16 @@ int main (int argc, char *argv[]) {
                         router_request_randomize (&req, &tdata);
                     }
                     else if (strncmp(argv[i], "--repeat=", 9) == 0) {
-                        cli_args.repeat = (uint32_t) strtol(&argv[i][9], NULL, 10);
+                        cli_args.repeat = strtol(&argv[i][9], NULL, 10);
                     }
                     break;
 
                 case 't':
                     if (strncmp(argv[i], "--to-idx=", 9) == 0) {
-                        req.to_stop_point = (uint32_t) strtol(&argv[i][9], NULL, 10);
+                        long stop_idx = strtol(&argv[i][9], NULL, 10);
+                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
+                            req.to_stop_point = (spidx_t) stop_idx;
+                        }
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
@@ -251,36 +257,36 @@ int main (int argc, char *argv[]) {
                     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                     else
                     if (strncmp(argv[i], "--banned-jp-idx=", 16) == 0) {
-                        uint32_t jp_index = (uint32_t) strtol(&argv[i][16], NULL, 10);
-                        if (jp_index < tdata.n_journey_patterns) {
+                        long jp_index = strtol(&argv[i][16], NULL, 10);
+                        if (jp_index >= 0 && jp_index < tdata.n_journey_patterns) {
                             set_add_jp(req.banned_journey_patterns,
                                        &req.n_banned_journey_patterns,
                                        RRRR_MAX_BANNED_JOURNEY_PATTERNS,
-                                       jp_index);
+                                       (uint32_t) jp_index);
                         }
                     }
                     #endif
                     #if RRRR_MAX_BANNED_STOP_POINTS > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
-                        uint32_t stop_idx = (uint32_t) strtol(&argv[i][19], NULL, 10);
-                        if (stop_idx < tdata.n_stop_points) {
+                        long stop_idx = strtol(&argv[i][19], NULL, 10);
+                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
                             set_add_sp(req.banned_stops,
                                        &req.n_banned_stops,
-                                    RRRR_MAX_BANNED_STOP_POINTS,
-                                       stop_idx);
+                                       RRRR_MAX_BANNED_STOP_POINTS,
+                                       (spidx_t) stop_idx);
                         }
                     }
                     #endif
                     #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
-                        uint32_t stop_idx = (uint32_t) strtol(&argv[i][23], NULL, 10);
-                        if (stop_idx < tdata.n_stop_points) {
+                        long stop_idx = strtol(&argv[i][23], NULL, 10);
+                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
                             set_add_sp(req.banned_stop_points_hard,
                                        &req.n_banned_stop_points_hard,
-                                    RRRR_MAX_BANNED_STOP_POINTS_HARD,
-                                       stop_idx);
+                                       RRRR_MAX_BANNED_STOP_POINTS_HARD,
+                                       (spidx_t) stop_idx);
                         }
                     }
                     #endif
@@ -288,17 +294,16 @@ int main (int argc, char *argv[]) {
                     else
                     if (strncmp(argv[i], "--banned-vj-offset=", 19) == 0) {
                         char *endptr;
-                        uint32_t jp_index;
-
-                        jp_index = (uint32_t) strtol(&argv[i][21], &endptr, 10);
-                        if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
-                            uint16_t vj_offset = strtol(++endptr, NULL, 10);
-                            if (vj_offset < tdata.journey_patterns[jp_index].n_vjs) {
+                        long jp_index = strtol(&argv[i][21], &endptr, 10);
+                        if (jp_index >= 0 && jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
+                            long vj_offset = strtol(++endptr, NULL, 10);
+                            if (vj_offset >= 0 && vj_offset < tdata.journey_patterns[jp_index].n_vjs) {
                                 set_add_trip(req.banned_vjs_journey_pattern,
                                              req.banned_vjs_offset,
                                              &req.n_banned_vjs,
-                                        RRRR_MAX_BANNED_VEHICLE_JOURNEYS,
-                                             jp_index, vj_offset);
+                                             RRRR_MAX_BANNED_VEHICLE_JOURNEYS,
+                                             (uint32_t) jp_index,
+                                             (uint16_t) vj_offset);
                             }
                         }
                     }
@@ -309,8 +314,11 @@ int main (int argc, char *argv[]) {
                     if (strcmp(argv[i], "--verbose") == 0) {
                         cli_args.verbose = true;
                     }
-                    else if (strncmp(argv[i], "--via=", 6) == 0) {
-                        req.via_stop_point = (uint32_t) strtol(&argv[i][6], NULL, 10);
+                    else if (strncmp(argv[i], "--via-idx=", 10) == 0) {
+                        long stop_idx = strtol(&argv[i][10], NULL, 10);
+                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
+                            req.via_stop_point = (spidx_t) stop_idx;
+                        }
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
@@ -325,7 +333,10 @@ int main (int argc, char *argv[]) {
                         req.walk_speed = (float) strtod(&argv[i][13], NULL);
                     }
                     else if (strncmp(argv[i], "--walk-slack=", 13) == 0) {
-                        req.walk_slack = (uint8_t) strtod(&argv[i][13], NULL);
+                        long walk_slack = strtol(&argv[i][13], NULL, 10);
+                        if (walk_slack >= 0 && walk_slack <= 255) {
+                            req.walk_slack = (uint8_t) walk_slack;
+                        }
                     }
                     break;
 
