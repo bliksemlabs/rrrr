@@ -140,6 +140,7 @@ void router_reset(router_t *router) {
      * search.
      */
     rrrr_memset (router->best_time, UNREACHED, router->tdata->n_stop_points);
+    rrrr_memset (router->states_board_time, UNREACHED, router->tdata->n_stop_points);
 }
 
 static bool initialize_states (router_t *router) {
@@ -598,7 +599,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
             rtime_t time_to = req->arrive_by ? time_from - transfer_duration
                                              : time_from + transfer_duration;
 
-            /* Avoid reserved values including UNREACHED 
+            /* Avoid reserved values including UNREACHED
              * and catch wrapping/overflow due to limited range of rtime_t
              * this happens normally on overnight routing but should
              * be avoided rather than caught.

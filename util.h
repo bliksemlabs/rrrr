@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <time.h>
 
+#define MIN(a,b) ((a) < (b) ? a : b)
+#define MAX(a,b) ((a) > (b) ? a : b)
+
 #if defined (HAVE_LOCALTIME_R)
     #define rrrr_localtime_r(a, b) localtime_r(a, b)
 #elif defined (HAVE_LOCALTIME_S)

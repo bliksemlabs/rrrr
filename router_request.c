@@ -308,9 +308,24 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
                 best_time = router->states_walk_time[round * router->tdata->n_stop_points + best_sp_index];
             }
             if (best_time != UNREACHED) {
+                bool add_request = true;
                 ret[*ret_n] = *req;
                 reverse_request(&ret[*ret_n], round, best_sp_index, best_time);
-                (*ret_n)++;
+
+                /* Our optisation is only about the last clockwise search */
+                if (!ret[*ret_n].arrive_by) {
+                    uint8_t j_ret;
+                    for (j_ret = 0; j_ret < *ret_n; ++j_ret) {
+                        if (!ret[*ret_n].arrive_by &&
+                            ret[j_ret].time == ret[*ret_n].time) {
+                            ret[j_ret].max_transfers = MAX(ret[j_ret].max_transfers, ret[*ret_n].max_transfers);
+                            ret[j_ret].time_cutoff = MAX(ret[j_ret].time_cutoff, ret[*ret_n].time_cutoff);
+                            add_request = false;
+                            break;
+                        }
+                    }
+                }
+                if (add_request) (*ret_n)++;
             }
             round--;
         } while (round >= 0);

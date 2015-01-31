@@ -470,6 +470,7 @@ int main (int argc, char *argv[]) {
      */
 
     {
+        uint32_t i;
         char result_buf[OUTPUT_LEN];
         router_request_t ret[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
         uint8_t n_ret;
@@ -478,6 +479,16 @@ int main (int argc, char *argv[]) {
         n_ret = 1;
         i_rev = 0;
         ret[i_rev] = req;
+
+        for (i = 0; i < router.tdata->n_stop_points; ++i) {
+            if (router.states_board_time[i] != UNREACHED) {
+                if (ret[i_rev].arrive_by) {
+                    ret[i_rev].time = MIN(ret[i_rev].time, router.states_board_time[i]);
+                } else {
+                    ret[i_rev].time = MAX(ret[i_rev].time, router.states_board_time[i]);
+                }
+            }
+        }
 
         /* first reversal, always required */
         if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
