@@ -120,9 +120,9 @@ int main (int argc, char *argv[]) {
                         "[ --verbose ] [ --randomize ]\n"
                         "[ --arrive=YYYY-MM-DDTHH:MM:SS | "
                           "--depart=YYYY-MM-DDTHH:MM:SS ]\n"
-                        "[ --from-idx=idx | --from-latlon=Y,X ]\n"
-                        "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
-                        "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
+                        "[ --from-idx=idx | --from-id=id | --from-latlon=Y,X ]\n"
+                        "[ --via-idx=idx  | --via-id=id  | --via-latlon=Y,X ]\n"
+                        "[ --to-idx=idx   | --to-id=id   | --to-latlon=Y,X ]\n"
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-jp-idx=idx ]\n"
 #endif
@@ -205,6 +205,9 @@ int main (int argc, char *argv[]) {
                             req.from_stop_point = (spidx_t) stop_idx;
                         }
                     }
+                    else if (strncmp(argv[i], "--from-id=", 10) == 0) {
+                        req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][10], 0);
+                    }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         /* TODO: check return value */
@@ -243,6 +246,9 @@ int main (int argc, char *argv[]) {
                         if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
                             req.to_stop_point = (spidx_t) stop_idx;
                         }
+                    }
+                    else if (strncmp(argv[i], "--to-id=", 8) == 0) {
+                        req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][8], 0);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
@@ -319,6 +325,9 @@ int main (int argc, char *argv[]) {
                         if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
                             req.via_stop_point = (spidx_t) stop_idx;
                         }
+                    }
+                    else if (strncmp(argv[i], "--via-id=", 9) == 0) {
+                        req.via_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][9], 0);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
