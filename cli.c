@@ -480,11 +480,9 @@ int main (int argc, char *argv[]) {
         i_rev = 0;
         ret[i_rev] = req;
 
-        for (i = 0; i < router.tdata->n_stop_points; ++i) {
-            if (router.states_board_time[i] != UNREACHED) {
-                if (ret[i_rev].arrive_by) {
-                    ret[i_rev].time = MIN(ret[i_rev].time, router.states_board_time[i]);
-                } else {
+        if (!ret[i_rev].arrive_by) {
+            for (i = 0; i < router.tdata->n_stop_points; ++i) {
+                if (router.states_board_time[i] != UNREACHED) {
                     ret[i_rev].time = MAX(ret[i_rev].time, router.states_board_time[i]);
                 }
             }
