@@ -1,8 +1,10 @@
 #include "config.h"
 #include "router_request.h"
 #include "util.h"
+#include "hashgrid.h"
 
 #include <stdio.h>
+#include <assert.h>
 
 /* router_request_to_epoch returns the time-date
  * used in the request in seconds since epoch.
@@ -198,6 +200,122 @@ router_request_next(router_request_t *req, rtime_t inc) {
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 }
 
+#ifdef RRRR_FEATURE_LATLON
+static bool
+best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_t *sp, rtime_t *time) {
+    hashgrid_result_t *hg_result;
+    uint64_t offset_state = router->tdata->n_stop_points * round;
+    uint32_t sp_index; /* uint32_t because of hashgrid result */
+    double distance;
+    spidx_t best_sp_index = STOP_NONE;
+    rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
+    rtime_t *round_best_time = &router->states_time[offset_state];
+
+    if (req->arrive_by) {
+        hg_result = &req->from_hg_result;
+    } else {
+        hg_result = &req->to_hg_result;
+    }
+
+    hashgrid_result_reset(hg_result);
+
+    #ifdef RRRR_DEBUG
+    fprintf (stderr, "Reversal - Hashgrid results:\n");
+    #endif
+
+    sp_index = hashgrid_result_next_filtered(hg_result, &distance);
+
+    while (sp_index != HASHGRID_NONE) {
+        rtime_t extra_walktime = 0;
+
+        if (round_best_time[sp_index] != UNREACHED) {
+            /* TODO: precompute all walktimes from the hashgrid */
+            extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) / req->walk_speed));
+
+            if (req->arrive_by) {
+                round_best_time[sp_index] -= extra_walktime;
+                if (round_best_time[sp_index] > best_time) {
+                    best_sp_index = sp_index;
+                    best_time = round_best_time[sp_index];
+                }
+            } else {
+                round_best_time[sp_index] += extra_walktime;
+                if (round_best_time[sp_index] < best_time) {
+                    best_sp_index = sp_index;
+                    best_time = round_best_time[sp_index];
+                }
+            }
+
+        }
+
+        #ifdef RRRR_DEBUG
+        fprintf (stderr, "%d %s %s (%.0fm) %d %d\n", sp_index,
+                    tdata_stop_point_id_for_index(router->tdata, sp_index),
+                    tdata_stop_point_name_for_index(router->tdata, sp_index),
+                    distance, round_best_time[sp_index], extra_walktime);
+        #endif
+
+        /* get the next potential start stop_point */
+        sp_index = hashgrid_result_next_filtered(hg_result, &distance);
+    }
+    *sp = best_sp_index;
+    *time = best_time;
+
+    return (best_sp_index != STOP_NONE);
+}
+#endif
+
+static void
+reverse_request (router_request_t *req, uint8_t round, spidx_t best_sp_index, rtime_t best_time) {
+    if (!req->arrive_by) {
+        req->to_stop_point = (spidx_t) best_sp_index;
+    } else {
+        req->from_stop_point = (spidx_t) best_sp_index;
+    }
+
+    req->time_cutoff = req->time;
+    req->time = best_time;
+
+    req->max_transfers = round;
+    req->arrive_by = !(req->arrive_by);
+}
+
+bool
+router_request_reverse_all(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n) {
+    spidx_t best_sp_index;
+    rtime_t best_time;
+    int8_t round;
+
+    assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
+
+    round = req->max_transfers;
+
+    if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
+                          req->to_stop_point == STOP_NONE)) {
+        do {
+            if (best_sp_by_round(router, req, round, &best_sp_index, &best_time)) {
+                ret[*ret_n] = *req;
+                reverse_request(&ret[*ret_n], round, best_sp_index, best_time);
+                (*ret_n)++;
+            }
+            round--;
+        } while (round >= 0);
+    } else {
+        best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
+        do {
+            best_time = router->states_walk_time[round * router->tdata->n_stop_points + best_sp_index];
+            if (best_time != UNREACHED) {
+                ret[*ret_n] = *req;
+                reverse_request(&ret[*ret_n], round, best_sp_index, best_time);
+                (*ret_n)++;
+            }
+            round--;
+        } while (round >= 0);
+    }
+
+    return (*ret_n > 0);
+}
+
 /* Reverse the direction of the search leaving most request parameters
  * unchanged but applying time and transfer cutoffs based on an existing
  * result for the same request. Returns a boolean value indicating whether
@@ -214,6 +332,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     #ifdef RRRR_FEATURE_LATLON
+
     if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
                           req->to_stop_point == STOP_NONE)) {
         hashgrid_result_t *hg_result;

@@ -412,7 +412,6 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
-plan:
     /* While the scratch space remains allocated, each new search may require
      * reinitialisation of this memory.
      */
@@ -439,7 +438,7 @@ plan:
     }
 
     /* To debug the router, we render an intermediate result */
-    if (cli_args.verbose) {
+    {
         char result_buf[OUTPUT_LEN];
         router_request_dump (&req, &tdata);
         router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
@@ -471,28 +470,45 @@ plan:
      */
 
     {
-        uint8_t i;
-        uint8_t n_reversals = req.arrive_by ? 1 : 2;
-        for (i = 0; i < n_reversals; ++i) {
-            if ( ! router_request_reverse (&router, &req)) {
-                /* if the reversal fails we must exit */
-                status = EXIT_FAILURE;
-                goto clean_exit;
-            }
+        char result_buf[OUTPUT_LEN];
+        router_request_t ret[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
+        uint8_t n_ret;
+        uint8_t n2_ret;
+        uint8_t i_rev;
+        n_ret = 1;
+        i_rev = 0;
+        ret[i_rev] = req;
 
+        /* first reversal, always required */
+        if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
+            /* if the reversal fails we must exit */
+            status = EXIT_FAILURE;
+            goto clean_exit;
+        }
+
+        n2_ret = n_ret;
+
+        for (i_rev = 1; i_rev < n_ret; ++i_rev) {
             router_reset (&router);
 
-            if ( ! router_route (&router, &req)) {
+            if ( ! router_route (&router, &ret[i_rev])) {
                 status = EXIT_FAILURE;
                 goto clean_exit;
             }
 
-            if (cli_args.verbose) {
-                char result_buf[OUTPUT_LEN];
-                puts ("Repeated search with reversed request: \n");
-                router_request_dump (&req, &tdata);
-                router_result_dump (&router, &req, result_buf, OUTPUT_LEN);
-                puts (result_buf);
+            strcpy(result_buf, "****");
+
+            puts ("Repeated search with reversed request: \n");
+            router_request_dump (&ret[i_rev], &tdata);
+            router_result_dump (&router, &ret[i_rev], result_buf, OUTPUT_LEN);
+            puts (result_buf);
+
+            if (!req.arrive_by && i_rev < n2_ret) {
+                if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
+                    /* if the reversal fails we must exit */
+                    status = EXIT_FAILURE;
+                    goto clean_exit;
+                }
             }
         }
     }
@@ -501,20 +517,6 @@ plan:
      *  PHASE THREE: RENDER THE RESULTS
      *
      * * * * * * * * * * * * * * * * * * */
-
-    /* Output only final result in non-verbose mode */
-    if ( ! cli_args.verbose) {
-        char result_buf[OUTPUT_LEN] = "";
-        router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
-
-        /* For benchmarking: repeat the search up to n time */
-        if (cli_args.repeat > 0) {
-            cli_args.repeat--;
-            goto plan;
-        }
-
-        puts (result_buf);
-    }
 
     /* * * * * * * * * * * * * * * * * * *
      *  PHASE FOUR: DESTRUCTION
