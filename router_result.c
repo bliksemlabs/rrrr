@@ -375,8 +375,11 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
             commercial_mode = "";
 
             /* Skip uninformative legs that just tell you to stay in the same
-             * place. if (leg->s0 == leg->s1) continue;
+             * place.
              */
+            #ifndef RRRR_DEBUG
+            if (leg->sp_from == leg->sp_to) continue;
+            #endif
             if (leg->sp_from == ONBOARD) continue;
             if (leg->sp_from == leg->sp_to) leg_mode = "WAIT";
             else leg_mode = "WALK";
