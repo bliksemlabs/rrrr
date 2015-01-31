@@ -304,7 +304,8 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
         best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
         do {
             best_time = router->states_time[round * router->tdata->n_stop_points + best_sp_index];
-            if (best_time == UNREACHED) {
+
+            if (best_time == UNREACHED || best_time < router->states_walk_time[round * router->tdata->n_stop_points + best_sp_index]) {
                 best_time = router->states_walk_time[round * router->tdata->n_stop_points + best_sp_index];
             }
             if (best_time != UNREACHED) {
