@@ -12,6 +12,7 @@
 
 #include "router_request.h"
 #include "router_result.h"
+#include "plan_render_text.h"
 
 #ifdef RRRR_FEATURE_REALTIME
 
@@ -450,7 +451,7 @@ int main (int argc, char *argv[]) {
     {
         char result_buf[OUTPUT_LEN];
         router_request_dump (&req, &tdata);
-        router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
+        router_result_dump(&router, &req, &plan_render_text, result_buf, OUTPUT_LEN);
         puts(result_buf);
     }
 
@@ -520,7 +521,7 @@ int main (int argc, char *argv[]) {
 
             puts ("Repeated search with reversed request: \n");
             router_request_dump (&ret[i_rev], &tdata);
-            router_result_dump (&router, &ret[i_rev], result_buf, OUTPUT_LEN);
+            router_result_dump (&router, &ret[i_rev], &plan_render_text, result_buf, OUTPUT_LEN);
             puts (result_buf);
 
             if (!req.arrive_by && i_rev < n2_ret) {
