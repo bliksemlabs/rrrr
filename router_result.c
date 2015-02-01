@@ -309,13 +309,13 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
  */
 uint32_t
 router_result_dump(router_t *router, router_request_t *req,
-                   uint32_t(*render)(plan_t *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen),
+                   uint32_t(*render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen),
                    char *buf, uint32_t buflen) {
     plan_t plan;
     if (!router_result_to_plan (&plan, router, req)) {
         return 0;
     }
 
-    return render (&plan, router->tdata, req, buf, buflen);
+    return render (&plan, router->tdata, buf, buflen);
 }
 

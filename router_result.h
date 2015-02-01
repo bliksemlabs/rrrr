@@ -82,11 +82,11 @@ struct result {
     uint8_t n_transfers;
 };
 
-bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req);
+bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req);
 
 /* return num of chars written */
 uint32_t router_result_dump(router_t *router, router_request_t *req,
-                            uint32_t(*render)(plan_t *plan, tdata_t *tdata, router_request_t *req, char *buf, uint32_t buflen),
+                            uint32_t(*render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen),
                             char *buf, uint32_t buflen);
 
 #endif

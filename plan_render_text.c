@@ -130,14 +130,13 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
 
 /* Write a plan structure out to a text buffer in tabular format. */
 uint32_t
-plan_render_text(plan_t *plan, tdata_t *tdata, router_request_t *req,
-            char *buf, uint32_t buflen) {
+plan_render_text(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
     char *b = buf;
     char *b_end = buf + buflen;
     struct tm ltm;
-    time_t date = router_request_to_date (req, tdata, &ltm);
+    time_t date = router_request_to_date (&plan->req, tdata, &ltm);
 
-    if ((req->optimise & o_all) == o_all) {
+    if ((plan->req.optimise & o_all) == o_all) {
         /* Iterate over itineraries in this plan,
          * which are in increasing order of number of rides
          */
@@ -151,14 +150,14 @@ plan_render_text(plan_t *plan, tdata_t *tdata, router_request_t *req,
         /* only render the first itinerary,
          * which has the least transfers
          */
-        if ((req->optimise & o_transfers) == o_transfers) {
+        if ((plan->req.optimise & o_transfers) == o_transfers) {
            b = plan_render_itinerary (plan->itineraries, tdata, date, b, b_end);
         }
 
         /* only render the last itinerary,
          * which has the most rides and is the shortest in time
          */
-        if ((req->optimise & o_shortest) == o_shortest) {
+        if ((plan->req.optimise & o_shortest) == o_shortest) {
             b = plan_render_itinerary (&plan->itineraries[plan->n_itineraries - 1], tdata, date, b, b_end);
         }
     }
