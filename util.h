@@ -41,3 +41,5 @@ char *btimetext(rtime_t rt, char *buf);
 char *timetext(rtime_t t);
 time_t strtoepoch (char *time);
 char * strcasestr(const char *s, const char *find);
+
+double round(double x);

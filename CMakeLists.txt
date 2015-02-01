@@ -47,6 +47,8 @@ set(SOURCE_FILES
     linkedlist.h
     plan_render_text.c
     plan_render_text.h
+    polyline.c
+    polyline.h
     radixtree.c
     radixtree.h
     router.c
