@@ -283,15 +283,17 @@ bool router_result_to_plan (struct plan *plan, router_t *router, router_request_
              */
             spidx_t origin_stop_point = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
             rtime_t duration;
+            leg_t *prev;
 
             l->sp_from = origin_stop_point;
             l->sp_to = sp_index;
-            /* It would also be possible to work from s1 to s0 and compress
-             * out the wait time.
+
+            /* Compress out the wait time from s1 to s0
              */
-            l->t0 = router->states_time[origin_stop_point];
+            prev = (l - (req->arrive_by ? 1 : -1));
+            l->t1 = (req->arrive_by ? prev->t1 : prev->t0);
             duration = transfer_duration (router->tdata, req, l->sp_from, l->sp_to);
-            l->t1 = l->t0 + (req->arrive_by ? -duration : +duration);
+            l->t0 = l->t1 + (req->arrive_by ? +duration : -duration);
             l->journey_pattern = WALK;
             l->vj = WALK;
             if (req->arrive_by) leg_swap (l);
