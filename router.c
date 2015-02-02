@@ -755,7 +755,11 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
                 *best_vj = (jp_vjoffset_t) i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
-                return;
+                /* Since FIFO ordering of trips is ensured, we can immediately return if the JourneyPattern does not overlap.
+                 * If the JourneyPattern does overlap, we can only return if the time does not fall in the overlapping period
+                 */
+                if (jp->min_time > jp->max_time - RTIME_ONE_DAY || jp->min_time > time - RTIME_ONE_DAY)
+                    return;
             }
         }  /*  end for (vehicle_journey's within this route) */
     }  /*  end for (service days: yesterday, today, tomorrow) */
