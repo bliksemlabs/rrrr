@@ -446,11 +446,17 @@ int main (int argc, char *argv[]) {
      * origin.
      */
 
-    if ( ! router_route (&router, &req) ||
-         ! router_result_to_plan (&plan, &router, &req)) {
+    if ( ! router_route (&router, &req)) {
         /* if the search failed we must exit */
         status = EXIT_FAILURE;
         goto clean_exit;
+    }
+
+    if (!req.arrive_by) {
+        if ( ! router_result_to_plan (&plan, &router, &req)) {
+            status = EXIT_FAILURE;
+            goto clean_exit;
+        }
     }
 
     #if 0
@@ -522,10 +528,16 @@ int main (int argc, char *argv[]) {
         for (i_rev = 1; i_rev < n_ret; ++i_rev) {
             router_reset (&router);
 
-            if ( ! router_route (&router, &ret[i_rev]) ||
-                 ! router_result_to_plan (&plan, &router, &ret[i_rev])) {
+            if ( ! router_route (&router, &ret[i_rev])) {
                 status = EXIT_FAILURE;
                 goto clean_exit;
+            }
+
+            if (! ret[i_rev].arrive_by) {
+                if (! router_result_to_plan (&plan, &router, &ret[i_rev])) {
+                    status = EXIT_FAILURE;
+                    goto clean_exit;
+                }
             }
 
             #if 0
