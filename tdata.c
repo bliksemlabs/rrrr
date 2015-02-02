@@ -72,6 +72,7 @@ const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_index) {
 }
 
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_index) {
+    if (td->line_names == NULL) return NULL;
     return td->string_pool + td->line_names[line_index];
 }
 
