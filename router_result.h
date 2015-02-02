@@ -56,7 +56,7 @@ struct itinerary {
 typedef struct plan plan_t;
 struct plan {
     uint32_t n_itineraries;
-    itinerary_t itineraries[RRRR_DEFAULT_MAX_ROUNDS];
+    itinerary_t itineraries[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
     router_request_t req;
 };
 

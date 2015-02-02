@@ -106,10 +106,15 @@ int main (int argc, char *argv[]) {
     /* the router structure, should not be manually changed */
     router_t router;
 
+    /* the plan structure, created for all the results */
+    plan_t plan;
+
     /* initialise the structs so we can always trust NULL values */
     memset (&tdata,    0, sizeof(tdata_t));
     memset (&router,   0, sizeof(router_t));
     memset (&cli_args, 0, sizeof(cli_args));
+
+    plan.n_itineraries = 0;
 
     /* * * * * * * * * * * * * * * * * * * * * *
      * PHASE ZERO: HANDLE COMMANDLINE ARGUMENTS
@@ -441,12 +446,14 @@ int main (int argc, char *argv[]) {
      * origin.
      */
 
-    if ( ! router_route (&router, &req)) {
+    if ( ! router_route (&router, &req) ||
+         ! router_result_to_plan (&plan, &router, &req)) {
         /* if the search failed we must exit */
         status = EXIT_FAILURE;
         goto clean_exit;
     }
 
+    #if 0
     /* To debug the router, we render an intermediate result */
     {
         char result_buf[OUTPUT_LEN];
@@ -454,6 +461,7 @@ int main (int argc, char *argv[]) {
         router_result_dump(&router, &req, &plan_render_text, result_buf, OUTPUT_LEN);
         puts(result_buf);
     }
+    #endif
 
     /* When searching clockwise we will board any vehicle_journey that will bring us at
      * the earliest time at any destination location. If we have to wait at
@@ -482,7 +490,9 @@ int main (int argc, char *argv[]) {
     {
         uint32_t i;
         rtime_t earliest_departure = UNREACHED;
+        #if 0
         char result_buf[OUTPUT_LEN];
+        #endif
         router_request_t ret[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
         uint8_t n_ret;
         uint8_t n2_ret;
@@ -512,17 +522,20 @@ int main (int argc, char *argv[]) {
         for (i_rev = 1; i_rev < n_ret; ++i_rev) {
             router_reset (&router);
 
-            if ( ! router_route (&router, &ret[i_rev])) {
+            if ( ! router_route (&router, &ret[i_rev]) ||
+                 ! router_result_to_plan (&plan, &router, &ret[i_rev])) {
                 status = EXIT_FAILURE;
                 goto clean_exit;
             }
 
+            #if 0
             strcpy(result_buf, "****");
 
             puts ("Repeated search with reversed request: \n");
             router_request_dump (&ret[i_rev], &tdata);
             router_result_dump (&router, &ret[i_rev], &plan_render_text, result_buf, OUTPUT_LEN);
             puts (result_buf);
+            #endif
 
             if (!req.arrive_by && i_rev < n2_ret) {
                 if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
@@ -538,6 +551,12 @@ int main (int argc, char *argv[]) {
      *  PHASE THREE: RENDER THE RESULTS
      *
      * * * * * * * * * * * * * * * * * * */
+    {
+        char result_buf[OUTPUT_LEN];
+        plan.req = req;
+        plan_render_text (&plan, &tdata, result_buf, OUTPUT_LEN);
+        puts(result_buf);
+    }
 
     /* * * * * * * * * * * * * * * * * * *
      *  PHASE FOUR: DESTRUCTION

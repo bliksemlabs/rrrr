@@ -181,10 +181,9 @@ static bool check_plan_invariants (plan_t *plan) {
 bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
     itinerary_t *itin;
     uint8_t i_transfer;
-    plan->n_itineraries = 0;
     /* copy the request into the plan for use in rendering */
     plan->req = *req;
-    itin = plan->itineraries;
+    itin = &plan->itineraries[plan->n_itineraries];
 
     /* Loop over the rounds to get ending states of itineraries
      * using different numbers of vehicles
@@ -312,6 +311,8 @@ router_result_dump(router_t *router, router_request_t *req,
                    uint32_t(*render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen),
                    char *buf, uint32_t buflen) {
     plan_t plan;
+    plan.n_itineraries = 0;
+
     if (!router_result_to_plan (&plan, router, req)) {
         return 0;
     }
