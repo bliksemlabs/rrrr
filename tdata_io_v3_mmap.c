@@ -98,6 +98,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, commercial_mode_for_jp, uint16_t);
     load_mmap (td->base, physical_mode_for_line, uint16_t);
     load_mmap (td->base, line_codes, uint32_t);
+    load_mmap (td->base, line_names, uint32_t);
     load_mmap (td->base, operator_ids, uint32_t);
     load_mmap (td->base, operator_names, uint32_t);
     load_mmap (td->base, operator_urls, uint32_t);
