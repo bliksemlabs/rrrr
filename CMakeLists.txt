@@ -43,8 +43,12 @@ set(SOURCE_FILES
     gtfs-realtime.pb-c.h
     hashgrid.c
     hashgrid.h
+    json.c
+    json.h
     linkedlist.c
     linkedlist.h
+    plan_render_otp.c
+    plan_render_otp.h
     plan_render_text.c
     plan_render_text.h
     polyline.c
