@@ -33,6 +33,8 @@ add_custom_command(OUTPUT ${PROTO_HDRS} ${PROTO_SRCS}
 ENABLE_TESTING()
 
 set(SOURCE_FILES
+    api.c
+    api.h
     bitset.c
     bitset.h
     cli.c

@@ -10,6 +10,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "api.h"
 #include "router_request.h"
 #include "router_result.h"
 #include "plan_render_text.h"
@@ -445,131 +446,9 @@ int main (int argc, char *argv[]) {
      * the first arrival time at the target, given the requests
      * origin.
      */
-
-    if ( ! router_route (&router, &req)) {
-        /* if the search failed we must exit */
+    if ( ! router_route_full_reversal (&router, &req, &plan) ) {
         status = EXIT_FAILURE;
         goto clean_exit;
-    }
-
-    if (!req.arrive_by) {
-        if ( ! router_result_to_plan (&plan, &router, &req)) {
-            status = EXIT_FAILURE;
-            goto clean_exit;
-        }
-    }
-
-    #if 0
-    /* To debug the router, we render an intermediate result */
-    {
-        char result_buf[OUTPUT_LEN];
-        router_request_dump (&req, &tdata);
-        router_result_dump(&router, &req, &plan_render_text, result_buf, OUTPUT_LEN);
-        puts(result_buf);
-    }
-    #endif
-
-    /* When searching clockwise we will board any vehicle_journey that will bring us at
-     * the earliest time at any destination location. If we have to wait at
-     * some stage for a connection, and this wait time exceeds the frequency
-     * of the ingress network, we may suggest a later departure decreases
-     * overal waitingtime.
-     *
-     * To compress waitingtime we employ a reversal. A clockwise search
-     * departing at 9:00am and arriving at 10:00am is observed as was
-     * requested: what vehicle_journey allows to arrive at 10:00am? The counter clockwise
-     * search starts at 10:00am and offers the last possible arrival at 9:15am.
-     * This bounds our searchspace between 9:15am and 10:00am.
-     *
-     * Because of the memory structure. We are not able to render an arrive-by
-     * search, therefore the second arrival will start at 9:15am and should
-     * render exactly the same vehicle_journey. This is not always true, especially not
-     * when there are multiple paths with exactly the same transittime.
-     *
-     *
-     * For an arrive_by counter clockwise search, we must make the result
-     * clockwise. Only one reversal is required. For the more regular clockwise
-     * search, the compression is handled in the first reversal (ccw) and made
-     * clockwise in the second reversal.
-     */
-
-    {
-        uint32_t i;
-        rtime_t earliest_departure = UNREACHED;
-        #if 0
-        char result_buf[OUTPUT_LEN];
-        #endif
-        router_request_t ret[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
-        uint8_t n_ret;
-        uint8_t n2_ret;
-        uint8_t i_rev;
-        n_ret = 0;
-        i_rev = 0;
-
-        /* We first add virtual request so we will never do them again */
-        for (i = 0; i < plan.n_itineraries; ++i) {
-            ret[n_ret] = req;
-            ret[n_ret].time = plan.itineraries[i].legs[0].t0;
-            ret[n_ret].max_transfers = plan.itineraries[i].n_rides - 1;
-            router_request_dump (&ret[n_ret], &tdata);
-            n_ret++;
-        }
-
-        /* We compute the first possible time to get out of here by transit */
-        ret[n_ret] = req;
-        if (!ret[n_ret].arrive_by) {
-            for (i = 0; i < router.tdata->n_stop_points; ++i) {
-                if (router.states_board_time[i] != UNREACHED) {
-                    earliest_departure = MIN(earliest_departure, router.states_board_time[i]);
-                }
-            }
-            ret[n_ret].time = earliest_departure;
-        }
-        i_rev = n_ret;
-        n_ret++;
-
-        /* first reversal, always required */
-        if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
-            /* if the reversal fails we must exit */
-            status = EXIT_FAILURE;
-            goto clean_exit;
-        }
-
-        i_rev++;
-        n2_ret = n_ret;
-
-        for (; i_rev < n_ret; ++i_rev) {
-            router_reset (&router);
-
-            if ( ! router_route (&router, &ret[i_rev])) {
-                status = EXIT_FAILURE;
-                goto clean_exit;
-            }
-
-            if (! ret[i_rev].arrive_by) {
-                if (! router_result_to_plan (&plan, &router, &ret[i_rev])) {
-                    status = EXIT_FAILURE;
-                    goto clean_exit;
-                }
-            }
-
-            #if 0
-            strcpy(result_buf, "****");
-
-            puts ("Repeated search with reversed request: \n");
-            router_request_dump (&ret[i_rev], &tdata);
-            router_result_dump (&router, &ret[i_rev], &plan_render_text, result_buf, OUTPUT_LEN);
-            puts (result_buf);
-            #endif
-
-            if (!req.arrive_by && i_rev < n2_ret) {
-                if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
-                    /* if the reversal fails we must exit */
-                    status = EXIT_FAILURE;
-                    goto clean_exit;
-                }
-            }
-        }
     }
 
     /* * * * * * * * * * * * * * * * * * *

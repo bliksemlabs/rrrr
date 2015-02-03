@@ -1,21 +1,21 @@
 CC=clang
 
 debug:
-	$(CC) -DRRRR_STRICT -DRRRR_TDATA_IO_DYNAMIC -DRRRR_FAKE_REALTIME -DRRRR_VALGRIND -DRRRR_BITSET_64 -Wextra -Wall -ansi -pedantic -DRRRR_DEBUG -DRRRR_INFO -DRRRR_TDATA -ggdb -O0 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c router_dump.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c
-	$(CC) -DRRRR_STRICT -DRRRR_TDATA_IO_MMAP -DRRRR_FAKE_REALTIME -DRRRR_VALGRIND -DRRRR_BITSET_64 -Wextra -Wall -ansi -pedantic -DRRRR_DEBUG -DRRRR_INFO -DRRRR_TDATA -ggdb -O0 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_mmap.c radixtree.c gtfs-realtime.pb-c.c geometry.c router_dump.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c
+	$(CC) -DRRRR_STRICT -DRRRR_TDATA_IO_DYNAMIC -DRRRR_FAKE_REALTIME -DRRRR_VALGRIND -DRRRR_BITSET_64 -Wextra -Wall -ansi -pedantic -DRRRR_DEBUG -DRRRR_INFO -DRRRR_TDATA -ggdb -O0 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c router_dump.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c api.c
+	$(CC) -DRRRR_STRICT -DRRRR_TDATA_IO_MMAP -DRRRR_FAKE_REALTIME -DRRRR_VALGRIND -DRRRR_BITSET_64 -Wextra -Wall -ansi -pedantic -DRRRR_DEBUG -DRRRR_INFO -DRRRR_TDATA -ggdb -O0 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_mmap.c radixtree.c gtfs-realtime.pb-c.c geometry.c router_dump.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c api.c
 
 valgrind:
-	$(CC) -DRRRR_STRICT -DRRRR_FAKE_REALTIME -DRRRR_VALGRIND -DRRRR_BITSET_128 -DNDEBUG -O0 -ggdb3 -Wextra -Wall -std=c99 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c tdata_io_v3_mmap.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c
+	$(CC) -DRRRR_STRICT -DRRRR_FAKE_REALTIME -DRRRR_VALGRIND -DRRRR_BITSET_128 -DNDEBUG -O0 -ggdb3 -Wextra -Wall -std=c99 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c tdata_io_v3_mmap.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c api.c
 
 prod:
-	$(CC) -DRRRR_BITSET_128 -DNDEBUG -O3 -Wextra -Wall -std=c99 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c
+	$(CC) -DRRRR_BITSET_128 -DNDEBUG -O3 -Wextra -Wall -std=c99 -lm -lprotobuf-c -o cli cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_expanded.c tdata_realtime_alerts.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c plan_render_text.c polyline.c json.c plan_render_otp.c api.c
 
 ioscli:
-	$(CC) -isysroot /var/sdks/Latest.sdk -DRRRR_TDATA_IO_MMAP -DRRRR_BITSET_64 -DNDEBUG -O2 -Wextra -Wall -std=c99 -lm -o cli router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_io_v3_mmap.c radixtree.c geometry.c hashgrid.c cli.c plan_render_text.c
+	$(CC) -isysroot /var/sdks/Latest.sdk -DRRRR_TDATA_IO_MMAP -DRRRR_BITSET_64 -DNDEBUG -O2 -Wextra -Wall -std=c99 -lm -o cli router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_io_v3_mmap.c radixtree.c geometry.c hashgrid.c cli.c plan_render_text.c api.c
 
 ios:
-	$(CC) -isysroot /var/sdks/Latest.sdk -DRRRR_TDATA_IO_MMAP -DRRRR_BITSET_64 -DNDEBUG -O2 -Wextra -Wall -std=c99 -c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_io_v3_mmap.c radixtree.c geometry.c hashgrid.c
-	libtool -static -o ../librrrr.a router.o tdata.o tdata_validation.o bitset.o router_request.o router_result.o util.o tdata_io_v3_mmap.o radixtree.o geometry.o hashgrid.o
+	$(CC) -isysroot /var/sdks/Latest.sdk -DRRRR_TDATA_IO_MMAP -DRRRR_BITSET_64 -DNDEBUG -O2 -Wextra -Wall -std=c99 -c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_io_v3_mmap.c radixtree.c geometry.c hashgrid.c api.c
+	libtool -static -o ../librrrr.a router.o tdata.o tdata_validation.o bitset.o router_request.o router_result.o util.o tdata_io_v3_mmap.o radixtree.o geometry.o hashgrid.o api.o
 
 
 all:
@@ -41,5 +41,6 @@ all:
 	$(CC) -c -Wextra -Wall -ansi -pedantic router_result.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic plan_render_text.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic plan_render_otp.c
+	$(CC) -c -Wextra -Wall -ansi -pedantic api.c
 	# $(CC) -o cli -Wextra -Wall -ansi -pedantic cli.c stubs.c
-	$(CC) -lm -lprotobuf-c -o cli -Wextra -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_alerts.c tdata_realtime_expanded.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c plan_render_text.c polyline.c
+	$(CC) -lm -lprotobuf-c -o cli -Wextra -Wall -ansi -pedantic cli.c router.c tdata.c tdata_validation.c bitset.c router_request.c router_result.c util.c tdata_realtime_alerts.c tdata_realtime_expanded.c tdata_io_v3_dynamic.c radixtree.c gtfs-realtime.pb-c.c geometry.c hashgrid.c plan_render_text.c polyline.c api.c
