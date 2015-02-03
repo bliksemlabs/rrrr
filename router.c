@@ -1036,10 +1036,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                                            req->via == board_stop) {
                     attempt_board = false;
                 } else {
-                    /* removed xfer slack for simplicity */
-                    /* TODO: is this repetitively triggering re-boarding
-                     * searches along a single route?
-                     */
                     rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
                             jp_index, vj_index,
