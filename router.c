@@ -38,7 +38,6 @@ static bool router_setup_hashgrid(router_t *router) {
     } while(i_sp);
 
     hashgrid_init (&router->hg, 100, 500.0, coords, router->tdata->n_stop_points);
-    free(coords);
 
     return true;
 }
@@ -1412,7 +1411,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
          * set to the walk optimum. For the geographic optimisation to start
          * a latlon must be set and the stop_point_index must be set to NONE.
          */
-        if (req->to_stop_point == STOP_NONE || req->from_stop_point == STOP_NONE) {
+        if (( req->arrive_by ? req->to_stop_point == STOP_NONE : req->from_stop_point == STOP_NONE)) {
             /* search the target based on latlon */
             return initialize_origin_latlon (router, req);
         } else
@@ -1431,7 +1430,7 @@ static bool initialize_target (router_t *router, router_request_t *req) {
      * a latlon must be set and the stop_point_index must be set to NONE.
      */
     #ifdef RRRR_FEATURE_LATLON
-    if (req->to_stop_point == STOP_NONE || req->from_stop_point == STOP_NONE) {
+    if (( req->arrive_by ? req->from_stop_point == STOP_NONE : req->to_stop_point == STOP_NONE)) {
         /* search the target based on latlon */
         return initialize_target_latlon (router, req);
     } else

@@ -54,6 +54,8 @@ router_request_to_date (router_request_t *req, tdata_t *tdata,
  */
 void
 router_request_initialize(router_request_t *req) {
+    req->from_hg_result.hg = NULL;
+    req->to_hg_result.hg = NULL;
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;

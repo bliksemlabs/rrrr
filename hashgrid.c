@@ -247,6 +247,7 @@ void hashgrid_teardown (hashgrid_t *hg) {
     /* Free up dynamically allocated arrays.
      * Individual bins do not need to be freed separately from items.
      */
+    free (hg->coords);
     free (hg->counts);
     free (hg->bins);
     free (hg->items);
