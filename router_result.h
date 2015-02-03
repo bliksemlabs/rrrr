@@ -46,18 +46,18 @@ struct leg {
 /* An itinerary is a chain of legs leading from one place to another. */
 typedef struct itinerary itinerary_t;
 struct itinerary {
-    uint32_t n_rides;
-    uint32_t n_legs;
     leg_t legs[RRRR_DEFAULT_MAX_ROUNDS * 2 + 1];
+    uint8_t n_rides;
+    uint8_t n_legs;
 };
 
 
 /* A plan is several pareto-optimal itineraries connecting the same two stops. */
 typedef struct plan plan_t;
 struct plan {
-    uint32_t n_itineraries;
     itinerary_t itineraries[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
     router_request_t req;
+    uint8_t n_itineraries;
 };
 
 /* Structure to temporary store abstracted plans */
