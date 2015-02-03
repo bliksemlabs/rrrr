@@ -503,18 +503,30 @@ int main (int argc, char *argv[]) {
         uint8_t n_ret;
         uint8_t n2_ret;
         uint8_t i_rev;
-        n_ret = 1;
+        n_ret = 0;
         i_rev = 0;
-        ret[i_rev] = req;
 
-        if (!ret[i_rev].arrive_by) {
+        /* We first add virtual request so we will never do them again */
+        for (i = 0; i < plan.n_itineraries; ++i) {
+            ret[n_ret] = req;
+            ret[n_ret].time = plan.itineraries[i].legs[0].t0;
+            ret[n_ret].max_transfers = plan.itineraries[i].n_rides - 1;
+            router_request_dump (&ret[n_ret], &tdata);
+            n_ret++;
+        }
+
+        /* We compute the first possible time to get out of here by transit */
+        ret[n_ret] = req;
+        if (!ret[n_ret].arrive_by) {
             for (i = 0; i < router.tdata->n_stop_points; ++i) {
                 if (router.states_board_time[i] != UNREACHED) {
                     earliest_departure = MIN(earliest_departure, router.states_board_time[i]);
                 }
             }
-            ret[i_rev].time = earliest_departure;
+            ret[n_ret].time = earliest_departure;
         }
+        i_rev = n_ret;
+        n_ret++;
 
         /* first reversal, always required */
         if ( ! router_request_reverse_all (&router, &ret[i_rev], ret, &n_ret)) {
@@ -523,9 +535,10 @@ int main (int argc, char *argv[]) {
             goto clean_exit;
         }
 
+        i_rev++;
         n2_ret = n_ret;
 
-        for (i_rev = 1; i_rev < n_ret; ++i_rev) {
+        for (; i_rev < n_ret; ++i_rev) {
             router_reset (&router);
 
             if ( ! router_route (&router, &ret[i_rev])) {
