@@ -93,6 +93,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     }
 
     if ( ! req->arrive_by &&
+           req->from_stop_point != NONE &&
          ! router_result_to_plan (plan, router, req) ) {
         return false;
     }
