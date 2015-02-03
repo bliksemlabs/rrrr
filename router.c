@@ -1282,6 +1282,9 @@ static bool latlon_best_stop_point_index(router_t *router, router_request_t *req
     /*  TODO eliminate this now that we have rtimes in requests */
     router->states_time[router->origin] = req->time;
 
+    /* TODO this silences a warning, but what exactly is required here */
+    apply_transfers(router, req, 1, false, false);
+
     return true;
 }
 #endif
