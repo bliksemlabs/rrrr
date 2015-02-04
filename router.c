@@ -807,18 +807,18 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
                             : --i_vj_offset) {
             rtime_t time;
 
-#ifdef RRRR_DEBUG
+            #ifdef RRRR_DEBUG
             printBits(4, & (vj_masks[i_vj_offset]));
             printBits(4, & (serviceday->mask));
             fprintf(stderr, "\n");
             #endif
 
-#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+            #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
             /* skip this vj if it is banned */
             if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
                     req->n_banned_vjs, jp_index,
                     i_vj_offset)) continue;
-#endif
+            #endif
 
             /* skip this vj if it is not running on
              * the current service day
@@ -836,7 +836,7 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
              */
             time = tdata_stoptime (router->tdata, serviceday, jp_index, i_vj_offset, jpp_offset, req->arrive_by);
 
-#ifdef RRRR_DEBUG_VEHICLE_JOURNEY
+            #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
             fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
             #endif
 
