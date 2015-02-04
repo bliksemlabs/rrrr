@@ -5,8 +5,17 @@
 #include <stddef.h>
 #include <time.h>
 
+
+#ifndef MIN
 #define MIN(a,b) ((a) < (b) ? a : b)
+#endif
+#ifndef MAX
 #define MAX(a,b) ((a) > (b) ? a : b)
+#endif
+
+#ifndef UNUSED
+#define UNUSED(expr) (void)(expr)
+#endif
 
 #if defined (HAVE_LOCALTIME_R)
     #define rrrr_localtime_r(a, b) localtime_r(a, b)
@@ -29,8 +38,6 @@
     memcpy (b, tmpstm, sizeof(struct tm));\
 }
 #endif
-
-#define UNUSED(expr) (void)(expr)
 
 #define rrrr_memset(s, u, n) { size_t i = n; do { i--; s[i] = u; } while (i); }
 
