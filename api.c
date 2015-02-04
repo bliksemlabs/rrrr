@@ -15,6 +15,8 @@
  * This is also the preference for ONBOARD searches.
  */
 bool router_route_first_departure (router_t *router, router_request_t *req, plan_t *plan) {
+    router_reset (router);
+
     if ( ! router_route (router, req) ) {
         return false;
     }
@@ -57,6 +59,8 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
     uint8_t i;
     uint8_t n_reversals = req->arrive_by ? 1 : 2;
 
+    router_reset (router);
+
     if ( ! router_route (router, req) ) {
         return false;
     }
@@ -88,6 +92,8 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     uint8_t i_rev;
     uint8_t n_req;
     uint8_t n2_req;
+
+    router_reset (router);
 
     if ( ! router_route (router, req) ) {
         return false;

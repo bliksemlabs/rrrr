@@ -448,11 +448,6 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
-    /* While the scratch space remains allocated, each new search may require
-     * reinitialisation of this memory.
-     */
-    router_reset (&router);
-
     /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
      * this erases the set cutoff time from reversals in previous requests in the repeat function
      */
