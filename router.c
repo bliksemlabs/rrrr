@@ -22,30 +22,10 @@
 #include <math.h>
 #include <sys/types.h>
 
-#ifdef RRRR_FEATURE_LATLON
-static bool router_setup_hashgrid(router_t *router) {
-    coord_t *coords;
-    uint32_t i_sp;
-
-    coords = (coord_t *) malloc(sizeof(coord_t) * router->tdata->n_stop_points);
-    if (!coords) return false;
-
-    i_sp = router->tdata->n_stop_points;
-    do {
-        i_sp--;
-        coord_from_latlon(coords + i_sp,
-                          router->tdata->stop_point_coords + i_sp);
-    } while(i_sp);
-
-    hashgrid_init (&router->hg, 100, 500.0, coords, router->tdata->n_stop_points);
-
-    return true;
-}
-#endif
-
-bool router_setup(router_t *router, tdata_t *tdata) {
+bool router_setup(router_t *router, tdata_t *tdata, hashgrid_t *hg) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
     router->tdata = tdata;
+    router->hg = hg;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
     router->states_back_vehicle_journey = (jp_vjoffset_t *) malloc(sizeof(jp_vjoffset_t) * n_states);
@@ -92,11 +72,7 @@ bool router_setup(router_t *router, tdata_t *tdata) {
         return false;
     }
 
-#ifdef RRRR_FEATURE_LATLON
-    return router_setup_hashgrid (router);
-#else
     return true;
-#endif
 }
 
 void router_teardown(router_t *router) {
@@ -118,10 +94,6 @@ void router_teardown(router_t *router) {
 
 #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
     bitset_destroy(router->banned_journey_patterns);
-#endif
-
-#ifdef RRRR_FEATURE_LATLON
-    hashgrid_teardown (&router->hg);
 #endif
 }
 
@@ -1300,7 +1272,7 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
         if (req->to_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
-            hashgrid_query (&router->hg, &req->to_hg_result,
+            hashgrid_query (router->hg, &req->to_hg_result,
                             coord, req->walk_max_distance);
         }
         return latlon_best_stop_point_index(router, req, &req->to_hg_result);
@@ -1313,7 +1285,7 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
         if (req->from_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
-            hashgrid_query (&router->hg, &req->from_hg_result,
+            hashgrid_query (router->hg, &req->from_hg_result,
                             coord, req->walk_max_distance);
         }
         return latlon_best_stop_point_index(router, req, &req->from_hg_result);
@@ -1332,7 +1304,7 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
         if (req->from_hg_result.hg == NULL) {
             coord_t coord;
             coord_from_latlon (&coord, &req->from_latlon);
-            hashgrid_query (&router->hg, &req->from_hg_result,
+            hashgrid_query (router->hg, &req->from_hg_result,
                             coord, req->walk_max_distance);
         }
         hashgrid_result_reset (&req->from_hg_result);
@@ -1346,7 +1318,7 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
         if (req->to_hg_result.hg == NULL ) {
             coord_t coord;
             coord_from_latlon (&coord, &req->to_latlon);
-            hashgrid_query (&router->hg, &req->to_hg_result,
+            hashgrid_query (router->hg, &req->to_hg_result,
                             coord, req->walk_max_distance);
         }
         hashgrid_result_reset (&req->to_hg_result);

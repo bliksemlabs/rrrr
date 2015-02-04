@@ -10,7 +10,9 @@
 #include <string.h>
 #include <time.h>
 
+#include "config.h"
 #include "api.h"
+#include "hashgrid.h"
 #include "router_request.h"
 #include "router_result.h"
 #include "plan_render_text.h"
@@ -35,6 +37,9 @@ struct cli_arguments {
     char *gtfsrt_tripupdates_filename;
     long repeat;
     bool verbose;
+    #ifdef RRRR_FEATURE_LATLON
+    bool has_latlon;
+    #endif
 };
 
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -103,6 +108,11 @@ int main (int argc, char *argv[]) {
 
     /* the timetable structure, the interface to the timetable */
     tdata_t tdata;
+
+    #ifdef RRRR_FEATURE_LATLON
+    /* the hashgrid structure, the interface to query on lat/lon */
+    hashgrid_t hg;
+    #endif
 
     /* the router structure, should not be manually changed */
     router_t router;
@@ -219,6 +229,7 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][14], &req.from_latlon);
+                        cli_args.has_latlon = true;
                     }
                     #endif
                     break;
@@ -261,6 +272,7 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][12], &req.to_latlon);
+                        cli_args.has_latlon = true;
                     }
                     #endif
                     break;
@@ -340,6 +352,7 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
                         /* TODO: check return value */
                         strtolatlon(&argv[i][13], &req.via_latlon);
+                        cli_args.has_latlon = true;
                     }
                     #endif
                     break;
@@ -406,6 +419,13 @@ int main (int argc, char *argv[]) {
     }
     req.time_rounded = false;
 
+    #ifdef RRRR_FEATURE_LATLON
+    if (cli_args.has_latlon && ! hashgrid_setup (&hg, &tdata)) {
+        status = EXIT_FAILURE;
+        goto clean_exit;
+    }
+    #endif
+
    /* * * * * * * * * * * * * * * * * *
      * PHASE ONE: INITIALISE THE ROUTER
      *
@@ -417,7 +437,7 @@ int main (int argc, char *argv[]) {
      *
      * The contents of this struct MUST NOT be changed directly.
      */
-    if ( ! router_setup (&router, &tdata)) {
+    if ( ! router_setup (&router, &tdata, &hg)) {
         /* if the memory is not allocated we must exit */
         status = EXIT_FAILURE;
         goto clean_exit;
@@ -479,6 +499,12 @@ clean_exit:
 
     /* Deallocate the scratchspace of the router */
     router_teardown (&router);
+
+    #ifdef RRRR_FEATURE_LATLON
+    if (cli_args.has_latlon) {
+        hashgrid_teardown (&hg);
+    }
+    #endif
 
     #ifdef RRRR_FEATURE_REALTIME
     if (tdata.stop_point_id_index) radixtree_destroy (tdata.stop_point_id_index);

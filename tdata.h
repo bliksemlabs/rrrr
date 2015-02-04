@@ -323,4 +323,8 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_ind
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
+#ifdef RRRR_FEATURE_LATLON
+bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata);
+#endif
+
 #endif /* _TDATA_H */

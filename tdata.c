@@ -452,3 +452,24 @@ void tdata_dump(tdata_t *td) {
     }
 }
 #endif
+
+#ifdef RRRR_FEATURE_LATLON
+bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata) {
+    coord_t *coords;
+    uint32_t i_sp;
+
+    coords = (coord_t *) malloc(sizeof(coord_t) * tdata->n_stop_points);
+    if (!coords) return false;
+
+    i_sp = tdata->n_stop_points;
+    do {
+        i_sp--;
+        coord_from_latlon(coords + i_sp,
+                          tdata->stop_point_coords + i_sp);
+    } while(i_sp);
+
+    hashgrid_init (hg, 100, 500.0, coords, tdata->n_stop_points);
+
+    return true;
+}
+#endif

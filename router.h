@@ -33,6 +33,11 @@ struct router {
     /* The transit / timetable data tables */
     tdata_t *tdata;
 
+#ifdef RRRR_FEATURE_LATLON
+    /* The latlon lookup for each stop_point */
+    hashgrid_t *hg;
+#endif
+
     /* The best known time at each stop_point */
     rtime_t *best_time;
 
@@ -84,9 +89,6 @@ struct router {
     serviceday_t servicedays[3];
     uint8_t n_servicedays;
 
-#ifdef RRRR_FEATURE_LATLON
-    hashgrid_t hg;
-#endif
     /* TODO: We should move more routing state in here,
      * like round and sub-scratch pointers.
      */
@@ -94,7 +96,7 @@ struct router {
 
 /* FUNCTION PROTOTYPES */
 
-bool router_setup(router_t*, tdata_t*);
+bool router_setup(router_t*, tdata_t*, hashgrid_t*);
 
 void router_reset(router_t *router);
 
@@ -103,4 +105,3 @@ void router_teardown(router_t*);
 bool router_route(router_t*, router_request_t*);
 
 #endif /* _ROUTER_H */
-
