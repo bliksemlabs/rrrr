@@ -658,7 +658,12 @@ static void apply_transfers (router_t *router, router_request_t *req,
      */
 }
 
-static void search_vehicle_journeys_within_days(router_t *router, router_request_t *req,
+/**
+* Search a better time for the best time to board when no journey_pattern before has been boarded along this journey_pattern
+* Start with the best possibility (arrive_by: LAST departure, depart_after FIRST departure) and end with the worst possibility,
+* unless we reach a vehicle_journey that matches our requirements (valid departure, valid calendar, valid trip_attributes)
+*/
+static void board_vehicle_journeys_within_days(router_t *router, router_request_t *req,
         uint32_t jp_index,
         uint16_t jpp_offset,
         rtime_t prev_time,
@@ -668,11 +673,10 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
     calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
     vehicle_journey_t *vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
     journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-
     serviceday_t *serviceday;
+    bool jp_overlap = jp->min_time < (jp->max_time - RTIME_ONE_DAY);
 
-    /* Search vehicle_journeys within days.
-     * The loop nesting could also be inverted.
+    /* Search through the servicedays that are assumed to be put in search-order (counterclockwise for arrive_by)
      */
     for (serviceday  = router->servicedays;
          serviceday <= router->servicedays + router->n_servicedays;
@@ -692,13 +696,13 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
          * scanning additional days. Note that day list is
          * reversed for arrive-by searches.
          */
-        if (*best_vj != NONE &&
-            !(jp->min_time < (jp->max_time - RTIME_ONE_DAY))) break;
+        if (*best_vj != NONE && !jp_overlap) break;
 
         for (i_vj_offset = req->arrive_by ? jp->n_vjs - 1: 0;
              req->arrive_by ? i_vj_offset >= 0
                             : i_vj_offset < jp->n_vjs;
-             req->arrive_by ? --i_vj_offset : ++i_vj_offset) {
+             req->arrive_by ? --i_vj_offset
+                            : ++i_vj_offset) {
             rtime_t time;
 
             #ifdef RRRR_DEBUG
@@ -756,10 +760,111 @@ static void search_vehicle_journeys_within_days(router_t *router, router_request
                 /* Since FIFO ordering of trips is ensured, we can immediately return if the JourneyPattern does not overlap.
                  * If the JourneyPattern does overlap, we can only return if the time does not fall in the overlapping period
                  */
-                if (jp->min_time > jp->max_time - RTIME_ONE_DAY || jp->min_time > time - RTIME_ONE_DAY)
+                if (!jp_overlap || jp->min_time > time - RTIME_ONE_DAY)
                     return;
             }
         }  /*  end for (vehicle_journey's within this route) */
+    }  /*  end for (service days: yesterday, today, tomorrow) */
+}
+
+/**
+* Search a better time for the best time to board when we already boarded a vehicle_journey on this journey_pattern.
+* Assume the currently boarded VJ is the best and try to improve that time,
+* since there usually non to very few better vehicle_journeys, this reduces the workload significantly
+* We are scanning counterclockwise for arrive_by and clockwise for depart_after.
+*/
+static void reboard_vehicle_journeys_within_days(router_t *router, router_request_t *req,
+        uint32_t jp_index,
+        uint16_t jpp_offset,
+        serviceday_t *prev_serviceday,
+        uint16_t prev_vj_offset,
+        rtime_t prev_time,
+        serviceday_t **best_serviceday,
+        uint32_t *best_vj, rtime_t *best_time) {
+
+    calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(router->tdata, jp_index);
+    vehicle_journey_t *vjs_in_journey_pattern = tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
+
+    serviceday_t *serviceday;
+
+    /* Search service_days in reverse order. (arrive_by low to high, else high to low) */
+    for (serviceday = prev_serviceday;
+         serviceday >= router->servicedays;
+         --serviceday) {
+        int32_t i_vj_offset;
+
+        /* Check that this journey_pattern still has any suitable vehicle_journeys
+         * running on this day.
+         */
+        if (req->arrive_by ? prev_time < serviceday->midnight + jp->min_time
+                           : prev_time > serviceday->midnight + jp->max_time) continue;
+
+        for (i_vj_offset = prev_vj_offset;
+             req->arrive_by ? i_vj_offset < jp->n_vjs :
+                              i_vj_offset >= 0;
+             req->arrive_by ? ++i_vj_offset
+                            : --i_vj_offset) {
+            rtime_t time;
+
+            #ifdef RRRR_DEBUG
+            printBits(4, & (vj_masks[i_vj_offset]));
+            printBits(4, & (serviceday->mask));
+            fprintf(stderr, "\n");
+            #endif
+
+            #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+            /* skip this vj if it is banned */
+            if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
+                    req->n_banned_vjs, jp_index,
+                    i_vj_offset)) continue;
+            #endif
+
+            /* skip this vj if it is not running on
+             * the current service day
+             */
+            if ( ! (serviceday->mask & vj_masks[i_vj_offset])) continue;
+            /* skip this vj if it doesn't have all our
+             * required attributes
+             * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
+             * is about 4% more efficient for journeys without specific vj attribute requirements.
+             */
+            if (req->vj_attributes && ! ((req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
+
+            /* consider the arrival or departure time on
+             * the current service day
+             */
+            time = tdata_stoptime (router->tdata, serviceday, jp_index, i_vj_offset, jpp_offset, req->arrive_by);
+
+            #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
+            fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
+            #endif
+
+            /* rtime overflow due to long overnight vehicle_journey's on day 2 */
+            if (time == UNREACHED) continue;
+
+            if (req->arrive_by ? time > prev_time
+                               : time < prev_time){
+                return;
+            }
+
+            /* Mark vj for boarding if it improves on the last round's
+             * post-walk time at this stop. Note: we should /not/ be comparing
+             * to the current best known time at this stop, because it may have
+             * been updated in this round by another vj (in the pre-walk
+             * transit phase).
+             */
+            if (req->arrive_by ? time <= prev_time && time > *best_time
+                    : time >= prev_time && time < *best_time) {
+                *best_vj = i_vj_offset;
+                *best_time = time;
+                *best_serviceday = serviceday;
+            }
+        }  /*  end for (vehicle_journey's within this route) */
+
+        /* Reset the VJ offset to the highest value, after we scanned the original serviceday */
+        prev_vj_offset = req->arrive_by ? 0 : jp->n_vjs - 1;
+
     }  /*  end for (service days: yesterday, today, tomorrow) */
 }
 
@@ -933,10 +1038,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                                            req->via == board_stop) {
                     attempt_board = false;
                 } else {
-                    /* removed xfer slack for simplicity */
-                    /* TODO: is this repetitively triggering re-boarding
-                     * searches along a single route?
-                     */
                     rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
                             jp_index, vj_index,
@@ -977,9 +1078,15 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
                 #endif
 
-                search_vehicle_journeys_within_days(router, req, jp_index, (uint16_t) jpp_index,
-                        prev_time, &best_serviceday,
-                        &best_vj, &best_time);
+                if (vj_index == NONE) {
+                    board_vehicle_journeys_within_days(router, req, jp_index, (uint16_t) jpp_index,
+                            prev_time, &best_serviceday,
+                            &best_vj, &best_time);
+                }else{
+                    reboard_vehicle_journeys_within_days(router, req, jp_index, (uint16_t) jpp_index,
+                            board_serviceday, vj_index, prev_time, &best_serviceday,
+                            &best_vj, &best_time);
+                }
 
                 if (best_vj != NONE) {
                     #ifdef RRRR_INFO
