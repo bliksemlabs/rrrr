@@ -790,10 +790,8 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
 
     /* Search service_days in reverse order. (arrive_by low to high, else high to low) */
     for (serviceday = prev_serviceday;
-         req->arrive_by ? serviceday < router->servicedays + router->n_servicedays
-                        : serviceday >= router->servicedays;
-         req->arrive_by ? ++serviceday
-                        : --serviceday) {
+         serviceday >= router->servicedays;
+         --serviceday) {
         int32_t i_vj_offset;
 
         /* Check that this journey_pattern still has any suitable vehicle_journeys
