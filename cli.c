@@ -386,6 +386,7 @@ int main (int argc, char *argv[]) {
         tdata.stop_point_id_index = tdata_radixtree_string_pool_setup (&tdata, tdata.stop_point_ids, tdata.n_stop_points);
         tdata.vjid_index = tdata_radixtree_string_pool_setup (&tdata, tdata.vj_ids, tdata.n_vjs);
         tdata.lineid_index = tdata_radixtree_string_pool_setup (&tdata, tdata.line_ids, tdata.n_line_ids);
+        tdata.stringpool_index = tdata_radixtree_full_string_pool_setup (tdata.string_pool, tdata.n_string_pool);
 
         /* Validate the radixtrees are actually created. */
         if (!(tdata.stop_point_id_index &&

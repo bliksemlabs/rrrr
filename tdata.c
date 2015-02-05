@@ -480,6 +480,7 @@ bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata) {
 }
 #endif
 
+#ifdef RRRR_FEATURE_REALTIME
 radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n) {
     uint32_t idx;
     radixtree_t *r = radixtree_new();
@@ -488,3 +489,19 @@ radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32
     }
     return r;
 }
+
+radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n) {
+    radixtree_t *r = radixtree_new();
+    char *strings_end = strings + n;
+    char *s = strings;
+    uint32_t idx = 0;
+    while (s < strings_end) {
+        size_t width = strlen(s) + 1;
+        radixtree_insert (r, s, idx);
+        idx += width;
+        s += width;
+    }
+
+    return r;
+}
+#endif

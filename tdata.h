@@ -200,6 +200,7 @@ struct tdata {
     radixtree_t *lineid_index;
     radixtree_t *stop_point_id_index;
     radixtree_t *vjid_index;
+    radixtree_t *stringpool_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     stoptime_t **vj_stoptimes;
     uint32_t *vjs_in_journey_pattern;
@@ -323,6 +324,9 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata);
 #endif
 
+#ifdef RRRR_FEATURE_REALTIME
 radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n);
+radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n);
+#endif
 
 #endif /* _TDATA_H */

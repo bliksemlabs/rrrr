@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 project(ansi)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -ansi -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT -O3 -DRRRR_TDATA_IO_MMAP -march=native")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -ansi -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT -O3 -march=native")
 if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
 endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
@@ -66,6 +66,8 @@ set(SOURCE_FILES
     router_result.c
     router_result.h
     rrrr_types.h
+    string_pool.c
+    string_pool.h
     tdata.c
     tdata.h
     tdata_io_v3.h
