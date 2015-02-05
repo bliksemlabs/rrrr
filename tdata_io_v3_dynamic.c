@@ -162,6 +162,7 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->journey_patterns);
     free (td->journey_pattern_points);
     free (td->journey_pattern_point_attributes);
+    free (td->journey_pattern_point_headsigns);
     free (td->stop_times);
     free (td->vjs);
     free (td->journey_patterns_at_stop);
@@ -188,6 +189,7 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->operator_names);
     free (td->operator_urls);
     free (td->line_codes);
+    free (td->line_names);
     free (td->line_ids);
     free (td->commercial_mode_ids);
     free (td->commercial_mode_names);
