@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "api.h"
+#include "set.h"
 #include "hashgrid.h"
 #include "router_request.h"
 #include "router_result.h"
@@ -41,60 +42,6 @@ struct cli_arguments {
     bool has_latlon;
     #endif
 };
-
-#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-static void set_add_jp (uint32_t *set,
-                        uint8_t  *length, uint8_t max_length,
-                        uint32_t value) {
-    uint8_t i;
-
-    if (*length >= max_length) return;
-
-    for (i = 0; i < *length; ++i) {
-        if (set[i] == value) return;
-    }
-
-    set[*length] = value;
-    (*length)++;
-}
-#endif
-
-#if RRRR_MAX_BANNED_STOP_POINTS > 0 || RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
-static void set_add_sp (spidx_t *set,
-                        uint8_t  *length, uint8_t max_length,
-                        spidx_t value) {
-    uint8_t i;
-
-    if (*length >= max_length) return;
-
-    for (i = 0; i < *length; ++i) {
-        if (set[i] == value) return;
-    }
-
-    set[*length] = value;
-    (*length)++;
-}
-#endif
-
-
-#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-static void set_add_trip (uint32_t *set1, uint16_t *set2,
-                          uint8_t  *length, uint8_t max_length,
-                          uint32_t value1, uint16_t value2) {
-    uint8_t i;
-
-    if (*length >= max_length) return;
-
-    for (i = 0; i < *length; ++i) {
-        if (set1[i] == value1 &&
-            set2[i] == value2) return;
-    }
-
-    set1[*length] = value1;
-    set2[*length] = value2;
-    (*length)++;
-}
-#endif
 
 int main (int argc, char *argv[]) {
     /* our return value */

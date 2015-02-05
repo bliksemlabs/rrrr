@@ -66,6 +66,8 @@ set(SOURCE_FILES
     router_result.c
     router_result.h
     rrrr_types.h
+    set.c
+    set.h
     tdata.c
     tdata.h
     tdata_io_v3.h
