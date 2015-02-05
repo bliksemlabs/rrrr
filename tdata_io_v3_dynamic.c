@@ -19,21 +19,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-
 #define load_dynamic(fd, storage, type) \
     td->n_##storage = header->n_##storage; \
     td->storage = (type*) malloc (sizeof(type) * RRRR_DYNAMIC_SLACK * (td->n_##storage + 1)); \
     if (lseek (fd, header->loc_##storage, SEEK_SET) == -1) goto fail_close_fd; \
     if (read (fd, td->storage, sizeof(type) * (td->n_##storage + 1)) != (ssize_t) (sizeof(type) * (td->n_##storage + 1))) goto fail_close_fd;
-
-#define load_dynamic_string(fd, storage) \
-    td->n_##storage = header->n_##storage; \
-    if (lseek (fd, header->loc_##storage, SEEK_SET) == -1) goto fail_close_fd; \
-    if (read (fd, &td->storage##_width, sizeof(uint32_t)) != sizeof(uint32_t)) goto fail_close_fd; \
-    if (!(td->storage##_width > 0 && td->storage##_width < UINT16_MAX)) goto fail_close_fd; \
-    td->storage = (char*) malloc (((uint64_t) sizeof(char)) * RRRR_DYNAMIC_SLACK * td->n_##storage * td->storage##_width); \
-    if (!td->storage) goto fail_close_fd; \
-    if (read (fd, td->storage, ((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width) != (ssize_t) (((uint64_t) sizeof(char)) * td->n_##storage * td->storage##_width)) goto fail_close_fd;
 
 /* Set the maximum drivetime of any day in tdata */
 void set_max_time(tdata_t *td){
@@ -148,11 +138,11 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, physical_mode_ids, uint32_t);
     load_dynamic (fd, physical_mode_names, uint32_t);
     load_dynamic (fd, platformcodes, uint32_t);
+    load_dynamic (fd, line_ids, uint32_t);
+    load_dynamic (fd, stop_point_ids, uint32_t);
+    load_dynamic (fd, stop_area_ids, uint32_t);
+    load_dynamic (fd, vj_ids, uint32_t);
 
-    load_dynamic_string (fd, stop_point_ids);
-    load_dynamic_string (fd, stop_area_ids);
-    load_dynamic_string (fd, vj_ids);
-    load_dynamic_string (fd, line_ids);
     set_max_time(td);
     close (fd);
 

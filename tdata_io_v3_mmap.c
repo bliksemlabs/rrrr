@@ -23,11 +23,6 @@
     td->n_##storage = header->n_##storage; \
     td->storage = (type *) (((char *) b) + header->loc_##storage)
 
-#define load_mmap_string(b, storage) \
-    td->n_##storage = header->n_##storage; \
-    td->storage##_width = *((uint32_t *) (((char *) b) + header->loc_##storage)); \
-    td->storage = (char*) (((char *) b) + header->loc_##storage + sizeof(uint32_t))
-
 /* Set the maximum drivetime of any day in tdata */
 void set_max_time(tdata_t *td){
     jpidx_t jp_index;
@@ -107,11 +102,10 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, physical_mode_ids, uint32_t);
     load_mmap (td->base, physical_mode_names, uint32_t);
     load_mmap (td->base, platformcodes, uint32_t);
-
-    load_mmap_string (td->base, stop_point_ids);
-    load_mmap_string (td->base, stop_area_ids);
-    load_mmap_string (td->base, vj_ids);
-    load_mmap_string (td->base, line_ids);
+    load_mmap (td->base, line_ids, uint32_t);
+    load_mmap (td->base, stop_point_ids, uint32_t);
+    load_mmap (td->base, stop_area_ids, uint32_t);
+    load_mmap (td->base, vj_ids, uint32_t);
 
     /* Set the maximum drivetime of any day in tdata */
     set_max_time(td);

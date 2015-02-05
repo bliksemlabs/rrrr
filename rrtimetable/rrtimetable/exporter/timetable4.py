@@ -407,32 +407,27 @@ def export_stringpool(tdata,index,out):
 
 def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
-    index.loc_line_codes = tell(out)
-    for line in index.lines:
-        writeint(out,index.put_string(line.code or ''))
+    index.loc_line_codes = write_list_of_strings(out,index,[line.code or '' for line in index.lines])
 
 def export_linenames(tdata,index,out):
     write_text_comment(out,"LINE NAMES")
-    index.loc_line_names = tell(out)
-    for line in index.lines:
-        writeint(out,index.put_string(line.name or ''))
+    index.loc_line_names = write_list_of_strings(out,index,[line.name or '' for line in index.lines])
 
 def export_line_uris(tdata,index,out):
-    # maybe no need to store route IDs: report trip ids and look them up when reconstructing the response
     print "writing line ids to string table"
     write_text_comment(out,"LINE IDS")
-    index.loc_line_uris = write_string_table(out,[jp.route.line.uri for jp in index.journey_patterns])
+    index.loc_line_uris = write_list_of_strings(out,index,[line.uri for line in index.lines])
 
 def export_sp_uris(tdata,index,out):
-    print "writing out sorted stop_point ids to string table"
+    print "writing out sorted stop_point ids to string point list"
     # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
     write_text_comment(out,"STOP_POINT IDS")
-    index.loc_stop_point_uris = write_string_table(out,[sp.uri for sp in index.stop_points])
+    index.loc_stop_point_uris = write_list_of_strings(out,index,[sp.uri for sp in index.stop_points])
 
 def export_sa_uris(tdata,index,out):
-    print "writing out sorted stop_area ids to string table"
+    print "writing out sorted stop_area ids to string point list"
     write_text_comment(out,"STOP_AREA IDS")
-    index.loc_stop_area_uris = write_string_table(out,[sa.uri for sa in index.stop_areas])
+    index.loc_stop_area_uris = write_list_of_strings(out,index,[sa.uri for sa in index.stop_areas])
 
 def export_vj_uris(tdata,index,out):
      all_vj_ids = [] 
@@ -443,7 +438,7 @@ def export_vj_uris(tdata,index,out):
      print "writing trip ids to string table" 
      # note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order. 
      write_text_comment(out,"VJ IDS")
-     index.loc_vj_uris = write_string_table(out,all_vj_ids)
+     index.loc_vj_uris = write_list_of_strings(out,index,all_vj_ids)
      index.n_vj = len(all_vj_ids)
 
 def export_routes(tdata,index,out):
