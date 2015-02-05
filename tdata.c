@@ -284,13 +284,18 @@ bool tdata_load(tdata_t *td, char *filename) {
 }
 
 void tdata_close(tdata_t *td) {
+    #ifdef RRRR_FEATURE_REALTIME
+    if (td->stop_point_id_index) radixtree_destroy (td->stop_point_id_index);
+    if (td->vjid_index) radixtree_destroy (td->vjid_index);
+    if (td->lineid_index) radixtree_destroy (td->lineid_index);
+
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     tdata_free_expanded (td);
     #endif
     #ifdef RRRR_FEATURE_REALTIME_ALERTS
     tdata_clear_gtfsrt_alerts (td);
     #endif
-
+    #endif
     tdata_io_v3_close (td);
 }
 
@@ -474,3 +479,12 @@ bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata) {
     return true;
 }
 #endif
+
+radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n) {
+    uint32_t idx;
+    radixtree_t *r = radixtree_new();
+    for (idx = 0; idx < n; idx++) {
+        radixtree_insert (r, td->string_pool + s[idx], n);
+    }
+    return r;
+}

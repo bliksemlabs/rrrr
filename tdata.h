@@ -323,4 +323,6 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata);
 #endif
 
+radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n);
+
 #endif /* _TDATA_H */
