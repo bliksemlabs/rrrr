@@ -473,3 +473,12 @@ bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata) {
     return true;
 }
 #endif
+
+bool strtospidx (const char *str, tdata_t *td, spidx_t *sp) {
+    long stop_idx = strtol(str, NULL, 10);
+    if (stop_idx >= 0 && stop_idx < td->n_stop_points) {
+        *sp = (spidx_t) stop_idx;
+        return true;
+    }
+    return false;
+}

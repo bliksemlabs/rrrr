@@ -164,19 +164,14 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
-                        long stop_idx = strtol(&argv[i][11], NULL, 10);
-                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
-                            req.from_stop_point = (spidx_t) stop_idx;
-                        }
+                        strtospidx (&argv[i][11], &tdata, &req.from_stop_point);
                     }
                     else if (strncmp(argv[i], "--from-id=", 10) == 0) {
                         req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][10], 0);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
-                        /* TODO: check return value */
-                        strtolatlon(&argv[i][14], &req.from_latlon);
-                        cli_args.has_latlon = true;
+                        cli_args.has_latlon = strtolatlon(&argv[i][14], &req.from_latlon);
                     }
                     #endif
                     break;
@@ -207,19 +202,14 @@ int main (int argc, char *argv[]) {
 
                 case 't':
                     if (strncmp(argv[i], "--to-idx=", 9) == 0) {
-                        long stop_idx = strtol(&argv[i][9], NULL, 10);
-                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
-                            req.to_stop_point = (spidx_t) stop_idx;
-                        }
+                        strtospidx (&argv[i][9], &tdata, &req.to_stop_point);
                     }
                     else if (strncmp(argv[i], "--to-id=", 8) == 0) {
                         req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][8], 0);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
-                        /* TODO: check return value */
-                        strtolatlon(&argv[i][12], &req.to_latlon);
-                        cli_args.has_latlon = true;
+                        cli_args.has_latlon = strtolatlon(&argv[i][12], &req.to_latlon);
                     }
                     #endif
                     break;
@@ -287,19 +277,14 @@ int main (int argc, char *argv[]) {
                         cli_args.verbose = true;
                     }
                     else if (strncmp(argv[i], "--via-idx=", 10) == 0) {
-                        long stop_idx = strtol(&argv[i][10], NULL, 10);
-                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
-                            req.via_stop_point = (spidx_t) stop_idx;
-                        }
+                        strtospidx (&argv[i][10], &tdata, &req.via_stop_point);
                     }
                     else if (strncmp(argv[i], "--via-id=", 9) == 0) {
                         req.via_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][9], 0);
                     }
                     #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
-                        /* TODO: check return value */
-                        strtolatlon(&argv[i][13], &req.via_latlon);
-                        cli_args.has_latlon = true;
+                        cli_args.has_latlon = strtolatlon(&argv[i][13], &req.via_latlon);
                     }
                     #endif
                     break;

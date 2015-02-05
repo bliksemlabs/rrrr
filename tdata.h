@@ -327,4 +327,6 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata);
 #endif
 
+bool strtospidx (const char *str, tdata_t *td, spidx_t *sp);
+
 #endif /* _TDATA_H */
