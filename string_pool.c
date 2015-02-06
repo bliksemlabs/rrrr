@@ -22,8 +22,8 @@ uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const 
 
 
 uint32_t string_pool_append_scan(char *pool, uint32_t *n_pool, const char *str) {
-    char *strings_end = pool + n_pool;
-    char *s = strings;
+    char *strings_end = pool + *n_pool;
+    char *s = pool;
     uint32_t idx = 0;
     size_t len = strlen (str);
 
@@ -37,7 +37,7 @@ uint32_t string_pool_append_scan(char *pool, uint32_t *n_pool, const char *str) 
     }
 
     strncpy (&pool[*n_pool], str, len);
-    idx = n_pool;
+    idx = *n_pool;
     *n_pool += len;
 
     return idx;
