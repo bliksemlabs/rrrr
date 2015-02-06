@@ -125,9 +125,9 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
-                        char *vj_id = "";
+                        char const *vj_id = "";
                         if (tdata->vj_ids) {
-                            vj_id = tdata->vj_ids + (vj_index * tdata->vj_ids_width);
+                            vj_id = tdata_vehicle_journey_id_for_index(tdata,vj_index);
                         }
 
                         fprintf (stderr, "negative travel time arriving at "

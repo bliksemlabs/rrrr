@@ -12,6 +12,7 @@
 #include "gtfs-realtime.pb-c.h"
 #include "rrrr_types.h"
 #include "util.h"
+#include "string_pool.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -151,12 +152,11 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
 
     }
 
-    /* append the allocated vj_ids to the array */
-    strncpy(&tdata->vj_ids[tdata->n_vjs * tdata->vj_ids_width],
-            vj_ids, tdata->vj_ids_width * n_vjs);
-
     /* add the last journey_pattern index to the lookup table */
     for (i_vj = 0; i_vj < n_vjs; ++i_vj) {
+        /* TODO: this doesn't handle multiple vjs! */
+        tdata->vj_ids[vj_index] = string_pool_append (tdata->string_pool, &tdata->n_string_pool, tdata->stringpool_index, vj_ids);
+
         tdata->vj_stoptimes[vj_index] = (stoptime_t *) malloc(sizeof(stoptime_t) * n_sp);
 
         for (sp_index = 0; sp_index < n_sp; ++sp_index) {
@@ -169,8 +169,8 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
         tdata->vjs_in_journey_pattern[vj_index] = tdata->n_journey_patterns;
         vj_index++;
 
-        radixtree_insert(tdata->lineid_index,
-                         &vj_ids[i_vj * tdata->vj_ids_width],
+        /* TODO: this doesn't handle multiple vjs! */
+        radixtree_insert(tdata->lineid_index, vj_ids,
                          tdata->n_journey_patterns);
     }
 
@@ -234,6 +234,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
     TransitRealtime__TripDescriptor *rt_trip = rt_trip_update->trip;
     journey_pattern_t *jp_new = NULL;
     char *vj_id_new;
+    size_t len;
     uint32_t jp_index;
 
     /* Don't ever continue if we found that n_sp == 0. */
@@ -246,9 +247,11 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
     /* The idea is to fork a vj to a new journey_pattern, based on
      * the vehicle_journey id to find if the vehicle_journey id already exists
      */
-    vj_id_new = (char *) alloca (sizeof(char) * tdata->vj_ids_width);
+
+    len = strlen(rt_trip->trip_id);
+    vj_id_new = (char *) alloca (len + 2);
     vj_id_new[0] = '@';
-    strncpy(&vj_id_new[1], rt_trip->trip_id, tdata->vj_ids_width - 1);
+    strncpy(&vj_id_new[1], rt_trip->trip_id, len);
 
     jp_index = radixtree_find (tdata->lineid_index, vj_id_new);
 

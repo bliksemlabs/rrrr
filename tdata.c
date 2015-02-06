@@ -35,12 +35,14 @@
 #include "bitset.h"
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
+    uint16_t route_index;
     if (jp_index == NONE) return "NONE";
-    return td->line_ids + (td->line_ids_width * jp_index);
+    route_index = td->journey_patterns[jp_index].route_index;
+    return tdata_line_id_for_index(td,td->line_for_route[route_index]);
 }
 
 const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index) {
-    return td->stop_point_ids + (td->stop_point_ids_width * sp_index);
+    return td->string_pool + td->stop_point_ids[sp_index];
 }
 
 uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index) {
@@ -48,11 +50,11 @@ uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index) {
 }
 
 const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index) {
-    return td->vj_ids + (td->vj_ids_width * vj_index);
+    return td->string_pool + td->vj_ids[vj_index];
 }
 
 const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
-    return td->vj_ids + (td->vj_ids_width * (td->journey_patterns[jp_index].vj_offset + vj_index));
+    return td->string_pool +  td->vj_ids[td->journey_patterns[jp_index].vj_offset + vj_index];
 }
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index) {
@@ -74,6 +76,11 @@ const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_index) {
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_index) {
     if (td->line_names == NULL) return NULL;
     return td->string_pool + td->line_names[line_index];
+}
+
+const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_index) {
+    if (td->line_names == NULL) return NULL;
+    return td->string_pool + td->line_ids[line_index];
 }
 
 const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index) {
@@ -138,7 +145,7 @@ spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, s
     for (sp_index = sp_index_offset;
          sp_index < td->n_stop_points;
          ++sp_index) {
-        if (strcasestr(td->stop_point_ids + (td->stop_point_ids_width * sp_index),
+        if (strcasestr(tdata_stop_point_id_for_index(td, sp_index),
                 stop_point_id)) {
             return sp_index;
         }
@@ -153,7 +160,7 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
     for (jp_index = jp_index_offset;
          jp_index < td->n_journey_patterns;
          ++jp_index) {
-        if (strcasestr(td->line_ids + (td->line_ids_width * jp_index),
+        if (strcasestr(tdata_line_id_for_journey_pattern(td, jp_index),
                 line_id)) {
             return jp_index;
         }
@@ -162,12 +169,6 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
 }
 
 #define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index_offset, 0)
-
-const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
-    uint32_t char_offset = jp->vj_offset * td->vj_ids_width;
-    return td->vj_ids + char_offset;
-}
 
 calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
@@ -283,13 +284,18 @@ bool tdata_load(tdata_t *td, char *filename) {
 }
 
 void tdata_close(tdata_t *td) {
+    #ifdef RRRR_FEATURE_REALTIME
+    if (td->stop_point_id_index) radixtree_destroy (td->stop_point_id_index);
+    if (td->vjid_index) radixtree_destroy (td->vjid_index);
+    if (td->lineid_index) radixtree_destroy (td->lineid_index);
+
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     tdata_free_expanded (td);
     #endif
     #ifdef RRRR_FEATURE_REALTIME_ALERTS
     tdata_clear_gtfsrt_alerts (td);
     #endif
-
+    #endif
     tdata_io_v3_close (td);
 }
 
@@ -482,3 +488,29 @@ bool strtospidx (const char *str, tdata_t *td, spidx_t *sp) {
     }
     return false;
 }
+
+#ifdef RRRR_FEATURE_REALTIME
+radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n) {
+    uint32_t idx;
+    radixtree_t *r = radixtree_new();
+    for (idx = 0; idx < n; idx++) {
+        radixtree_insert (r, td->string_pool + s[idx], n);
+    }
+    return r;
+}
+
+radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n) {
+    radixtree_t *r = radixtree_new();
+    char *strings_end = strings + n;
+    char *s = strings;
+    uint32_t idx = 0;
+    while (s < strings_end) {
+        size_t width = strlen(s) + 1;
+        radixtree_insert (r, s, idx);
+        idx += width;
+        s += width;
+    }
+
+    return r;
+}
+#endif

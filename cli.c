@@ -315,9 +315,10 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stop_point_id_index = radixtree_load_strings_from_tdata (tdata.stop_point_ids, tdata.stop_point_ids_width, tdata.n_stop_points);
-        tdata.vjid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
-        tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
+        tdata.stop_point_id_index = tdata_radixtree_string_pool_setup (&tdata, tdata.stop_point_ids, tdata.n_stop_points);
+        tdata.vjid_index = tdata_radixtree_string_pool_setup (&tdata, tdata.vj_ids, tdata.n_vjs);
+        tdata.lineid_index = tdata_radixtree_string_pool_setup (&tdata, tdata.line_ids, tdata.n_line_ids);
+        tdata.stringpool_index = tdata_radixtree_full_string_pool_setup (tdata.string_pool, tdata.n_string_pool);
 
         /* Validate the radixtrees are actually created. */
         if (!(tdata.stop_point_id_index &&
@@ -431,12 +432,6 @@ clean_exit:
     if (cli_args.has_latlon) {
         hashgrid_teardown (&hg);
     }
-    #endif
-
-    #ifdef RRRR_FEATURE_REALTIME
-    if (tdata.stop_point_id_index) radixtree_destroy (tdata.stop_point_id_index);
-    if (tdata.vjid_index) radixtree_destroy (tdata.vjid_index);
-    if (tdata.lineid_index) radixtree_destroy (tdata.lineid_index);
     #endif
 
     /* Unmap the memory and/or deallocate the memory on the heap */

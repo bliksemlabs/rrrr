@@ -192,18 +192,15 @@ struct tdata {
     calendar_t *vj_active;
     calendar_t *journey_pattern_active;
     uint32_t *journey_pattern_point_headsigns;
-    uint32_t line_ids_width;
-    char *line_ids;
-    uint32_t stop_point_ids_width;
-    char *stop_point_ids;
-    uint32_t stop_area_ids_width;
-    char *stop_area_ids;
-    uint32_t vj_ids_width;
-    char *vj_ids;
+    uint32_t *line_ids;
+    uint32_t *stop_point_ids;
+    uint32_t *stop_area_ids;
+    uint32_t *vj_ids;
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;
     radixtree_t *stop_point_id_index;
     radixtree_t *vjid_index;
+    radixtree_t *stringpool_index;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     stoptime_t **vj_stoptimes;
     uint32_t *vjs_in_journey_pattern;
@@ -260,6 +257,8 @@ const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_name_index);
 
+const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_name_index);
+
 const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
 
 const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
@@ -283,8 +282,6 @@ spidx_t tdata_stop_pointidx_by_stop_area_name(tdata_t *td, char *stop_point_name
 spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
 jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t start_index);
-
-const char *tdata_vehicle_journey_ids_in_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
@@ -328,5 +325,9 @@ bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata);
 #endif
 
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp);
+#ifdef RRRR_FEATURE_REALTIME
+radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n);
+radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n);
+#endif
 
 #endif /* _TDATA_H */

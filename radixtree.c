@@ -314,31 +314,6 @@ fail_free_r:
     return NULL;
 }
 
-radixtree_t *radixtree_load_strings_from_tdata (char *strings, uint32_t width, uint32_t length) {
-    radixtree_t *r = radixtree_new();
-    char *strings_end = strings + (width * length);
-    char *s = strings;
-    uint32_t idx = 0;
-    #ifdef RRRR_DEBUG
-    fprintf (stderr, "Indexing strings...\n");
-    #endif
-    while (s < strings_end) {
-        radixtree_insert (r, s, idx);
-        s += width;
-        idx += 1;
-    }
-
-    #if 0
-    rxt_compress (root);
-    fprintf (stderr, "total number of edges: %d\n", edge_count(root));
-    fprintf (stderr, "size of one edge: %ld\n", sizeof(struct rxt_edge));
-    fprintf (stderr, "total size of all edges: %ld\n",
-                     edge_count(root) * sizeof(struct rxt_edge));
-    #endif
-
-    return r;
-}
-
 static void rxt_edge_free (struct rxt_edge *e) {
     if (e == NULL) return;
 
