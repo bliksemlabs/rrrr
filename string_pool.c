@@ -34,7 +34,7 @@ uint32_t string_pool_append_scan(char *pool, uint32_t *n_pool, const char *str) 
         len2++;
         idx += len2;
         s += len2;
-}   }
+    }
 
     strncpy (&pool[*n_pool], str, len);
     idx = n_pool;
