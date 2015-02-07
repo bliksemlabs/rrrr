@@ -225,24 +225,24 @@ int main (int argc, char *argv[]) {
                     #if RRRR_MAX_BANNED_STOP_POINTS > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
-                        long stop_idx = strtol(&argv[i][19], NULL, 10);
-                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
+                        spidx_t sp;
+                        if (strtospidx (&argv[i][19], &tdata, &sp)) {
                             set_add_sp(req.banned_stops,
                                        &req.n_banned_stops,
                                        RRRR_MAX_BANNED_STOP_POINTS,
-                                       (spidx_t) stop_idx);
+                                       sp);
                         }
                     }
                     #endif
                     #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
-                        long stop_idx = strtol(&argv[i][23], NULL, 10);
-                        if (stop_idx >= 0 && stop_idx < tdata.n_stop_points) {
-                            set_add_sp(req.banned_stop_points_hard,
+                        spidx_t sp;
+                        if (strtospidx (&argv[i][23], &tdata, &sp)) {
+                             set_add_sp(req.banned_stop_points_hard,
                                        &req.n_banned_stop_points_hard,
                                        RRRR_MAX_BANNED_STOP_POINTS_HARD,
-                                       (spidx_t) stop_idx);
+                                       sp);
                         }
                     }
                     #endif
