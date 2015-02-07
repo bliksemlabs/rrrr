@@ -13,6 +13,7 @@
 #include "tdata.h"
 #include "bitset.h"
 #include "hashgrid.h"
+#include "set.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -315,32 +316,6 @@ static void unflag_banned_stop_points(router_t *router, router_request_t *req) {
         bitset_unset (router->updated_stop_points,
                       req->banned_stops[i_banned_sp]);
     } while (i_banned_sp);
-}
-#endif
-
-#if RRRR_MAX_BANNED_STOP_POINTS > 0 || RRRR_BAX_BANNED_STOPS_HARD > 0
-static bool set_in (spidx_t *set, uint8_t length, spidx_t value) {
-    uint8_t i = length;
-    if (i == 0) return false;
-    do {
-        i--;
-        if (set[i] == value) return true;
-    } while (i);
-    return false;
-}
-#endif
-
-#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-static bool set2_in (uint32_t *set1, uint16_t *set2, uint8_t length,
-                     uint32_t value1, uint16_t value2) {
-    uint8_t i = length;
-    if (i == 0) return false;
-    do {
-        i--;
-        if (set1[i] == value1 &&
-            set2[i] == value2) return true;
-    } while (i);
-    return false;
 }
 #endif
 
@@ -686,9 +661,9 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
 
             #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
             /* skip this vj if it is banned */
-            if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
-                        req->n_banned_vjs, jp_index,
-                    (jp_vjoffset_t) i_vj_offset)) continue;
+            if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
+                           req->n_banned_vjs, jp_index,
+                           (jp_vjoffset_t) i_vj_offset)) continue;
             #endif
 
             /* skip this vj if it is not running on
@@ -788,9 +763,9 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
 
             #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
             /* skip this vj if it is banned */
-            if (set2_in(req->banned_vjs_journey_pattern, req->banned_vjs_offset,
-                    req->n_banned_vjs, jp_index,
-                    i_vj_offset)) continue;
+            if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
+                           req->n_banned_vjs, jp_index,
+                           (jp_vjoffset_t) i_vj_offset)) continue;
             #endif
 
             /* skip this vj if it is not running on
@@ -992,8 +967,8 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
              * the currect stop. This effectively splits the journey_pattern in two,
              * and forces a re-board afterwards.
              */
-            if (set_in (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                    (spidx_t) sp_index)) {
+            if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
+                           (spidx_t) sp_index)) {
                 vj_index = NONE;
                 continue;
             }
@@ -1307,14 +1282,14 @@ static bool latlon_best_stop_point_index(router_t *router, router_request_t *req
 
         #if RRRR_MAX_BANNED_STOP_POINTS > 0
         /* if a stop_point is banned, we should not act upon it here */
-        if (set_in (req->banned_stops, req->n_banned_stops,
-                (spidx_t) sp_index)) continue;
+        if (set_in_sp (req->banned_stops, req->n_banned_stops,
+                       (spidx_t) sp_index)) continue;
         #endif
 
         #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
         /* if a stop_point is banned hard, we should not act upon it here */
-        if (set_in (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                (spidx_t) sp_index)) continue;
+        if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
+                       (spidx_t) sp_index)) continue;
         #endif
 
         i_state = router->tdata->n_stop_points + sp_index;

@@ -336,7 +336,10 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 bool tdata_hashgrid_setup (tdata_t *tdata);
 #endif
 
-bool strtospidx (const char *str, tdata_t *td, spidx_t *sp);
+bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
+bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
+bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr);
+
 #ifdef RRRR_FEATURE_REALTIME
 bool tdata_realtime_setup (tdata_t *tdata);
 #endif

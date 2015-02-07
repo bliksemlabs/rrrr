@@ -108,7 +108,7 @@ struct router_request {
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-    uint32_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
+    jpidx_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     spidx_t banned_stops[RRRR_MAX_BANNED_STOP_POINTS];
@@ -117,8 +117,8 @@ struct router_request {
     spidx_t banned_stop_points_hard[RRRR_MAX_BANNED_STOP_POINTS_HARD];
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-    uint32_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
-    uint16_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    jpidx_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    jp_vjoffset_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
     #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */

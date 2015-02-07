@@ -484,10 +484,28 @@ bool tdata_hashgrid_setup (tdata_t *tdata) {
 }
 #endif
 
-bool strtospidx (const char *str, tdata_t *td, spidx_t *sp) {
-    long stop_idx = strtol(str, NULL, 10);
+bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr) {
+    long stop_idx = strtol(str, endptr, 10);
     if (stop_idx >= 0 && stop_idx < td->n_stop_points) {
         *sp = (spidx_t) stop_idx;
+        return true;
+    }
+    return false;
+}
+
+bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr) {
+    long jp_idx = strtol(str, endptr, 10);
+    if (jp_idx >= 0 && jp_idx < td->n_journey_patterns) {
+        *jp = (jpidx_t) jp_idx;
+        return true;
+    }
+    return false;
+}
+
+bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr) {
+    long vj_offset = strtol(str, endptr, 10);
+    if (vj_offset >= 0 && vj_offset < td->journey_patterns[jp_index].n_vjs) {
+        *vj_o = (jp_vjoffset_t) vj_offset;
         return true;
     }
     return false;
