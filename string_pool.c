@@ -20,25 +20,3 @@ uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const 
     return location;
 }
 
-
-uint32_t string_pool_append_scan(char *pool, uint32_t *n_pool, const char *str) {
-    char *strings_end = pool + *n_pool;
-    char *s = pool;
-    uint32_t idx = 0;
-    size_t len = strlen (str);
-
-    while (s < strings_end) {
-        size_t len2 = strlen (s);
-        if (len == len2 && strcmp(pool, str) == 0) return idx;
-
-        len2++;
-        idx += len2;
-        s += len2;
-    }
-
-    strncpy (&pool[*n_pool], str, len);
-    idx = *n_pool;
-    *n_pool += len;
-
-    return idx;
-}

@@ -3,5 +3,3 @@
 #include "radixtree.h"
 
 uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const char *str);
-
-uint32_t string_pool_append_scan(char *pool, uint32_t *n_pool, const char *str);
