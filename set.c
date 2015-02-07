@@ -1,4 +1,5 @@
 #include "rrrr_types.h"
+#include "set.h"
 
 void set_add_jp (uint32_t *set,
                  uint8_t  *length, uint8_t max_length,

@@ -127,7 +127,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
     uint32_t vj_index = tdata->n_vjs;
-    uint16_t sp_index;
+    spidx_t sp_index;
     uint16_t i_vj;
 
     new = &tdata->journey_patterns[tdata->n_journey_patterns];
@@ -187,7 +187,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     return tdata->n_journey_patterns++;
 }
 
-void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
     uint32_t journey_pattern_point_offset = tdata->journey_patterns[jp_index].journey_pattern_point_offset;
     uint32_t rs = 0;
     uint32_t i_stu;
@@ -551,11 +551,11 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
             memset (&ltm, 0, sizeof(struct tm));
             strncpy (buf, rt_trip->start_date, 8);
             buf[8] = '\0';
-            ltm.tm_mday = strtol(&buf[6], NULL, 10);
+            ltm.tm_mday = (int) strtol(&buf[6], NULL, 10);
             buf[6] = '\0';
-            ltm.tm_mon  = strtol(&buf[4], NULL, 10) - 1;
+            ltm.tm_mon  = (int) strtol(&buf[4], NULL, 10) - 1;
             buf[4] = '\0';
-            ltm.tm_year = strtol(&buf[0], NULL, 10) - 1900;
+            ltm.tm_year = (int) strtol(&buf[0], NULL, 10) - 1900;
             ltm.tm_isdst = -1;
             epochtime = mktime(&ltm);
 

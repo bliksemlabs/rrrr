@@ -8,7 +8,7 @@ if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Werror")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
 endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 
@@ -84,6 +84,9 @@ set(SOURCE_FILES
     util.c
     util.h)
 
+include_directories(/usr/local/include)
+
+link_directories(/usr/local/lib)
 link_libraries(m)
 link_libraries(protobuf-c)
 

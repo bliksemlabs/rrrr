@@ -13,7 +13,7 @@
  */
 int tdata_validation_boarding_alighting(tdata_t *tdata) {
     int32_t ret_invalid = 0;
-    uint32_t i_jp = tdata->n_journey_patterns;
+    jpidx_t i_jp = (jpidx_t) tdata->n_journey_patterns;
 
     do {
         journey_pattern_t *jp;
@@ -247,6 +247,7 @@ bool tdata_validation_check_coherent (tdata_t *tdata) {
 
     return  (tdata_validation_check_nstop_points(tdata) &&
              tdata->n_journey_patterns > 0 &&
+             tdata->n_journey_patterns < ((jpidx_t) -1) &&
              tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&
              tdata_validation_increasing_times(tdata) == 0 &&

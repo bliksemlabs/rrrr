@@ -9,11 +9,11 @@
 /* A leg represents one ride or walking transfer. */
 typedef struct leg leg_t;
 struct leg {
-    /* journey_pattern index */
-    uint32_t journey_pattern;
-
     /* vj index */
     uint32_t vj;
+
+    /* journey_pattern index */
+    jpidx_t journey_pattern;
 
     /* from stop_point index */
     spidx_t sp_from;

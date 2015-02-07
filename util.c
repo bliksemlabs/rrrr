@@ -58,7 +58,7 @@ uint32_t rrrrandom(uint32_t limit) {
  */
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     struct tm ltm;
-    uint32_t seconds;
+    int seconds;
     rtime_t rtime;
 
     if (epochtime < SEC_IN_ONE_DAY) {
@@ -114,12 +114,12 @@ time_t strtoepoch (char *time) {
     char *endptr;
     struct tm ltm;
     memset (&ltm, 0, sizeof(struct tm));
-    ltm.tm_year = strtol(time, &endptr, 10) - 1900;
-    ltm.tm_mon  = strtol(&endptr[1], &endptr, 10) - 1;
-    ltm.tm_mday = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_hour = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_min  = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_sec  = strtol(&endptr[1], &endptr, 10);
+    ltm.tm_year = (int) strtol(time, &endptr, 10) - 1900;
+    ltm.tm_mon  = (int) strtol(&endptr[1], &endptr, 10) - 1;
+    ltm.tm_mday = (int) strtol(&endptr[1], &endptr, 10);
+    ltm.tm_hour = (int) strtol(&endptr[1], &endptr, 10);
+    ltm.tm_min  = (int) strtol(&endptr[1], &endptr, 10);
+    ltm.tm_sec  = (int) strtol(&endptr[1], &endptr, 10);
     ltm.tm_isdst = -1;
     return mktime(&ltm);
 }
