@@ -338,8 +338,7 @@ bool tdata_hashgrid_setup (tdata_t *tdata);
 
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp);
 #ifdef RRRR_FEATURE_REALTIME
-radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n);
-radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n);
+bool tdata_realtime_setup (tdata_t *tdata);
 #endif
 
 #endif /* _TDATA_H */

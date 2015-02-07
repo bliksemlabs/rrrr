@@ -494,6 +494,7 @@ bool strtospidx (const char *str, tdata_t *td, spidx_t *sp) {
 }
 
 #ifdef RRRR_FEATURE_REALTIME
+static
 radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32_t n) {
     uint32_t idx;
     radixtree_t *r = radixtree_new();
@@ -503,6 +504,7 @@ radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32
     return r;
 }
 
+static
 radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n) {
     radixtree_t *r = radixtree_new();
     char *strings_end = strings + n;
@@ -516,6 +518,18 @@ radixtree_t *tdata_radixtree_full_string_pool_setup (char *strings, uint32_t n) 
     }
 
     return r;
+}
+
+bool tdata_realtime_setup (tdata_t *tdata) {
+    tdata->stop_point_id_index = tdata_radixtree_string_pool_setup (tdata, tdata->stop_point_ids, tdata->n_stop_points);
+    tdata->vjid_index = tdata_radixtree_string_pool_setup (tdata, tdata->vj_ids, tdata->n_vjs);
+    tdata->lineid_index = tdata_radixtree_string_pool_setup (tdata, tdata->line_ids, tdata->n_line_ids);
+    tdata->stringpool_index = tdata_radixtree_full_string_pool_setup (tdata->string_pool, tdata->n_string_pool);
+
+    /* Validate the radixtrees are actually created. */
+    return (tdata->stop_point_id_index &&
+            tdata->vjid_index &&
+            tdata->lineid_index);
 }
 #endif
 

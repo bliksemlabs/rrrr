@@ -309,15 +309,7 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stop_point_id_index = tdata_radixtree_string_pool_setup (&tdata, tdata.stop_point_ids, tdata.n_stop_points);
-        tdata.vjid_index = tdata_radixtree_string_pool_setup (&tdata, tdata.vj_ids, tdata.n_vjs);
-        tdata.lineid_index = tdata_radixtree_string_pool_setup (&tdata, tdata.line_ids, tdata.n_line_ids);
-        tdata.stringpool_index = tdata_radixtree_full_string_pool_setup (tdata.string_pool, tdata.n_string_pool);
-
-        /* Validate the radixtrees are actually created. */
-        if (!(tdata.stop_point_id_index &&
-              tdata.vjid_index &&
-              tdata.lineid_index)) {
+        if (!tdata_realtime_setup (&tdata)) {
             status = EXIT_FAILURE;
             goto clean_exit;
         }
