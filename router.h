@@ -9,7 +9,6 @@
 #include "rrrr_types.h"
 #include "tdata.h"
 #include "bitset.h"
-#include "hashgrid.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,11 +31,6 @@ typedef struct router router_t;
 struct router {
     /* The transit / timetable data tables */
     tdata_t *tdata;
-
-#ifdef RRRR_FEATURE_LATLON
-    /* The latlon lookup for each stop_point */
-    hashgrid_t *hg;
-#endif
 
     /* The best known time at each stop_point */
     rtime_t *best_time;
@@ -96,7 +90,7 @@ struct router {
 
 /* FUNCTION PROTOTYPES */
 
-bool router_setup(router_t*, tdata_t*, hashgrid_t*);
+bool router_setup(router_t*, tdata_t*);
 
 void router_reset(router_t *router);
 

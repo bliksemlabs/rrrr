@@ -13,7 +13,6 @@
 #include "config.h"
 #include "api.h"
 #include "set.h"
-#include "hashgrid.h"
 #include "router_request.h"
 #include "router_result.h"
 #include "plan_render_text.h"
@@ -55,11 +54,6 @@ int main (int argc, char *argv[]) {
 
     /* the timetable structure, the interface to the timetable */
     tdata_t tdata;
-
-    #ifdef RRRR_FEATURE_LATLON
-    /* the hashgrid structure, the interface to query on lat/lon */
-    hashgrid_t hg;
-    #endif
 
     /* the router structure, should not be manually changed */
     router_t router;
@@ -353,7 +347,7 @@ int main (int argc, char *argv[]) {
     req.time_rounded = false;
 
     #ifdef RRRR_FEATURE_LATLON
-    if (cli_args.has_latlon && ! hashgrid_setup (&hg, &tdata)) {
+    if (cli_args.has_latlon && ! tdata_hashgrid_setup (&tdata)) {
         status = EXIT_FAILURE;
         goto clean_exit;
     }
@@ -370,7 +364,7 @@ int main (int argc, char *argv[]) {
      *
      * The contents of this struct MUST NOT be changed directly.
      */
-    if ( ! router_setup (&router, &tdata, &hg)) {
+    if ( ! router_setup (&router, &tdata)) {
         /* if the memory is not allocated we must exit */
         status = EXIT_FAILURE;
         goto clean_exit;
@@ -427,12 +421,6 @@ clean_exit:
 
     /* Deallocate the scratchspace of the router */
     router_teardown (&router);
-
-    #ifdef RRRR_FEATURE_LATLON
-    if (cli_args.has_latlon) {
-        hashgrid_teardown (&hg);
-    }
-    #endif
 
     /* Unmap the memory and/or deallocate the memory on the heap */
     tdata_close (&tdata);

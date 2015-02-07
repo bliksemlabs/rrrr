@@ -9,6 +9,10 @@
 #include "geometry.h"
 #include "rrrr_types.h"
 
+#ifdef RRRR_FEATURE_LATLON
+#include "hashgrid.h"
+#endif
+
 #ifdef RRRR_FEATURE_REALTIME
 #include "gtfs-realtime.pb-c.h"
 #include "radixtree.h"
@@ -212,6 +216,10 @@ struct tdata {
     TransitRealtime__FeedMessage *alerts;
     #endif
     #endif
+    #ifdef RRRR_FEATURE_LATLON
+    /* The latlon lookup for each stop_point */
+    hashgrid_t hg;
+    #endif
 };
 
 bool tdata_load(tdata_t *td, char *filename);
@@ -325,7 +333,7 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_ind
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
 #ifdef RRRR_FEATURE_LATLON
-bool hashgrid_setup (hashgrid_t *hg, tdata_t *tdata);
+bool tdata_hashgrid_setup (tdata_t *tdata);
 #endif
 
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp);
