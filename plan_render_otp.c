@@ -372,3 +372,50 @@ plan_render_otp(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
 
     return otp_json(&j, plan, tdata, buf, buflen);
 }
+
+uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
+    json_t j;
+    latlon_t ll, ur;
+    uint64_t starttime, endtime;
+    tmode_t m;
+
+    char modes[67];
+    char *dst = modes;
+
+    tdata_extends (tdata, &ll, &ur);
+    tdata_validity (tdata, &starttime, &endtime);
+    tdata_modes (tdata, &m);
+
+    json_init(&j, buf, buflen);
+    json_obj(&j);
+    json_kl(&j, "startTime", starttime * 1000);
+    json_kl(&j, "endTime",   endtime * 1000);
+
+    json_kf(&j, "lowerLeftLatitude", ll.lat);
+    json_kf(&j, "lowerLeftLongitude", ll.lon);
+    json_kf(&j, "upperRightLatitude", ur.lat);
+    json_kf(&j, "upperRightLongitude", ur.lon);
+    json_kf(&j, "minLatitude", ll.lat);
+    json_kf(&j, "minLongitude", ll.lon);
+    json_kf(&j, "maxLatitude", ur.lat);
+    json_kf(&j, "maxLongitude", ur.lon);
+
+    json_kf(&j, "centerLatitude", (ur.lat - ll.lat) / 2.0f);
+    json_kf(&j, "centerLongitude", (ur.lon - ll.lon) / 2.0f);
+
+    if ((m & m_tram)      == m_tram)      dst = strcpy(dst, "TRAM,");
+    if ((m & m_subway)    == m_subway)    dst = strcpy(dst, "SUBWAY,");
+    if ((m & m_rail)      == m_rail)      dst = strcpy(dst, "RAIL,");
+    if ((m & m_bus)       == m_bus)       dst = strcpy(dst, "BUS,");
+    if ((m & m_ferry)     == m_ferry)     dst = strcpy(dst, "FERRY,");
+    if ((m & m_cablecar)  == m_cablecar)  dst = strcpy(dst, "CABLE_CAR,");
+    if ((m & m_gondola)   == m_gondola)   dst = strcpy(dst, "GONDOLA,");
+    if ((m & m_funicular) == m_funicular) dst = strcpy(dst, "FUNICULAR,");
+
+    dst[0] = '\0';
+
+    json_kv(&j, "transitModes", modes);
+    json_end_obj(&j);
+
+    return json_length(&j);
+}

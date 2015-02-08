@@ -551,3 +551,41 @@ bool tdata_realtime_setup (tdata_t *tdata) {
 }
 #endif
 
+void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max) {
+    *min = tdata->calendar_start_time;
+    *max = tdata->calendar_start_time + (tdata->n_days - 1) * 86400;
+}
+
+void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur) {
+    spidx_t i_stop = (spidx_t) tdata->n_stop_points;
+
+    float min_lon = 180.0f, min_lat = 90.0f, max_lon = -180.0f, max_lat = -90.f;
+
+    do {
+        i_stop--;
+        if (tdata->stop_point_coords[i_stop].lat == 0.0f ||
+            tdata->stop_point_coords[i_stop].lon == 0.0f) continue;
+
+        max_lat = MAX(tdata->stop_point_coords[i_stop].lat, max_lat);
+        max_lon = MAX(tdata->stop_point_coords[i_stop].lon, max_lon);
+        min_lat = MIN(tdata->stop_point_coords[i_stop].lat, min_lat);
+        min_lon = MIN(tdata->stop_point_coords[i_stop].lon, min_lon);
+    } while (i_stop > 0);
+
+    ll->lat = min_lat;
+    ll->lon = min_lon;
+    ur->lat = max_lat;
+    ur->lon = max_lon;
+}
+
+void tdata_modes (tdata_t *tdata, tmode_t *m) {
+    jpidx_t i_jp = (jpidx_t) tdata->n_journey_patterns;
+    uint16_t attributes = 0;
+
+    do {
+        i_jp--;
+        attributes |= tdata->journey_patterns[i_jp].attributes;
+    } while (i_jp > 0);
+
+    *m = (tmode_t) attributes;
+}

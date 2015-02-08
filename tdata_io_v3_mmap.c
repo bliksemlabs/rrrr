@@ -66,6 +66,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
 
     td->calendar_start_time = header->calendar_start_time;
     td->dst_active = header->dst_active;
+    td->n_days = 32;
     td->n_stop_areas = header->n_stop_areas;
 
     load_mmap (td->base, stop_points, stop_point_t);

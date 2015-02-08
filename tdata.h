@@ -115,6 +115,7 @@ struct tdata {
 
     /* Dates within the active calendar which have DST. */
     calendar_t dst_active;
+    uint32_t n_days;
     uint32_t n_stop_points;
     uint32_t n_stop_areas;
     uint32_t n_stop_point_attributes;
@@ -343,5 +344,9 @@ bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_
 #ifdef RRRR_FEATURE_REALTIME
 bool tdata_realtime_setup (tdata_t *tdata);
 #endif
+
+void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max);
+void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur);
+void tdata_modes (tdata_t *tdata, tmode_t *m);
 
 #endif /* _TDATA_H */
