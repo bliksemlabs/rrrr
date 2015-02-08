@@ -124,7 +124,11 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         rrrr_localtime_r(&servicedate_time, &ltm);
         strftime(servicedate, 9, "%Y%m%d", &ltm);
 
+        #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+        headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
+        #else
         headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
+        #endif
         linecode = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
         linename = tdata_line_name_for_index(tdata, leg->journey_pattern);
         commercialmode = tdata_commercial_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
