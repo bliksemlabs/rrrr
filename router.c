@@ -167,7 +167,7 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
             router->day_mask |= tomorrow.mask;
             day_i++;
         }
-        if (req->time_cutoff < (tomorrow.midnight + router->tdata->max_time) && req->time > today.midnight) {
+        if (req->time_cutoff < (today.midnight + router->tdata->max_time) && req->time > today.midnight) {
             router->servicedays[day_i] = today;
             router->day_mask |= today.mask;
             day_i++;
