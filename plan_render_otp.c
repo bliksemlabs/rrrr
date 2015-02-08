@@ -13,6 +13,20 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+static char *
+modes_string (tmode_t m, char *dst) {
+    if ((m & m_tram)      == m_tram)      { dst = strncpy(dst, "TRAM,", 5);       dst += 5; }
+    if ((m & m_subway)    == m_subway)    { dst = strncpy(dst, "SUBWAY,", 7);     dst += 7; }
+    if ((m & m_rail)      == m_rail)      { dst = strncpy(dst, "RAIL,", 5);       dst += 5; }
+    if ((m & m_bus)       == m_bus)       { dst = strncpy(dst, "BUS,", 4);        dst += 4; }
+    if ((m & m_ferry)     == m_ferry)     { dst = strncpy(dst, "FERRY,", 6);      dst += 6; }
+    if ((m & m_cablecar)  == m_cablecar)  { dst = strncpy(dst, "CABLE_CAR,", 10); dst += 10; }
+    if ((m & m_gondola)   == m_gondola)   { dst = strncpy(dst, "GONDOLA,", 8);    dst += 8; }
+    if ((m & m_funicular) == m_funicular) { dst = strncpy(dst, "FUNICULAR,", 10); dst += 10; }
+    return dst;
+}
 
 /* Produces a polyline connecting a subset of the stops in a route,
  * or connecting two walk path endpoints if route_idx == WALK.
@@ -330,15 +344,7 @@ otp_json(json_t *j, plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
                 char modes[67];
                 char *dst = modes;
 
-                if ((plan->req.mode & m_tram)      == m_tram)      dst = strcpy(dst, "TRAM,");
-                if ((plan->req.mode & m_subway)    == m_subway)    dst = strcpy(dst, "SUBWAY,");
-                if ((plan->req.mode & m_rail)      == m_rail)      dst = strcpy(dst, "RAIL,");
-                if ((plan->req.mode & m_bus)       == m_bus)       dst = strcpy(dst, "BUS,");
-                if ((plan->req.mode & m_ferry)     == m_ferry)     dst = strcpy(dst, "FERRY,");
-                if ((plan->req.mode & m_cablecar)  == m_cablecar)  dst = strcpy(dst, "CABLE_CAR,");
-                if ((plan->req.mode & m_gondola)   == m_gondola)   dst = strcpy(dst, "GONDOLA,");
-                if ((plan->req.mode & m_funicular) == m_funicular) dst = strcpy(dst, "FUNICULAR,");
-
+                dst = modes_string (plan->req.mode, dst);
                 dst = strcpy(dst, "WALK");
 
                 json_kv(j, "mode", modes);
@@ -375,14 +381,32 @@ plan_render_otp(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
 
 uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     json_t j;
-    latlon_t ll, ur;
+    latlon_t ll, ur, c;
+    float *lon, *lat;
     uint64_t starttime, endtime;
+    spidx_t i_stop = tdata->n_stop_points;
     tmode_t m;
 
     char modes[67];
     char *dst = modes;
 
-    tdata_extends (tdata, &ll, &ur);
+    lon = (float *) malloc(sizeof(float) * tdata->n_stop_points);
+    lat = (float *) malloc(sizeof(float) * tdata->n_stop_points);
+
+    if (!lon || !lat) return 0;
+
+    do {
+        i_stop--;
+        lon[i_stop] = tdata->stop_point_coords[i_stop].lon;
+        lat[i_stop] = tdata->stop_point_coords[i_stop].lat;
+    } while (i_stop > 0);
+
+    c.lon = median (lon, tdata->n_stop_points, &ll.lon, &ur.lon);
+    c.lat = median (lat, tdata->n_stop_points, &ll.lat, &ur.lat);
+
+    free (lon);
+    free (lat);
+
     tdata_validity (tdata, &starttime, &endtime);
     tdata_modes (tdata, &m);
 
@@ -400,19 +424,11 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     json_kf(&j, "maxLatitude", ur.lat);
     json_kf(&j, "maxLongitude", ur.lon);
 
-    json_kf(&j, "centerLatitude", (ur.lat - ll.lat) / 2.0f);
-    json_kf(&j, "centerLongitude", (ur.lon - ll.lon) / 2.0f);
+    json_kf(&j, "centerLatitude", c.lat);
+    json_kf(&j, "centerLongitude", c.lon);
 
-    if ((m & m_tram)      == m_tram)      dst = strcpy(dst, "TRAM,");
-    if ((m & m_subway)    == m_subway)    dst = strcpy(dst, "SUBWAY,");
-    if ((m & m_rail)      == m_rail)      dst = strcpy(dst, "RAIL,");
-    if ((m & m_bus)       == m_bus)       dst = strcpy(dst, "BUS,");
-    if ((m & m_ferry)     == m_ferry)     dst = strcpy(dst, "FERRY,");
-    if ((m & m_cablecar)  == m_cablecar)  dst = strcpy(dst, "CABLE_CAR,");
-    if ((m & m_gondola)   == m_gondola)   dst = strcpy(dst, "GONDOLA,");
-    if ((m & m_funicular) == m_funicular) dst = strcpy(dst, "FUNICULAR,");
-
-    dst[0] = '\0';
+    dst = modes_string (m, dst);
+    dst[-1] = '\0';
 
     json_kv(&j, "transitModes", modes);
     json_end_obj(&j);

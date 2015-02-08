@@ -143,3 +143,25 @@ void printBits(size_t const size, void const * const ptr) {
     puts("");
 }
 #endif
+
+/* https://answers.yahoo.com/question/index?qid=20091214075728AArnEug */
+int compareFloats(const void *elem1, const void *elem2) {
+    return ((*((float*) elem1)) - (*((float *) elem2)));
+}
+
+/* http://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean */
+float median(float *f, uint32_t n, float *min, float *max) {
+    qsort (f, n, sizeof(float), compareFloats);
+
+    if (min) *min = f[0];
+    if (max) *max = f[n - 1];
+
+    if((n & 1) == 0) {
+        /* even number of elements, return the mean of the two elements */
+        return ((f[(n >> 1)] + f[(n >> 1) - 1]) / 2.0f);
+    } else {
+        /* else return the element in the middle */
+        return f[n >> 1];
+    }
+}
+

@@ -50,3 +50,4 @@ time_t strtoepoch (char *time);
 char * strcasestr(const char *s, const char *find);
 
 double round(double x);
+float median(float *in, uint32_t n, float *min, float *max);
