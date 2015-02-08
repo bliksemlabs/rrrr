@@ -263,7 +263,19 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
     *sp = best_sp_index;
     *time = best_time;
 
-    return (best_sp_index != STOP_NONE);
+    if (best_sp_index != STOP_NONE) {
+        if (round > 0) {
+            offset_state -= router->tdata->n_stop_points;
+            if (best_time >= router->states_time[offset_state + best_sp_index]) {
+                fprintf(stderr, "A later round shows solutions which are not better.\n");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 #endif
 
