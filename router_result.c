@@ -181,8 +181,11 @@ static bool check_plan_invariants (plan_t *plan) {
 
 static int
 compareItineraries(const void *elem1, const void *elem2) {
-    return ((((itinerary_t *) elem1)->legs[0].t0 - ((itinerary_t *) elem2)->legs[0].t0) << 3) +
-           (((itinerary_t *) elem1)->n_legs     - ((itinerary_t *) elem2)->n_legs);
+    itinerary_t *i1 = (itinerary_t *) elem1;
+    itinerary_t *i2 = (itinerary_t *) elem2;
+
+    return ((i1->legs[0].t0 - i2->legs[0].t0) << 3) +
+           i1->legs[i1->n_legs - 1].t1 - i2->legs[i2->n_legs - 1].t1;
 }
 
 void router_result_sort (plan_t *plan) {
