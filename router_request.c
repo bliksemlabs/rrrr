@@ -438,6 +438,8 @@ router_request_reverse(router_t *router, router_request_t *req) {
         best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
     }
 
+    if (best_sp_index == HASHGRID_NONE) return false;
+
     {
         /* find the solution with the most transfers and the earliest arrival */
         uint8_t r;
