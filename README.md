@@ -27,11 +27,8 @@ a unit testing framework for c. http://check.sourceforge.net/.
 Building transit data
 ---------------------
 
-The ansi branch currently does not include any build scripts. Your best bet for generating timetable v3 outside the realm of Bliksem Integration will be timetable.py from the realtime_expanded2 branch.
-First, run `python gtfsdb.py input.gtfs.zip output.gtfsdb` to load your GTFS feed into an SQLite database.
-Next, run `python transfers.py output.gtfsdb` to add distance-based transfers to the transfers table in the database.
-Finally, run `python timetable.py output.gtfsdb` to create the timetable file `timetable.dat` based on that GTFS database.
-If you just want to experiment with the code download: http://1313.nl/timetable.dat
+Browse into rrtimetable/rrtimetable. Run `python gtfs2rrrr.py gtfs.zip` to create the timetable file `timetable4.dat` based on that GTFS database.
+If you just want to experiment with the code download: http://1313.nl/timetable4.dat
 
 Coding conventions
 ------------------

@@ -110,12 +110,12 @@ int main (int argc, char *argv[]) {
      * The tdata_file stores timetable data in binary format.
      * We have several ways to load this data from disk;
      *
-     * 1) memory mapped (tdata_io_v3_mmap.c)
+     * 1) memory mapped (tdata_io_v4_mmap.c)
      * Pro: The operation is resource efficient
      * Con: The operating system has to support it,
      *      the data can't be arbitrary extended
      *
-     * 2) using read into dynamically allocated memory (tdata_io_v3_dynamic.c)
+     * 2) using read into dynamically allocated memory (tdata_io_v4_dynamic.c)
      * Pro: This will work in all C implementations
      * Con: Requires heap memory which stores the timetable in full
      */

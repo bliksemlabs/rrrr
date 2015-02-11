@@ -7,7 +7,7 @@
 
 /* top, make sure it works alone */
 #include "tdata.h"
-#include "tdata_io_v3.h"
+#include "tdata_io_v4.h"
 #include "tdata_validation.h"
 #include "rrrr_types.h"
 #include "util.h"
@@ -263,7 +263,7 @@ const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index
 }
 
 bool tdata_load(tdata_t *td, char *filename) {
-    if ( !tdata_io_v3_load (td, filename)) return false;
+    if ( !tdata_io_v4_load (td, filename)) return false;
 
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     if ( !tdata_alloc_expanded (td)) return false;
@@ -300,7 +300,7 @@ void tdata_close(tdata_t *td) {
     tdata_clear_gtfsrt_alerts (td);
     #endif
     #endif
-    tdata_io_v3_close (td);
+    tdata_io_v4_close (td);
 }
 
 spidx_t *tdata_points_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {

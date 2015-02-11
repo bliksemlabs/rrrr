@@ -7,7 +7,7 @@
 
 #ifdef RRRR_TDATA_IO_DYNAMIC
 
-#include "tdata_io_v3.h"
+#include "tdata_io_v4.h"
 #include "tdata.h"
 #include "rrrr_types.h"
 
@@ -36,7 +36,7 @@ void set_max_time(tdata_t *td){
     }
 }
 
-bool tdata_io_v3_load(tdata_t *td, char *filename) {
+bool tdata_io_v4_load(tdata_t *td, char *filename) {
     tdata_header_t h;
     tdata_header_t *header = &h;
 
@@ -155,7 +155,7 @@ fail_close_fd:
     return false;
 }
 
-void tdata_io_v3_close(tdata_t *td) {
+void tdata_io_v4_close(tdata_t *td) {
     free (td->stop_points);
     free (td->stop_point_attributes);
     free (td->stop_point_coords);
@@ -199,5 +199,5 @@ void tdata_io_v3_close(tdata_t *td) {
 }
 
 #else
-void tdata_io_v3_dynamic_not_available();
+void tdata_io_v4_dynamic_not_available();
 #endif /* RRRR_TDATA_IO_DYNAMIC */

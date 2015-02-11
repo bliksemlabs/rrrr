@@ -92,5 +92,5 @@ struct tdata_header {
     uint32_t loc_stop_area_for_stop_point;
 };
 
-bool tdata_io_v3_load(tdata_t *td, char* filename);
-void tdata_io_v3_close(tdata_t *td);
+bool tdata_io_v4_load(tdata_t *td, char* filename);
+void tdata_io_v4_close(tdata_t *td);

@@ -7,7 +7,7 @@
 
 #ifdef RRRR_TDATA_IO_MMAP
 
-#include "tdata_io_v3.h"
+#include "tdata_io_v4.h"
 #include "tdata.h"
 #include "rrrr_types.h"
 
@@ -35,7 +35,7 @@ void set_max_time(tdata_t *td){
 }
 
 /* Map an input file into memory and reconstruct pointers to its contents. */
-bool tdata_io_v3_load(tdata_t *td, char *filename) {
+bool tdata_io_v4_load(tdata_t *td, char *filename) {
     struct stat st;
     tdata_header_t *header;
     int fd;
@@ -127,10 +127,10 @@ fail_close_fd:
     return false;
 }
 
-void tdata_io_v3_close(tdata_t *td) {
+void tdata_io_v4_close(tdata_t *td) {
     munmap(td->base, td->size);
 }
 
 #else
-void tdata_io_v3_mmap_not_available();
+void tdata_io_v4_mmap_not_available();
 #endif /* RRRR_TDATA_IO_MMAP */
