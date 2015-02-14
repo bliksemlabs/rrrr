@@ -211,6 +211,8 @@ message TripUpdate {
       // stops in the trip are considered to be unspecified as well.
       // Neither arrival nor departure should be supplied.
       NO_DATA = 2;
+
+      ADDED = 3;
     }
     optional ScheduleRelationship schedule_relationship = 5
         [default = SCHEDULED];
