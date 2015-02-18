@@ -1,4 +1,5 @@
 import datetime
+import dateutil.tz
 
 class Timetable:
     def __init__(self,validfrom):
@@ -22,7 +23,7 @@ class Timetable:
 class StopArea:
 
     def validate_timezone(self,timezone):
-        return timezone is not None
+        return timezone is not None and dateutil.tz.gettz(timezone) is not None
 
     def __init__(self,timetable,uri,timezone,name=None,latitude=None,longitude=None):
         self.type = 'stop_area'
