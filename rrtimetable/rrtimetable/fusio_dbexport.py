@@ -21,17 +21,17 @@ def convert(dbname):
     for id,name in cur.fetchall():
         CommercialMode(tdata,id,name=name)
 
-    cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon FROM fusio.stops WHERE location_type = 1")
-    for stop_id,stop_name,stop_lat,stop_lon in cur.fetchall():
-        StopArea(tdata,stop_id,name=stop_name,latitude=stop_lat,longitude=stop_lon)
-    cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code FROM fusio.stops WHERE coalesce(location_type,0) = 0")
+    cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone FROM fusio.stops WHERE location_type = 1")
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in cur.fetchall():
+        StopArea(tdata,stop_id,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+    cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code FROM fusio.stops WHERE coalesce(location_type,0) = 0")
     for stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code in cur.fetchall():
         stop_area_uri = parent_station
         try:
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
         except:
             stop_area_uri = 'StopArea:ZZ:'+stop_id
-            StopArea(tdata,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+            StopArea(tdata,stop_area_uri,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
     cur.execute("SELECT from_stop_id,to_stop_id,min_transfer_time,transfer_type FROM fusio.transfers")
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in cur.fetchall():

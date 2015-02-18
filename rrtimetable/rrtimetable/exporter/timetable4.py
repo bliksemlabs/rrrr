@@ -429,6 +429,10 @@ def export_sa_uris(tdata,index,out):
     write_text_comment(out,"STOP_AREA IDS")
     index.loc_stop_area_uris = write_list_of_strings(out,index,[sa.uri for sa in index.stop_areas])
 
+def export_sa_timezones(tdata,index,out):
+    write_text_comment(out,"STOP_AREA TIMEZONES")
+    index.loc_stop_area_timezones = write_list_of_strings(out,index,[sa.timezone for sa in index.stop_areas])
+
 def export_vj_uris(tdata,index,out):
      all_vj_ids = [] 
      for jp in index.journey_patterns:
@@ -493,6 +497,7 @@ def write_header (out,index) :
         len(index.lines), # n_line_names
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
+        len(index.stop_areas), # n_stop_area_timezones
         index.n_vj, # n_vj_ids
         len(index.routes), #n_line_for_route
         len(index.lines), #n_operator_for_line
@@ -539,13 +544,14 @@ def write_header (out,index) :
         index.loc_line_uris,
         index.loc_stop_point_uris,
         index.loc_stop_area_uris,
+        index.loc_stop_area_timezones,
         index.loc_vj_uris,
         index.loc_stop_area_coords,
         index.loc_sa_for_sp,
     )
     out.write(packed)
 
-struct_header = Struct('8sQ82I')
+struct_header = Struct('8sQ84I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -585,6 +591,7 @@ def export(tdata):
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)
     export_sa_uris(tdata,index,out)
+    export_sa_timezones(tdata,index,out)
     export_vj_uris(tdata,index,out)
     export_stringpool(tdata,index,out)
     print "reached end of timetable file"

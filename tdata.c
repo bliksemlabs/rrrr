@@ -342,6 +342,14 @@ const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index) {
     return td->string_pool + td->stop_area_nameidx[sa_index];
 }
 
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index) {
+    return td->string_pool + td->stop_area_ids[sa_index];
+}
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t sa_index) {
+    return td->string_pool + td->stop_area_timezones[sa_index];
+}
+
 rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index) {
     return tdata->stop_point_waittime[sp_index];
 }

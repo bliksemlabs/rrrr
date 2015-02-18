@@ -33,16 +33,16 @@ def convert(gtfsdb):
     print "Timetable valid from "+str(from_date)
     
     put_gtfs_modes(tdata)
-    for stop_id,stop_name,stop_lat,stop_lon in gtfsdb.stop_areas():
-        StopArea(tdata,stop_id,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in gtfsdb.stop_areas():
+        StopArea(tdata,stop_id,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
 
-    for stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code in gtfsdb.stop_points():
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code in gtfsdb.stop_points():
         stop_area_uri = parent_station
         try:
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
         except:
             stop_area_uri = 'StopArea:ZZ:'+stop_id
-            StopArea(tdata,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+            StopArea(tdata,stop_area_uri,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
 
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in gtfsdb.transfers():

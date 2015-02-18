@@ -296,14 +296,14 @@ class GTFSDatabase:
 
     def stop_points(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code FROM stops WHERE coalesce(location_type,0) = 0 ORDER BY stop_id " )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code FROM stops WHERE coalesce(location_type,0) = 0 ORDER BY stop_id " )
         ret = list(c)
         c.close()
         return ret
 
     def stop_areas(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops WHERE location_type = 1 ORDER BY stop_id " )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone FROM stops WHERE location_type = 1 ORDER BY stop_id " )
         ret = list(c)
         c.close()
         return ret

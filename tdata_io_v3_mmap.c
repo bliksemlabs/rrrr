@@ -106,6 +106,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_mmap (td->base, line_ids, uint32_t);
     load_mmap (td->base, stop_point_ids, uint32_t);
     load_mmap (td->base, stop_area_ids, uint32_t);
+    load_mmap (td->base, stop_area_timezones, uint32_t);
     load_mmap (td->base, vj_ids, uint32_t);
 
     /* Set the maximum drivetime of any day in tdata */

@@ -42,6 +42,7 @@ struct tdata_header {
     uint32_t n_line_names;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
+    uint32_t n_stop_area_timezones;
     uint32_t n_vj_ids;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
@@ -87,6 +88,7 @@ struct tdata_header {
     uint32_t loc_line_ids;
     uint32_t loc_stop_point_ids;
     uint32_t loc_stop_area_ids;
+    uint32_t loc_stop_area_timezones;
     uint32_t loc_vj_ids;
     uint32_t loc_stop_area_coords;
     uint32_t loc_stop_area_for_stop_point;

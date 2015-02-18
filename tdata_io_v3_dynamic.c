@@ -142,6 +142,7 @@ bool tdata_io_v3_load(tdata_t *td, char *filename) {
     load_dynamic (fd, line_ids, uint32_t);
     load_dynamic (fd, stop_point_ids, uint32_t);
     load_dynamic (fd, stop_area_ids, uint32_t);
+    load_dynamic (fd, stop_area_timezones, uint32_t);
     load_dynamic (fd, vj_ids, uint32_t);
 
     set_max_time(td);
@@ -185,6 +186,7 @@ void tdata_io_v3_close(tdata_t *td) {
     free (td->platformcodes);
     free (td->stop_point_ids);
     free (td->stop_area_ids);
+    free (td->stop_area_timezones);
     free (td->vj_ids);
     free (td->operator_ids);
     free (td->operator_names);

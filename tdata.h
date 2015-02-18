@@ -150,6 +150,7 @@ struct tdata {
     uint32_t n_line_ids;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
+    uint32_t n_stop_area_timezones;
     uint32_t n_vj_ids;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
@@ -200,6 +201,7 @@ struct tdata {
     uint32_t *line_ids;
     uint32_t *stop_point_ids;
     uint32_t *stop_area_ids;
+    uint32_t *stop_area_timezones;
     uint32_t *vj_ids;
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;
@@ -285,6 +287,10 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
 

@@ -20,12 +20,19 @@ class Timetable:
         self.commercial_modes = {}
 
 class StopArea:
-    def __init__(self,timetable,uri,name=None,latitude=None,longitude=None):
+
+    def validate_timezone(self,timezone):
+        return timezone is not None
+
+    def __init__(self,timetable,uri,timezone,name=None,latitude=None,longitude=None):
         self.type = 'stop_area'
         self.uri = uri
         if uri in timetable.stop_areas:
             raise ValueError('Violation of unique StopArea key') 
         timetable.stop_areas[uri] = self
+        if not self.validate_timezone(timezone):
+            raise Exception("Invalid timezone")
+        self.timezone = timezone
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
