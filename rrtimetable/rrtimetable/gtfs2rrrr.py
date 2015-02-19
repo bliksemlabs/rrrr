@@ -26,11 +26,12 @@ def put_gtfs_modes(tdata):
     CommercialMode(tdata,'6',name='Gondola')
     CommercialMode(tdata,'7',name='Funicular')
 
-def convert(gtfsdb):
+def convert(gtfsdb, from_date=None):
+    if from_date == None:
+        from_date, _ = gtfsdb.date_range()
 
-    from_date,to_date = gtfsdb.date_range()
     tdata = Timetable(from_date)
-    print "Timetable valid from "+str(from_date)
+    print "Timetable valid from %s to %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS))
     
     put_gtfs_modes(tdata)
     for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in gtfsdb.stop_areas():
@@ -111,8 +112,14 @@ from optparse import OptionParser
 def main():
     parser = OptionParser()
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="make a bunch of noise" )
+    parser.add_option("-d", "--from-date", action="store", type="string", dest="from_date", default=None, help="Explicitly set the first valid date of the timetable. Format: YYYY-MM-DD" )
 
     (options, args) = parser.parse_args()
+
+    if options.from_date:
+        from_date = datetime.datetime.strptime(options.from_date, '%Y-%m-%d').date()
+    else:
+        from_date = None
 
     if len(args) < 1:
         print("Loads a GTFS file and generate a timetable suitable for RRRR.\nusage: gtfs2rrrr.py <input.gtfs.zip>")
@@ -123,7 +130,7 @@ def main():
  
     gtfsdb = GTFSDatabase( gtfsdb_filename, overwrite=True )
     gtfsdb.load_gtfs( gtfs_filename, None, reporter=sys.stdout, verbose=options.verbose )
-    tdata = convert(gtfsdb)
+    tdata = convert(gtfsdb, from_date)
     if len(tdata.journey_patterns) == 0 or len(tdata.vehicle_journeys) == 0:
         print "No valid trips in this GTFS file!"
         sys.exit(1)

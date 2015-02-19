@@ -72,9 +72,9 @@ set(SOURCE_FILES
     string_pool.h
     tdata.c
     tdata.h
-    tdata_io_v3.h
-    tdata_io_v3_dynamic.c
-    tdata_io_v3_mmap.c
+    tdata_io_v4.h
+    tdata_io_v4_dynamic.c
+    tdata_io_v4_mmap.c
     tdata_realtime_alerts.c
     tdata_realtime_alerts.h
     tdata_realtime_expanded.c

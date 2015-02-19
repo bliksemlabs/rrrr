@@ -318,6 +318,7 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
         json_kb(j, "walkLimitExceeded", false);
         json_kd(j, "elevationLost",0);
         json_kd(j, "elevationGained",0);
+        json_kv(j, "occupancyStatus", NULL);
 
     json_end_obj(j);
 }

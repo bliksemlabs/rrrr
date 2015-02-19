@@ -3,6 +3,7 @@
 #include "router_request.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* Reverse the times and stops in a leg.
  * Used for creating arrive-by itineraries.
@@ -178,7 +179,20 @@ static bool check_plan_invariants (plan_t *plan) {
     return fail;
 }
 
-bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req) {
+static int
+compareItineraries(const void *elem1, const void *elem2) {
+    itinerary_t *i1 = (itinerary_t *) elem1;
+    itinerary_t *i2 = (itinerary_t *) elem2;
+
+    return ((i1->legs[0].t0 - i2->legs[0].t0) << 3) +
+           i1->legs[i1->n_legs - 1].t1 - i2->legs[i2->n_legs - 1].t1;
+}
+
+void router_result_sort (plan_t *plan) {
+    qsort(&plan->itineraries, plan->n_itineraries, sizeof(itinerary_t), compareItineraries);
+}
+
+bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req) {
     itinerary_t *itin;
     uint8_t i_transfer;
     /* copy the request into the plan for use in rendering */
