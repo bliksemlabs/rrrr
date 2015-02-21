@@ -2,15 +2,16 @@ cmake_minimum_required(VERSION 2.8.4)
 project(ansi)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -ansi -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT -O3 -march=native")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c89 -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT -O3 -march=native")
 if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Wno-padded -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments")
 endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
 endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
+set_source_files_properties(gtfs-realtime.pb-c.c PROPERTIES COMPILE_FLAGS -Wno-missing-variable-declarations)
 
 SET(PROTO_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/gtfs-realtime.proto
@@ -47,8 +48,6 @@ set(SOURCE_FILES
     hashgrid.h
     json.c
     json.h
-    linkedlist.c
-    linkedlist.h
     plan_render_otp.c
     plan_render_otp.h
     plan_render_text.c

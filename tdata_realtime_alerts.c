@@ -63,7 +63,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                *(informed_entity->route_id) = jp_index;
+                *(informed_entity->route_id) = (char) jp_index;
             }
 
             if (informed_entity->stop_id) {
@@ -76,7 +76,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                *(informed_entity->stop_id) = sp_index;
+                *(informed_entity->stop_id) = (char) sp_index;
             }
 
             if (informed_entity->trip && informed_entity->trip->trip_id) {
@@ -89,7 +89,7 @@ void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
                 }
                 #endif
 
-                *(informed_entity->trip->trip_id) = trip_index;
+                *(informed_entity->trip->trip_id) = (char) trip_index;
             }
         }
     }
@@ -122,14 +122,14 @@ void tdata_apply_gtfsrt_alerts_file (tdata_t *tdata, char *filename) {
         goto fail_clean_fd;
     }
 
-    buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    buf = mmap(NULL, (size_t) st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) {
         fprintf(stderr, "Could not mmap GTFS-RT input file %s.\n", filename);
         goto fail_clean_fd;
     }
 
-    tdata_apply_gtfsrt_alerts (tdata, buf, st.st_size);
-    munmap (buf, st.st_size);
+    tdata_apply_gtfsrt_alerts (tdata, buf, (size_t) st.st_size);
+    munmap (buf, (size_t) st.st_size);
 
 fail_clean_fd:
     close (fd);

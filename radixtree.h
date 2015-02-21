@@ -39,7 +39,7 @@ struct radixtree_s {
     size_t size;
 };
 
-radixtree_t *radixtree_new ();
+radixtree_t *radixtree_new (void);
 
 radixtree_t *radixtree_load_strings_from_file (char *filename);
 

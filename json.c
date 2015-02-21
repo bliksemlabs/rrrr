@@ -147,7 +147,7 @@ void json_end_arr(json_t *j) {
 }
 
 size_t json_length(json_t *j) {
-    return j->b - j->buf_start;
+    return (size_t) (j->b - j->buf_start);
 }
 
 void json_dump(json_t *j) {

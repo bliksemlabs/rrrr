@@ -55,7 +55,7 @@ int encode_double (double c, char *buf) {
      * one '?' chunk, allowing zero coordinates and deltas
      */
     uint32_t last_chunk = 0;
-    uint32_t binary = round(1e5 * c);
+    uint32_t binary = (uint32_t) (round(1e5 * c));
     uint8_t i;
 
     /* printf ("%+10.5f %+10d ", c, binary); */
@@ -65,7 +65,7 @@ int encode_double (double c, char *buf) {
     if ((int32_t)binary < 0) binary = ~binary;
     /* printf ("%+10d ", binary); */
     for (i = 0; i < 6; ++i) {
-        chunks[i] = (binary & mask) >> (5 * i);
+        chunks[i] = (char) ((binary & mask) >> (5 * i));
         /* printf ("%3d ", chunks[i]); */
         /* track the last nonzero chunk. there may be zeros between
          * positive chunks (rendered as '_' == 95)
@@ -85,7 +85,7 @@ int encode_double (double c, char *buf) {
     }
     *b = '\0';
     /* printf ("%s \n", buf); */
-    return (b - buf);
+    return (int) (b - buf);
 }
 
 /* Our latlon_t contains floats, so results will not be exactly like examples. */

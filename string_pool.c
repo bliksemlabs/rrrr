@@ -1,6 +1,4 @@
-#include "config.h"
-#include "radixtree.h"
-#include "rrrr_types.h"
+#include "string_pool.h"
 #include "string.h"
 
 uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const char *str) {

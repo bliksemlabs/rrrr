@@ -1,6 +1,5 @@
 #include "config.h"
-#include "rrrr_types.h"
-#include "router_result.h"
+#include "plan_render_text.h"
 #include "router_request.h"
 #include <stdio.h>
 #include <string.h>
@@ -9,8 +8,8 @@
 static void
 leg_add_alerts (leg_t *leg, tdata_t *tdata, time_t date, char **alert_msg) {
     size_t i_entity;
-    uint64_t t0 = date + RTIME_TO_SEC(leg->t0 - RTIME_ONE_DAY);
-    uint64_t t1 = date + RTIME_TO_SEC(leg->t1 - RTIME_ONE_DAY);
+    uint64_t t0 = (uint64_t) (date + RTIME_TO_SEC(leg->t0 - RTIME_ONE_DAY));
+    uint64_t t1 = (uint64_t) (date + RTIME_TO_SEC(leg->t1 - RTIME_ONE_DAY));
     for (i_entity = 0; i_entity < tdata->alerts->n_entity; ++i_entity) {
         if (tdata->alerts->entity[i_entity] &&
             tdata->alerts->entity[i_entity]->alert) {
@@ -159,5 +158,5 @@ plan_render_text(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
         }
     }
     *b = '\0';
-    return b - buf;
+    return (uint32_t) (b - buf);
 }
