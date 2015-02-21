@@ -48,6 +48,8 @@ set(SOURCE_FILES
     hashgrid.h
     json.c
     json.h
+    linkedlist.c
+    linkedlist.h
     plan_render_otp.c
     plan_render_otp.h
     plan_render_text.c
