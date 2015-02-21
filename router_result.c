@@ -316,7 +316,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
         plan->n_itineraries += 1;
         itin += 1;
     }
-    return check_plan_invariants (plan);
+    return !check_plan_invariants (plan);
 }
 
 /* After routing, call to convert the router state into a readable list of
