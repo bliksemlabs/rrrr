@@ -116,12 +116,12 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     router_request_initialize (req);
     #endif
     struct tm origin_tm;
-    uint32_t cal_day;
+    calendar_t cal_day;
 
     req->time = epoch_to_rtime (epochtime, &origin_tm);
     req->time_rounded = ((origin_tm.tm_sec % 4) > 0);
     /* TODO not DST-proof, use noons */
-    cal_day = (uint32_t) (((uint32_t) (mktime(&origin_tm)) - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
+    cal_day = (calendar_t) (((calendar_t) (mktime(&origin_tm)) - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
     if (cal_day > 31 ) {
         /* date not within validity period of the timetable file,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
