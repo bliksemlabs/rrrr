@@ -87,7 +87,7 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_STOP_POINTS > 0
                         "[ --banned-stop-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_STOP_HARD > 0
+#if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
