@@ -585,3 +585,11 @@ void tdata_modes (tdata_t *tdata, tmode_t *m) {
 
     *m = (tmode_t) attributes;
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-macros"
+
+#define tdata_stop_pointidx_by_stop_point_id(td, stop_id) tdata_stopidx_by_stop_id(td, stop_id, 0)
+#define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index_offset, 0)
+
+#pragma clang diagnostic pop
