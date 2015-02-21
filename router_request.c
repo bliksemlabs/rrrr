@@ -317,10 +317,10 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
     } else {
         best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
         do {
-            best_time = router->states_time[(unsigned int) round * router->tdata->n_stop_points + best_sp_index];
+            best_time = router->states_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
 
-            if (best_time == UNREACHED || best_time < router->states_walk_time[(unsigned int) round * router->tdata->n_stop_points + best_sp_index]) {
-                best_time = router->states_walk_time[(unsigned int) round * router->tdata->n_stop_points + best_sp_index];
+            if (best_time == UNREACHED || best_time < router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index]) {
+                best_time = router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
             }
             if (best_time != UNREACHED) {
                 bool add_request = true;
