@@ -24,8 +24,16 @@
  */
 #define METERS_PER_BRAD (EARTH_CIRCUMFERENCE / INT32_RANGE)
 
-static double radians (double degrees) {
+double radians (double degrees);
+double degrees (double radians);
+double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2);
+
+double radians (double degrees) {
     return degrees * M_PI / 180;
+}
+
+double degrees (double radians) {
+    return radians * 180 / M_PI;
 }
 
 /* Sinusoidal / equirectangular projection.
@@ -109,6 +117,17 @@ double coord_distance_meters (coord_t *c1, coord_t *c2) {
     double dxm = coord_diff_meters(c1->x, c2->x);
     double dym = coord_diff_meters(c1->y, c2->y);
     return sqrt((dxm * dxm) + (dym * dym));
+}
+
+double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2) {
+    /* Rather than finding and using the average latitude for longitude
+     * scaling, or scaling the two latlons separately, just convert the to
+     * the internal projected representation.
+     */
+    coord_t c1, c2;
+    coord_from_latlon (&c1, ll1);
+    coord_from_latlon (&c2, ll2);
+    return coord_distance_meters (&c1, &c2);
 }
 
 void latlon_from_coord (latlon_t *latlon, coord_t *coord) {
