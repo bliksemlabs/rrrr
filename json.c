@@ -84,32 +84,32 @@ void json_init (json_t *j, char *buf, size_t buflen) {
     j->overflowed = false;
 }
 
-void json_kv(json_t *j, char *key, const char *value) {
+void json_kv(json_t *j, const char *key, const char *value) {
     ekey(j, key);
     string(j, value);
 }
 
-void json_kd(json_t *j, char *key, int value) {
+void json_kd(json_t *j, const char *key, int value) {
     ekey(j, key);
     if (remaining(j, 11)) j->b += sprintf(j->b, "%d", value);
 }
 
-void json_kf(json_t *j, char *key, double value) {
+void json_kf(json_t *j, const char *key, double value) {
     ekey(j, key);
     if (remaining(j, 12)) j->b += sprintf(j->b, "%5.5f", value);
 }
 
-void json_kl(json_t *j, char *key, int64_t value) {
+void json_kl(json_t *j, const char *key, int64_t value) {
     ekey(j, key);
     if (remaining(j, 21)) j->b += sprintf(j->b, "%" PRId64 , value);
 }
 
-void json_kb(json_t *j, char *key, bool value) {
+void json_kb(json_t *j, const char *key, bool value) {
     ekey(j, key);
     if (remaining(j, 5)) j->b += sprintf(j->b, value ? "true" : "false");
 }
 
-void json_key_obj(json_t *j, char *key) {
+void json_key_obj(json_t *j, const char *key) {
     if (key)
         ekey(j, key);
     else
@@ -118,7 +118,7 @@ void json_key_obj(json_t *j, char *key) {
     j->in_list = false;
 }
 
-void json_key_arr(json_t *j, char *key) {
+void json_key_arr(json_t *j, const char *key) {
     ekey(j, key);
     check(j, '[');
     j->in_list = false;

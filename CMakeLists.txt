@@ -4,7 +4,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c89 -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT -O3 -march=native")
 if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Wno-padded -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Wno-padded -Wno-disabled-macro-expansion -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments")
 endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

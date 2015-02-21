@@ -60,7 +60,7 @@ rtime_to_msec(rtime_t rtime, time_t date) {
 }
 
 static void
-json_place (json_t *j, char *key, rtime_t arrival, rtime_t departure,
+json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
             spidx_t stop_index, tdata_t *tdata, time_t date) {
     const char *stop_name = tdata_stop_point_name_for_index(tdata, stop_index);
     const char *platformcode = tdata_platformcode_for_index(tdata, stop_index);
@@ -96,7 +96,7 @@ json_place (json_t *j, char *key, rtime_t arrival, rtime_t departure,
 static void
 json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
           router_request_t *req, time_t date) {
-    char *mode = NULL;
+    const char *mode = NULL;
     const char *headsign = NULL;
     const char *linecode = NULL;
     const char *linename = NULL;
@@ -104,7 +104,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     const char *line_id = NULL;
     const char *vj_id = NULL;
     uint16_t vj_attributes = 0;
-    char *wheelchair_accessible = NULL;
+    const char *wheelchair_accessible = NULL;
     const char *operator_id = NULL;
     const char *operator_name = NULL;
     const char *operator_url = NULL;

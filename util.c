@@ -13,7 +13,7 @@
  * including terminating null
  */
 char *btimetext(rtime_t rt, char *buf) {
-    char *day;
+    const char *day;
     uint32_t t, s, m, h;
 
     if (rt == UNREACHED) {

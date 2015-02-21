@@ -116,19 +116,19 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     router_request_initialize (req);
     #endif
     struct tm origin_tm;
-    uint64_t cal_day;
+    uint32_t cal_day;
 
     req->time = epoch_to_rtime (epochtime, &origin_tm);
     req->time_rounded = ((origin_tm.tm_sec % 4) > 0);
     /* TODO not DST-proof, use noons */
-    cal_day = ((uint64_t) (mktime(&origin_tm)) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
+    cal_day = (uint32_t) (((uint32_t) (mktime(&origin_tm)) - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
     if (cal_day > 31 ) {
         /* date not within validity period of the timetable file,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
          * up to the same day of the week.
          */
         cal_day %= 28;
-        fprintf (stderr, "calendar day out of range. wrapping to %lld, "
+        fprintf (stderr, "calendar day out of range. wrapping to %u, "
                          "which is on the same day of the week.\n", cal_day);
         req->calendar_wrapped = true;
     }
