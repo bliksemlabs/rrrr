@@ -64,7 +64,6 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_stop_point_attributes < ((spidx_t) -2) &&
             header->n_stop_point_coords < ((spidx_t) -2) &&
             header->n_stop_area_coords < ((spidx_t) -2) &&
-            header->n_stop_area_coords < ((spidx_t) -2) &&
             header->n_journey_patterns < ((jpidx_t) -1) &&
             header->n_journey_pattern_points < (UINT32_MAX) &&
             header->n_journey_pattern_point_attributes < (UINT32_MAX) &&
@@ -78,6 +77,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_journey_pattern_active < (UINT32_MAX) &&
             header->n_platformcodes < (UINT32_MAX) &&
             header->n_stop_point_nameidx < ((spidx_t) -2) &&
+            header->n_stop_area_nameidx < ((spidx_t) -2) &&
             header->n_operator_ids < (UINT8_MAX) &&
             header->n_operator_names < (UINT8_MAX) &&
             header->n_operator_urls < (UINT8_MAX) &&
@@ -89,8 +89,13 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_physical_mode_ids < (UINT16_MAX) &&
             header->n_physical_mode_names < (UINT16_MAX) &&
             header->n_physical_mode_for_line < (UINT16_MAX) &&
+            header->n_stop_point_waittime < ((rtime_t) -2) &&
+            header->n_vehicle_journey_transfers_backward < (UINT32_MAX) &&
+            header->n_vehicle_journey_transfers_forward < (UINT32_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
+            header->n_line_names < (UINT32_MAX) &&
             header->n_line_for_route < (UINT16_MAX) &&
+            header->n_operator_for_line < (UINT8_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
             header->n_stop_area_ids < ((spidx_t) -2) &&
             header->n_vj_ids < (UINT32_MAX) ) ) {
@@ -108,6 +113,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_dynamic (fd, stop_point_attributes, uint8_t);
     load_dynamic (fd, stop_point_coords, latlon_t);
     load_dynamic (fd, stop_area_coords, latlon_t);
+    load_dynamic (fd, stop_area_for_stop_point, spidx_t);
     load_dynamic (fd, journey_patterns, journey_pattern_t);
     load_dynamic (fd, journey_pattern_points, spidx_t);
     load_dynamic (fd, journey_pattern_point_attributes, uint8_t);
@@ -187,6 +193,7 @@ void tdata_io_v4_close(tdata_t *td) {
     free (td->stop_point_ids);
     free (td->stop_area_ids);
     free (td->stop_area_timezones);
+    free (td->stop_area_for_stop_point);
     free (td->vj_ids);
     free (td->operator_ids);
     free (td->operator_names);

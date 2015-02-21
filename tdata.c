@@ -525,7 +525,7 @@ radixtree_t *tdata_radixtree_string_pool_setup (tdata_t *td, uint32_t *s, uint32
     uint32_t idx;
     radixtree_t *r = radixtree_new();
     for (idx = 0; idx < n; idx++) {
-        radixtree_insert (r, td->string_pool + s[idx], n);
+        radixtree_insert (r, td->string_pool + s[idx], idx);
     }
     return r;
 }
