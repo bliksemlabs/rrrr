@@ -262,6 +262,8 @@ class VehicleJourney:
         self.points.append(JourneyPatternPoint(self.timetable,stop_point_uri,forboarding,foralighting,timingpoint,headsign=(headsign or self.headsign)))
 
     def finish(self):
+        if self.__isfinished__:
+            raise AttributeError('VehicleJourney was previously completed')
         self.__isfinished__ = True
         if len(self.points) != len(self.timedemandgroup):
             raise ValueError('Length of timedemandgroup is not equal with journeypattern')
