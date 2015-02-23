@@ -215,7 +215,7 @@ def export_vj_in_jp(tdata,index,out):
         index.vj_ids_offsets.append(tioffset)
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
             vj_attr = 0
-            out.write(vj_t.pack(index.offset_for_timedemandgroup_uri[vj.timedemandgroup.uri], vj.departure_time+index.global_utc_offset >> 2, vj_attr))
+            out.write(vj_t.pack(index.offset_for_timedemandgroup_uri[vj.timedemandgroup.uri], (vj.departure_time+index.global_utc_offset) >> 2, vj_attr))
             tioffset += 1
 
 def export_jpp_at_sp(tdata,index,out):
