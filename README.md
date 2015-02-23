@@ -64,3 +64,9 @@ Been there done that
  * We have attempted to split the journey_pattern_t in a core routing and a meta data struct. The resulting code was 4% slower.
  * The original code for the router state was packed in one struct. It gave 10% improvement to split it in separate lists.
  * In an attempt to prevent overflow checking (migrating rtime to 32bit) resulted in a serious performance degradation.
+
+Conciderations
+--------------
+
+ * In some places of the code the function argument has been made uint32_t to prevent overflowing on a multiplication later. Such example is initialize_transfers_full (router_t *router, uint32_t round) where the original uint8_t round is later multiplied with spidx_t.
+
