@@ -144,7 +144,7 @@ static bool initialize_servicedays (router_t *router, router_request_t *req) {
     #ifdef RRRR_FAKE_REALTIME
     realtime_mask = ~((calendar_t) 0);
     #else
-    realtime_mask = ((calendar_t) 1) << ((time(NULL) - router->tdata->calendar_start_time) /
+    realtime_mask = ((calendar_t) 1) << (((unsigned long) (time(NULL)) - router->tdata->calendar_start_time) /
                                          SEC_IN_ONE_DAY);
     #endif
 
@@ -782,7 +782,7 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
             /* consider the arrival or departure time on
              * the current service day
              */
-            time = tdata_stoptime (router->tdata, serviceday, jp_index, i_vj_offset, jpp_offset, req->arrive_by);
+            time = tdata_stoptime (router->tdata, serviceday, jp_index, (jp_vjoffset_t) i_vj_offset, jpp_offset, req->arrive_by);
 
             #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
             fprintf(stderr, "    board option %d at %s \n", i_vj_offset, "");
@@ -804,7 +804,7 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
              */
             if (req->arrive_by ? time <= prev_time && time > *best_time
                     : time >= prev_time && time < *best_time) {
-                *best_vj = i_vj_offset;
+                *best_vj = (jp_vjoffset_t) i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
             }
@@ -878,7 +878,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
         spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, (jpidx_t) jp_index);
-        uint8_t *journey_pattern_point_attributes = tdata_stop_point_attributes_for_journey_pattern(router->tdata, jp_index);
+        uint8_t *journey_pattern_point_attributes = tdata_stop_point_attributes_for_journey_pattern(router->tdata, (jpidx_t) jp_index);
 
         /* Service day on which that vj was boarded */
         serviceday_t *board_serviceday = NULL;
@@ -1067,7 +1067,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             /*  We have already boarded a vehicle_journey along this journey_pattern. */
             } else if (vj_index != NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
-                                               jp_index, vj_index,
+                                               (jpidx_t) jp_index, vj_index,
                                                (jppidx_t ) jpp_offset,
                                                !req->arrive_by);
 
@@ -1131,8 +1131,8 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                                     jp_index, vj_index, sp_index);
                     #endif
                 } else {
-                    write_state(router, req, round, jp_index, vj_index,
-                            sp_index, (jppidx_t) jpp_offset, time,
+                    write_state(router, req, round, (jpidx_t) jp_index, vj_index,
+                            (spidx_t) sp_index, (jppidx_t) jpp_offset, time,
                             board_sp, board_jpp, board_time);
 
                     /*  mark stop_point for next round. */
@@ -1186,7 +1186,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     rtime_t stop_time;
 
     if (tdata_next (router, req,
-                    req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
+                    req->onboard_journey_pattern, (jp_vjoffset_t) req->onboard_journey_pattern_vjoffset,
                     req->time, &sp_index, &stop_time) ){
         uint64_t i_state;
 
@@ -1329,7 +1329,7 @@ static bool latlon_best_stop_point_index(router_t *router, router_request_t *req
         sp_index = hashgrid_result_next_filtered(hg_result, &distance);
     }
 
-    router->origin = best_sp_index;
+    router->origin = (spidx_t) best_sp_index;
 
     if (router->origin == STOP_NONE) return false;
 

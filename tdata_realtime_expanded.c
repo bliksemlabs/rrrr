@@ -213,7 +213,7 @@ static void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uin
                 tdata->journey_pattern_point_attributes[journey_pattern_point_offset] = (rsa_boarding | rsa_alighting);
                 /* TODO: We dont know headsign, set to string_idx of last stop in jp?? */
                 tdata->journey_pattern_point_headsigns[journey_pattern_point_offset] = 0;
-                tdata->journey_pattern_points[journey_pattern_point_offset] = sp_index;
+                tdata->journey_pattern_points[journey_pattern_point_offset] = (spidx_t) sp_index;
                 tdata_apply_gtfsrt_time (rt_stop_time_update, &tdata->vj_stoptimes[vj_index][rs]);
                 tdata_rt_journey_patterns_at_stop_point_append(tdata, sp_index, jp_index);
                 journey_pattern_point_offset++;
@@ -522,7 +522,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
             uint32_t vj_index;
             time_t epochtime;
             int16_t cal_day;
-            char buf[9];
+            char date_buf[9];
 
 
             if (rt_trip == NULL) continue;
@@ -549,17 +549,17 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
             /* Take care of the realtime validity */
             memset (&ltm, 0, sizeof(struct tm));
-            strncpy (buf, rt_trip->start_date, 8);
-            buf[8] = '\0';
-            ltm.tm_mday = (int) strtol(&buf[6], NULL, 10);
-            buf[6] = '\0';
-            ltm.tm_mon  = (int) strtol(&buf[4], NULL, 10) - 1;
-            buf[4] = '\0';
-            ltm.tm_year = (int) strtol(&buf[0], NULL, 10) - 1900;
+            strncpy (date_buf, rt_trip->start_date, 8);
+            date_buf[8] = '\0';
+            ltm.tm_mday = (int) strtol(&date_buf[6], NULL, 10);
+            date_buf[6] = '\0';
+            ltm.tm_mon  = (int) strtol(&date_buf[4], NULL, 10) - 1;
+            date_buf[4] = '\0';
+            ltm.tm_year = (int) strtol(&date_buf[0], NULL, 10) - 1900;
             ltm.tm_isdst = -1;
             epochtime = mktime(&ltm);
 
-            cal_day = (epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
+            cal_day = (int16_t) (((uint64_t)epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
 
             if (cal_day < 0 || cal_day > 31 ) {
                 #ifdef RRRR_DEBUG
@@ -637,14 +637,14 @@ void tdata_apply_gtfsrt_tripupdates_file (tdata_t *tdata, char *filename) {
         goto fail_clean_fd;
     }
 
-    buf = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    buf = mmap(NULL, (size_t) st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buf == MAP_FAILED) {
         fprintf(stderr, "Could not map GTFS-RT input file %s.\n", filename);
         goto fail_clean_fd;
     }
 
-    tdata_apply_gtfsrt_tripupdates (tdata, buf, st.st_size);
-    munmap (buf, st.st_size);
+    tdata_apply_gtfsrt_tripupdates (tdata, buf, (size_t) st.st_size);
+    munmap (buf, (size_t) st.st_size);
 
 fail_clean_fd:
     close (fd);

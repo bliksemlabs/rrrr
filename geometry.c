@@ -24,9 +24,9 @@
  */
 #define METERS_PER_BRAD (EARTH_CIRCUMFERENCE / INT32_RANGE)
 
-/* Must be scaled according to latitude for use in the longitude direction.
- */
-#define METERS_PER_DEGREE_LAT (EARTH_CIRCUMFERENCE / 360.0)
+double radians (double degrees);
+double degrees (double radians);
+double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2);
 
 double radians (double degrees) {
     return degrees * M_PI / 180;
@@ -79,13 +79,13 @@ static double coord_diff_meters (int32_t o1, int32_t o2) {
  * 2. Either we start x=0 at lon=-180 or lon=0.
  */
 void coord_from_lat_lon (coord_t *coord, double lat, double lon) {
-    coord->y = lat * UINT32_MAX / 360.0;
-    coord->x = lon * UINT32_MAX / 360.0 * xscale_at_lat (lat);
+    coord->y = (int32_t)(lat * UINT32_MAX / 360.0);
+    coord->x = (int32_t)(lon * UINT32_MAX / 360.0 * xscale_at_lat (lat));
 }
 
 void coord_from_meters (coord_t *coord, double meters_x, double meters_y) {
-    coord->x = meters_x / METERS_PER_BRAD;
-    coord->y = meters_y / METERS_PER_BRAD;
+    coord->x = (int32_t)(meters_x / METERS_PER_BRAD);
+    coord->y = (int32_t)(meters_y / METERS_PER_BRAD);
 }
 
 void coord_from_latlon (coord_t *coord, latlon_t *latlon) {
@@ -131,8 +131,8 @@ double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2) {
 }
 
 void latlon_from_coord (latlon_t *latlon, coord_t *coord) {
-    latlon->lat = coord->y * 180.0f / INT32_MAX ;
-    latlon->lon = coord->x * 180.0f / INT32_MAX / xscale_at_y (coord->y);
+    latlon->lat = (float) (coord->y * 180.0f / INT32_MAX);
+    latlon->lon = (float) (coord->x * 180.0f / INT32_MAX / xscale_at_y ((uint32_t)coord->y));
 }
 
 bool strtolatlon (char *latlon, latlon_t *result) {

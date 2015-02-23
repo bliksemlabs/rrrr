@@ -70,6 +70,8 @@ START_TEST (test_bitset)
     }
 END_TEST
 
+Suite *make_bitset_suite(void);
+
 Suite *make_bitset_suite(void) {
     Suite *s = suite_create("bitset_t");
     TCase *tc_core = tcase_create("Core");

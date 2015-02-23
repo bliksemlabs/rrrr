@@ -26,7 +26,7 @@
     if (read (fd, td->storage, sizeof(type) * (td->n_##storage + 1)) != (ssize_t) (sizeof(type) * (td->n_##storage + 1))) goto fail_close_fd;
 
 /* Set the maximum drivetime of any day in tdata */
-void set_max_time(tdata_t *td){
+static void set_max_time(tdata_t *td){
     jpidx_t jp_index;
     td->max_time = 0;
     for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){

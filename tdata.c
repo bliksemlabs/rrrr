@@ -153,8 +153,6 @@ spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, s
     return STOP_NONE;
 }
 
-#define tdata_stop_pointidx_by_stop_point_id(td, stop_id) tdata_stopidx_by_stop_id(td, stop_id, 0)
-
 jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t jp_index_offset) {
     jpidx_t jp_index;
     for (jp_index = jp_index_offset;
@@ -167,8 +165,6 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
     }
     return NONE;
 }
-
-#define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index_offset, 0)
 
 calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     journey_pattern_t *jp = &(td->journey_patterns[jp_index]);
@@ -567,7 +563,7 @@ void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max) {
 void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur) {
     spidx_t i_stop = (spidx_t) tdata->n_stop_points;
 
-    float min_lon = 180.0f, min_lat = 90.0f, max_lon = -180.0f, max_lat = -90.f;
+    float min_lon = 180.0f, min_lat = 90.0f, max_lon = -180.0f, max_lat = -90.0f;
 
     do {
         i_stop--;
@@ -597,3 +593,11 @@ void tdata_modes (tdata_t *tdata, tmode_t *m) {
 
     *m = (tmode_t) attributes;
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-macros"
+
+#define tdata_stop_pointidx_by_stop_point_id(td, stop_id) tdata_stopidx_by_stop_id(td, stop_id, 0)
+#define tdata_journey_pattern_idx_by_line_id(td, line_id) tdata_journey_pattern_idx_by_line_id(td, jp_index_offset, 0)
+
+#pragma clang diagnostic pop
