@@ -301,6 +301,6 @@ class VehicleJourney:
                 self.timetable.vehicle_journeys_utc[utc_key] = copy(self)
                 self.timetable.vehicle_journeys_utc[utc_key].validity_pattern = set([])
                 self.timetable.vehicle_journeys_utc[utc_key].departure_time = utc_deptime
-                self.timetable.vehicle_journeys_utc[utc_key].utc_offset = utc_deptime
+                self.timetable.vehicle_journeys_utc[utc_key].utc_offset = utc_offset
             utc_vj = self.timetable.vehicle_journeys_utc[utc_key]
             utc_vj.validity_pattern.add((validdate-self.timetable.validfrom).days)
