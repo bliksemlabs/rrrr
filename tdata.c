@@ -53,8 +53,16 @@ const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index) {
     return td->string_pool + td->vj_ids[vj_index];
 }
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
-    return td->string_pool +  td->vj_ids[td->journey_patterns[jp_index].vj_offset + vj_index];
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index) {
+    return tdata_vehicle_journey_id_for_index(td,td->journey_patterns[jp_index].vj_offset + vj_index);
+}
+
+int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index) {
+    return td->utc_offset+td->vj_time_offsets[vj_index];
+}
+
+int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index){
+    return tdata_utc_offset_for_index(td, td->journey_patterns[jp_index].vj_offset + vj_index);
 }
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index) {
