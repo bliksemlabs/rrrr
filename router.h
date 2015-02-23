@@ -76,12 +76,15 @@ struct router {
     bitset_t *banned_journey_patterns;
 #endif
 
-    spidx_t origin;
-    spidx_t target;
+    spidx_t *origins;
+    spidx_t *targets;
 
     calendar_t day_mask;
     serviceday_t servicedays[3];
     uint8_t n_servicedays;
+
+    uint8_t n_origins;
+    uint8_t n_targets;
 
     /* TODO: We should move more routing state in here,
      * like round and sub-scratch pointers.
