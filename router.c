@@ -429,28 +429,28 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 
 /* TODO: change the function name of tdata_next */
 static bool
-tdata_next (router_t *router, router_request_t *req,
+tdata_next (tdata_t *tdata, serviceday_t *servicedays, bool arrive_by,
             jpidx_t jp_index, jp_vjoffset_t vj_offset, rtime_t qtime,
             spidx_t *ret_sp_index, rtime_t *ret_stop_time) {
 
-    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
+    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(tdata, jp_index);
+    journey_pattern_t *jp = tdata->journey_patterns + jp_index;
     uint32_t jpp_i;
 
     *ret_sp_index = STOP_NONE;
     *ret_stop_time = UNREACHED;
 
     for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
-        /* TODO: check if the arrive = false flag works with req->arrive_by */
+        /* TODO: check if the arrive = false flag works with arrive_by */
 
-        rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
+        rtime_t time = tdata_stoptime (tdata, &(servicedays[1]),
                 jp_index, vj_offset, (jppidx_t) jpp_i, false);
 
         /* Find stop_point immediately after the given time on the given vj. */
-        if (req->arrive_by ? time > qtime : time < qtime) {
+        if (arrive_by ? time > qtime : time < qtime) {
             if (*ret_stop_time == UNREACHED ||
-                (req->arrive_by ? time < *ret_stop_time :
-                                  time > *ret_stop_time)) {
+                (arrive_by ? time < *ret_stop_time :
+                             time > *ret_stop_time)) {
                 *ret_sp_index = (spidx_t) journey_pattern_points[jpp_i];
                 *ret_stop_time = time;
             }
@@ -1185,7 +1185,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     spidx_t sp_index;
     rtime_t stop_time;
 
-    if (tdata_next (router, req,
+    if (tdata_next (router->tdata, router->servicedays, req->arrive_by,
                     req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
                     req->time, &sp_index, &stop_time) ){
         uint64_t i_state;
