@@ -109,12 +109,12 @@ struct tdata {
     void *base;
     size_t size;
     /* Midnight of the first day in the 32-day calendar in seconds
-     * since the epoch, ignores Daylight Saving Time (DST).
+     * since the epoch
      */
     uint64_t calendar_start_time;
 
-    /* Dates within the active calendar which have DST. */
-    calendar_t dst_active;
+    /* The offset in seconds from UTC for the entire timetable */
+    int32_t utc_offset;
     uint32_t n_days;
     uint32_t n_stop_points;
     uint32_t n_stop_areas;
@@ -152,6 +152,7 @@ struct tdata {
     uint32_t n_stop_area_ids;
     uint32_t n_stop_area_timezones;
     uint32_t n_vj_ids;
+    uint32_t n_vj_time_offsets;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
     uint32_t n_commercial_mode_for_jp;
@@ -202,6 +203,7 @@ struct tdata {
     uint32_t *stop_point_ids;
     uint32_t *stop_area_ids;
     uint32_t *stop_area_timezones;
+    int8_t *vj_time_offsets;
     uint32_t *vj_ids;
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;

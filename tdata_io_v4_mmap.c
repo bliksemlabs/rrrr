@@ -65,7 +65,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     }
 
     td->calendar_start_time = header->calendar_start_time;
-    td->dst_active = header->dst_active;
+    td->utc_offset = header->utc_offset;
     td->n_days = 32;
     td->n_stop_areas = header->n_stop_areas;
 
@@ -110,6 +110,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_mmap (td->base, stop_area_ids, uint32_t);
     load_mmap (td->base, stop_area_timezones, uint32_t);
     load_mmap (td->base, vj_ids, uint32_t);
+    load_mmap (td->base, vj_time_offsets, int8_t);
 
     /* Set the maximum drivetime of any day in tdata */
     set_max_time(td);

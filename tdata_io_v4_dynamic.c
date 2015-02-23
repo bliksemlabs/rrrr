@@ -105,7 +105,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     }
 
     td->calendar_start_time = header->calendar_start_time;
-    td->dst_active = header->dst_active;
+    td->utc_offset = header->utc_offset;
     td->n_days = 32;
     td->n_stop_areas = header->n_stop_areas;
 
@@ -150,6 +150,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_dynamic (fd, stop_area_ids, uint32_t);
     load_dynamic (fd, stop_area_timezones, uint32_t);
     load_dynamic (fd, vj_ids, uint32_t);
+    load_dynamic (fd, vj_time_offsets, int8_t);
 
     set_max_time(td);
     close (fd);
@@ -195,6 +196,7 @@ void tdata_io_v4_close(tdata_t *td) {
     free (td->stop_area_timezones);
     free (td->stop_area_for_stop_point);
     free (td->vj_ids);
+    free (td->vj_time_offsets);
     free (td->operator_ids);
     free (td->operator_names);
     free (td->operator_urls);
