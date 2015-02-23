@@ -56,7 +56,7 @@ typedef enum vehicle_journey_attributes {
     vja_school_vehicle        = 64,
     vja_wifi                  = 128,
     vja_toilet                = 256,
-    vja_ondemand              = 512,
+    vja_ondemand              = 512
     /* 5 more attributes allowed */
 } vehicle_journey_attributes_t;
 
