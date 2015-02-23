@@ -356,8 +356,26 @@ static void initialize_transfers (router_t *router,
         states_walk_time[sp_index_to] = UNREACHED;
     }
 }
-#endif
 
+/* Evaluate the performance of initialize_transfers_full, with this advance method. */
+static void initialize_transfers_n (router_t *router, uint8_t round,
+                                    spidx_t *sp_index_from, uint8_t n_stops) {
+    do {
+        rtime_t *states_walk_time;
+        uint32_t t, tN;
+        n_stops--;
+
+        states_walk_time = router->states_walk_time + (round * router->tdata->n_stop_points);
+        t  = router->tdata->stop_points[sp_index_from[n_stops]    ].transfers_offset;
+        tN = router->tdata->stop_points[sp_index_from[n_stops] + 1].transfers_offset;
+        states_walk_time[sp_index_from[n_stops]] = UNREACHED;
+        for ( ; t < tN ; ++t) {
+            spidx_t sp_index_to = router->tdata->transfer_target_stops[t];
+            states_walk_time[sp_index_to] = UNREACHED;
+        }
+    } while (n_stops);
+}
+#endif
 
 /* Get the departure or arrival time of the given vj on the given
  * service day, applying realtime data as needed.
