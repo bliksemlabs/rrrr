@@ -9,7 +9,7 @@ Suite *make_hashgrid_suite (void);
 Suite *make_radixtree_suite (void);
 #endif
 
-Suite *make_master_suite (void) {
+static Suite *make_master_suite (void) {
     Suite *s = suite_create ("Master");
     return s;
 }

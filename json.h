@@ -12,13 +12,13 @@ struct json {
 };
 
 void json_init (json_t *j, char *buf, size_t buflen);
-void json_kv(json_t *j, char *key, const char *value);
-void json_kd(json_t *j, char *key, int value);
-void json_kf(json_t *j, char *key, double value);
-void json_kl(json_t *j, char *key, int64_t value);
-void json_kb(json_t *j, char *key, bool value);
-void json_key_obj(json_t *j, char *key);
-void json_key_arr(json_t *j, char *key);
+void json_kv(json_t *j, const char *key, const char *value);
+void json_kd(json_t *j, const char *key, int value);
+void json_kf(json_t *j, const char *key, double value);
+void json_kl(json_t *j, const char *key, int64_t value);
+void json_kb(json_t *j, const char *key, bool value);
+void json_key_obj(json_t *j, const char *key);
+void json_key_arr(json_t *j, const char *key);
 void json_obj(json_t *j);
 void json_arr(json_t *j);
 void json_end_obj(json_t *j);

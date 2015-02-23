@@ -33,7 +33,7 @@ void dump_results(router_t *router) {
     char id_fmt[10];
     sprintf(id_fmt, "%%%ds", router.tdata.stop_id_width);
     #else
-    char *id_fmt = "%30.30s";
+    #define id_fmt "%30.30s"
     #endif
 
     fprintf(stderr, "\nRouter states:\n");

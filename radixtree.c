@@ -251,7 +251,7 @@ radixtree_t *radixtree_load_strings_from_file (char *filename) {
         goto fail_close_fd;
     }
 
-    r->size = st.st_size;
+    r->size = (size_t) st.st_size;
 
     #if defined(RRRR_TDATA_IO_MMAP)
     r->base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
@@ -260,7 +260,7 @@ radixtree_t *radixtree_load_strings_from_file (char *filename) {
         goto fail_close_fd;
     }
     #else
-    r->base = malloc(st.st_size + 1);
+    r->base = malloc((unsigned long) (st.st_size + 1));
     if (r->base == NULL) {
         fprintf(stderr, "Could not allocate memomry to store %s.\n", filename);
         goto fail_close_fd;

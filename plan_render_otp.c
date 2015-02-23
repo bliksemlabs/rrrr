@@ -60,7 +60,7 @@ rtime_to_msec(rtime_t rtime, time_t date) {
 }
 
 static void
-json_place (json_t *j, char *key, rtime_t arrival, rtime_t departure,
+json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
             spidx_t stop_index, tdata_t *tdata, time_t date) {
     const char *stop_name = tdata_stop_point_name_for_index(tdata, stop_index);
     const char *platformcode = tdata_platformcode_for_index(tdata, stop_index);
@@ -96,15 +96,15 @@ json_place (json_t *j, char *key, rtime_t arrival, rtime_t departure,
 static void
 json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
           router_request_t *req, time_t date) {
-    char *mode = NULL;
+    const char *mode = NULL;
     const char *headsign = NULL;
     const char *linecode = NULL;
     const char *linename = NULL;
     const char *commercialmode = NULL;
     const char *line_id = NULL;
     const char *vj_id = NULL;
-    uint8_t vj_attributes = 0;
-    char *wheelchair_accessible = NULL;
+    uint16_t vj_attributes = 0;
+    const char *wheelchair_accessible = NULL;
     const char *operator_id = NULL;
     const char *operator_name = NULL;
     const char *operator_url = NULL;
@@ -248,7 +248,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
             polyline_for_leg (&pl, tdata, leg);
             json_kv(j, "points", polyline_result(&pl));
             json_kv(j, "levels", NULL);
-            json_kd(j, "length", polyline_length(&pl));
+            json_kd(j, "length", (int) polyline_length(&pl));
         json_end_obj(j);
         json_key_arr(j, "intermediateStops");
         if (req->intermediatestops && leg->journey_pattern != WALK) {
@@ -274,7 +274,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
             }
         }
         json_end_arr(j);
-        json_kd(j, "duration", endtime - starttime);
+        json_kl(j, "duration", endtime - starttime);
     json_end_obj(j);
 }
 
@@ -289,13 +289,13 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
     leg_t *leg;
 
     json_obj(j); /* one itinerary */
-        json_kd(j, "duration", endtime - starttime);
+        json_kl(j, "duration", endtime - starttime);
         json_kl(j, "startTime", starttime);
         json_kl(j, "endTime", endtime);
         json_kd(j, "transfers", itin->n_legs / 2 - 1);
         json_key_arr(j, "legs");
             for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
-                int32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
+                uint32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
                 json_leg (j, leg, tdata, req, date);
                 if (leg->journey_pattern == WALK) {
                     if (leg->sp_from == leg->sp_to) {
@@ -374,7 +374,7 @@ otp_json(json_t *j, plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
         #endif
     json_end_obj(j);
     /* json_dump(j); */
-    return json_length(j);
+    return (uint32_t) json_length(j);
 }
 
 uint32_t
@@ -389,7 +389,7 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     latlon_t ll, ur, c;
     float *lon, *lat;
     uint64_t starttime, endtime;
-    spidx_t i_stop = tdata->n_stop_points;
+    spidx_t i_stop = (spidx_t) tdata->n_stop_points;
     tmode_t m;
 
     char modes[67];
@@ -417,8 +417,8 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
 
     json_init(&j, buf, buflen);
     json_obj(&j);
-    json_kl(&j, "startTime", starttime * 1000);
-    json_kl(&j, "endTime",   endtime * 1000);
+    json_kl(&j, "startTime", (int64_t) (starttime * 1000));
+    json_kl(&j, "endTime",   (int64_t) (endtime * 1000));
 
     json_kf(&j, "lowerLeftLatitude", ll.lat);
     json_kf(&j, "lowerLeftLongitude", ll.lon);
@@ -438,5 +438,5 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     json_kv(&j, "transitModes", modes);
     json_end_obj(&j);
 
-    return json_length(&j);
+    return (uint32_t) json_length(&j);
 }

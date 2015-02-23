@@ -18,9 +18,9 @@ router_request_to_epoch (router_request_t *req, tdata_t *tdata,
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) +
+    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) +
               RTIME_TO_SEC(req->time - RTIME_ONE_DAY) -
-              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
+              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0));
 
     rrrr_localtime_r (&seconds, tm_out);
 
@@ -40,8 +40,8 @@ router_request_to_date (router_request_t *req, tdata_t *tdata,
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) -
-              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0);
+    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) -
+              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0));
 
     rrrr_localtime_r (&seconds, tm_out);
 
@@ -116,19 +116,19 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     router_request_initialize (req);
     #endif
     struct tm origin_tm;
-    uint32_t cal_day;
+    calendar_t cal_day;
 
     req->time = epoch_to_rtime (epochtime, &origin_tm);
     req->time_rounded = ((origin_tm.tm_sec % 4) > 0);
     /* TODO not DST-proof, use noons */
-    cal_day = (mktime(&origin_tm) - tdata->calendar_start_time) / SEC_IN_ONE_DAY;
+    cal_day = (calendar_t) (((calendar_t) (mktime(&origin_tm)) - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
     if (cal_day > 31 ) {
         /* date not within validity period of the timetable file,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
          * up to the same day of the week.
          */
         cal_day %= 28;
-        fprintf (stderr, "calendar day out of range. wrapping to %d, "
+        fprintf (stderr, "calendar day out of range. wrapping to %u, "
                          "which is on the same day of the week.\n", cal_day);
         req->calendar_wrapped = true;
     }
@@ -146,7 +146,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->via_stop_point = STOP_NONE;
     req->time_cutoff = UNREACHED;
     /* 0 or 1 */
-    req->arrive_by = (bool) rrrrandom(2);
+    req->arrive_by = (bool) (rrrrandom(2));
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
     req->day_mask = ((calendar_t) 1) << rrrrandom(32);
     req->mode = m_all;
@@ -237,13 +237,13 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
             if (req->arrive_by) {
                 round_best_time[sp_index] -= extra_walktime;
                 if (round_best_time[sp_index] > best_time) {
-                    best_sp_index = sp_index;
+                    best_sp_index = (spidx_t) sp_index;
                     best_time = round_best_time[sp_index];
                 }
             } else {
                 round_best_time[sp_index] += extra_walktime;
                 if (round_best_time[sp_index] < best_time) {
-                    best_sp_index = sp_index;
+                    best_sp_index = (spidx_t) sp_index;
                     best_time = round_best_time[sp_index];
                 }
             }
@@ -302,14 +302,14 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
 
     assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
 
-    round = req->max_transfers;
+    round = (int8_t) req->max_transfers;
 
     if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
                           req->to_stop_point == STOP_NONE)) {
         do {
-            if (best_sp_by_round(router, req, round, &best_sp_index, &best_time)) {
+            if (best_sp_by_round(router, req, (uint8_t) round, &best_sp_index, &best_time)) {
                 ret[*ret_n] = *req;
-                reverse_request(&ret[*ret_n], round, best_sp_index, best_time);
+                reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
                 (*ret_n)++;
             }
             round--;
@@ -317,15 +317,15 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
     } else {
         best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
         do {
-            best_time = router->states_time[round * router->tdata->n_stop_points + best_sp_index];
+            best_time = router->states_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
 
-            if (best_time == UNREACHED || best_time < router->states_walk_time[round * router->tdata->n_stop_points + best_sp_index]) {
-                best_time = router->states_walk_time[round * router->tdata->n_stop_points + best_sp_index];
+            if (best_time == UNREACHED || best_time < router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index]) {
+                best_time = router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
             }
             if (best_time != UNREACHED) {
                 bool add_request = true;
                 ret[*ret_n] = *req;
-                reverse_request(&ret[*ret_n], round, best_sp_index, best_time);
+                reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
 
                 /* Our optisation is only about the last clockwise search */
                 if (!ret[*ret_n].arrive_by) {

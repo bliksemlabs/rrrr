@@ -13,7 +13,7 @@
  * including terminating null
  */
 char *btimetext(rtime_t rt, char *buf) {
-    char *day;
+    const char *day;
     uint32_t t, s, m, h;
 
     if (rt == UNREACHED) {
@@ -145,8 +145,8 @@ void printBits(size_t const size, void const * const ptr) {
 #endif
 
 /* https://answers.yahoo.com/question/index?qid=20091214075728AArnEug */
-int compareFloats(const void *elem1, const void *elem2) {
-    return ((*((float*) elem1)) - (*((float *) elem2)));
+static int compareFloats(const void *elem1, const void *elem2) {
+    return (int) (((*((float*) elem1)) - (*((float *) elem2))));
 }
 
 /* http://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean */
