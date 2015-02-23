@@ -1186,7 +1186,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     rtime_t stop_time;
 
     if (tdata_next (router, req,
-                    req->onboard_journey_pattern, (jp_vjoffset_t) req->onboard_journey_pattern_vjoffset,
+                    req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
                     req->time, &sp_index, &stop_time) ){
         uint64_t i_state;
 
