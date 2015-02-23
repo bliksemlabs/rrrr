@@ -2,6 +2,7 @@ import helper
 from utils import *
 import operator
 import sys
+import datetime
 
 # Notes:
 
@@ -577,7 +578,8 @@ struct_header = Struct('8sQi85I')
 
 def export(tdata):
     index = make_idx(tdata)
-    index.calendar_start_time = time.mktime((tdata.validfrom).timetuple())
+    index.calendar_start_time = (tdata.validfrom.toordinal() - datetime.date(1970, 1, 1).toordinal()) * 24*60*60
+    print index.calendar_start_time
     index.n_stops = len(index.stop_points)
     index.n_jp = len(index.journey_patterns)
     out = open('timetable4.dat','wb')

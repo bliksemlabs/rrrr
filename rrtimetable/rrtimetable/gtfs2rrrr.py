@@ -34,8 +34,20 @@ def convert(gtfsdb, from_date=None):
     print "Timetable valid from %s to %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS))
     
     put_gtfs_modes(tdata)
+
+    timezones = set([])
+    for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
+        Operator(tdata,agency_id,agency_timezone,name=agency_name,url=agency_url)
+        if agency_timezone is not None:
+            timezones.add(agency_timezone)
+
+    feed_timezone = None
+    if len(timezones) == 1:
+        feed_timezone = list(timezones)[0]
+    print 'Feed timezone is '+feed_timezone
+
     for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in gtfsdb.stop_areas():
-        StopArea(tdata,stop_id,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+        StopArea(tdata,stop_id,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
 
     for stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code in gtfsdb.stop_points():
         stop_area_uri = parent_station
@@ -43,7 +55,7 @@ def convert(gtfsdb, from_date=None):
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
         except:
             stop_area_uri = 'StopArea:ZZ:'+stop_id
-            StopArea(tdata,stop_area_uri,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+            StopArea(tdata,stop_area_uri,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
 
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in gtfsdb.transfers():
@@ -67,9 +79,6 @@ def convert(gtfsdb, from_date=None):
             Connection(tdata,sp.uri,sp.uri,min_transfer_time,type=transfer_type)
         except:
             pass
-
-    for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
-        Operator(tdata,agency_id,agency_timezone,name=agency_name,url=agency_url)
 
     for line_id,line_name,line_code,agency_id,route_type in gtfsdb.lines():
         if agency_id is None:
