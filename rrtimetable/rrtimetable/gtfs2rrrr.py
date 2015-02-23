@@ -68,8 +68,8 @@ def convert(gtfsdb, from_date=None):
         except:
             pass
 
-    for agency_id,agency_name,agency_url in gtfsdb.agencies():
-        Operator(tdata,agency_id,name=agency_name,url=agency_url)
+    for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
+        Operator(tdata,agency_id,agency_timezone,name=agency_name,url=agency_url)
 
     for line_id,line_name,line_code,agency_id,route_type in gtfsdb.lines():
         if agency_id is None:
@@ -134,7 +134,7 @@ def main():
     if len(tdata.journey_patterns) == 0 or len(tdata.vehicle_journeys) == 0:
         print "No valid trips in this GTFS file!"
         sys.exit(1)
-    export(tdata)
+    #export(tdata)
     exporter.timetable4.export(tdata)
 
 if __name__=='__main__': 

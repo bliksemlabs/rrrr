@@ -1,5 +1,7 @@
 import datetime
 import dateutil.tz
+import utils
+from copy import copy
 
 class Timetable:
     def __init__(self,validfrom):
@@ -12,6 +14,7 @@ class Timetable:
         self.routes = {}
         self.lines = {}
         self.vehicle_journeys = {}
+        self.vehicle_journeys_utc = {}
         self.connections = {}
         self.journey_patterns = {}
         self.signature_to_jp = {}
@@ -22,16 +25,13 @@ class Timetable:
 
 class StopArea:
 
-    def validate_timezone(self,timezone):
-        return timezone is not None and dateutil.tz.gettz(timezone) is not None
-
     def __init__(self,timetable,uri,timezone,name=None,latitude=None,longitude=None):
         self.type = 'stop_area'
         self.uri = uri
         if uri in timetable.stop_areas:
             raise ValueError('Violation of unique StopArea key') 
         timetable.stop_areas[uri] = self
-        if not self.validate_timezone(timezone):
+        if not utils.validate_timezone(timezone):
             raise Exception("Invalid timezone")
         self.timezone = timezone
         self.name = name
@@ -105,12 +105,15 @@ class Connection:
         timetable.connections[(from_stop_point_uri,to_stop_point_uri)] = self
 
 class Operator:
-    def __init__(self,timetable,uri,name=None,url=None):
+    def __init__(self,timetable,uri,timezone,name=None,url=None):
         self.type = 'operator'
         self.uri = uri
         if uri in timetable.operators:
             raise ValueError('Violation of unique Operator key') 
         timetable.operators[uri] = self
+        if not utils.validate_timezone(timezone):
+            raise Exception("Invalid timezone")
+        self.timezone = timezone
         self.name = name
         self.url = url
 
@@ -261,7 +264,7 @@ class VehicleJourney:
             self.timedemandgroup.append(TimeDemandGroupPoint(drivetime,totaldrivetime))
         self.points.append(JourneyPatternPoint(self.timetable,stop_point_uri,forboarding,foralighting,timingpoint,headsign=(headsign or self.headsign)))
 
-    def finish(self):
+    def finish(self,utc_offset_calculation=utils.utc_time_gtfs):
         if self.__isfinished__:
             raise AttributeError('VehicleJourney was previously completed')
         self.__isfinished__ = True
@@ -289,3 +292,15 @@ class VehicleJourney:
             self.timetable.signature_to_timedemandgroup[self.timedemandgroup] = timegroup
             self.timetable.timedemandgroups[timegroup.uri] = timegroup
             self.timedemandgroup = timegroup
+
+        #Build UTC VehicleJourneys
+        for validdate in [self.timetable.validfrom + datetime.timedelta(days=validdate) for validdate in self.validity_pattern]:
+            utc_offset,utc_deptime = utc_offset_calculation(validdate,self.departure_time,self.route.line.operator.timezone)
+            utc_key = (self.uri,utc_offset)
+            if utc_key not in self.timetable.vehicle_journeys_utc:
+                self.timetable.vehicle_journeys_utc[utc_key] = copy(self)
+                self.timetable.vehicle_journeys_utc[utc_key].validity_pattern = set([])
+                self.timetable.vehicle_journeys_utc[utc_key].departure_time = utc_deptime
+                self.timetable.vehicle_journeys_utc[utc_key].utc_offset = utc_deptime
+            utc_vj = self.timetable.vehicle_journeys_utc[utc_key]
+            utc_vj.validity_pattern.add((validdate-self.timetable.validfrom).days)

@@ -328,7 +328,7 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
 
     def agencies(self):
         c = self.get_cursor()
-        c.execute( "SELECT agency_id,agency_name,agency_url FROM agency" )
+        c.execute( "SELECT agency_id,agency_name,agency_url,agency_timezone FROM agency" )
         ret = list(c)
         c.close()
         return ret
