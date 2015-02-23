@@ -103,7 +103,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     const char *commercialmode = NULL;
     const char *line_id = NULL;
     const char *vj_id = NULL;
-    uint16_t vj_attributes = 0;
+    vj_attribute_mask_t vj_attributes = 0;
     const char *wheelchair_accessible = NULL;
     const char *operator_id = NULL;
     const char *operator_name = NULL;
@@ -141,7 +141,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
 
         /* departuredelay = tdata_delay_min (tdata, leg->journey_pattern, leg->vj); */
 
-        wheelchair_accessible = (vj_attributes & vja_accessible) ? "true" : NULL;
+        wheelchair_accessible = (vj_attributes & vja_wheelchair_accessible) ? "true" : NULL;
         if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_tram)      == m_tram)      mode = "TRAM";      else
         if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_subway)    == m_subway)    mode = "SUBWAY";    else
         if ((tdata->journey_patterns[leg->journey_pattern].attributes & m_rail)      == m_rail)      mode = "RAIL";      else

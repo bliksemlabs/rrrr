@@ -56,9 +56,9 @@ struct vehicle_journey {
      */
     rtime_t  begin_time;
 
-    /* The vj_attributes, including CANCELED flag
+    /* The vj_attributes
      */
-    uint16_t vj_attributes;
+    vj_attribute_mask_t vj_attributes;
 };
 
 typedef struct vehicle_journey_ref vehicle_journey_ref_t;
