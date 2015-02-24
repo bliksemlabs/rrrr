@@ -267,7 +267,11 @@ const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_ind
 
 int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index);
 
+int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index);
+
 int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
+int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
 
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
 
