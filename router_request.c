@@ -18,16 +18,15 @@ router_request_to_epoch (router_request_t *req, tdata_t *tdata,
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) +
-              RTIME_TO_SEC(req->time - RTIME_ONE_DAY));
+    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) - tdata->utc_offset) +
+              RTIME_TO_SEC(req->time - RTIME_ONE_DAY);
 
-    rrrr_localtime_r (&seconds, tm_out);
-
+    rrrr_gmtime_r (&seconds, tm_out);
     return seconds;
 }
 
 
-/* router_request_to_date returns the date used
+/* router_request_to_date returns the UTC date used
  * in the request in seconds since epoch.
  */
 time_t
@@ -39,10 +38,9 @@ router_request_to_date (router_request_t *req, tdata_t *tdata,
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY));
+    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) - tdata->utc_offset);
 
-    rrrr_localtime_r (&seconds, tm_out);
-
+    rrrr_gmtime_r (&seconds, tm_out);
     return seconds;
 }
 
