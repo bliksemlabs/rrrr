@@ -108,6 +108,9 @@ typedef struct tdata tdata_t;
 struct tdata {
     void *base;
     size_t size;
+
+    /* Pointer to string pool, with the timezone of the times in the data*/
+    uint32_t timezone;
     /* Midnight of the first day in the 32-day calendar in seconds
      * since the epoch
      */
@@ -267,6 +270,8 @@ int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index);
 int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
 
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
+
+const char *tdata_timezone(tdata_t *td);
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index);
 

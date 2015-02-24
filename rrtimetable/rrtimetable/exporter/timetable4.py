@@ -484,7 +484,9 @@ def write_header (out,index) :
 
     packed = struct_header.pack(htext,
         index.calendar_start_time,
+        index.timezone,
         index.global_utc_offset,
+        index.n_days, # n_days
         index.n_stops, # n_stops
         len(index.stop_areas), #n_stop_areas
         index.n_stops, # n_stop_attributes
@@ -574,14 +576,16 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQi85I')
+struct_header = Struct('8sQi87I')
 
 def export(tdata):
     index = make_idx(tdata)
+    index.n_days = NUMBER_OF_DAYS
     index.calendar_start_time = (tdata.validfrom.toordinal() - datetime.date(1970, 1, 1).toordinal()) * 24*60*60
     print index.calendar_start_time
     index.n_stops = len(index.stop_points)
     index.n_jp = len(index.journey_patterns)
+    index.timezone = index.put_string(tdata.timezone)
     out = open('timetable4.dat','wb')
     out.seek(struct_header.size)
 

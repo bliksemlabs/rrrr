@@ -7,7 +7,9 @@ struct tdata_header {
     /* Contents must read "TTABLEV4" */
     char version_string[8];
     uint64_t calendar_start_time;
+    uint32_t timezone;
     int32_t utc_offset;
+    uint32_t n_days;
     uint32_t n_stop_points;
     uint32_t n_stop_areas;
     uint32_t n_stop_point_attributes;

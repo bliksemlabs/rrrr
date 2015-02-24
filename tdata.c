@@ -34,6 +34,10 @@
 #include "config.h"
 #include "bitset.h"
 
+const char *tdata_timezone(tdata_t *td){
+    return td->string_pool + td->timezone;
+}
+
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
     if (jp_index == NONE) return "NONE";

@@ -104,9 +104,10 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
         goto fail_close_fd;
     }
 
+    td->timezone = header->timezone;
     td->calendar_start_time = header->calendar_start_time;
     td->utc_offset = header->utc_offset;
-    td->n_days = 32;
+    td->n_days = header->n_days;
     td->n_stop_areas = header->n_stop_areas;
 
     load_dynamic (fd, stop_points, stop_point_t);

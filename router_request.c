@@ -118,7 +118,7 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     req->time_rounded = ((request_time%SEC_IN_ONE_DAY) % 4) > 0;
     cal_day = (calendar_t) (request_time/SEC_IN_ONE_DAY);
 
-    if (cal_day > 31 ) {
+    if (cal_day >= tdata->n_days ) {
         /* date not within validity period of the timetable file,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
          * up to the same day of the week.

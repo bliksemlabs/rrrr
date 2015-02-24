@@ -4,9 +4,12 @@ import utils
 from copy import copy
 
 class Timetable:
-    def __init__(self,validfrom):
+    def __init__(self,validfrom,timezone):
         if not isinstance(validfrom, datetime.date):
             raise TypeError('validfrom must be a datetime.date, not a %s' % type(validfrom))
+        if not utils.validate_timezone(timezone):
+            raise Exception("Invalid timezone "+str(timezone))
+        self.timezone = timezone
         self.validfrom = validfrom
         self.stop_areas = {}
         self.stop_points = {}

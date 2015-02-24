@@ -26,25 +26,31 @@ def put_gtfs_modes(tdata):
     CommercialMode(tdata,'6',name='Gondola')
     CommercialMode(tdata,'7',name='Funicular')
 
+def determine_timezone(gtfsdb):
+    timezones = set([])
+    for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
+        if agency_timezone is not None:
+            timezones.add(agency_timezone)
+
+    if len(timezones) == 0:
+        raise Exception("Agency has required field agency_timezone not filled in")
+    elif len(timezones) > 1:
+        raise Exception("Feed has multiple timezones, RRRR currently only supports one") #But should be trivial to change
+    else:
+        return list(timezones)[0]
+
 def convert(gtfsdb, from_date=None):
     if from_date == None:
         from_date, _ = gtfsdb.date_range()
 
-    tdata = Timetable(from_date)
-    print "Timetable valid from %s to %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS))
+    feed_timezone = determine_timezone(gtfsdb)
+    tdata = Timetable(from_date,feed_timezone)
+    print "Timetable valid from %s to %s, timezone: %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS),feed_timezone)
     
     put_gtfs_modes(tdata)
 
-    timezones = set([])
     for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
         Operator(tdata,agency_id,agency_timezone,name=agency_name,url=agency_url)
-        if agency_timezone is not None:
-            timezones.add(agency_timezone)
-
-    feed_timezone = None
-    if len(timezones) == 1:
-        feed_timezone = list(timezones)[0]
-    print 'Feed timezone is '+feed_timezone
 
     for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in gtfsdb.stop_areas():
         StopArea(tdata,stop_id,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
