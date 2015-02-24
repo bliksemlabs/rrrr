@@ -11,7 +11,8 @@ import datetime
 # We normalize all times to UTC, to properly route through DST-changes and multiple timezones.
 # However since we are using unsigned integers, we cannot allow negative times.
 # To avoid that we take the highest UTC offset of all vehicle_journey's in the timetable and use that as a global offset.
-# All vehicle_journey's have the number of 15-minutes, offset from that global utc offset
+# All vehicle_journey's have the number of 15-minutes, offset from that global utc offset.
+# We picked a 15 minute resolution for these offsets to allow them to store in int8_t
 
 NUMBER_OF_DAYS = 32
 MIN_WAITTIME = 120
