@@ -10,8 +10,10 @@ def convert(dbname):
     conn = psycopg2.connect("dbname='ridprod'")
 
     cur = conn.cursor()
+    cur.execute("SELECT DISTINCT agency_timezone FROM fusio.agency");
+    feed_timezone = cur.fetchone()[0]
     cur.execute("SELECT MIN(date)::date FROM fusio.calendar_dates")
-    tdata = Timetable(cur.fetchone()[0])
+    tdata = Timetable(cur.fetchone()[0],feed_timezone)
 
     cur.execute("select physical_mode_id,physical_mode_name from fusio.physical_modes")
     for id,name in cur.fetchall():
@@ -23,15 +25,15 @@ def convert(dbname):
 
     cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone FROM fusio.stops WHERE location_type = 1")
     for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in cur.fetchall():
-        StopArea(tdata,stop_id,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+        StopArea(tdata,stop_id,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
     cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code FROM fusio.stops WHERE coalesce(location_type,0) = 0")
-    for stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code in cur.fetchall():
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code,stop_timezone in cur.fetchall():
         stop_area_uri = parent_station
         try:
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
         except:
             stop_area_uri = 'StopArea:ZZ:'+stop_id
-            StopArea(tdata,stop_area_uri,stop_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+            StopArea(tdata,stop_area_uri,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
     cur.execute("SELECT from_stop_id,to_stop_id,min_transfer_time,transfer_type FROM fusio.transfers")
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in cur.fetchall():
@@ -40,16 +42,16 @@ def convert(dbname):
             Connection(tdata,to_stop_id,from_stop_id,min_transfer_time,type=transfer_type)
         except:
             pass
-    cur.execute("SELECT agency_id,agency_name,agency_url FROM fusio.agency")
-    for agency_id,agency_name,agency_url in cur.fetchall():
-        Operator(tdata,agency_id,name=agency_name,url=agency_url)
+    cur.execute("SELECT agency_id,agency_name,agency_url,agency_timezone FROM fusio.agency")
+    for agency_id,agency_name,agency_url,agency_timezone in cur.fetchall():
+        Operator(tdata,agency_id,agency_timezone,name=agency_name,url=agency_url)
     cur.execute("""
 SELECT DISTINCT ON (line_id)
-line_id,line_name,line_code,network_id,physical_mode_id
+line_id,line_name,line_code,network_id,physical_mode_id,line_color
 FROM fusio.lines JOIN fusio.routes USING (line_id) JOIN fusio.trips USING (route_id)
 """)
-    for line_id,line_name,line_code,network_id,physical_mode_id in cur.fetchall():
-        Line(tdata,line_id,network_id,physical_mode_id,name=line_name,code=line_code)
+    for line_id,line_name,line_code,network_id,physical_mode_id,line_color in cur.fetchall():
+        Line(tdata,line_id,network_id,physical_mode_id,name=line_name,code=line_code,color=line_color)
     cur.execute("SELECT route_id,line_id,route_type FROM fusio.routes")
     for route_id,line_id,route_type in cur.fetchall():
         Route(tdata,route_id,line_id,route_type=route_type)
@@ -60,6 +62,8 @@ FROM fusio.lines JOIN fusio.routes USING (line_id) JOIN fusio.trips USING (route
         calendars[service_id] = validdates
 
     trip_id = None
+    cur.close()
+    cur = conn.cursor('trips')
     cur.execute("""
 SELECT trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,commercial_mode_id
 FROM fusio.trips JOIN fusio.stop_times USING (trip_id) JOIN fusio.routes USING (route_id) JOIN fusio.lines USING (line_id)

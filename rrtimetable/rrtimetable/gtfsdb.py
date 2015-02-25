@@ -335,7 +335,7 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
 
     def lines(self):
         c = self.get_cursor()
-        c.execute( "SELECT route_id as line_id, route_long_name as line_name, coalesce(route_short_name,route_long_name) as line_code, agency_id,route_type FROM routes" )
+        c.execute( "SELECT route_id as line_id, route_long_name as line_name, coalesce(route_short_name,route_long_name) as line_code, agency_id,route_type,route_color,route_text_color FROM routes" )
         ret = list(c)
         c.close()
         return ret

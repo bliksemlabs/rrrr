@@ -86,11 +86,11 @@ def convert(gtfsdb, from_date=None):
         except:
             pass
 
-    for line_id,line_name,line_code,agency_id,route_type in gtfsdb.lines():
+    for line_id,line_name,line_code,agency_id,route_type,route_color,route_text_color in gtfsdb.lines():
         if agency_id is None:
             if len(index.operators) == 1:
                 agency_id = list(index.operators.keys())[0]
-        Line(tdata,line_id,agency_id,str(route_type),name=line_name,code=line_code)
+        Line(tdata,line_id,agency_id,str(route_type),name=line_name,code=line_code,color=route_color,color_text=route_text_color)
 
     for route_id,line_id,route_type in gtfsdb.routes():
         Route(tdata,route_id,line_id,route_type=route_type)
