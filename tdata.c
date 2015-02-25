@@ -76,7 +76,7 @@ rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_off
 }
 
 rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
-    return (rtime_t) (tdata_stoptime_for_index(td,jp_index,jpp_offset,vj_index,arrival) +
+    return (rtime_t) (tdata_stoptime_for_index(td,jp_index,jpp_offset,vj_index,arrival) -
             SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(td, jp_index, vj_index)));
 }
 
