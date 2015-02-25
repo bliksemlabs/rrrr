@@ -137,7 +137,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         #endif
         linecode = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
         line_color = tdata_line_color_for_journey_pattern(tdata, leg->journey_pattern);
-        line_color_text = tdata_line_color_for_journey_pattern(tdata, leg->journey_pattern);
+        line_color_text = tdata_line_color_text_for_journey_pattern(tdata, leg->journey_pattern);
         linename = tdata_line_name_for_journey_pattern(tdata, leg->journey_pattern);
         commercialmode = tdata_commercial_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
         line_id = tdata_line_id_for_journey_pattern(tdata, leg->journey_pattern);
