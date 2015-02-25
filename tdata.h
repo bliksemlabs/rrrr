@@ -111,9 +111,8 @@ struct tdata {
 
     /* Pointer to string pool, with the timezone of the times in the data*/
     uint32_t timezone;
-    /* Midnight of the first day in the 32-day calendar in seconds
-     * since the epoch
-     */
+
+    /* Midnight (UTC) of the first day in the 32-day calendar in seconds since the epoch */
     uint64_t calendar_start_time;
 
     /* The offset in seconds from UTC for the entire timetable */
