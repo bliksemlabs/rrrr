@@ -55,8 +55,8 @@ polyline_for_leg (polyline_t *pl, tdata_t *tdata, leg_t *leg) {
 }
 
 static int64_t
-rtime_to_msec(rtime_t rtime, time_t date) {
-    return ((int64_t) 1000) * (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date);
+rtime_to_msec(rtime_t rtime, time_t date, int32_t tdata_utc_offset) {
+    return ((int64_t) 1000) * (RTIME_TO_SEC_SIGNED(rtime - RTIME_ONE_DAY) + date - tdata_utc_offset);
 }
 
 static void
@@ -82,15 +82,22 @@ json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
 	if (arrival == UNREACHED) {
         	json_kv(j, "arrival", NULL);
     } else {
-        	json_kl(j, "arrival", rtime_to_msec(arrival, date));
+        	json_kl(j, "arrival", rtime_to_msec(arrival, date, tdata->utc_offset));
     }
 
 	if (departure == UNREACHED) {
 		json_kv(j, "departure", NULL);
 	} else {
-		json_kl(j, "departure", rtime_to_msec(departure, date));
+		json_kl(j, "departure", rtime_to_msec(departure, date, tdata->utc_offset));
     }
     json_end_obj(j);
+}
+
+static void put_servicedate(leg_t *leg, time_t date, char *servicedate){
+    struct tm ltm;
+    time_t servicedate_time = date + (SEC_IN_ONE_DAY * (leg->d0 % RTIME_ONE_DAY));
+    rrrr_gmtime_r(&servicedate_time, &ltm);
+    strftime(servicedate, 9, "%Y%m%d", &ltm);
 }
 
 static void
@@ -112,17 +119,13 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
 
-    int64_t starttime = rtime_to_msec(leg->t0, date);
-    int64_t endtime = rtime_to_msec(leg->t1, date);
+    int64_t starttime = rtime_to_msec(leg->t0, date, tdata->utc_offset);
+    int64_t endtime = rtime_to_msec(leg->t1, date, tdata->utc_offset);
 
     polyline_t pl;
 
     if (leg->journey_pattern == WALK) mode = "WALK"; else {
-        rtime_t begin_time = tdata->vjs[tdata->journey_patterns[leg->journey_pattern].vj_offset + leg->vj].begin_time;
-        struct tm ltm;
-        time_t servicedate_time = date + RTIME_TO_SEC(begin_time);
-        rrrr_localtime_r(&servicedate_time, &ltm);
-        strftime(servicedate, 9, "%Y%m%d", &ltm);
+        put_servicedate(leg, date, servicedate);
 
         #ifdef RRRR_FEATURE_REALTIME_EXPANDED
         headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
@@ -280,8 +283,8 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
 
 static void
 json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *req, time_t date) {
-    int64_t starttime = rtime_to_msec(itin->legs[0].t0, date);
-    int64_t endtime = rtime_to_msec(itin->legs[(itin->n_legs - 1)].t1, date);
+    int64_t starttime = rtime_to_msec(itin->legs[0].t0, date, tdata->utc_offset);
+    int64_t endtime = rtime_to_msec(itin->legs[(itin->n_legs - 1)].t1, date, tdata->utc_offset);
     int32_t walktime = 0;
     int32_t walkdistance = 0;
     int32_t waitingtime = 0;
