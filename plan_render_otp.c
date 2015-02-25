@@ -106,6 +106,8 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     const char *mode = NULL;
     const char *headsign = NULL;
     const char *linecode = NULL;
+    const char *line_color = NULL;
+    const char *line_color_text = NULL;
     const char *linename = NULL;
     const char *commercialmode = NULL;
     const char *line_id = NULL;
@@ -115,6 +117,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     const char *operator_id = NULL;
     const char *operator_name = NULL;
     const char *operator_url = NULL;
+    char agencyTzOffset[16] = "\0";
 
     char servicedate[9] = "\0";
     int64_t departuredelay = 0;
@@ -133,7 +136,9 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         headsign = tdata_headsign_for_journey_pattern(tdata, leg->journey_pattern);
         #endif
         linecode = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
-        linename = tdata_line_name_for_index(tdata, leg->journey_pattern);
+        line_color = tdata_line_color_for_journey_pattern(tdata, leg->journey_pattern);
+        line_color_text = tdata_line_color_for_journey_pattern(tdata, leg->journey_pattern);
+        linename = tdata_line_name_for_journey_pattern(tdata, leg->journey_pattern);
         commercialmode = tdata_commercial_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
         line_id = tdata_line_id_for_journey_pattern(tdata, leg->journey_pattern);
         operator_id = tdata_operator_id_for_journey_pattern(tdata, leg->journey_pattern);
@@ -141,6 +146,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         operator_url = tdata_operator_url_for_journey_pattern(tdata, leg->journey_pattern);
         vj_id = tdata_vehicle_journey_id_for_jp_vj_index(tdata, leg->journey_pattern, leg->vj);
         vj_attributes = tdata->vjs[leg->vj].vj_attributes;
+        sprintf(agencyTzOffset,"%d",tdata_utc_offset_for_jp_vj_index(tdata, leg->journey_pattern, leg->vj)*1000);
 
         /* departuredelay = tdata_delay_min (tdata, leg->journey_pattern, leg->vj); */
 
@@ -166,15 +172,21 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         json_kl(j, "endTime",   endtime);
         json_kl(j, "departureDelay", departuredelay);
         json_kl(j, "arrivalDelay", 0);
+        json_kv(j, "route", linecode && strcmp(linecode,"") ? linename : linecode);
         json_kv(j, "routeShortName", linecode);
-        json_kv(j, "route", linename);
-        json_kv(j, "headsign", headsign);
+        json_kv(j, "routeLongName", linename);
         json_kv(j, "routeId", line_id);
+        json_kv(j, "routeColor", line_color);
+        json_kv(j, "routeTextColor", line_color_text);
+        json_kv(j, "headsign", headsign);
         json_kv(j, "tripId", vj_id);
         json_kv(j, "serviceDate", servicedate);
         json_kv(j, "agencyId", operator_id);
         json_kv(j, "agencyName", operator_name);
         json_kv(j, "agencyUrl", operator_url);
+        if (leg->journey_pattern != WALK){
+            json_kv(j, "agencyTimeZoneOffset", agencyTzOffset);
+        }
         json_kv(j, "wheelchairAccessible", wheelchair_accessible);
         json_kv(j, "productCategory", commercialmode);
 /*
