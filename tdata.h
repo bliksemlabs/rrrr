@@ -272,6 +272,12 @@ int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoff
 
 int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
 
+rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
 
 const char *tdata_timezone(tdata_t *td);

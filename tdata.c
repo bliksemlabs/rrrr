@@ -68,6 +68,22 @@ int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index) {
     return td->vj_time_offsets[vj_index]*15*60;
 }
 
+rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
+    uint32_t vj_offset = td->journey_patterns[jp_index].vj_offset;
+    vehicle_journey_t vj = td->vjs[vj_offset];
+    return vj.begin_time + arrival ? td->stop_times[vj.stop_times_offset].arrival :
+                                     td->stop_times[vj.stop_times_offset].departure;
+}
+
+rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
+    return (rtime_t) (tdata_stoptime_for_index(td,jp_index,jpp_offset,vj_index,arrival) +
+            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(td, jp_index, vj_index)));
+}
+
+int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
+    return tdata_stoptime_for_index(td,jp_index,jpp_offset,vj_index,arrival) - SIGNED_SEC_TO_RTIME(td->utc_offset);
+}
+
 int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index){
     return tdata_utc_offset_for_index(td, td->journey_patterns[jp_index].vj_offset + vj_index);
 }
