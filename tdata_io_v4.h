@@ -41,6 +41,8 @@ struct tdata_header {
     uint32_t n_string_pool;
     uint32_t n_line_codes;
     uint32_t n_line_ids;
+    uint32_t n_line_colors;
+    uint32_t n_line_colors_text;
     uint32_t n_line_names;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
@@ -89,6 +91,8 @@ struct tdata_header {
     uint32_t loc_line_codes;
     uint32_t loc_line_names;
     uint32_t loc_line_ids;
+    uint32_t loc_line_colors;
+    uint32_t loc_line_colors_text;
     uint32_t loc_stop_point_ids;
     uint32_t loc_stop_area_ids;
     uint32_t loc_stop_area_timezones;

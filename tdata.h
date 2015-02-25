@@ -150,6 +150,8 @@ struct tdata {
     uint32_t n_line_codes;
     uint32_t n_line_names;
     uint32_t n_line_ids;
+    uint32_t n_line_colors;
+    uint32_t n_line_colors_text;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
     uint32_t n_stop_area_timezones;
@@ -202,6 +204,8 @@ struct tdata {
     calendar_t *journey_pattern_active;
     uint32_t *journey_pattern_point_headsigns;
     uint32_t *line_ids;
+    uint32_t *line_colors;
+    uint32_t *line_colors_text;
     uint32_t *stop_point_ids;
     uint32_t *stop_area_ids;
     uint32_t *stop_area_timezones;
@@ -290,6 +294,10 @@ const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
+const char *tdata_line_color_for_index(tdata_t *td, uint32_t line_code_index);
+
+const char *tdata_line_color_text_for_index(tdata_t *td, uint32_t line_code_index);
+
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_name_index);
 
 const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_name_index);
@@ -329,6 +337,10 @@ const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,jppidx_t jpp_offset);
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+const char *tdata_line_color_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+const char *tdata_line_color_text_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 

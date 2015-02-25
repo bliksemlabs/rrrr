@@ -121,7 +121,7 @@ class Operator:
         self.url = url
 
 class Line:
-    def __init__(self,timetable,uri,operator_uri,physical_mode_uri,name=None,code=None):
+    def __init__(self,timetable,uri,operator_uri,physical_mode_uri,name=None,code=None,color=None,color_text=None):
         self.type = 'line'
         self.uri = uri
         if operator_uri not in timetable.operators:
@@ -135,6 +135,8 @@ class Line:
         timetable.lines[uri] = self
         self.name = name
         self.code = code
+        self.color = color
+        self.color_text = color_text
 
 class Route:
     def __init__(self,timetable,uri,line_uri,direction=None,route_type=None):

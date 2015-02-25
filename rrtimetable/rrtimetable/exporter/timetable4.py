@@ -424,6 +424,12 @@ def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
     index.loc_line_codes = write_list_of_strings(out,index,[line.code or '' for line in index.lines])
 
+def export_linecolors(tdata,index,out):
+    write_text_comment(out,"LINE COLOR")
+    index.loc_line_color = write_list_of_strings(out,index,[line.color or '' for line in index.lines])
+    write_text_comment(out,"LINE COLOR_TEXT")
+    index.loc_line_color_text = write_list_of_strings(out,index,[line.color_text or '' for line in index.lines])
+
 def export_linenames(tdata,index,out):
     write_text_comment(out,"LINE NAMES")
     index.loc_line_names = write_list_of_strings(out,index,[line.name or '' for line in index.lines])
@@ -518,6 +524,8 @@ def write_header (out,index) :
         index.string_length, # n_string_pool (length of the object)
         len(index.lines), # n_line_codes
         len(index.lines), # n_line_ids
+        len(index.lines), # n_line_colors
+        len(index.lines), # n_line_colors_text
         len(index.lines), # n_line_names
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
@@ -567,6 +575,8 @@ def write_header (out,index) :
         index.loc_line_codes,
         index.loc_line_names,
         index.loc_line_uris,
+        index.loc_line_color,
+        index.loc_line_color_text,
         index.loc_stop_point_uris,
         index.loc_stop_area_uris,
         index.loc_stop_area_timezones,
@@ -577,7 +587,7 @@ def write_header (out,index) :
     )
     out.write(packed)
 
-struct_header = Struct('8sQi87I')
+struct_header = Struct('8sQi91I')
 
 def export(tdata):
     index = make_idx(tdata)
@@ -615,6 +625,7 @@ def export(tdata):
     export_lines(tdata,index,out)
     export_linecodes(tdata,index,out)
     export_linenames(tdata,index,out)
+    export_linecolors(tdata,index,out)
     export_journey_pattern_point_headsigns(tdata,index,out)
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)

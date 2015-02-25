@@ -97,6 +97,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_mmap (td->base, vehicle_journey_transfers_backward, vehicle_journey_ref_t);
     load_mmap (td->base, vehicle_journey_transfers_forward, vehicle_journey_ref_t);
     load_mmap (td->base, line_codes, uint32_t);
+    load_mmap (td->base, line_colors, uint32_t);
+    load_mmap (td->base, line_colors_text, uint32_t);
     load_mmap (td->base, line_names, uint32_t);
     load_mmap (td->base, operator_ids, uint32_t);
     load_mmap (td->base, operator_names, uint32_t);

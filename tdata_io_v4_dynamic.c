@@ -93,6 +93,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_vehicle_journey_transfers_backward < (UINT32_MAX) &&
             header->n_vehicle_journey_transfers_forward < (UINT32_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
+            header->n_line_colors < (UINT32_MAX) &&
+            header->n_line_colors_text < (UINT32_MAX) &&
             header->n_line_names < (UINT32_MAX) &&
             header->n_line_for_route < (UINT16_MAX) &&
             header->n_operator_for_line < (UINT8_MAX) &&
@@ -137,6 +139,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_dynamic (fd, commercial_mode_for_jp, uint16_t);
     load_dynamic (fd, physical_mode_for_line, uint16_t);
     load_dynamic (fd, line_codes, uint32_t);
+    load_dynamic (fd, line_colors, uint32_t);
+    load_dynamic (fd, line_colors_text, uint32_t);
     load_dynamic (fd, line_names, uint32_t);
     load_dynamic (fd, operator_ids, uint32_t);
     load_dynamic (fd, operator_names, uint32_t);
@@ -202,6 +206,8 @@ void tdata_io_v4_close(tdata_t *td) {
     free (td->operator_names);
     free (td->operator_urls);
     free (td->line_codes);
+    free (td->line_colors);
+    free (td->line_colors_text);
     free (td->line_names);
     free (td->line_ids);
     free (td->commercial_mode_ids);
