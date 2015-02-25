@@ -51,11 +51,11 @@ static char *
 plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
                        char *b, char *b_end) {
     leg_t *leg;
+    int32_t time_offset = itin->n_legs < 2 ? 0 :
+            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(tdata, itin->legs[1].journey_pattern, itin->legs[1].vj));
 
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
 
-    int32_t time_offset = itin->n_legs < 2 ? 0 :
-            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(tdata, itin->legs[1].journey_pattern, itin->legs[1].vj));
     /* Render the legs of this itinerary, which are in chronological order */
     for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
         char ct0[16];
