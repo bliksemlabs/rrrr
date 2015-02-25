@@ -97,7 +97,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_line_colors_text < (UINT32_MAX) &&
             header->n_line_names < (UINT32_MAX) &&
             header->n_line_for_route < (UINT16_MAX) &&
-            header->n_operator_for_line < (UINT8_MAX) &&
+            header->n_operator_for_line < (UINT16_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
             header->n_stop_area_ids < ((spidx_t) -2) &&
             header->n_vj_ids < (UINT32_MAX) ) ) {
