@@ -103,22 +103,25 @@ def load_gtfs_table_to_sqlite(fp, gtfs_basename, cc, header=None, verbose=False)
     # populate stoptimes table
     insert_template = 'insert into %s (%s) values (%s)'%(gtfs_basename,",".join([x[0] for x in header]), ",".join(["?"]*len(header)))
     print( insert_template )
-    for i, line in withProgress(enumerate(rd), 5000):
-        # carry on quietly if there's a blank line in the csv
-        if line == []:
-            continue
-        
-        _line = []
-        for i, converter in field_operator:
-            if i<len(line) and i is not None and line[i].strip() != "":
-                if converter:
-                    _line.append( converter(line[i].strip()) )
+    def insert_data():
+        for i, line in withProgress(enumerate(rd), 5000):
+            # carry on quietly if there's a blank line in the csv
+            if line == []:
+                continue
+
+            _line = []
+            for i, converter in field_operator:
+                if i<len(line) and i is not None and line[i].strip() != "":
+                    if converter:
+                        _line.append( converter(line[i].strip()) )
+                    else:
+                        _line.append( line[i].strip() )
                 else:
-                    _line.append( line[i].strip() )
-            else:
-                _line.append( None )
-                
-        cc.execute(insert_template, _line)
+                    _line.append( None )
+
+            yield _line
+
+    cc.executemany(insert_template, insert_data())
 
 class GTFSDatabase:
     TRIPS_DEF = ("trips", (("route_id",   None, None),
