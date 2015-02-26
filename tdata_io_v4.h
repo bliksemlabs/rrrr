@@ -7,7 +7,9 @@ struct tdata_header {
     /* Contents must read "TTABLEV4" */
     char version_string[8];
     uint64_t calendar_start_time;
-    calendar_t dst_active;
+    uint32_t timezone;
+    int32_t utc_offset;
+    uint32_t n_days;
     uint32_t n_stop_points;
     uint32_t n_stop_areas;
     uint32_t n_stop_point_attributes;
@@ -39,10 +41,14 @@ struct tdata_header {
     uint32_t n_string_pool;
     uint32_t n_line_codes;
     uint32_t n_line_ids;
+    uint32_t n_line_colors;
+    uint32_t n_line_colors_text;
     uint32_t n_line_names;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
+    uint32_t n_stop_area_timezones;
     uint32_t n_vj_ids;
+    uint32_t n_vj_time_offsets;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
     uint32_t n_commercial_mode_for_jp;
@@ -85,8 +91,12 @@ struct tdata_header {
     uint32_t loc_line_codes;
     uint32_t loc_line_names;
     uint32_t loc_line_ids;
+    uint32_t loc_line_colors;
+    uint32_t loc_line_colors_text;
     uint32_t loc_stop_point_ids;
     uint32_t loc_stop_area_ids;
+    uint32_t loc_stop_area_timezones;
+    uint32_t loc_vj_time_offsets;
     uint32_t loc_vj_ids;
     uint32_t loc_stop_area_coords;
     uint32_t loc_stop_area_for_stop_point;

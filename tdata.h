@@ -56,9 +56,9 @@ struct vehicle_journey {
      */
     rtime_t  begin_time;
 
-    /* The vj_attributes, including CANCELED flag
+    /* The vj_attributes
      */
-    uint16_t vj_attributes;
+    vj_attribute_mask_t vj_attributes;
 };
 
 typedef struct vehicle_journey_ref vehicle_journey_ref_t;
@@ -108,13 +108,15 @@ typedef struct tdata tdata_t;
 struct tdata {
     void *base;
     size_t size;
-    /* Midnight of the first day in the 32-day calendar in seconds
-     * since the epoch, ignores Daylight Saving Time (DST).
-     */
+
+    /* Pointer to string pool, with the timezone of the times in the data*/
+    uint32_t timezone;
+
+    /* Midnight (UTC) of the first day in the 32-day calendar in seconds since the epoch */
     uint64_t calendar_start_time;
 
-    /* Dates within the active calendar which have DST. */
-    calendar_t dst_active;
+    /* The offset in seconds from UTC for the entire timetable */
+    int32_t utc_offset;
     uint32_t n_days;
     uint32_t n_stop_points;
     uint32_t n_stop_areas;
@@ -148,9 +150,13 @@ struct tdata {
     uint32_t n_line_codes;
     uint32_t n_line_names;
     uint32_t n_line_ids;
+    uint32_t n_line_colors;
+    uint32_t n_line_colors_text;
     uint32_t n_stop_point_ids;
     uint32_t n_stop_area_ids;
+    uint32_t n_stop_area_timezones;
     uint32_t n_vj_ids;
+    uint32_t n_vj_time_offsets;
     uint32_t n_line_for_route;
     uint32_t n_operator_for_line;
     uint32_t n_commercial_mode_for_jp;
@@ -198,8 +204,12 @@ struct tdata {
     calendar_t *journey_pattern_active;
     uint32_t *journey_pattern_point_headsigns;
     uint32_t *line_ids;
+    uint32_t *line_colors;
+    uint32_t *line_colors_text;
     uint32_t *stop_point_ids;
     uint32_t *stop_area_ids;
+    uint32_t *stop_area_timezones;
+    int8_t *vj_time_offsets;
     uint32_t *vj_ids;
     #ifdef RRRR_FEATURE_REALTIME
     radixtree_t *lineid_index;
@@ -256,9 +266,25 @@ uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
+int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index);
+
+int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index);
+
+int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
+int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
+rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
 
 uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
+
+const char *tdata_timezone(tdata_t *td);
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index);
 
@@ -267,6 +293,10 @@ const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index);
 const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
+
+const char *tdata_line_color_for_index(tdata_t *td, uint32_t line_code_index);
+
+const char *tdata_line_color_text_for_index(tdata_t *td, uint32_t line_code_index);
 
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_name_index);
 
@@ -286,6 +316,10 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sp_index);
 
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t sp_index);
+
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
 
 spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
@@ -303,6 +337,10 @@ const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,jppidx_t jpp_offset);
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+const char *tdata_line_color_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+const char *tdata_line_color_text_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 

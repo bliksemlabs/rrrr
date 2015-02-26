@@ -2,6 +2,17 @@ import helper
 from utils import *
 import operator
 import sys
+import datetime
+
+# Notes:
+
+# UTC and timezones
+#
+# We normalize all times to UTC, to properly route through DST-changes and multiple timezones.
+# However since we are using unsigned integers, we cannot allow negative times.
+# To avoid that we take the highest UTC offset of all vehicle_journey's in the timetable and use that as a global offset.
+# All vehicle_journey's have the number of 15-minutes, offset from that global utc offset.
+# We picked a 15 minute resolution for these offsets to allow them to store in int8_t
 
 NUMBER_OF_DAYS = 32
 MIN_WAITTIME = 120
@@ -46,9 +57,12 @@ class Index():
 
 def make_idx(tdata):
     index = Index()
-    for vj in sorted(tdata.vehicle_journeys.values(), key= lambda vj: (vj.route.line.operator.uri,vj.route.line.uri,vj.route.uri,vj.departure_time)):
+    index.global_utc_offset = -999999
+    for vj in sorted(tdata.vehicle_journeys_utc.values(), key= lambda vj: (vj.route.line.operator.uri,vj.route.line.uri,vj.route.uri,vj.departure_time)):
         if len(vj.validity_pattern) == 0 or min(vj.validity_pattern) >= NUMBER_OF_DAYS:
             continue
+        if vj.utc_offset > index.global_utc_offset:
+            index.global_utc_offset = vj.utc_offset
         if vj.journey_pattern.uri not in index.validity_pattern_for_journey_pattern_uri:
             index.validity_pattern_for_journey_pattern_uri[vj.journey_pattern.uri] = set([])
         index.validity_pattern_for_journey_pattern_uri[vj.journey_pattern.uri].update(vj.validity_pattern)
@@ -202,7 +216,7 @@ def export_vj_in_jp(tdata,index,out):
         index.vj_ids_offsets.append(tioffset)
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
             vj_attr = 0
-            out.write(vj_t.pack(index.offset_for_timedemandgroup_uri[vj.timedemandgroup.uri], vj.departure_time >> 2, vj_attr))
+            out.write(vj_t.pack(index.offset_for_timedemandgroup_uri[vj.timedemandgroup.uri], (vj.departure_time+index.global_utc_offset) >> 2, vj_attr))
             tioffset += 1
 
 def export_jpp_at_sp(tdata,index,out):
@@ -226,7 +240,7 @@ def export_sa_for_sp(tdata,index,out):
         write_stop_area_idx(out,index,sp.stop_area.uri)
 
 vjref_t = Struct('HH')
-def export_vj_transfers(tdata,index,out):
+def export_vj_transitions(tdata,index,out):
     index.loc_vj_transfers_backward = tell(out)
     for jp in index.journey_patterns:
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
@@ -311,8 +325,9 @@ def export_jp_structs(tdata,index,out):
     for jp in index.journey_patterns:
         jp_n_jpp.append(len(jp.points))
         jp_n_vj.append(len(index.vehicle_journeys_in_journey_pattern[jp.uri]))
-        jp_min_time.append(min([vj.departure_time for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
-        jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
+        jp_min_time.append(min([vj.departure_time+index.global_utc_offset for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
+        jp_max_time.append(max([vj.departure_time+vj.timedemandgroup.points[-1].totaldrivetime+index.global_utc_offset
+                                for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]]) >> 2)
         routeidx_offsets.append(index.idx_for_route_uri[jp.route.uri])
 
         jp_attributes.append(1 << jp.route.route_type)
@@ -409,6 +424,12 @@ def export_linecodes(tdata,index,out):
     write_text_comment(out,"LINE CODES")
     index.loc_line_codes = write_list_of_strings(out,index,[line.code or '' for line in index.lines])
 
+def export_linecolors(tdata,index,out):
+    write_text_comment(out,"LINE COLOR")
+    index.loc_line_color = write_list_of_strings(out,index,[line.color or '' for line in index.lines])
+    write_text_comment(out,"LINE COLOR_TEXT")
+    index.loc_line_color_text = write_list_of_strings(out,index,[line.color_text or '' for line in index.lines])
+
 def export_linenames(tdata,index,out):
     write_text_comment(out,"LINE NAMES")
     index.loc_line_names = write_list_of_strings(out,index,[line.name or '' for line in index.lines])
@@ -428,6 +449,17 @@ def export_sa_uris(tdata,index,out):
     print "writing out sorted stop_area ids to string point list"
     write_text_comment(out,"STOP_AREA IDS")
     index.loc_stop_area_uris = write_list_of_strings(out,index,[sa.uri for sa in index.stop_areas])
+
+def export_sa_timezones(tdata,index,out):
+    write_text_comment(out,"STOP_AREA TIMEZONES")
+    index.loc_stop_area_timezones = write_list_of_strings(out,index,[sa.timezone for sa in index.stop_areas])
+
+def export_vj_time_offsets(tdata,index,out):
+     print 'Timetable offset from UTC'+str(index.global_utc_offset)
+     index.loc_vj_time_offsets = tell(out)
+     for jp in index.journey_patterns:
+         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
+             writesignedbyte(out,(index.global_utc_offset-vj.utc_offset)/60/15) # n * 15 minutes
 
 def export_vj_uris(tdata,index,out):
      all_vj_ids = [] 
@@ -459,7 +491,9 @@ def write_header (out,index) :
 
     packed = struct_header.pack(htext,
         index.calendar_start_time,
-        index.dst_mask,
+        index.timezone,
+        index.global_utc_offset,
+        index.n_days, # n_days
         index.n_stops, # n_stops
         len(index.stop_areas), #n_stop_areas
         index.n_stops, # n_stop_attributes
@@ -476,7 +510,7 @@ def write_header (out,index) :
         index.n_connections, #n_transfer_target_stop
         index.n_connections, #n_transfer_dist_meters
         index.n_vj, #n_trip_active
-        index.n_jp, # n_route_active
+        index.n_jp, # n_jp_active
         index.n_stops, # n_platformcodes
         len(index.stop_points), # n_stop_nameidx
         len(index.stop_areas), # n_stop_nameidx
@@ -490,9 +524,13 @@ def write_header (out,index) :
         index.string_length, # n_string_pool (length of the object)
         len(index.lines), # n_line_codes
         len(index.lines), # n_line_ids
+        len(index.lines), # n_line_colors
+        len(index.lines), # n_line_colors_text
         len(index.lines), # n_line_names
         len(index.stop_points), # n_stop_point_ids
         len(index.stop_areas), # n_stop_area_ids
+        len(index.stop_areas), # n_stop_area_timezones
+        index.n_vj, # n_vj_time_offsets
         index.n_vj, # n_vj_ids
         len(index.routes), #n_line_for_route
         len(index.lines), #n_operator_for_line
@@ -537,22 +575,28 @@ def write_header (out,index) :
         index.loc_line_codes,
         index.loc_line_names,
         index.loc_line_uris,
+        index.loc_line_color,
+        index.loc_line_color_text,
         index.loc_stop_point_uris,
         index.loc_stop_area_uris,
+        index.loc_stop_area_timezones,
+        index.loc_vj_time_offsets,
         index.loc_vj_uris,
         index.loc_stop_area_coords,
         index.loc_sa_for_sp,
     )
     out.write(packed)
 
-struct_header = Struct('8sQ82I')
+struct_header = Struct('8sQi91I')
 
 def export(tdata):
     index = make_idx(tdata)
-    index.dst_mask = 0
-    index.calendar_start_time = time.mktime((tdata.validfrom).timetuple())
+    index.n_days = NUMBER_OF_DAYS
+    index.calendar_start_time = (tdata.validfrom.toordinal() - datetime.date(1970, 1, 1).toordinal()) * 24*60*60
+    print index.calendar_start_time
     index.n_stops = len(index.stop_points)
     index.n_jp = len(index.journey_patterns)
+    index.timezone = index.put_string(tdata.timezone)
     out = open('timetable4.dat','wb')
     out.seek(struct_header.size)
 
@@ -563,7 +607,7 @@ def export(tdata):
     export_vj_in_jp(tdata,index,out)
     export_jpp_at_sp(tdata,index,out)
     export_transfers(tdata,index,out)
-    export_vj_transfers(tdata,index,out)
+    export_vj_transitions(tdata,index,out)
     export_stop_indices(tdata,index,out)
     export_stop_point_attributes(tdata,index,out)
     export_jp_structs(tdata,index,out)
@@ -581,10 +625,13 @@ def export(tdata):
     export_lines(tdata,index,out)
     export_linecodes(tdata,index,out)
     export_linenames(tdata,index,out)
+    export_linecolors(tdata,index,out)
     export_journey_pattern_point_headsigns(tdata,index,out)
     export_line_uris(tdata,index,out)
     export_sp_uris(tdata,index,out)
     export_sa_uris(tdata,index,out)
+    export_sa_timezones(tdata,index,out)
+    export_vj_time_offsets(tdata,index,out)
     export_vj_uris(tdata,index,out)
     export_stringpool(tdata,index,out)
     print "reached end of timetable file"

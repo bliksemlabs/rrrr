@@ -296,14 +296,14 @@ class GTFSDatabase:
 
     def stop_points(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code FROM stops WHERE coalesce(location_type,0) = 0 ORDER BY stop_id " )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code FROM stops WHERE coalesce(location_type,0) = 0 ORDER BY stop_id " )
         ret = list(c)
         c.close()
         return ret
 
     def stop_areas(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops WHERE location_type = 1 ORDER BY stop_id " )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone FROM stops WHERE location_type = 1 ORDER BY stop_id " )
         ret = list(c)
         c.close()
         return ret
@@ -328,14 +328,14 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
 
     def agencies(self):
         c = self.get_cursor()
-        c.execute( "SELECT agency_id,agency_name,agency_url FROM agency" )
+        c.execute( "SELECT agency_id,agency_name,agency_url,agency_timezone FROM agency" )
         ret = list(c)
         c.close()
         return ret
 
     def lines(self):
         c = self.get_cursor()
-        c.execute( "SELECT route_id as line_id, route_long_name as line_name, coalesce(route_short_name,route_long_name) as line_code, agency_id,route_type FROM routes" )
+        c.execute( "SELECT route_id as line_id, route_long_name as line_name, coalesce(route_short_name,route_long_name) as line_code, agency_id,route_type,route_color,route_text_color FROM routes" )
         ret = list(c)
         c.close()
         return ret

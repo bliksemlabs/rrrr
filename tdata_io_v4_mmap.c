@@ -64,9 +64,10 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
         goto fail_munmap_base;
     }
 
+    td->timezone = header->timezone;
     td->calendar_start_time = header->calendar_start_time;
-    td->dst_active = header->dst_active;
-    td->n_days = 32;
+    td->utc_offset = header->utc_offset;
+    td->n_days = header->n_days;
     td->n_stop_areas = header->n_stop_areas;
 
     load_mmap (td->base, stop_points, stop_point_t);
@@ -96,6 +97,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_mmap (td->base, vehicle_journey_transfers_backward, vehicle_journey_ref_t);
     load_mmap (td->base, vehicle_journey_transfers_forward, vehicle_journey_ref_t);
     load_mmap (td->base, line_codes, uint32_t);
+    load_mmap (td->base, line_colors, uint32_t);
+    load_mmap (td->base, line_colors_text, uint32_t);
     load_mmap (td->base, line_names, uint32_t);
     load_mmap (td->base, operator_ids, uint32_t);
     load_mmap (td->base, operator_names, uint32_t);
@@ -108,7 +111,9 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_mmap (td->base, line_ids, uint32_t);
     load_mmap (td->base, stop_point_ids, uint32_t);
     load_mmap (td->base, stop_area_ids, uint32_t);
+    load_mmap (td->base, stop_area_timezones, uint32_t);
     load_mmap (td->base, vj_ids, uint32_t);
+    load_mmap (td->base, vj_time_offsets, int8_t);
 
     /* Set the maximum drivetime of any day in tdata */
     set_max_time(td);

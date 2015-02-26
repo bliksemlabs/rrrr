@@ -10,7 +10,7 @@
 typedef struct leg leg_t;
 struct leg {
     /* vj index */
-    uint32_t vj;
+    jp_vjoffset_t vj;
 
     /* journey_pattern index */
     jpidx_t journey_pattern;

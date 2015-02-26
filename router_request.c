@@ -18,17 +18,15 @@ router_request_to_epoch (router_request_t *req, tdata_t *tdata,
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) +
-              RTIME_TO_SEC(req->time - RTIME_ONE_DAY) -
-              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0));
+    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) ) +
+              RTIME_TO_SEC(req->time - RTIME_ONE_DAY) - tdata->utc_offset;
 
-    rrrr_localtime_r (&seconds, tm_out);
-
+    rrrr_gmtime_r (&seconds, tm_out);
     return seconds;
 }
 
 
-/* router_request_to_date returns the date used
+/* router_request_to_date returns the UTC date used
  * in the request in seconds since epoch.
  */
 time_t
@@ -40,11 +38,9 @@ router_request_to_date (router_request_t *req, tdata_t *tdata,
 
     while (day_mask >>= 1) cal_day++;
 
-    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY) -
-              ((tdata->dst_active & 1 << cal_day) ? SEC_IN_ONE_HOUR : 0));
+    seconds = (time_t) (tdata->calendar_start_time + (cal_day * SEC_IN_ONE_DAY));
 
-    rrrr_localtime_r (&seconds, tm_out);
-
+    rrrr_gmtime_r (&seconds, tm_out);
     return seconds;
 }
 
@@ -113,16 +109,16 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     char etime[32];
     strftime(etime, 32, "%Y-%m-%d %H:%M:%S\0", localtime(&epochtime));
     fprintf (stderr, "epoch time: %s [%ld]\n", etime, epochtime);
-    router_request_initialize (req);
+    fprintf (stderr, "calendar_start_time: %s [%ld]\n", etime, tdata->calendar_start_time);
     #endif
-    struct tm origin_tm;
     calendar_t cal_day;
+    time_t request_time = (epochtime - tdata->calendar_start_time + tdata->utc_offset);
 
-    req->time = epoch_to_rtime (epochtime, &origin_tm);
-    req->time_rounded = ((origin_tm.tm_sec % 4) > 0);
-    /* TODO not DST-proof, use noons */
-    cal_day = (calendar_t) (((calendar_t) (mktime(&origin_tm)) - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
-    if (cal_day > 31 ) {
+    req->time =  RTIME_ONE_DAY + SEC_TO_RTIME(request_time%SEC_IN_ONE_DAY);
+    req->time_rounded = ((request_time%SEC_IN_ONE_DAY) % 4) > 0;
+    cal_day = (calendar_t) (request_time/SEC_IN_ONE_DAY);
+
+    if (cal_day >= tdata->n_days ) {
         /* date not within validity period of the timetable file,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
          * up to the same day of the week.

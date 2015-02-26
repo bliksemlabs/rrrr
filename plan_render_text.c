@@ -51,6 +51,8 @@ static char *
 plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
                        char *b, char *b_end) {
     leg_t *leg;
+    int32_t time_offset = itin->n_legs < 2 ? 0 :
+            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(tdata, itin->legs[1].journey_pattern, itin->legs[1].vj));
 
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
 
@@ -59,20 +61,21 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
         char ct0[16];
         char ct1[16];
         char *alert_msg = NULL;
-        const char *operator_name, *short_name, *headsign, *commercial_mode;
+        const char *operator_name, *short_name, *headsign, *commercial_mode, *vj_id;
         const char *leg_mode = NULL;
         const char *s0_id = tdata_stop_point_name_for_index(tdata, leg->sp_from);
         const char *s1_id = tdata_stop_point_name_for_index(tdata, leg->sp_to);
         float d0 = 0.0, d1 = 0.0;
 
-        btimetext(leg->t0, ct0);
-        btimetext(leg->t1, ct1);
+        btimetext((rtime_t) (leg->t0 - time_offset), ct0);
+        btimetext((rtime_t) (leg->t1 - time_offset), ct1);
 
         if (leg->journey_pattern == WALK) {
             operator_name = "";
             short_name = "walk";
             headsign = "walk";
             commercial_mode = "";
+            vj_id = "";
 
             /* Skip uninformative legs that just tell you to stay in the same
              * place.
@@ -84,6 +87,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
             operator_name = tdata_operator_name_for_journey_pattern(tdata, leg->journey_pattern);
             short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
             commercial_mode = tdata_commercial_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
+            vj_id = tdata_vehicle_journey_id_for_jp_vj_index(tdata, leg->journey_pattern, leg->vj);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
             d0 = leg->d0 / 60.0f;
@@ -101,13 +105,14 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
             #else
             UNUSED(date);
             #endif
+            time_offset = SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(tdata, leg->journey_pattern, leg->vj));
         }
 
         /* TODO: we are able to calculate the maximum length required for each line
          * therefore we could prevent a buffer overflow from happening. */
-        b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s\n",
+        b += sprintf (b, "%s %5d %3d %5d %5d %s %+3.1f %s %+3.1f ;%s;%s;%s;%s;%s;%s;%s;%s\n",
             leg_mode, leg->journey_pattern, leg->vj, leg->sp_from, leg->sp_to, ct0, d0, ct1, d1, operator_name, short_name, headsign, commercial_mode, s0_id, s1_id,
-                        (alert_msg ? alert_msg : ""));
+                        vj_id,(alert_msg ? alert_msg : ""));
 
         /* EXAMPLE
         polyline_for_leg (tdata, leg);

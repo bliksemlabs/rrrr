@@ -93,9 +93,11 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_vehicle_journey_transfers_backward < (UINT32_MAX) &&
             header->n_vehicle_journey_transfers_forward < (UINT32_MAX) &&
             header->n_line_ids < (UINT32_MAX) &&
+            header->n_line_colors < (UINT32_MAX) &&
+            header->n_line_colors_text < (UINT32_MAX) &&
             header->n_line_names < (UINT32_MAX) &&
             header->n_line_for_route < (UINT16_MAX) &&
-            header->n_operator_for_line < (UINT8_MAX) &&
+            header->n_operator_for_line < (UINT16_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
             header->n_stop_area_ids < ((spidx_t) -2) &&
             header->n_vj_ids < (UINT32_MAX) ) ) {
@@ -104,9 +106,10 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
         goto fail_close_fd;
     }
 
+    td->timezone = header->timezone;
     td->calendar_start_time = header->calendar_start_time;
-    td->dst_active = header->dst_active;
-    td->n_days = 32;
+    td->utc_offset = header->utc_offset;
+    td->n_days = header->n_days;
     td->n_stop_areas = header->n_stop_areas;
 
     load_dynamic (fd, stop_points, stop_point_t);
@@ -136,6 +139,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_dynamic (fd, commercial_mode_for_jp, uint16_t);
     load_dynamic (fd, physical_mode_for_line, uint16_t);
     load_dynamic (fd, line_codes, uint32_t);
+    load_dynamic (fd, line_colors, uint32_t);
+    load_dynamic (fd, line_colors_text, uint32_t);
     load_dynamic (fd, line_names, uint32_t);
     load_dynamic (fd, operator_ids, uint32_t);
     load_dynamic (fd, operator_names, uint32_t);
@@ -148,7 +153,9 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_dynamic (fd, line_ids, uint32_t);
     load_dynamic (fd, stop_point_ids, uint32_t);
     load_dynamic (fd, stop_area_ids, uint32_t);
+    load_dynamic (fd, stop_area_timezones, uint32_t);
     load_dynamic (fd, vj_ids, uint32_t);
+    load_dynamic (fd, vj_time_offsets, int8_t);
 
     set_max_time(td);
     close (fd);
@@ -191,12 +198,16 @@ void tdata_io_v4_close(tdata_t *td) {
     free (td->platformcodes);
     free (td->stop_point_ids);
     free (td->stop_area_ids);
+    free (td->stop_area_timezones);
     free (td->stop_area_for_stop_point);
     free (td->vj_ids);
+    free (td->vj_time_offsets);
     free (td->operator_ids);
     free (td->operator_names);
     free (td->operator_urls);
     free (td->line_codes);
+    free (td->line_colors);
+    free (td->line_colors_text);
     free (td->line_names);
     free (td->line_ids);
     free (td->commercial_mode_ids);
