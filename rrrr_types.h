@@ -44,13 +44,21 @@ struct list {
     uint32_t len;
 };
 
+typedef uint16_t vj_attribute_mask_t;
 typedef enum vehicle_journey_attributes {
-    vja_none = 0,
-    vja_accessible = 1,
-    vja_toilet = 2,
-    vja_wifi = 4
+    vja_none                  = 0,
+    vja_wheelchair_accessible = 1,
+    vja_bike_accepted         = 2,
+    vja_visual_announcement   = 4,
+    vja_audible_announcement  = 8,
+    vja_appropriate_escort    = 16,
+    vja_appropriate_signage   = 32,
+    vja_school_vehicle        = 64,
+    vja_wifi                  = 128,
+    vja_toilet                = 256,
+    vja_ondemand              = 512
+    /* 5 more attributes allowed */
 } vehicle_journey_attributes_t;
-
 
 typedef enum optimise {
     /* output only shortest time */
@@ -151,7 +159,7 @@ struct router_request {
     uint8_t walk_slack;
 
     /* select the required vehicle_journey attributes by a bitfield */
-    uint8_t vj_attributes;
+    vj_attribute_mask_t vj_attributes;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -191,6 +199,7 @@ struct router_request {
 #endif
 
 #define SEC_TO_RTIME(x) (rtime_t) ((x) >> 2)
+#define SIGNED_SEC_TO_RTIME(x) ((x) >> 2)
 #define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
 #define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
 

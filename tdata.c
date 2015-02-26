@@ -30,9 +30,12 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
-
 #include "config.h"
 #include "bitset.h"
+
+const char *tdata_timezone(tdata_t *td){
+    return td->string_pool + td->timezone;
+}
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
@@ -53,8 +56,41 @@ const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index) {
     return td->string_pool + td->vj_ids[vj_index];
 }
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, uint32_t vj_index) {
-    return td->string_pool +  td->vj_ids[td->journey_patterns[jp_index].vj_offset + vj_index];
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index) {
+    return tdata_vehicle_journey_id_for_index(td,td->journey_patterns[jp_index].vj_offset + vj_index);
+}
+
+int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index) {
+    return td->utc_offset-td->vj_time_offsets[vj_index]*15*60;
+}
+
+int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index) {
+    return td->vj_time_offsets[vj_index]*15*60;
+}
+
+rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
+    uint32_t vj_offset = td->journey_patterns[jp_index].vj_offset + vj_index;
+    vehicle_journey_t vj = td->vjs[vj_offset];
+    return vj.begin_time + (arrival ? (td->stop_times[vj.stop_times_offset + jpp_offset]).arrival :
+                                     td->stop_times[vj.stop_times_offset + jpp_offset].departure);
+}
+
+rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
+    return (rtime_t) (tdata_stoptime_for_index(td,jp_index,jpp_offset,vj_index,arrival) -
+            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(td, jp_index, vj_index)));
+}
+
+int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival){
+    return tdata_stoptime_for_index(td,jp_index,jpp_offset,vj_index,arrival) -
+            SIGNED_SEC_TO_RTIME(tdata_utc_offset_for_jp_vj_index(td,jp_index,vj_index));
+}
+
+int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index){
+    return tdata_utc_offset_for_index(td, td->journey_patterns[jp_index].vj_offset + vj_index);
+}
+
+int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index){
+    return tdata_time_offset_for_index(td, td->journey_patterns[jp_index].vj_offset + vj_index);
 }
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index) {
@@ -71,6 +107,14 @@ const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index) {
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_index) {
     return td->string_pool + td->line_codes[line_index];
+}
+
+const char *tdata_line_color_for_index(tdata_t *td, uint32_t line_index) {
+    return td->string_pool + td->line_colors[line_index];
+}
+
+const char *tdata_line_color_text_for_index(tdata_t *td, uint32_t line_index) {
+    return td->string_pool + td->line_colors_text[line_index];
 }
 
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_index) {
@@ -186,6 +230,20 @@ const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     if (jp_index == NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_code_for_index(td, td->line_for_route[route_index]);
+}
+
+const char *tdata_line_color_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
+    uint16_t route_index;
+    if (jp_index == NONE) return "NONE";
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    return tdata_line_color_for_index(td, td->line_for_route[route_index]);
+}
+
+const char *tdata_line_color_text_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
+    uint16_t route_index;
+    if (jp_index == NONE) return "NONE";
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    return tdata_line_color_text_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
@@ -336,6 +394,14 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index) {
 
 const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index) {
     return td->string_pool + td->stop_area_nameidx[sa_index];
+}
+
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index) {
+    return td->string_pool + td->stop_area_ids[sa_index];
+}
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t sa_index) {
+    return td->string_pool + td->stop_area_timezones[sa_index];
 }
 
 rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index) {

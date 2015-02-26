@@ -26,24 +26,42 @@ def put_gtfs_modes(tdata):
     CommercialMode(tdata,'6',name='Gondola')
     CommercialMode(tdata,'7',name='Funicular')
 
+def determine_timezone(gtfsdb):
+    timezones = set([])
+    for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
+        if agency_timezone is not None:
+            timezones.add(agency_timezone)
+
+    if len(timezones) == 0:
+        raise Exception("Agency has required field agency_timezone not filled in")
+    elif len(timezones) > 1:
+        raise Exception("Feed has multiple timezones, RRRR currently only supports one") #But should be trivial to change
+    else:
+        return list(timezones)[0]
+
 def convert(gtfsdb, from_date=None):
     if from_date == None:
         from_date, _ = gtfsdb.date_range()
 
-    tdata = Timetable(from_date)
-    print "Timetable valid from %s to %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS))
+    feed_timezone = determine_timezone(gtfsdb)
+    tdata = Timetable(from_date,feed_timezone)
+    print "Timetable valid from %s to %s, timezone: %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS),feed_timezone)
     
     put_gtfs_modes(tdata)
-    for stop_id,stop_name,stop_lat,stop_lon in gtfsdb.stop_areas():
-        StopArea(tdata,stop_id,name=stop_name,latitude=stop_lat,longitude=stop_lon)
 
-    for stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code in gtfsdb.stop_points():
+    for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
+        Operator(tdata,agency_id,agency_timezone,name=agency_name,url=agency_url)
+
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in gtfsdb.stop_areas():
+        StopArea(tdata,stop_id,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code in gtfsdb.stop_points():
         stop_area_uri = parent_station
         try:
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
         except:
             stop_area_uri = 'StopArea:ZZ:'+stop_id
-            StopArea(tdata,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon)
+            StopArea(tdata,stop_area_uri,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
 
     for from_stop_id,to_stop_id,min_transfer_time,transfer_type in gtfsdb.transfers():
@@ -68,14 +86,11 @@ def convert(gtfsdb, from_date=None):
         except:
             pass
 
-    for agency_id,agency_name,agency_url in gtfsdb.agencies():
-        Operator(tdata,agency_id,name=agency_name,url=agency_url)
-
-    for line_id,line_name,line_code,agency_id,route_type in gtfsdb.lines():
+    for line_id,line_name,line_code,agency_id,route_type,route_color,route_text_color in gtfsdb.lines():
         if agency_id is None:
             if len(index.operators) == 1:
                 agency_id = list(index.operators.keys())[0]
-        Line(tdata,line_id,agency_id,str(route_type),name=line_name,code=line_code)
+        Line(tdata,line_id,agency_id,str(route_type),name=line_name,code=line_code,color=route_color,color_text=route_text_color)
 
     for route_id,line_id,route_type in gtfsdb.routes():
         Route(tdata,route_id,line_id,route_type=route_type)

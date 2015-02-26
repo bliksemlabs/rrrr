@@ -6,9 +6,6 @@
 #include "util.h"
 #include "config.h"
 
-time_t req_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
-time_t req_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
-
 void router_request_initialize(router_request_t *req);
 void router_request_from_epoch(router_request_t *req, tdata_t *tdata, time_t epochtime);
 void router_request_randomize (router_request_t *req, tdata_t *tdata);

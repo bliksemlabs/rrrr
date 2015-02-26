@@ -19,6 +19,10 @@ struct_1B = Struct('B') # a single UNSIGNED byte
 def writebyte(out,x) :
     out.write(struct_1B.pack(x));
 
+struct_1b = Struct('b') # a single SIGNED byte
+def writesignedbyte(out,x) :
+    out.write(struct_1b.pack(x));
+
 struct_2H = Struct('HH') # a two UNSIGNED shorts
 def write_2ushort(out,x, y) :
     out.write(struct_2H.pack(x, y));

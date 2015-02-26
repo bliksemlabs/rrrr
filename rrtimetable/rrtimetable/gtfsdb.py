@@ -103,22 +103,25 @@ def load_gtfs_table_to_sqlite(fp, gtfs_basename, cc, header=None, verbose=False)
     # populate stoptimes table
     insert_template = 'insert into %s (%s) values (%s)'%(gtfs_basename,",".join([x[0] for x in header]), ",".join(["?"]*len(header)))
     print( insert_template )
-    for i, line in withProgress(enumerate(rd), 5000):
-        # carry on quietly if there's a blank line in the csv
-        if line == []:
-            continue
-        
-        _line = []
-        for i, converter in field_operator:
-            if i<len(line) and i is not None and line[i].strip() != "":
-                if converter:
-                    _line.append( converter(line[i].strip()) )
+    def insert_data():
+        for i, line in withProgress(enumerate(rd), 5000):
+            # carry on quietly if there's a blank line in the csv
+            if line == []:
+                continue
+
+            _line = []
+            for i, converter in field_operator:
+                if i<len(line) and i is not None and line[i].strip() != "":
+                    if converter:
+                        _line.append( converter(line[i].strip()) )
+                    else:
+                        _line.append( line[i].strip() )
                 else:
-                    _line.append( line[i].strip() )
-            else:
-                _line.append( None )
-                
-        cc.execute(insert_template, _line)
+                    _line.append( None )
+
+            yield _line
+
+    cc.executemany(insert_template, insert_data())
 
 class GTFSDatabase:
     TRIPS_DEF = ("trips", (("route_id",   None, None),
@@ -296,14 +299,14 @@ class GTFSDatabase:
 
     def stop_points(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code FROM stops WHERE coalesce(location_type,0) = 0 ORDER BY stop_id " )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code FROM stops WHERE coalesce(location_type,0) = 0 ORDER BY stop_id " )
         ret = list(c)
         c.close()
         return ret
 
     def stop_areas(self):
         c = self.get_cursor()
-        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon FROM stops WHERE location_type = 1 ORDER BY stop_id " )
+        c.execute( "SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone FROM stops WHERE location_type = 1 ORDER BY stop_id " )
         ret = list(c)
         c.close()
         return ret
@@ -328,14 +331,14 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
 
     def agencies(self):
         c = self.get_cursor()
-        c.execute( "SELECT agency_id,agency_name,agency_url FROM agency" )
+        c.execute( "SELECT agency_id,agency_name,agency_url,agency_timezone FROM agency" )
         ret = list(c)
         c.close()
         return ret
 
     def lines(self):
         c = self.get_cursor()
-        c.execute( "SELECT route_id as line_id, route_long_name as line_name, coalesce(route_short_name,route_long_name) as line_code, agency_id,route_type FROM routes" )
+        c.execute( "SELECT route_id as line_id, route_long_name as line_name, coalesce(route_short_name,route_long_name) as line_code, agency_id,route_type,route_color,route_text_color FROM routes" )
         ret = list(c)
         c.close()
         return ret
