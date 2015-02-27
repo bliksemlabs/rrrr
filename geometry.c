@@ -1,14 +1,11 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
-#include "config.h"
 #include "geometry.h"
 #include "rrrr_types.h"
 
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 /* Mean of Earth's equatorial and meridional circumferences. */
