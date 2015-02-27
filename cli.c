@@ -339,7 +339,7 @@ int main (int argc, char *argv[]) {
     req.time_rounded = false;
 
     #ifdef RRRR_FEATURE_LATLON
-    if (cli_args.has_latlon && ! tdata_hashgrid_setup (&tdata)) {
+    if (! tdata_hashgrid_setup (&tdata)) {
         status = EXIT_FAILURE;
         goto clean_exit;
     }
