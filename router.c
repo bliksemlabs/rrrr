@@ -1251,16 +1251,6 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     return false;
 }
 
-static bool initialize_target_index (router_t *router, router_request_t *req) {
-    spidx_t target = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
-    if (target == STOP_NONE) return false;
-
-    router->target_stop_points[0] = target;
-    router->n_targets  = 1;
-
-    return true;
-}
-
 static bool mark_origin_stop_point (router_t *router, spidx_t sp_index, rtime_t duration){
     spidx_t i_origin = router->n_origins;
     router->origin_stop_points[i_origin] = sp_index;
