@@ -1,9 +1,11 @@
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #include "config.h"
 #include "router_dump.h"
-#include "router.h"
 #include "util.h"
-#include "rrrr_types.h"
-#include "tdata.h"
 
 #include <stdio.h>
 
