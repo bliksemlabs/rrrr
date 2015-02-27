@@ -1322,8 +1322,7 @@ static bool initialize_origins(router_t *router, router_request_t *req){
     return router->n_origins > 0;
 }
 
-#ifdef RRRR_FEATURE_LATLON
-static bool latlon_best_stop_point_index_origin (router_t *router, router_request_t *req,
+static bool mark_result_of_origin_hashgrid (router_t *router, router_request_t *req,
         hashgrid_result_t *hg_result) {
     double distance;
     uint32_t sp_index;
@@ -1341,7 +1340,7 @@ static bool latlon_best_stop_point_index_origin (router_t *router, router_reques
     return true;
 }
 
-static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
+static bool build_origins_list_from_hashgrid (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
         coord_t coord;
 
@@ -1356,7 +1355,7 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
             hashgrid_query (&router->tdata->hg, &req->to_hg_result,
                             coord, req->walk_max_distance);
         }
-        return latlon_best_stop_point_index_origin (router, req, &req->to_hg_result);
+        return mark_result_of_origin_hashgrid (router, req, &req->to_hg_result);
     } else {
         coord_t coord;
         if (req->from_latlon.lat == 0.0 &&
@@ -1370,7 +1369,7 @@ static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
             hashgrid_query (&router->tdata->hg, &req->from_hg_result,
                             coord, req->walk_max_distance);
         }
-        return latlon_best_stop_point_index_origin (router, req, &req->from_hg_result);
+        return mark_result_of_origin_hashgrid (router, req, &req->from_hg_result);
     }
 
     return false;
@@ -1451,7 +1450,6 @@ static bool initialize_target_latlon (router_t *router, router_request_t *req) {
 
     return false;
 }
-#endif
 
 static bool initialize_origin (router_t *router, router_request_t *req) {
     /* In this function we are setting up all initial required elements of the
@@ -1504,7 +1502,8 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
             return false;
         }
     } else {
-        return initialize_origin_latlon (router, req);
+        build_origins_list_from_hashgrid(router, req);
+        return initialize_origins(router,req);
     }
 }
 
@@ -1554,7 +1553,6 @@ bool router_route(router_t *router, router_request_t *req) {
         fprintf(stderr, "Search origin could not be initialised.\n");
         return false;
     }
-    initialize_origins(router,req);
 
     /* populate router->target */
     if (!initialize_target (router, req)) {
