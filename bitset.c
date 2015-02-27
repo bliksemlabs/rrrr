@@ -1,15 +1,12 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
 /* bitset.c : compact enumerable bit array */
 #include "bitset.h"
-#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
 #include <assert.h>
 
 

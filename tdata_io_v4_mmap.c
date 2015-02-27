@@ -1,18 +1,12 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
-#include "config.h"
-
 #ifdef RRRR_TDATA_IO_MMAP
 
 #include "tdata_io_v4.h"
-#include "tdata.h"
-#include "rrrr_types.h"
-
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>

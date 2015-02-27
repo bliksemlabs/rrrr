@@ -1,18 +1,14 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
-/* json.c */
-
+/* plan_render_otp.c renders plan structs to a json-variant of the API output of the OpenTripPlanner project */
 #include "json.h"
 #include "util.h"
 #include "polyline.h"
 #include "plan_render_otp.h"
 #include "router_request.h"
-
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 
 static char *

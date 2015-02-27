@@ -1,11 +1,10 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
+/* tdata_validation.c : a set of validation tools to check whether a timetable is correct for RRRR*/
 #include "tdata_validation.h"
-#include "tdata.h"
-
 #include <stdio.h>
 
 /* Validate that the first journey_pattern_point have won't alighting set and

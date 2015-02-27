@@ -1,4 +1,4 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
@@ -6,22 +6,11 @@
 /* router.c : the main routing algorithm */
 #include "router.h" /* first to ensure it works alone */
 #include "router_request.h"
-#include "router_dump.h"
 
 #include "util.h"
-#include "config.h"
-#include "tdata.h"
-#include "bitset.h"
-#include "hashgrid.h"
 #include "set.h"
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <stdint.h>
-#include <math.h>
-#include <sys/types.h>
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
@@ -675,7 +664,7 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
              * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
              * is about 4% more efficient for journeys without specific vj attribute requirements.
              */
-            if (req->vj_attributes && ! ((req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
+            if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
 
             /* consider the arrival or departure time on
              * the current service day
@@ -777,7 +766,7 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
              * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
              * is about 4% more efficient for journeys without specific vj attribute requirements.
              */
-            if (req->vj_attributes && ! ((req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
+            if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
 
             /* consider the arrival or departure time on
              * the current service day
@@ -811,7 +800,7 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
         }  /*  end for (vehicle_journey's within this route) */
 
         /* Reset the VJ offset to the highest value, after we scanned the original serviceday */
-        prev_vj_offset = req->arrive_by ? 0 : jp->n_vjs - 1;
+        prev_vj_offset = (jp_vjoffset_t) (req->arrive_by ? 0 : jp->n_vjs - 1);
 
     }  /*  end for (service days: yesterday, today, tomorrow) */
 }

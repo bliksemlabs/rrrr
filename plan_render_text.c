@@ -1,8 +1,13 @@
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
+/* plan_render_text.c renders plan structs to a human-readable tabular format */
 #include "config.h"
 #include "plan_render_text.h"
 #include "router_request.h"
 #include <stdio.h>
-#include <string.h>
 
 #ifdef RRRR_FEATURE_REALTIME_ALERTS
 static void

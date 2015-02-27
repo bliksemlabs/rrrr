@@ -14,11 +14,8 @@
 #include <stdint.h>
 #include <time.h>
 
-/* When associated with a stop_point index,
- * a router_state_t describes a leg of an itinerary.
- */
 
-/* We could potentially remove the back_time from router_state,
+/* We could potentially remove the states_board_time from router,
  * but this requires implementing some lookup functions and storing
  * the back_vj_stop_point rather than the back_stop_point (global stop_point index):
  * a vehicle_journey can pass through a stop_point more than once.

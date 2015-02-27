@@ -1,4 +1,4 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
@@ -8,22 +8,16 @@
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 
 #include "tdata_realtime_expanded.h"
-#include "radixtree.h"
-#include "gtfs-realtime.pb-c.h"
-#include "rrrr_types.h"
 #include "util.h"
 #include "string_pool.h"
 
-#include <time.h>
 #include <stdio.h>
 #include <alloca.h>
 #include <unistd.h>
-#include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 /* rt_journey_patterns_at_stop_point store the delta to the planned journey_patterns_at_stop_point */
 static void tdata_rt_journey_patterns_at_stop_point_append(tdata_t *tdata,

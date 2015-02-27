@@ -1,17 +1,14 @@
-/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and
+ * at https://github.com/bliksemlabs/rrrr/
+ */
 
 /* hashgrid.c */
 #include "hashgrid.h"
 
-#include "geometry.h"
 #include "tdata.h"
-#include "config.h"
-#include <syslog.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include <math.h> /* be sure to link with math library (-lm) */
 
 /* TODO: benchmark the conversion from variable length arrays
  * to [y * grid_dims + x]
