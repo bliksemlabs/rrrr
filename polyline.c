@@ -40,11 +40,6 @@
  */
 
 #include "polyline.h"
-#include "geometry.h"
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <math.h>
 
 int encode_double (double c, char *buf) {
     char *b = buf;
