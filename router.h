@@ -73,8 +73,15 @@ struct router {
     bitset_t *banned_journey_patterns;
 #endif
 
-    spidx_t *origins;
-    spidx_t *targets;
+    /* Used to mark stop_point as reachable from origin */
+    spidx_t *origin_stop_points;
+    /* Used to mark distance from origin to stop_point */
+    rtime_t * origin_distance;
+
+    /* Used to mark stop_point as reachable to target */
+    spidx_t *target_stop_points;
+    /* Used to mark distance from stop_point to target*/
+    rtime_t * target_distance;
 
     spidx_t n_origins;
     spidx_t n_targets;

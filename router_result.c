@@ -217,7 +217,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             int16_t j_transfer;
             spidx_t sp_index;
 
-            sp_index = router->targets[i_target];
+            sp_index = router->target_stop_points[i_target];
 
             /* Skip the targets which were not reached in the round */
             if (router->states_walk_time[i_state + sp_index] == UNREACHED) continue;

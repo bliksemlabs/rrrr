@@ -15,8 +15,10 @@
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
     router->tdata = tdata;
-    router->origins = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
-    router->targets = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->origin_stop_points = (spidx_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->origin_distance = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->target_stop_points = (spidx_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->target_distance = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
     router->states_back_vehicle_journey = (jp_vjoffset_t *) malloc(sizeof(jp_vjoffset_t) * n_states);
@@ -40,8 +42,10 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 #endif
 
     if ( ! (router->best_time
-            && router->origins
-            && router->targets
+            && router->origin_stop_points
+            && router->origin_distance
+            && router->target_stop_points
+            && router->target_distance
             && router->states_back_journey_pattern
             && router->states_back_vehicle_journey
             && router->states_ride_from
@@ -69,8 +73,10 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 }
 
 void router_teardown(router_t *router) {
-    free(router->origins);
-    free(router->targets);
+    free(router->origin_stop_points);
+    free(router->origin_distance);
+    free(router->target_stop_points);
+    free(router->target_distance);
     free(router->best_time);
     free(router->states_back_journey_pattern);
     free(router->states_back_vehicle_journey);
@@ -881,7 +887,7 @@ target_pruning (router_t *router, router_request_t *req, time_t time) {
         spidx_t target;
 
         i_target--;
-        target = router->targets[i_target];
+        target = router->target_stop_points[i_target];
         if ((router->best_time[target] != UNREACHED) &&
             (req->arrive_by ? time < router->best_time[target]
                             : time > router->best_time[target])) {
@@ -1223,7 +1229,7 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
         req->from_stop_point = ONBOARD;
 
         /* Initialize the origin */
-        router->origins[0] = sp_index;
+        router->origin_stop_points[0] = sp_index;
         router->n_origins  = 1;
         router->best_time[sp_index] = stop_time;
 
@@ -1254,7 +1260,7 @@ static spidx_t initialize_origin_index (router_t *router, router_request_t *req)
     if (origin == STOP_NONE) return false;
 
     /* Set the origin in router context */
-    router->origins[0] = origin;
+    router->origin_stop_points[0] = origin;
     router->n_origins  = 1;
 
     router->best_time[origin] = req->time;
@@ -1295,7 +1301,7 @@ static bool initialize_target_index (router_t *router, router_request_t *req) {
     spidx_t target = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
     if (target == STOP_NONE) return false;
 
-    router->targets[0] = target;
+    router->target_stop_points[0] = target;
     router->n_targets  = 1;
 
     return true;
@@ -1312,6 +1318,7 @@ static bool latlon_best_stop_point_index_origin (router_t *router, router_reques
 
     while (sp_index != HASHGRID_NONE) {
         uint32_t i_state;
+        spidx_t i_origin;
         rtime_t extra_walktime;
 
         /* TODO: this is terrible. For each result we explicitly remove if it
@@ -1352,7 +1359,8 @@ static bool latlon_best_stop_point_index_origin (router_t *router, router_reques
 
         bitset_set(router->updated_stop_points, sp_index);
 
-        router->origins[++router->n_origins] = (spidx_t) sp_index;
+        i_origin = ++router->n_origins;
+        router->origin_stop_points[i_origin] = (spidx_t) sp_index;
 
         #ifdef RRRR_INFO
         fprintf (stderr, "%d %s %s (%.0fm)\n",
@@ -1369,7 +1377,7 @@ static bool latlon_best_stop_point_index_origin (router_t *router, router_reques
     if (router->n_origins == 0) return false;
 
     /*  !!TODO eliminate this now that we have rtimes in requests */
-    router->states_time[router->origins[0]] = req->time;
+    router->states_time[router->origin_stop_points[0]] = req->time;
 
     /* TODO this silences a warning, but what exactly is required here */
     apply_transfers(router, req, 1, false, false);
@@ -1436,7 +1444,7 @@ static bool latlon_best_stop_point_index_target (router_t *router, router_reques
                        (spidx_t) sp_index)) continue;
         #endif
 
-        router->targets[++router->n_targets] = (spidx_t) sp_index;
+        router->target_stop_points[++router->n_targets] = (spidx_t) sp_index;
 
         #ifdef RRRR_INFO
         fprintf (stderr, "%d %s %s (%.0fm)\n",
