@@ -7,9 +7,6 @@
 
 #include "linkedlist.h"
 
-#include <stdint.h>
-#include <stdlib.h>
-
 void linkedlist_init (linkedlist_t *list) {
     list->head = NULL;
     list->tail = NULL;
