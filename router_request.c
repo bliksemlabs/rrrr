@@ -513,7 +513,9 @@ router_request_dump(router_request_t *req, tdata_t *tdata) {
     btimetext(req->time_cutoff, time_cutoff);
     printf("-- Router Request --\n"
             "from_stop_point:  %s [%d]\n"
+            "from_latlon:  %f,%f\n"
             "to_stop_point:    %s [%d]\n"
+            "to_latlon:  %f,%f\n"
             "date:  %s\n"
             "time:  %s [%d]\n"
             "speed: %f m/sec\n"
@@ -521,7 +523,9 @@ router_request_dump(router_request_t *req, tdata_t *tdata) {
             "max xfers: %d\n"
             "max time:  %s\n"
             "mode: ",
-            from_stop_id, req->from_stop_point, to_stop_id, req->to_stop_point, date, time,
+            from_stop_id, req->from_stop_point, req->from_latlon.lat, req->from_latlon.lon,
+            to_stop_id,   req->to_stop_point, req->to_latlon.lat,req->to_latlon.lon,
+            date, time,
             req->time, req->walk_speed,
             (req->arrive_by ? "true" : "false"),
             req->max_transfers, time_cutoff);
