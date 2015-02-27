@@ -1276,6 +1276,21 @@ static bool mark_origin_stop_point (router_t *router, spidx_t sp_index, rtime_t 
     return true;
 }
 
+static bool mark_target_stop_point (router_t *router, spidx_t sp_index, rtime_t duration){
+    spidx_t i_origin = router->n_targets;
+    router->target_stop_points[i_origin] = sp_index;
+    router->target_duration[i_origin] = duration;
+    ++router->n_targets;
+    #ifdef RRRR_INFO
+        fprintf (stderr, "ORIGIN %d %s %s (%d seconds)\n",
+                         sp_index,
+                         tdata_stop_point_id_for_index(router->tdata, sp_index),
+                         tdata_stop_point_name_for_index(router->tdata, sp_index),
+                         RTIME_TO_SEC(duration));
+    #endif
+    return true;
+}
+
 static bool initialize_origins(router_t *router, router_request_t *req){
     int32_t i_origin;
     for (i_origin = 0;i_origin < router->n_origins;++i_origin){
@@ -1340,6 +1355,59 @@ static bool mark_result_of_origin_hashgrid (router_t *router, router_request_t *
     return true;
 }
 
+static bool mark_result_of_target_hashgrid (router_t *router, router_request_t *req,
+        hashgrid_result_t *hg_result) {
+    double distance;
+    uint32_t sp_index;
+
+    hashgrid_result_reset(hg_result);
+    sp_index = hashgrid_result_next_filtered(hg_result, &distance);
+
+    while (sp_index != HASHGRID_NONE) {
+        rtime_t extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
+                req->walk_speed));
+        mark_target_stop_point(router,sp_index,extra_walktime);
+        /* get the next potential start stop_point */
+        sp_index = hashgrid_result_next_filtered(hg_result, &distance);
+    }
+    return true;
+}
+
+static bool build_targets_list_from_hashgrid (router_t *router, router_request_t *req) {
+    if (req->arrive_by) {
+        coord_t coord;
+
+        if (req->from_latlon.lat == 0.0 &&
+                req->from_latlon.lon == 0.0) {
+            coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->from_stop_point]);
+        }else{
+            coord_from_latlon (&coord, &req->from_latlon);
+        }
+
+        if (req->from_hg_result.hg == NULL) {
+            hashgrid_query (&router->tdata->hg, &req->from_hg_result,
+                    coord, req->walk_max_distance);
+        }
+        return mark_result_of_target_hashgrid (router, req, &req->from_hg_result);
+    } else {
+        coord_t coord;
+        if (req->to_latlon.lat == 0.0 &&
+                req->to_latlon.lon == 0.0) {
+            coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->to_stop_point]);
+        }else{
+            coord_from_latlon (&coord, &req->to_latlon);
+        }
+
+        if (req->to_hg_result.hg == NULL ) {
+            hashgrid_query (&router->tdata->hg, &req->to_hg_result,
+                    coord, req->walk_max_distance);
+        }
+        return mark_result_of_target_hashgrid (router, req, &req->to_hg_result);
+    }
+
+    return false;
+}
+
 static bool build_origins_list_from_hashgrid (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
         coord_t coord;
@@ -1370,82 +1438,6 @@ static bool build_origins_list_from_hashgrid (router_t *router, router_request_t
                             coord, req->walk_max_distance);
         }
         return mark_result_of_origin_hashgrid (router, req, &req->from_hg_result);
-    }
-
-    return false;
-}
-
-static bool latlon_best_stop_point_index_target (router_t *router, router_request_t *req,
-        hashgrid_result_t *hg_result) {
-    double distance;
-    uint32_t sp_index;
-
-    hashgrid_result_reset(hg_result);
-    sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-
-    while (sp_index != HASHGRID_NONE) {
-        /* TODO: this is terrible. For each result we explicitly remove if it
-         * is banned. While banning doesn't happen that often a more elegant
-         * way would be to just overwrite the state and best_time.
-         * Sadly that might not give us an accurate best_sp_index.
-         */
-
-        #if RRRR_MAX_BANNED_STOP_POINTS > 0
-        /* if a stop_point is banned, we should not act upon it here */
-        if (set_in_sp (req->banned_stops, req->n_banned_stops,
-                       (spidx_t) sp_index)) continue;
-        #endif
-
-        #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
-        /* if a stop_point is banned hard, we should not act upon it here */
-        if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                       (spidx_t) sp_index)) continue;
-        #endif
-
-        router->target_stop_points[++router->n_targets] = (spidx_t) sp_index;
-
-        #ifdef RRRR_INFO
-        fprintf (stderr, "%d %s %s (%.0fm)\n",
-                         sp_index,
-                         tdata_stop_point_id_for_index(router->tdata, sp_index),
-                         tdata_stop_point_name_for_index(router->tdata, sp_index),
-                         distance);
-        #endif
-
-        /* get the next potential start stop_point */
-        sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-    }
-
-    return (router->n_targets > 0);
-}
-
-static bool initialize_target_latlon (router_t *router, router_request_t *req) {
-    if (req->arrive_by) {
-        if (req->from_latlon.lat == 0.0 &&
-            req->from_latlon.lon == 0.0) {
-            return false;
-        }
-
-        if (req->from_hg_result.hg == NULL) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->from_latlon);
-            hashgrid_query (&router->tdata->hg, &req->from_hg_result,
-                            coord, req->walk_max_distance);
-        }
-        return latlon_best_stop_point_index_target (router, req, &req->from_hg_result);
-    } else {
-        if (req->to_latlon.lat == 0.0 &&
-            req->to_latlon.lon == 0.0) {
-            return false;
-        }
-
-        if (req->to_hg_result.hg == NULL ) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->to_latlon);
-            hashgrid_query (&router->tdata->hg, &req->to_hg_result,
-                            coord, req->walk_max_distance);
-        }
-        return latlon_best_stop_point_index_target (router, req, &req->to_hg_result);
     }
 
     return false;
@@ -1502,29 +1494,9 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
             return false;
         }
     } else {
-        build_origins_list_from_hashgrid(router, req);
         return initialize_origins(router,req);
     }
 }
-
-static bool initialize_target (router_t *router, router_request_t *req) {
-    /* In the first two searches the LATLON search will find the best
-     * values for req->to and req->from the final interation have both
-     * set to the walk optimum. For the geographic optimisation to start
-     * a latlon must be set and the stop_point_index must be set to NONE.
-     */
-    #ifdef RRRR_FEATURE_LATLON
-    if (( req->arrive_by ? req->from_stop_point == STOP_NONE : req->to_stop_point == STOP_NONE)) {
-        /* search the target based on latlon */
-        return initialize_target_latlon (router, req);
-    } else
-    #endif
-    {
-        /* search the origin based on a provided index */
-        return initialize_target_index (router, req);
-    }
-}
-
 
 bool router_route(router_t *router, router_request_t *req) {
     uint8_t i_round, n_rounds;
@@ -1541,7 +1513,12 @@ bool router_route(router_t *router, router_request_t *req) {
         return false;
     }
 
-    #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+    build_origins_list_from_hashgrid(router, req);
+    build_targets_list_from_hashgrid(router, req);
+    printf("%d origins, %d targets\n",router->n_origins,router->n_targets);
+
+
+#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
     /* populate router->banned_journey_patterns first, as unflag_banned_journey_patterns
      * is used via initialize_origin, apply_transfers
      */
@@ -1551,12 +1528,6 @@ bool router_route(router_t *router, router_request_t *req) {
     /* populate router->origin */
     if (!initialize_origin (router, req)) {
         fprintf(stderr, "Search origin could not be initialised.\n");
-        return false;
-    }
-
-    /* populate router->target */
-    if (!initialize_target (router, req)) {
-        fprintf(stderr, "Search target could not be initialised.\n");
         return false;
     }
 
