@@ -1,24 +1,19 @@
-/* Copyright 2013 Bliksem Labs.
- * See the LICENSE file at the top-level directory of this distribution and at
- * https://github.com/bliksemlabs/rrrr/
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and
+ * at https://github.com/bliksemlabs/rrrr/
  */
 
 #include "radixtree.h"
-#include "config.h"
 
 /* All nodes are identical in size, allowing use with no dynamic allocation
  * (in a contiguous block of memory). Only supports insertion and retrieval,
  * not deleting.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <string.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 
 static struct rxt_edge *rxt_edge_new () {
