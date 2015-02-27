@@ -1,13 +1,11 @@
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #include "util.h"
-#include "rrrr_types.h"
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <string.h>
-#include <time.h>
 
 /* buffer should always be at least 13 characters long,
  * including terminating null
