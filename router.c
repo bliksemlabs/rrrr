@@ -16,9 +16,9 @@ bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
     router->tdata = tdata;
     router->origin_stop_points = (spidx_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
-    router->origin_distance = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->origin_duration = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->target_stop_points = (spidx_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
-    router->target_distance = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->target_duration = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
     router->states_back_vehicle_journey = (jp_vjoffset_t *) malloc(sizeof(jp_vjoffset_t) * n_states);
@@ -43,9 +43,9 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 
     if ( ! (router->best_time
             && router->origin_stop_points
-            && router->origin_distance
+            && router->origin_duration
             && router->target_stop_points
-            && router->target_distance
+            && router->target_duration
             && router->states_back_journey_pattern
             && router->states_back_vehicle_journey
             && router->states_ride_from
@@ -74,9 +74,9 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 
 void router_teardown(router_t *router) {
     free(router->origin_stop_points);
-    free(router->origin_distance);
+    free(router->origin_duration);
     free(router->target_stop_points);
-    free(router->target_distance);
+    free(router->target_duration);
     free(router->best_time);
     free(router->states_back_journey_pattern);
     free(router->states_back_vehicle_journey);
@@ -1304,6 +1304,14 @@ static bool initialize_target_index (router_t *router, router_request_t *req) {
     router->target_stop_points[0] = target;
     router->n_targets  = 1;
 
+    return true;
+}
+
+static bool mark_origin_stop_point (router_t *router, spidx_t sp_index, rtime_t duration){
+    spidx_t i_origin = router->n_origins;
+    router->origin_stop_points[i_origin] = sp_index;
+    router->origin_duration[i_origin] = duration;
+    ++router->n_origins;
     return true;
 }
 

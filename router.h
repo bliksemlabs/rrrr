@@ -75,13 +75,13 @@ struct router {
 
     /* Used to mark stop_point as reachable from origin */
     spidx_t *origin_stop_points;
-    /* Used to mark distance from origin to stop_point */
-    rtime_t * origin_distance;
+    /* Used to mark duration from origin to stop_point */
+    rtime_t *origin_duration;
 
     /* Used to mark stop_point as reachable to target */
     spidx_t *target_stop_points;
-    /* Used to mark distance from stop_point to target*/
-    rtime_t * target_distance;
+    /* Used to mark duration from stop_point to target*/
+    rtime_t *target_duration;
 
     spidx_t n_origins;
     spidx_t n_targets;
