@@ -1266,7 +1266,60 @@ static bool mark_origin_stop_point (router_t *router, spidx_t sp_index, rtime_t 
     router->origin_stop_points[i_origin] = sp_index;
     router->origin_duration[i_origin] = duration;
     ++router->n_origins;
+    #ifdef RRRR_INFO
+        fprintf (stderr, "ORIGIN %d %s %s (%d seconds)\n",
+                         sp_index,
+                         tdata_stop_point_id_for_index(router->tdata, sp_index),
+                         tdata_stop_point_name_for_index(router->tdata, sp_index),
+                         RTIME_TO_SEC(duration));
+    #endif
     return true;
+}
+
+static bool initialize_origins(router_t *router, router_request_t *req){
+    int32_t i_origin;
+    for (i_origin = 0;i_origin < router->n_origins;++i_origin){
+        spidx_t sp_index = router->origin_stop_points[i_origin];
+        rtime_t duration_to_origin = router->origin_duration[i_origin];
+        uint32_t i_state = router->tdata->n_stop_points + sp_index;
+
+        /* TODO: this is terrible. For each result we explicitly remove if it
+         * is banned. While banning doesn't happen that often a more elegant
+         * way would be to just overwrite the state and best_time.
+         * Sadly that might not give us an accurate best_sp_index.
+         */
+
+        #if RRRR_MAX_BANNED_STOP_POINTS > 0
+        /* if a stop_point is banned, we should not act upon it here */
+        if (set_in_sp (req->banned_stops, req->n_banned_stops,
+                (spidx_t) sp_index)) continue;
+        #endif
+
+        #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
+        /* if a stop_point is banned hard, we should not act upon it here */
+        if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
+                (spidx_t) sp_index)) continue;
+        #endif
+
+        {
+            rtime_t start_time = req->arrive_by ? req->time - duration_to_origin :
+                                                  req->time + duration_to_origin;
+            router->best_time[sp_index] = start_time;
+            router->states_time[i_state] = start_time;
+            router->states_walk_time[i_state] = start_time;
+            router->states_walk_from[i_state] = sp_index;
+            router->states_ride_from[i_state] = STOP_NONE;
+            router->states_back_journey_pattern[i_state] = NONE;
+            router->states_back_vehicle_journey[i_state] = NONE;
+            router->states_board_time[i_state] = UNREACHED;
+        }
+
+        flag_journey_patterns_for_stop_point(router, req, (spidx_t) sp_index);
+    }
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    unflag_banned_journey_patterns(router, req);
+    #endif
+    return router->n_origins > 0;
 }
 
 #ifdef RRRR_FEATURE_LATLON
@@ -1279,71 +1332,12 @@ static bool latlon_best_stop_point_index_origin (router_t *router, router_reques
     sp_index = hashgrid_result_next_filtered(hg_result, &distance);
 
     while (sp_index != HASHGRID_NONE) {
-        uint32_t i_state;
-        spidx_t i_origin;
-        rtime_t extra_walktime;
-
-        /* TODO: this is terrible. For each result we explicitly remove if it
-         * is banned. While banning doesn't happen that often a more elegant
-         * way would be to just overwrite the state and best_time.
-         * Sadly that might not give us an accurate best_sp_index.
-         */
-
-        #if RRRR_MAX_BANNED_STOP_POINTS > 0
-        /* if a stop_point is banned, we should not act upon it here */
-        if (set_in_sp (req->banned_stops, req->n_banned_stops,
-                       (spidx_t) sp_index)) continue;
-        #endif
-
-        #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
-        /* if a stop_point is banned hard, we should not act upon it here */
-        if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                       (spidx_t) sp_index)) continue;
-        #endif
-
-        i_state = router->tdata->n_stop_points + sp_index;
-        extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
-                                                     req->walk_speed));
-
-        if (req->arrive_by) {
-            router->best_time[sp_index] = req->time - extra_walktime;
-            router->states_time[i_state]  = req->time - extra_walktime;
-        } else {
-            router->best_time[sp_index] = req->time + extra_walktime;
-            router->states_time[i_state]  = req->time + extra_walktime;
-        }
-
-        /*  the rest of these should be unnecessary */
-        router->states_ride_from[i_state] = STOP_NONE;
-        router->states_back_journey_pattern[i_state] = NONE;
-        router->states_back_vehicle_journey[i_state] = NONE;
-        router->states_board_time[i_state] = UNREACHED;
-
-        bitset_set(router->updated_stop_points, sp_index);
-
-        i_origin = ++router->n_origins;
-        router->origin_stop_points[i_origin] = (spidx_t) sp_index;
-
-        #ifdef RRRR_INFO
-        fprintf (stderr, "%d %s %s (%.0fm)\n",
-                         sp_index,
-                         tdata_stop_point_id_for_index(router->tdata, sp_index),
-                         tdata_stop_point_name_for_index(router->tdata, sp_index),
-                         distance);
-        #endif
-
+        rtime_t extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
+                req->walk_speed));
+        mark_origin_stop_point(router,sp_index,extra_walktime);
         /* get the next potential start stop_point */
         sp_index = hashgrid_result_next_filtered(hg_result, &distance);
     }
-
-    if (router->n_origins == 0) return false;
-
-    /*  !!TODO eliminate this now that we have rtimes in requests */
-    router->states_time[router->origin_stop_points[0]] = req->time;
-
-    /* TODO this silences a warning, but what exactly is required here */
-    apply_transfers(router, req, 1, false, false);
-
     return true;
 }
 
@@ -1560,6 +1554,7 @@ bool router_route(router_t *router, router_request_t *req) {
         fprintf(stderr, "Search origin could not be initialised.\n");
         return false;
     }
+    initialize_origins(router,req);
 
     /* populate router->target */
     if (!initialize_target (router, req)) {
