@@ -1,4 +1,4 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
@@ -8,17 +8,12 @@
 #ifdef RRRR_FEATURE_REALTIME_ALERTS
 
 #include "tdata_realtime_alerts.h"
-#include "radixtree.h"
-#include "gtfs-realtime.pb-c.h"
-#include "rrrr_types.h"
 
 #include <stdio.h>
 #include <unistd.h>
-#include <string.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 void tdata_apply_gtfsrt_alerts (tdata_t *tdata, uint8_t *buf, size_t len) {
     size_t e;

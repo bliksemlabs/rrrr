@@ -1,17 +1,12 @@
-/* Copyright 2013 Bliksem Labs.
- * See the LICENSE file at the top-level directory of this distribution and at
- * https://github.com/bliksemlabs/rrrr/
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and
+ * at https://github.com/bliksemlabs/rrrr/
  */
 
-/* json.c */
+/* json.c : helper functions to build a JSON document */
 
 #include "json.h"
-
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <inttypes.h>
-#include <string.h>
 
 /* private functions */
 

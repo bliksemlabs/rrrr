@@ -1,15 +1,14 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013–2015 Bliksem Labs.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
-/* tdata.c : handles memory mapped data file containing transit timetable etc. */
+/* tdata.c : handles data-structures containing transit timetable etc. */
 
 /* top, make sure it works alone */
 #include "tdata.h"
 #include "tdata_io_v4.h"
 #include "tdata_validation.h"
-#include "rrrr_types.h"
 #include "util.h"
 
 #ifdef RRRR_FEATURE_REALTIME_ALERTS

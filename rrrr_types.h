@@ -1,3 +1,8 @@
+/* Copyright 2013–2015 Bliksem Labs.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #ifndef _RRRR_TYPES_H
 #define _RRRR_TYPES_H
 
