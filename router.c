@@ -675,7 +675,7 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
              * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
              * is about 4% more efficient for journeys without specific vj attribute requirements.
              */
-            if (req->vj_attributes && ! ((req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) == req->vj_attributes)) continue;
+            if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
 
             /* consider the arrival or departure time on
              * the current service day
