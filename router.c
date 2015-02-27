@@ -6,22 +6,11 @@
 /* router.c : the main routing algorithm */
 #include "router.h" /* first to ensure it works alone */
 #include "router_request.h"
-#include "router_dump.h"
 
 #include "util.h"
-#include "config.h"
-#include "tdata.h"
-#include "bitset.h"
-#include "hashgrid.h"
 #include "set.h"
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <stdint.h>
-#include <math.h>
-#include <sys/types.h>
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
