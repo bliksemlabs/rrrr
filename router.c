@@ -811,7 +811,7 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
         }  /*  end for (vehicle_journey's within this route) */
 
         /* Reset the VJ offset to the highest value, after we scanned the original serviceday */
-        prev_vj_offset = req->arrive_by ? 0 : jp->n_vjs - 1;
+        prev_vj_offset = (jp_vjoffset_t) (req->arrive_by ? 0 : jp->n_vjs - 1);
 
     }  /*  end for (service days: yesterday, today, tomorrow) */
 }
