@@ -1251,52 +1251,6 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     return false;
 }
 
-static spidx_t initialize_origin_index (router_t *router, router_request_t *req) {
-    uint32_t i_state;
-    spidx_t origin;
-
-    origin = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
-
-    if (origin == STOP_NONE) return false;
-
-    /* Set the origin in router context */
-    router->origin_stop_points[0] = origin;
-    router->n_origins  = 1;
-
-    router->best_time[origin] = req->time;
-
-    /* TODO: This is a hack to communicate the origin time to itinerary
-     * renderer. It would be better to just include rtime_t in request
-     * structs.  eliminate this now that we have rtimes in requests.
-     */
-    router->states_time[origin] = req->time;
-    bitset_clear(router->updated_stop_points);
-
-    /* This is inefficient, as it depends on iterating over
-     * a bitset with only one bit true.
-     */
-    bitset_set(router->updated_stop_points, origin);
-
-    /* We will use round 1 to hold the initial state for round 0.
-     * Round 1 must then be re-initialized before use.
-     */
-    i_state = router->tdata->n_stop_points + origin;
-    router->states_time[i_state] = req->time;
-
-    /* the rest of these should be unnecessary */
-    router->states_ride_from[i_state] = STOP_NONE;
-    router->states_back_journey_pattern[i_state] = NONE;
-    router->states_back_vehicle_journey[i_state] = NONE;
-    router->states_board_time[i_state] = UNREACHED;
-
-    /* Apply transfers to initial state,
-     * which also initializes the updated journey_patterns bitset.
-     */
-    apply_transfers(router, req, 1, true,true);
-
-    return true;
-}
-
 static bool initialize_target_index (router_t *router, router_request_t *req) {
     spidx_t target = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
     if (target == STOP_NONE) return false;
@@ -1395,27 +1349,30 @@ static bool latlon_best_stop_point_index_origin (router_t *router, router_reques
 
 static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
+        coord_t coord;
+
         if (req->to_latlon.lat == 0.0 &&
             req->to_latlon.lon == 0.0) {
-            return false;
+            coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->to_stop_point]);
+        }else{
+            coord_from_latlon (&coord, &req->to_latlon);
         }
 
         if (req->to_hg_result.hg == NULL) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->to_latlon);
             hashgrid_query (&router->tdata->hg, &req->to_hg_result,
                             coord, req->walk_max_distance);
         }
         return latlon_best_stop_point_index_origin (router, req, &req->to_hg_result);
     } else {
+        coord_t coord;
         if (req->from_latlon.lat == 0.0 &&
             req->from_latlon.lon == 0.0) {
-            return false;
+            coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->from_stop_point]);
+        }else{
+            coord_from_latlon (&coord, &req->from_latlon);
         }
 
         if (req->from_hg_result.hg == NULL ) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->from_latlon);
             hashgrid_query (&router->tdata->hg, &req->from_hg_result,
                             coord, req->walk_max_distance);
         }
@@ -1553,21 +1510,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
             return false;
         }
     } else {
-        #ifdef RRRR_FEATURE_LATLON
-        /* In the first two searches the LATLON search will find the best
-         * values for req->to and req->from the final interation have both
-         * set to the walk optimum. For the geographic optimisation to start
-         * a latlon must be set and the stop_point_index must be set to NONE.
-         */
-        if (( req->arrive_by ? req->to_stop_point == STOP_NONE : req->from_stop_point == STOP_NONE)) {
-            /* search the target based on latlon */
-            return initialize_origin_latlon (router, req);
-        } else
-        #endif
-        {
-            /* search the origin based on a provided index */
-            return initialize_origin_index (router, req);
-        }
+        return initialize_origin_latlon (router, req);
     }
 }
 
