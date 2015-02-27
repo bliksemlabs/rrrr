@@ -1330,9 +1330,7 @@ static bool latlon_best_stop_point_index(router_t *router, router_request_t *req
 
     return true;
 }
-#endif
 
-#ifdef RRRR_FEATURE_LATLON
 static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
     if (req->arrive_by) {
         if (req->to_latlon.lat == 0.0 &&
