@@ -361,12 +361,12 @@ router_request_reverse(router_t *router, router_request_t *req) {
                         best_time = router->best_time[sp_index];
                     }
                 }
-            //#ifdef RRRR_DEBUG
+            #ifdef RRRR_DEBUG
             fprintf (stderr, "%d %s %s %d : %d seconds\n", sp_index,
                      tdata_stop_point_id_for_index(router->tdata, sp_index),
                      tdata_stop_point_name_for_index(router->tdata, sp_index),
                      router->best_time[sp_index], router->target_duration[i_target]);
-            //#endif
+            #endif
             }
         }
         if (req->arrive_by) {
