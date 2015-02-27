@@ -1,7 +1,6 @@
 #include "config.h"
 #include "router_request.h"
 #include "util.h"
-#include "hashgrid.h"
 
 #include <stdio.h>
 #include <assert.h>
