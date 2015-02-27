@@ -26,6 +26,8 @@
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
     router->tdata = tdata;
+    router->origins = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
+    router->targets = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
     router->states_back_vehicle_journey = (jp_vjoffset_t *) malloc(sizeof(jp_vjoffset_t) * n_states);
@@ -49,6 +51,8 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 #endif
 
     if ( ! (router->best_time
+            && router->origins
+            && router->targets
             && router->states_back_journey_pattern
             && router->states_back_vehicle_journey
             && router->states_ride_from
@@ -76,6 +80,8 @@ bool router_setup(router_t *router, tdata_t *tdata) {
 }
 
 void router_teardown(router_t *router) {
+    free(router->origins);
+    free(router->targets);
     free(router->best_time);
     free(router->states_back_journey_pattern);
     free(router->states_back_vehicle_journey);
