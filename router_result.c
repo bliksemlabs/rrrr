@@ -1,8 +1,6 @@
 #include "rrrr_types.h"
 #include "router_result.h"
-#include "router_request.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 
 /* Reverse the times and stops in a leg.
