@@ -142,10 +142,10 @@ static bool check_plan_invariants (plan_t *plan) {
             for (i_leg = 0; i_leg < itin->n_legs; ++i_leg) {
                 leg_t *leg = itin->legs + i_leg;
                 if (i_leg % 2 == 0) {
-                    if (leg->journey_pattern != WALK) fprintf(stderr, "even numbered leg %d has journey_pattern %d not WALK.\n", i_leg, leg->journey_pattern);
+                    if (leg->journey_pattern < WALK) fprintf(stderr, "even numbered leg %d has journey_pattern %d not WALK.\n", i_leg, leg->journey_pattern);
                     fail = true;
                 } else {
-                    if (leg->journey_pattern == WALK) fprintf(stderr, "odd numbered leg %d has journey_pattern WALK.\n", i_leg);
+                    if (leg->journey_pattern >= WALK) fprintf(stderr, "odd numbered leg %d has journey_pattern WALK.\n", i_leg);
                     fail = true;
                 }
                 if (leg->t1 < leg->t0) {
