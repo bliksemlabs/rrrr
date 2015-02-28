@@ -1263,7 +1263,7 @@ static bool mark_target_stop_point (router_t *router, spidx_t sp_index, rtime_t 
     router->target_duration[i_origin] = duration;
     ++router->n_targets;
     #ifdef RRRR_INFO
-        fprintf (stderr, "ORIGIN %d %s %s (%d seconds)\n",
+        fprintf (stderr, "TARGET %d %s %s (%d seconds)\n",
                          sp_index,
                          tdata_stop_point_id_for_index(router->tdata, sp_index),
                          tdata_stop_point_name_for_index(router->tdata, sp_index),
@@ -1329,6 +1329,9 @@ static bool mark_result_of_origin_hashgrid (router_t *router, router_request_t *
     while (sp_index != HASHGRID_NONE) {
         rtime_t extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
                 req->walk_speed));
+        if (req->arrive_by ? sp_index == req->to_stop_point : sp_index == req->from_stop_point){
+            extra_walktime = 0;
+        }
         mark_origin_stop_point(router,sp_index,extra_walktime);
         /* get the next potential start stop_point */
         sp_index = hashgrid_result_next_filtered(hg_result, &distance);
@@ -1347,6 +1350,9 @@ static bool mark_result_of_target_hashgrid (router_t *router, router_request_t *
     while (sp_index != HASHGRID_NONE) {
         rtime_t extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
                 req->walk_speed));
+        if (req->arrive_by ? sp_index == req->from_stop_point : sp_index == req->to_stop_point){
+            extra_walktime = 0;
+        }
         mark_target_stop_point(router,sp_index,extra_walktime);
         /* get the next potential start stop_point */
         sp_index = hashgrid_result_next_filtered(hg_result, &distance);
