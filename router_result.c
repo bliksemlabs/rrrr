@@ -157,12 +157,12 @@ static bool check_plan_invariants (plan_t *plan) {
                         fprintf(stderr, "legs do not chain: leg %d begins with stop_point %d, previous leg ends with stop_point %d.\n", i_leg, leg->sp_from, prev_leg->sp_to);
                         fail = true;
                     }
-                    if (leg->journey_pattern == WALK && leg->t0 != prev_leg->t1) {
+                    if (leg->journey_pattern >= WALK && leg->t0 != prev_leg->t1) {
                         /* This will fail unless reversal is being performed */
-#if 0
+                        #if 0
                         fprintf(stderr, "walk leg does not immediately follow ride: leg %d begins at time %d, previous leg ends at time %d.\n", l, leg->t0, prev_leg->t1);
                         fail = true;
-#endif
+                        #endif
                     }
                     if (leg->t0 < prev_leg->t1) {
                         fprintf(stderr, "itin %d: non-increasing times between legs %d and %d: %d, %d\n",

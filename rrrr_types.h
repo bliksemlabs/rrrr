@@ -218,7 +218,8 @@ struct router_request {
 
 #define UNREACHED UINT16_MAX
 #define NONE      (UINT16_MAX)
-#define WALK      (UINT16_MAX - 1)
+#define STREET    (UINT16_MAX - 1)
+#define WALK      (UINT16_MAX - 2)
 
 #define STOP_NONE ((spidx_t) -1)
 #define ONBOARD   ((spidx_t) -2)
