@@ -310,7 +310,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                 prev = (l - (req->arrive_by ? 1 : -1));
                 l->t1 = (req->arrive_by ? prev->t1 : prev->t0);
                 duration = transfer_duration (router->tdata, req, l->sp_from, l->sp_to);
-                l->t0 = l->t1 + (req->arrive_by ? +duration : -duration);
+                l->t0 = (rtime_t) (l->t1 + (req->arrive_by ? +duration : -duration));
                 l->journey_pattern = WALK;
                 l->vj = WALK;
                 if (req->arrive_by) leg_swap (l);
