@@ -91,7 +91,6 @@ typedef enum tmode {
 
 typedef struct router_request router_request_t;
 struct router_request {
-#ifdef RRRR_FEATURE_LATLON
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
     hashgrid_result_t from_hg_result;
@@ -103,7 +102,7 @@ struct router_request {
     /* actual intermediate in wgs84 presented to the planner */
     latlon_t via_latlon;
     hashgrid_result_t via_hg_result;
-#endif
+
     /* (nearest) start stop_point index from the users perspective */
     spidx_t from_stop_point;
 

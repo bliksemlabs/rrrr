@@ -37,9 +37,7 @@ struct cli_arguments {
     char *gtfsrt_tripupdates_filename;
     long repeat;
     bool verbose;
-    #ifdef RRRR_FEATURE_LATLON
     bool has_latlon;
-    #endif
 };
 
 int main (int argc, char *argv[]) {
@@ -163,11 +161,9 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--from-id=", 10) == 0) {
                         req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][10], 0);
                     }
-                    #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][14], &req.from_latlon);
                     }
-                    #endif
                     break;
 
                 #ifdef RRRR_FEATURE_REALTIME
@@ -201,11 +197,9 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--to-id=", 8) == 0) {
                         req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][8], 0);
                     }
-                    #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][12], &req.to_latlon);
                     }
-                    #endif
                     break;
 
                 case 'b':
@@ -276,11 +270,9 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--via-id=", 9) == 0) {
                         req.via_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][9], 0);
                     }
-                    #ifdef RRRR_FEATURE_LATLON
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][13], &req.via_latlon);
                     }
-                    #endif
                     break;
 
                 case 'w':
@@ -338,12 +330,10 @@ int main (int argc, char *argv[]) {
     }
     req.time_rounded = false;
 
-    #ifdef RRRR_FEATURE_LATLON
     if (! tdata_hashgrid_setup (&tdata)) {
         status = EXIT_FAILURE;
         goto clean_exit;
     }
-    #endif
 
    /* * * * * * * * * * * * * * * * * *
      * PHASE ONE: INITIALISE THE ROUTER

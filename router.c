@@ -316,7 +316,6 @@ static void unflag_banned_stop_points(router_t *router, router_request_t *req) {
 }
 #endif
 
-#ifdef RRRR_FEATURE_LATLON
 /* Because the first round begins with so few reached stops, the initial state
  * doesn't get its own full array of states
  * Instead we reuse one of the later rounds (round 1) for the initial state.
@@ -332,7 +331,6 @@ static void initialize_transfers_full (router_t *router, uint32_t round) {
         states_walk_time[i_state] = UNREACHED;
     } while (i_state);
 }
-#else
 
 /* Because the first round begins with so few reached stops, the initial state
  * doesn't get its own full array of states. Instead we reuse one of the later
@@ -376,7 +374,6 @@ static void initialize_transfers_n (router_t *router, uint8_t round,
         }
     } while (n_stops);
 }
-#endif
 
 /* Get the departure or arrival time of the given vj on the given
  * service day, applying realtime data as needed.
@@ -1193,11 +1190,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
      */
     /*  TODO: also must be done for the hashgrid */
     if (round == 0) {
-        #ifdef RRRR_FEATURE_LATLON
         initialize_transfers_full (router, 1);
-        #else
-        initialize_transfers (router, 1, router->origin);
-        #endif
     }
 
      /*  TODO add arrival hashgrid timings */

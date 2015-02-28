@@ -90,12 +90,10 @@ router_request_initialize(router_request_t *req) {
     req->onboard_journey_pattern_vjoffset = NONE;
     req->intermediatestops = false;
 
-    #ifdef RRRR_FEATURE_LATLON
     req->from_latlon.lat = 0.0;
     req->from_latlon.lon = 0.0;
     req->to_latlon.lat = 0.0;
     req->to_latlon.lon = 0.0;
-    #endif
 
     #ifdef RRRR_FEATURE_OPERATOR_FILTER
     req->operator = OPERATOR_UNFILTERED;
@@ -173,12 +171,10 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->from_stop_point = (spidx_t) rrrrandom(tdata->n_stop_points);
     req->to_stop_point = (spidx_t) rrrrandom(tdata->n_stop_points);
 
-    #ifdef RRRR_FEATURE_LATLON
     req->from_latlon = tdata->stop_point_coords[rrrrandom(tdata->n_stop_points)];
     req->to_latlon = tdata->stop_point_coords[rrrrandom(tdata->n_stop_points)];
     req->from_stop_point = STOP_NONE;
     req->to_stop_point = STOP_NONE;
-    #endif
 
     #ifdef RRRR_FEATURE_OPERATOR_FILTER
     req->operator = OPERATOR_UNFILTERED;
@@ -202,7 +198,6 @@ router_request_next(router_request_t *req, rtime_t inc) {
     req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 }
 
-#ifdef RRRR_FEATURE_LATLON
 static bool
 best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_t *sp, rtime_t *time) {
     uint64_t offset_state = router->tdata->n_stop_points * round;
@@ -252,7 +247,6 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
 
     return false;
 }
-#endif
 
 static void
 reverse_request (router_request_t *req, uint8_t round, spidx_t best_sp_index, rtime_t best_time) {
@@ -305,10 +299,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
-    #ifdef RRRR_FEATURE_LATLON
-
-    if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
-                          req->to_stop_point == STOP_NONE)) {
+    {
         int32_t i_target;
         rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
@@ -348,10 +339,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
          * than the stop_point that is the best with most transfers.
          */
 
-    } else
-    #endif
-    {
-        best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
     }
 
     if (best_sp_index == NONE) return false;

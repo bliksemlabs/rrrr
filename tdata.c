@@ -337,9 +337,7 @@ bool tdata_load(tdata_t *td, char *filename) {
 }
 
 void tdata_close(tdata_t *td) {
-    #ifdef RRRR_FEATURE_LATLON
     hashgrid_teardown (&td->hg);
-    #endif
 
     #ifdef RRRR_FEATURE_REALTIME
     if (td->stop_point_id_index) radixtree_destroy (td->stop_point_id_index);
@@ -524,7 +522,6 @@ void tdata_dump(tdata_t *td) {
 }
 #endif
 
-#ifdef RRRR_FEATURE_LATLON
 bool tdata_hashgrid_setup (tdata_t *tdata) {
     coord_t *coords;
     uint32_t i_sp;
@@ -543,7 +540,6 @@ bool tdata_hashgrid_setup (tdata_t *tdata) {
 
     return true;
 }
-#endif
 
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr) {
     long stop_idx = strtol(str, endptr, 10);
