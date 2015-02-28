@@ -279,47 +279,14 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
 
     round = (int8_t) req->max_transfers;
 
-    if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
-                          req->to_stop_point == STOP_NONE)) {
-        do {
-            if (best_sp_by_round(router, req, (uint8_t) round, &best_sp_index, &best_time)) {
-                ret[*ret_n] = *req;
-                reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
-                (*ret_n)++;
-            }
-            round--;
-        } while (round >= 0);
-    } else {
-        best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
-        do {
-            best_time = router->states_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
-
-            if (best_time == UNREACHED || best_time < router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index]) {
-                best_time = router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
-            }
-            if (best_time != UNREACHED) {
-                bool add_request = true;
-                ret[*ret_n] = *req;
-                reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
-
-                /* Our optisation is only about the last clockwise search */
-                if (!ret[*ret_n].arrive_by) {
-                    uint8_t j_ret;
-                    for (j_ret = 0; j_ret < *ret_n; ++j_ret) {
-                        if (!ret[*ret_n].arrive_by &&
-                            ret[j_ret].time == ret[*ret_n].time) {
-                            ret[j_ret].max_transfers = MAX(ret[j_ret].max_transfers, ret[*ret_n].max_transfers);
-                            ret[j_ret].time_cutoff = MAX(ret[j_ret].time_cutoff, ret[*ret_n].time_cutoff);
-                            add_request = false;
-                            break;
-                        }
-                    }
-                }
-                if (add_request) (*ret_n)++;
-            }
-            round--;
-        } while (round >= 0);
-    }
+    do {
+        if (best_sp_by_round(router, req, (uint8_t) round, &best_sp_index, &best_time)) {
+            ret[*ret_n] = *req;
+            reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
+            (*ret_n)++;
+        }
+        round--;
+    } while (round >= 0);
 
     return (*ret_n > 0);
 }
