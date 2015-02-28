@@ -347,7 +347,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
         /* find the solution with the most transfers and the earliest arrival */
         uint8_t r;
         for (r = 0; r <= max_transfers; ++r) {
-            if (router->states_walk_time[r * router->tdata->n_stop_points + best_sp_index] != UNREACHED) {
+            if (router->states_time[r * router->tdata->n_stop_points + best_sp_index] != UNREACHED) {
                 round = r;
                 /* Instead of the earliest arrival (most transfers)
                 * use the solution with the least transfers.
@@ -363,8 +363,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     if (round == UINT8_MAX) return false;
 
     req->time_cutoff = req->time;
-    req->time = router->states_walk_time[round * router->tdata->n_stop_points +
-            best_sp_index];
+    req->time = router->states_time[round * router->tdata->n_stop_points + best_sp_index];
     #if 0
     fprintf (stderr, "State present at round %d \n", round);
     router_state_dump (router, round * router->tdata->n_stop_points + sp_index);
