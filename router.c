@@ -1364,8 +1364,7 @@ static bool build_targets_list_from_hashgrid (router_t *router, router_request_t
     if (req->arrive_by) {
         coord_t coord;
 
-        if (req->from_latlon.lat == 0.0 &&
-                req->from_latlon.lon == 0.0) {
+        if (req->from_stop_point != NONE) {
             coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->from_stop_point]);
         }else{
             coord_from_latlon (&coord, &req->from_latlon);
@@ -1378,8 +1377,7 @@ static bool build_targets_list_from_hashgrid (router_t *router, router_request_t
         return mark_result_of_target_hashgrid (router, req, &req->from_hg_result);
     } else {
         coord_t coord;
-        if (req->to_latlon.lat == 0.0 &&
-                req->to_latlon.lon == 0.0) {
+        if (req->to_stop_point != NONE) {
             coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->to_stop_point]);
         }else{
             coord_from_latlon (&coord, &req->to_latlon);
@@ -1399,8 +1397,7 @@ static bool build_origins_list_from_hashgrid (router_t *router, router_request_t
     if (req->arrive_by) {
         coord_t coord;
 
-        if (req->to_latlon.lat == 0.0 &&
-            req->to_latlon.lon == 0.0) {
+        if (req->to_stop_point != NONE) {
             coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->to_stop_point]);
         }else{
             coord_from_latlon (&coord, &req->to_latlon);
@@ -1413,8 +1410,7 @@ static bool build_origins_list_from_hashgrid (router_t *router, router_request_t
         return mark_result_of_origin_hashgrid (router, req, &req->to_hg_result);
     } else {
         coord_t coord;
-        if (req->from_latlon.lat == 0.0 &&
-            req->from_latlon.lon == 0.0) {
+        if (req->from_stop_point != NONE) {
             coord_from_latlon (&coord, &router->tdata->stop_point_coords[req->from_stop_point]);
         }else{
             coord_from_latlon (&coord, &req->from_latlon);
