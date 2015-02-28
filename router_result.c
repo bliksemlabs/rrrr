@@ -227,10 +227,10 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             */
             l = itin->legs;
 
-            itin->n_rides = i_transfer + 1;
+            itin->n_rides = (uint8_t) (i_transfer + 1);
 
             /* always same number of legs for same number of transfers */
-            itin->n_legs = itin->n_rides * 2 + 1;
+            itin->n_legs = (uint8_t) (itin->n_rides * 2 + 1);
 
             if ( ! req->arrive_by) l += itin->n_legs - 1;
 
