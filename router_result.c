@@ -271,9 +271,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                     fprintf (stderr, "ERROR: stop_point idx %d out of range.\n", sp_index);
                     return false;
                 }
-
-                printf("%d %s\n",sp_index, tdata_stop_point_name_for_index(router->tdata,sp_index));
-
+                
                 /* Walk phase */
                 i_walk = i_state + sp_index;
                 if (router->states_walk_time[i_walk] == UNREACHED) {
