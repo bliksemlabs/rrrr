@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+rtime_t origin_duration(router_request_t *pT, spidx_t to);
+
 /* Reverse the times and stops in a leg.
  * Used for creating arrive-by itineraries.
  */
@@ -190,6 +192,30 @@ void router_result_sort (plan_t *plan) {
     qsort(&plan->itineraries, plan->n_itineraries, sizeof(itinerary_t), compareItineraries);
 }
 
+static void leg_add_street (leg_t *leg, router_t *router, router_request_t *req,
+        uint64_t i_ride, rtime_t street_duration,
+        spidx_t walk_stop_point) {
+    /* Walk phase */
+    leg->sp_from = walk_stop_point;
+    leg->sp_to = req->arrive_by ? req->from_stop_point : req->to_stop_point;
+    /* Rendering the walk requires already having the ride arrival time */
+    leg->t0 = (rtime_t) (router->states_time[i_ride] - (req->arrive_by ? street_duration :0));
+    leg->t1 = (rtime_t) (router->states_time[i_ride]  + (req->arrive_by ? 0 : street_duration));
+    leg->journey_pattern = STREET;
+    leg->vj = STREET;
+}
+
+rtime_t origin_duration(router_request_t *req, spidx_t to){
+    street_network_t origin = req->arrive_by ? req->exit : req->entry;
+    spidx_t i_origin = origin.n_points;
+    while (i_origin){
+        --i_origin;
+        if (origin.stop_points[i_origin] == to){
+            return origin.durations[i_origin];
+        }
+    }
+    return 0;
+}
 
 /* TODO: move the innerloop of router_result_to_plan to a seperate function */
 bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req) {
@@ -269,8 +295,13 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                 /* follow the chain of states backward */
                 sp_index = router->states_ride_from[i_ride];
 
-                /* Walk phase */
-                leg_add_walk(l, router, i_walk, i_ride, walk_stop_point);
+                if (j_transfer == i_transfer){
+                    /* Street-network origin phase */
+                    leg_add_street(l, router, req, i_ride,target->durations[i_target] ,walk_stop_point);
+                }else{
+                    /* Walk phase */
+                    leg_add_walk(l, router, i_walk, i_ride, walk_stop_point);
+                }
 
                 if (req->arrive_by) leg_swap (l);
                 l += (req->arrive_by ? 1 : -1); /* next leg */
@@ -312,10 +343,10 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                 */
                 prev = (l - (req->arrive_by ? 1 : -1));
                 l->t1 = (req->arrive_by ? prev->t1 : prev->t0);
-                duration = transfer_duration (router->tdata, req, l->sp_from, l->sp_to);
+                duration = origin_duration (req, l->sp_to);
                 l->t0 = (rtime_t) (l->t1 + (req->arrive_by ? +duration : -duration));
-                l->journey_pattern = WALK;
-                l->vj = WALK;
+                l->journey_pattern = STREET;
+                l->vj = STREET;
                 if (req->arrive_by) leg_swap (l);
             }
             /* Move to the next itinerary in the plan. */
