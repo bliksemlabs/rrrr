@@ -1,5 +1,4 @@
 import unittest
-import helper
 from model.transit import *
 from exporter.timetable3 import export
 import datetime
