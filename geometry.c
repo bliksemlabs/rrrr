@@ -5,8 +5,10 @@
 
 #include "geometry.h"
 #include "rrrr_types.h"
-
 #include <stdlib.h>
+#ifdef RRRR_DEBUG
+#include <stdio.h>
+#endif
 
 /* Mean of Earth's equatorial and meridional circumferences. */
 #define EARTH_CIRCUMFERENCE 40041438.5

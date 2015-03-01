@@ -91,7 +91,7 @@ json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
 
 static void put_servicedate(leg_t *leg, time_t date, char *servicedate){
     struct tm ltm;
-    time_t servicedate_time = date + (SEC_IN_ONE_DAY * (leg->d0 % RTIME_ONE_DAY));
+    time_t servicedate_time = date + (SEC_IN_ONE_DAY * (leg->t0 % RTIME_ONE_DAY));
     rrrr_gmtime_r(&servicedate_time, &ltm);
     strftime(servicedate, 9, "%Y%m%d", &ltm);
 }
