@@ -346,7 +346,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
     }
 
     if (best_sp_index == NONE) return false;
-    printf("BEST SP INDEX %d\n",best_sp_index);
     {
         /* find the solution with the most transfers and the earliest arrival */
         uint8_t r;
