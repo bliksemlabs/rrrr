@@ -57,8 +57,10 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
         printf("No coord for exit\n");
         return false;
     }
+    #if RRRR_DEBUG
     dump_exits_and_entries(req,router->tdata);
     printf("%d entries, %d exits\n",req->entry.n_points,req->exit.n_points);
+    #endif
     return true;
 }
 
