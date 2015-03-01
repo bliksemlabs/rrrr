@@ -7,6 +7,7 @@ compiler:
 before_install:
   - sudo apt-get update >/dev/null
   - sudo apt-get -q install check libprotobuf-c0-dev protobuf-c-compiler
+  - sudo pip install pytz python-dateutil
 
 before_script:
   - mkdir build
@@ -16,6 +17,7 @@ before_script:
 script:
   - make
   - ctest
+  - python -m unittest discover ../rrtimetable/rrtimetable "*_tests.py"
 
 env:
   global:
