@@ -313,16 +313,14 @@ router_request_reverse(router_t *router, router_request_t *req) {
             sp_index = target->stop_points[i_target];
             if (router->best_time[sp_index] != UNREACHED) {
                 if (req->arrive_by) {
-                    router->best_time[sp_index] -= target->durations[i_target];
-                    if (router->best_time[sp_index] > best_time) {
+                    if (router->best_time[sp_index] - target->durations[i_target] > best_time) {
                         best_sp_index = sp_index;
-                        best_time = router->best_time[sp_index];
+                        best_time = router->best_time[sp_index] - target->durations[i_target];
                     }
                 } else {
-                    router->best_time[sp_index] += target->durations[i_target];
-                    if (router->best_time[sp_index] < best_time) {
+                    if (router->best_time[sp_index] + target->durations[i_target] < best_time) {
                         best_sp_index = sp_index;
-                        best_time = router->best_time[sp_index];
+                        best_time = router->best_time[sp_index] + target->durations[i_target];
                     }
                 }
                 #ifdef RRRR_DEBUG
