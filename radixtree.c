@@ -15,6 +15,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#if defined(RRRR_TDATA_IO_MMAP)
+#include <sys/mman.h>
+#endif
 
 static struct rxt_edge *rxt_edge_new () {
     struct rxt_edge *e = (struct rxt_edge *) malloc(sizeof(struct rxt_edge));

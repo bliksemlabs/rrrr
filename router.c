@@ -6,11 +6,13 @@
 /* router.c : the main routing algorithm */
 #include "router.h" /* first to ensure it works alone */
 #include "router_request.h"
-
 #include "util.h"
 #include "set.h"
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef RRRR_DEBUG
+#include "router_dump.h"
+#endif
 
 bool router_setup(router_t *router, tdata_t *tdata) {
     uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
