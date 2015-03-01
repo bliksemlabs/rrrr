@@ -331,11 +331,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
                 #endif
             }
         }
-        if (req->arrive_by) {
-            req->from_stop_point = (spidx_t) best_sp_index;
-        } else {
-            req->to_stop_point = (spidx_t) best_sp_index;
-        }
 
         /* TODO: Ideally we should implement a o_transfers option here to find
          * the stop_point that requires the least transfers and is the best
