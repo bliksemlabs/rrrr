@@ -1,25 +1,24 @@
 import unittest
-import helper
 from model.transit import *
 import datetime
 
 class TestSequenceFunctions(unittest.TestCase):
 
     def test_equal(self):
-        tdata = Timetable(datetime.date(2014,1,1))
+        tdata = Timetable(datetime.date(2014,1,1),'Europe/Amsterdam')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam',name='SA1')
         sa = StopArea(tdata,'SA2','Europe/Amsterdam',name='SA2')
         sa = StopArea(tdata,'SA3','Europe/Amsterdam',name='SA3')
         sp = StopPoint(tdata,'SP1','SA1',name='SP1')
         sp = StopPoint(tdata,'SP2','SA2',name='SP1')
         sp = StopPoint(tdata,'SP3','SA3',name='SP1')
-        
+
         jpp1 = JourneyPatternPoint(tdata,'SP1',forboarding=True,foralighting=True,timingpoint=False)
         jpp2 = JourneyPatternPoint(tdata,'SP1',forboarding=True,foralighting=True,timingpoint=False)
         self.assertEquals(jpp1,jpp2)
 
     def test_primary_key_constraints(self):
-        tdata = Timetable(datetime.date(2014,1,1))
+        tdata = Timetable(datetime.date(2014,1,1),'Europe/Amsterdam')
         pm = PhysicalMode(tdata,'BUS',name='Bus')
         cm = CommercialMode(tdata,'BUS',name='Bus')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam')
@@ -52,7 +51,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertEquals(tdata.vehicle_journeys['VJ1'].route.line.operator.name,'OP1')
 
     def test_foreign_key_constraints(self):
-        tdata = Timetable(datetime.date(2014,1,1))
+        tdata = Timetable(datetime.date(2014,1,1),'Europe/Amsterdam')
         pm = PhysicalMode(tdata,'BUS',name='Bus')
         cm = CommercialMode(tdata,'BUS',name='Bus')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam')
@@ -77,7 +76,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertEquals(tdata.vehicle_journeys['VJ1'].route.line.operator.name,'OP1')
 
     def test_integration(self):
-        tdata = Timetable(datetime.date(2014,1,1))
+        tdata = Timetable(datetime.date(2014,1,1),'Europe/Amsterdam')
         pm = PhysicalMode(tdata,'BUS',name='Bus')
         cm = CommercialMode(tdata,'BUS',name='Bus')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam',name='SA1')
@@ -131,7 +130,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertEquals(3,len(tdata.timedemandgroups))
 
     def test_utc_dst_off_to_on(self):
-        tdata = Timetable(datetime.date(2015,3,28))
+        tdata = Timetable(datetime.date(2015,3,28),'Europe/Amsterdam')
         pm = PhysicalMode(tdata,'BUS',name='Bus')
         cm = CommercialMode(tdata,'BUS',name='Bus')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam',name='SA1')
@@ -170,7 +169,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertEquals(set([1]),tdata.vehicle_journeys_utc[('VJ1',7200)].validity_pattern)
 
     def test_utc_dst_on_to_off(self):
-        tdata = Timetable(datetime.date(2015,10,24))
+        tdata = Timetable(datetime.date(2015,10,24),'Europe/Amsterdam')
         pm = PhysicalMode(tdata,'BUS',name='Bus')
         cm = CommercialMode(tdata,'BUS',name='Bus')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam',name='SA1')

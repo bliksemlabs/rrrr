@@ -1,5 +1,4 @@
 import unittest
-import helper
 from model.transit import *
 from exporter.timetable3 import export
 import datetime
@@ -7,7 +6,7 @@ import datetime
 class TestSequenceFunctions(unittest.TestCase):
 
     def test_integration(self):
-        tdata = Timetable(datetime.date(2014,1,1))
+        tdata = Timetable(datetime.date(2014,1,1),'Europe/Amsterdam')
         sa = StopArea(tdata,'SA1','Europe/Amsterdam',name='SA1')
         sa = StopArea(tdata,'SA2','Europe/Amsterdam',name='SA2')
         sa = StopArea(tdata,'SA3','Europe/Amsterdam',name='SA3')
@@ -18,7 +17,7 @@ class TestSequenceFunctions(unittest.TestCase):
         conn = Connection(tdata,'SP2','SP1',120,type=2)
         conn = Connection(tdata,'SP3','SP2',120,type=2)
         conn = Connection(tdata,'SP2','SP3',120,type=2)
-        op = Operator(tdata,'OP1',name='Operator',url='http://www.example.com')
+        op = Operator(tdata,'OP1',name='Operator',url='http://www.example.com',timezone='Europe/Amsterdam')
         buspm = PhysicalMode(tdata,'3',name='Bus')
         buscc = CommercialMode(tdata,'3',name='Bus')
         l = Line(tdata,'L1','OP1','3',name='Testline',code='T')
