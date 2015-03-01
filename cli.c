@@ -371,7 +371,7 @@ int main (int argc, char *argv[]) {
      * origin.
      */
 
-    if ( ! router_route_naive_reversal (&router, &req, &plan) ) {
+    if ( ! router_route_full_reversal (&router, &req, &plan) ) {
         status = EXIT_FAILURE;
         goto clean_exit;
     }
