@@ -297,6 +297,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     spidx_t best_sp_index = NONE;
     uint8_t max_transfers = req->max_transfers;
     uint8_t round = UINT8_MAX;
+    rtime_t best_time;
     /* range-check to keep search within states array */
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
@@ -304,7 +305,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     {
         street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
         int32_t i_target = target->n_points;
-        rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
+        best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
         while (i_target) {
             spidx_t sp_index;
@@ -368,7 +369,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     if (round == UINT8_MAX) return false;
 
     req->time_cutoff = req->time;
-    req->time = router->states_time[round * router->tdata->n_stop_points + best_sp_index];
+    req->time = best_time;
     #if 0
     fprintf (stderr, "State present at round %d \n", round);
     router_state_dump (router, round * router->tdata->n_stop_points + sp_index);
