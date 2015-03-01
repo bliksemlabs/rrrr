@@ -4,7 +4,7 @@
 #include "rrrr_types.h"
 #include "tdata.h"
 
-static bool street_network_mark_entrypoints(router_request_t *req, tdata_t *tdata);
-static bool street_network_mark_exitpoints(router_request_t *req, tdata_t *tdata);
+bool streetnetwork_stoppoint_durations(latlon_t *latlon, float walk_speed, uint16_t max_walk_distance, tdata_t *tdata,street_network_t *sn);
 
 #endif
+
