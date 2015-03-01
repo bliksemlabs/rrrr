@@ -867,10 +867,10 @@ target_pruning (router_t *router, router_request_t *req, time_t time) {
     int32_t i_target = target->n_points;
 
     /* Target pruning, section 3.1 of RAPTOR paper. */
-    do {
+    while (i_target) {
         spidx_t sp_idx;
         rtime_t duration;
-
+        --i_target;
         sp_idx = target->stop_points[i_target];
         duration = target->durations[i_target];
         if ((router->best_time[sp_idx] != UNREACHED) &&
@@ -885,7 +885,6 @@ target_pruning (router_t *router, router_request_t *req, time_t time) {
              */
             return true;
         }
-        --i_target;
     } while (i_target);
 
     return false;
