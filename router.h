@@ -73,19 +73,6 @@ struct router {
     bitset_t *banned_journey_patterns;
 #endif
 
-    /* Used to mark stop_point as reachable from origin */
-    spidx_t *origin_stop_points;
-    /* Used to mark duration from origin to stop_point */
-    rtime_t *origin_duration;
-
-    /* Used to mark stop_point as reachable to target */
-    spidx_t *target_stop_points;
-    /* Used to mark duration from stop_point to target*/
-    rtime_t *target_duration;
-
-    spidx_t n_origins;
-    spidx_t n_targets;
-
     calendar_t day_mask;
     serviceday_t servicedays[3];
     uint8_t n_servicedays;

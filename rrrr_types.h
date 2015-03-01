@@ -8,7 +8,6 @@
 
 #include "config.h"
 #include "hashgrid.h"
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
@@ -89,19 +88,25 @@ typedef enum tmode {
     m_all       = 255
 } tmode_t;
 
+typedef struct street_network street_network_t;
+struct street_network {
+    spidx_t n_points;
+    /* Used to mark stop_point as po for the itinerary */
+    spidx_t stop_points[RRRR_MAX_ENTRY_EXIT_POINTS];
+    /* Used to mark duration from origin to stop_point */
+    rtime_t durations[RRRR_MAX_ENTRY_EXIT_POINTS];
+};
+
 typedef struct router_request router_request_t;
 struct router_request {
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
-    hashgrid_result_t from_hg_result;
 
     /* actual destination in wgs84 presented to the planner */
     latlon_t to_latlon;
-    hashgrid_result_t to_hg_result;
 
     /* actual intermediate in wgs84 presented to the planner */
     latlon_t via_latlon;
-    hashgrid_result_t via_hg_result;
 
     /* (nearest) start stop_point index from the users perspective */
     spidx_t from_stop_point;
@@ -193,6 +198,11 @@ struct router_request {
 
     /* whether to show the intermediate stops in the output */
     bool intermediatestops;
+
+    /* Mark durations to various stop-points from the request start-position of the itinerary */
+    street_network_t entry;
+    /* Mark durations from various stop-points to the request end-position of the itinerary */
+    street_network_t exit;
 };
 
 

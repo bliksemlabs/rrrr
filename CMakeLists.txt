@@ -82,6 +82,8 @@ set(SOURCE_FILES
     tdata_realtime_expanded.h
     tdata_validation.c
     tdata_validation.h
+    street_network.h
+    hashgrid_streetnetwork.c
     util.c
     util.h)
 

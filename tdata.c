@@ -142,6 +142,14 @@ const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode
     return td->string_pool + (td->physical_mode_ids[physical_mode_index]);
 }
 
+latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index){
+    return &td->stop_point_coords[sp_index];
+}
+
+latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index){
+    return &td->stop_area_coords[sa_index];
+}
+
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index) {
     switch (sp_index) {
     case STOP_NONE :

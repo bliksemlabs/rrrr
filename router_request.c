@@ -54,8 +54,8 @@ router_request_to_date (router_request_t *req, tdata_t *tdata,
  */
 void
 router_request_initialize(router_request_t *req) {
-    req->from_hg_result.hg = NULL;
-    req->to_hg_result.hg = NULL;
+    req->exit.n_points = 0;
+    req->entry.n_points = 0;
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
@@ -203,31 +203,33 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
     uint64_t offset_state = router->tdata->n_stop_points * round;
     spidx_t sp_index;
     spidx_t best_sp_index = STOP_NONE;
-    spidx_t target_i;
     rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
     rtime_t *round_best_time = &router->states_time[offset_state];
+
+    street_network_t target = req->arrive_by ? req->entry : req->exit;
+    int32_t i_target = target.n_points;
 
     #ifdef RRRR_DEBUG
     fprintf (stderr, "Reversal - Hashgrid results:\n");
     #endif
-
-    for (target_i = 0; target_i < router->n_targets; target_i++) {
-        sp_index = router->target_stop_points[target_i];
+    while (i_target){
+        sp_index = target.stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
             if (req->arrive_by) {
-                round_best_time[sp_index] -= router->target_duration[target_i];
+                round_best_time[sp_index] -= target.durations[i_target];
                 if (round_best_time[sp_index] > best_time) {
                     best_sp_index = (spidx_t) sp_index;
                     best_time = round_best_time[sp_index];
                 }
             } else {
-                round_best_time[sp_index] += router->target_duration[target_i];
+                round_best_time[sp_index] += target.durations[i_target];
                 if (round_best_time[sp_index] < best_time) {
                     best_sp_index = (spidx_t) sp_index;
                     best_time = round_best_time[sp_index];
                 }
             }
         }
+        --i_target;
     }
 
     *sp = best_sp_index;
@@ -300,31 +302,34 @@ router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     {
-        int32_t i_target;
+        street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
+        int32_t i_target = target->n_points;
         rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
-        for (i_target = 0; i_target < router->n_targets; i_target++){
-            spidx_t sp_index = router->target_stop_points[i_target];
+        while (i_target) {
+            spidx_t sp_index;
+            --i_target;
+            sp_index = target->stop_points[i_target];
             if (router->best_time[sp_index] != UNREACHED) {
                 if (req->arrive_by) {
-                    router->best_time[sp_index] -= router->target_duration[i_target];
+                    router->best_time[sp_index] -= target->durations[i_target];
                     if (router->best_time[sp_index] > best_time) {
                         best_sp_index = sp_index;
                         best_time = router->best_time[sp_index];
                     }
                 } else {
-                    router->best_time[sp_index] += router->target_duration[i_target];
+                    router->best_time[sp_index] += target->durations[i_target];
                     if (router->best_time[sp_index] < best_time) {
                         best_sp_index = sp_index;
                         best_time = router->best_time[sp_index];
                     }
                 }
-            #ifdef RRRR_DEBUG
-            fprintf (stderr, "%d %s %s %d : %d seconds\n", sp_index,
-                     tdata_stop_point_id_for_index(router->tdata, sp_index),
-                     tdata_stop_point_name_for_index(router->tdata, sp_index),
-                     router->best_time[sp_index], router->target_duration[i_target]);
-            #endif
+                #ifdef RRRR_DEBUG
+                fprintf(stderr, "TT %d %s %s %d : %d seconds\n", sp_index,
+                        tdata_stop_point_id_for_index(router->tdata, sp_index),
+                        tdata_stop_point_name_for_index(router->tdata, sp_index),
+                        router->best_time[sp_index], RTIME_TO_SEC(target->durations[i_target]));
+                #endif
             }
         }
         if (req->arrive_by) {
@@ -342,7 +347,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     }
 
     if (best_sp_index == NONE) return false;
-
+    printf("BEST SP INDEX %d\n",best_sp_index);
     {
         /* find the solution with the most transfers and the earliest arrival */
         uint8_t r;

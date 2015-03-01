@@ -205,17 +205,18 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
     for (i_transfer = 0; i_transfer < RRRR_DEFAULT_MAX_ROUNDS; ++i_transfer) {
         /* Work backward from the target to the origin */
         uint64_t i_state;
-        spidx_t i_target;
+        int32_t i_target;
+        street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
         i_state = (((uint64_t) i_transfer) * router->tdata->n_stop_points);
 
         /* Work backward from the targets to the origin */
-        for (i_target = 0; i_target < router->n_targets; ++i_target) {
+        for (i_target = 0; i_target < target->n_points; ++i_target) {
             leg_t *l;
             /* signed int because we will be decreasing */
             int16_t j_transfer;
             spidx_t sp_index;
 
-            sp_index = router->target_stop_points[i_target];
+            sp_index = target->stop_points[i_target];
 
             /* Skip the targets which were not reached by a vhicle in the round */
             if (router->states_time[i_state + sp_index] == UNREACHED) continue;
@@ -244,6 +245,8 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                     fprintf (stderr, "ERROR: stop_point idx %d out of range.\n", sp_index);
                     return false;
                 }
+
+                printf("%d %s\n",sp_index, tdata_stop_point_name_for_index(router->tdata,sp_index));
 
                 /* Walk phase */
                 i_walk = i_state + sp_index;
@@ -318,7 +321,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             /* Move to the next itinerary in the plan. */
             plan->n_itineraries += 1;
             itin += 1;
-        }
+        };
     }
     return check_plan_invariants (plan);
 }

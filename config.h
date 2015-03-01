@@ -12,6 +12,9 @@
 /* Speed by foot, in meter per second */
 #define RRRR_DEFAULT_WALK_SPEED 1.5
 
+/*Maximum stops to enter or exit a journey */
+#define RRRR_MAX_ENTRY_EXIT_POINTS 2500
+
 /* Maximum distance in meters to travel by feet from the
  * origin to the first stop_point, and from the last stop_point to
  * the destination.

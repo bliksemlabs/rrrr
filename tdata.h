@@ -313,11 +313,15 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
-const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sp_index);
+latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t saindex);
+
+latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
 
