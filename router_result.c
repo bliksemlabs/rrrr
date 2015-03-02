@@ -201,8 +201,8 @@ static void leg_add_target (leg_t *leg, router_t *router, router_request_t *req,
     leg->sp_to = req->arrive_by ? req->from_stop_point : req->to_stop_point;
 
     /* Rendering the walk requires already having the ride arrival time */
-    leg->t1 = router->states_time[i_ride];
-    leg->t0 = leg->t1 + target.durations[i_target];
+    leg->t0 = router->states_time[i_ride];
+    leg->t1 = leg->t0 + target.durations[i_target];
     leg->journey_pattern = STREET;
     leg->vj = STREET;
     if (req->arrive_by) leg_swap(leg);
