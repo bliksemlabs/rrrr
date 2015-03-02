@@ -139,9 +139,6 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
 
     router_reset (router);
     search_streetnetwork(router,req);
-    #ifdef RRRR_DEV
-    router_request_dump(req, router->tdata);
-    #endif
     if ( ! router_route (router, req) ) {
         return false;
     }
@@ -152,9 +149,6 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
         }
 
         router_reset (router);
-        #ifdef RRRR_DEV
-        router_request_dump(req, router->tdata);
-        #endif
         if ( ! router_route (router, req)) {
             return false;
         }
