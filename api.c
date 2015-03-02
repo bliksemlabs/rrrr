@@ -171,7 +171,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     for (n_req = 0; n_req < plan->n_itineraries; ++n_req) {
         req_storage[n_req] = *req;
         req_storage[n_req].time = plan->itineraries[n_req].legs[0].t0;
-        req_storage[n_req].max_transfers = plan->itineraries[n_req].n_rides - 1;
+        req_storage[n_req].max_transfers = (uint8_t) (plan->itineraries[n_req].n_rides - 1);
     }
 
     /* Fetch the first possible time to get out of here by transit */
