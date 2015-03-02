@@ -267,11 +267,11 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
 
             /* Follow the chain of states backward */
             for (j_transfer = i_transfer; j_transfer >= 0; --j_transfer) {
-                uint64_t i_walk, i_ride;
+                uint64_t j_walk, j_ride, j_state;
                 spidx_t walk_stop_point;
                 spidx_t ride_stop_point;
 
-                i_state = ((uint64_t) j_transfer) * router->tdata->n_stop_points;
+                j_state = ((uint64_t) j_transfer) * router->tdata->n_stop_points;
 
                 if (sp_index > router->tdata->n_stop_points) {
                     fprintf (stderr, "ERROR: stop_point idx %d out of range.\n", sp_index);
@@ -279,39 +279,39 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                 }
                 
                 /* Walk phase */
-                i_walk = i_state + sp_index;
-                if (router->states_walk_time[i_walk] == UNREACHED) {
+                j_walk = j_state + sp_index;
+                if (router->states_walk_time[j_walk] == UNREACHED) {
                     fprintf (stderr, "ERROR: stop_point idx %d was unreached by walking.\n", sp_index);
                     return false;
                 }
                 walk_stop_point = sp_index;
 
                 /* follow the chain of states backward */
-                sp_index = router->states_walk_from[i_walk];
+                sp_index = router->states_walk_from[j_walk];
 
                 /* Ride phase */
-                i_ride = i_state + sp_index;
-                if (router->states_time[i_ride] == UNREACHED) {
+                j_ride = j_state + sp_index;
+                if (router->states_time[j_ride] == UNREACHED) {
                     fprintf (stderr, "ERROR: sp %d was unreached by riding.\n", sp_index);
                     return false;
                 }
                 ride_stop_point = sp_index;
                 /* follow the chain of states backward */
-                sp_index = router->states_ride_from[i_ride];
+                sp_index = router->states_ride_from[j_ride];
 
                 if (j_transfer == i_transfer){
                     /* Street-network origin phase */
-                    leg_add_target(l, router, req, i_ride,i_target);
+                    leg_add_target(l, router, req, j_ride,i_target);
                 }else{
                     /* Walk phase */
-                    leg_add_walk(l, router, i_walk, i_ride, walk_stop_point);
+                    leg_add_walk(l, router, j_walk, j_ride, walk_stop_point);
                 }
 
                 if (req->arrive_by) leg_swap (l);
                 l += (req->arrive_by ? 1 : -1); /* next leg */
 
                 /* Ride phase */
-                leg_add_ride (l, router, i_ride, ride_stop_point);
+                leg_add_ride (l, router, j_ride, ride_stop_point);
 
                 if (req->arrive_by) leg_swap (l);
                 l += (req->arrive_by ? 1 : -1);   /* next leg */
