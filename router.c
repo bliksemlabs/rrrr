@@ -1257,6 +1257,9 @@ static bool initialize_origins(router_t *router, router_request_t *req){
     street_network_t *origin = req->arrive_by ? &req->exit : &req->entry;
     int32_t i_origin = origin->n_points;
     if (i_origin == 0) { return false; }
+    #ifdef RRRR_DEV
+    fprintf(stderr,"\n INITIALIZING ORIGINS\n");
+    #endif
     while (i_origin){
         rtime_t start_time;
         spidx_t sp_index;
