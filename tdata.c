@@ -398,7 +398,14 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index) {
 }
 
 const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index) {
-    return td->string_pool + td->stop_area_nameidx[sa_index];
+    switch (sa_index) {
+        case STOP_NONE :
+            return "NONE";
+        case ONBOARD :
+            return "ONBOARD";
+        default :
+            return td->string_pool + td->stop_area_nameidx[sa_index];
+    }
 }
 
 const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index) {
