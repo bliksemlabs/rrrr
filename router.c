@@ -1270,7 +1270,7 @@ static bool initialize_origins(router_t *router, router_request_t *req){
         if (stop_point_is_banned(req,sp_index)){
             continue;
         }
-        #ifdef RRRR_DEBUG
+        #ifdef RRRR_DEV
         fprintf (stderr, "ORIGIN %d :%d %s %s : %d seconds\n", i_origin, sp_index,
                 tdata_stop_point_id_for_index(router->tdata, sp_index),
                 tdata_stop_point_name_for_index(router->tdata, sp_index),

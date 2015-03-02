@@ -46,6 +46,10 @@
 #define RRRR_DYNAMIC_SLACK 2
 #endif
 
+#ifdef RRRR_DEBUG
+#define RRRR_DEV
+#endif
+
 /* roughly the length of common prefixes in IDs */
 #define RRRR_RADIXTREE_PREFIX_SIZE 4
 

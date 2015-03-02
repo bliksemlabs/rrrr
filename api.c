@@ -10,7 +10,7 @@
 #include "street_network.h"
 #include "plan_render_text.h"
 
-#if RRRR_DEBUG
+#ifdef RRRR_DEV
 static bool dump_exits_and_entries(router_request_t *req, tdata_t *tdata){
     spidx_t i;
     printf("Entries: \n");
@@ -58,7 +58,7 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
         printf("No coord for exit\n");
         return false;
     }
-    #if RRRR_DEBUG
+    #ifdef RRRR_DEV
     dump_exits_and_entries(req,router->tdata);
     printf("%d entries, %d exits\n",req->entry.n_points,req->exit.n_points);
     #endif
