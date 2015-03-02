@@ -939,6 +939,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             req->operator != jp->operator_index) continue;
         #endif
 
+
         #if 0
         if (jp_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", jp->min_time, jp->max_time, jp_overlap);
         fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", jp_index, jp->min_time, jp->max_time);
@@ -948,6 +949,9 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
         #endif
 
+        if (jp_index != 9253){
+            continue;
+        }
 
         for (jpp_offset = (req->arrive_by ? jp->n_stops - 1 : 0);
                 req->arrive_by ? jpp_offset >= 0 :
@@ -971,22 +975,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                             tdata_stop_point_name_for_index (router->tdata,
                                                        sp_index));
             #endif
-
-            if (vj_index != NONE &&
-                    /* When currently on a vehicle, skip stops where
-                     * alighting is not allowed at the route-point.
-                     */
-                    ((!forboarding && req->arrive_by) ||
-                     (!foralighting && !req->arrive_by))) {
-                continue;
-            } else if (vj_index == NONE &&
-                    /* When looking to board a vehicle, skip stops where
-                     * boarding is not allowed at the route-point.
-                     */
-                    ((!forboarding && !req->arrive_by) ||
-                     (!foralighting && req->arrive_by))) {
-                continue;
-            }
 
             #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
             /* If a stop_point in in banned_stop_points_hard, we do not want to transit
@@ -1028,7 +1016,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                         fprintf (stderr, "    [reboarding here] vj = %s\n",
                                          btimetext(vj_stoptime, buf));
                         #endif
-                        attempt_board = true;
+                        attempt_board = req->arrive_by ? foralighting : forboarding;
                     }
                 }
             }
@@ -1100,6 +1088,10 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
                 /* overflow due to long overnight vehicle_journeys on day 2 */
                 if (time == UNREACHED) continue;
+
+                if (!(req->arrive_by ? forboarding : foralighting)){
+                    continue;
+                }
 
                 #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
                 fprintf(stderr, "    on board vj %d considering time %s \n",
