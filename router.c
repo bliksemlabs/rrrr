@@ -934,12 +934,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         int32_t jpp_offset;
 
-        #ifdef FEATURE_OPERATOR_FILTER
-        if (req->operator != OPERATOR_UNFILTERED &&
-            req->operator != jp->operator_index) continue;
-        #endif
-
-
         #if 0
         if (jp_overlap) fprintf (stderr, "min time %d max time %d overlap %d \n", jp->min_time, jp->max_time, jp_overlap);
         fprintf (stderr, "journey_pattern %d has min_time %d and max_time %d. \n", jp_index, jp->min_time, jp->max_time);
