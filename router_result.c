@@ -192,17 +192,20 @@ void router_result_sort (plan_t *plan) {
     qsort(&plan->itineraries, plan->n_itineraries, sizeof(itinerary_t), compareItineraries);
 }
 
-static void leg_add_street (leg_t *leg, router_t *router, router_request_t *req,
-        uint64_t i_ride, rtime_t street_duration,
-        spidx_t walk_stop_point) {
-    /* Walk phase */
-    leg->sp_from = walk_stop_point;
+static void leg_add_target (leg_t *leg, router_t *router, router_request_t *req,
+        uint64_t i_ride, int32_t i_target) {
+
+    street_network_t target = req->arrive_by ? req->entry : req->exit;
+    /* Target to first transit with streetnetwork phase */
+    leg->sp_from = target.stop_points[i_target];
     leg->sp_to = req->arrive_by ? req->from_stop_point : req->to_stop_point;
+
     /* Rendering the walk requires already having the ride arrival time */
-    leg->t0 = (rtime_t) (router->states_time[i_ride] - (req->arrive_by ? street_duration :0));
-    leg->t1 = (rtime_t) (router->states_time[i_ride]  + (req->arrive_by ? 0 : street_duration));
+    leg->t1 = router->states_time[i_ride];
+    leg->t0 = leg->t1 + target.durations[i_target];
     leg->journey_pattern = STREET;
     leg->vj = STREET;
+    if (req->arrive_by) leg_swap(leg);
 }
 
 rtime_t origin_duration(router_request_t *req, spidx_t to){
@@ -298,7 +301,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
 
                 if (j_transfer == i_transfer){
                     /* Street-network origin phase */
-                    leg_add_street(l, router, req, i_ride,target->durations[i_target] ,walk_stop_point);
+                    leg_add_target(l, router, req, i_ride,i_target);
                 }else{
                     /* Walk phase */
                     leg_add_walk(l, router, i_walk, i_ride, walk_stop_point);
