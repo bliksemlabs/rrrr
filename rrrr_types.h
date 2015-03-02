@@ -153,11 +153,6 @@ struct router_request {
     /* the maximum distance the hashgrid will search through for alternative stops */
     uint16_t walk_max_distance;
 
-#ifdef FEATURE_OPERATOR_FILTER
-    /* Filter the journey_patterns by the operating operator */
-    uint16_t operator;
-#endif
-
     /* the largest number of transfers to allow in the result */
     uint8_t max_transfers;
 

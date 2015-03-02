@@ -94,10 +94,6 @@ router_request_initialize(router_request_t *req) {
     req->from_latlon.lon = 0.0;
     req->to_latlon.lat = 0.0;
     req->to_latlon.lon = 0.0;
-
-    #ifdef RRRR_FEATURE_OPERATOR_FILTER
-    req->operator = OPERATOR_UNFILTERED;
-    #endif
 }
 
 /* Initializes the router request then fills in its time and datemask fields
@@ -175,10 +171,6 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->to_latlon = tdata->stop_point_coords[rrrrandom(tdata->n_stop_points)];
     req->from_stop_point = STOP_NONE;
     req->to_stop_point = STOP_NONE;
-
-    #ifdef RRRR_FEATURE_OPERATOR_FILTER
-    req->operator = OPERATOR_UNFILTERED;
-    #endif
 }
 
 static bool
