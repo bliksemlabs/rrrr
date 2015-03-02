@@ -76,9 +76,10 @@ int main (int argc, char *argv[]) {
                         "[ --verbose ] [ --randomize ]\n"
                         "[ --arrive=YYYY-MM-DDTHH:MM:SS | "
                           "--depart=YYYY-MM-DDTHH:MM:SS ]\n"
-                        "[ --from-idx=idx | --from-id=id | --from-latlon=Y,X ]\n"
+                        "[ --from-idx=idx | --from-id=id | --from-sp-idx=idx | --from-sp-id=id | --from-latlon=Y,X ]\n"
                         "[ --via-idx=idx  | --via-id=id  | --via-latlon=Y,X ]\n"
-                        "[ --to-idx=idx   | --to-id=id   | --to-latlon=Y,X ]\n"
+                        "[ --to-idx=idx   | --to-id=id   | --to-sp-idx=idx   | --to-sp-id=id   | --to-latlon=Y,X ]\n",argv[0]);
+        fprintf(stderr,
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-jp-idx=idx ]\n"
 #endif
@@ -97,8 +98,7 @@ int main (int argc, char *argv[]) {
 #if RRRR_FEATURE_REALTIME_EXPANDED == 1
                         "[ --gtfsrt-tripupdates=filename.pb ]\n"
 #endif
-                        "[ --repeat=n ]\n"
-                        , argv[0]);
+                        "[ --repeat=n ]\n");
     }
 
     /* The first mandartory argument is the timetable file. We must initialise
@@ -156,9 +156,15 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
+                        strtospidx (&argv[i][11], &tdata, &req.from_stop_area, NULL);
+                    }
+                    else if (strncmp(argv[i], "--from-sp-idx", 14) == 0) {
                         strtospidx (&argv[i][11], &tdata, &req.from_stop_point, NULL);
                     }
                     else if (strncmp(argv[i], "--from-id=", 10) == 0) {
+                        req.from_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][10], 0);
+                    }
+                    else if (strncmp(argv[i], "--from-sp-id=", 13) == 0) {
                         req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][10], 0);
                     }
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
@@ -192,9 +198,15 @@ int main (int argc, char *argv[]) {
 
                 case 't':
                     if (strncmp(argv[i], "--to-idx=", 9) == 0) {
+                        strtospidx (&argv[i][9], &tdata, &req.to_stop_area, NULL);
+                    }
+                    else if (strncmp(argv[i], "--to-sp-idx=", 12) == 0) {
                         strtospidx (&argv[i][9], &tdata, &req.to_stop_point, NULL);
                     }
                     else if (strncmp(argv[i], "--to-id=", 8) == 0) {
+                        req.to_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][8], 0);
+                    }
+                    else if (strncmp(argv[i], "--to-sp-id=", 11) == 0) {
                         req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][8], 0);
                     }
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
