@@ -181,23 +181,6 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     #endif
 }
 
-/* router_request_next updates the current request structure with
- * the next request using the rtime_t resolution (4s)
- */
-void
-router_request_next(router_request_t *req, rtime_t inc) {
-    req->time += inc;
-
-    if (req->time >= 21600) {
-        req->day_mask++;
-        req->time -= 21600;
-    }
-
-    req->time_cutoff = UNREACHED;
-    req->time_rounded = false;
-    req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
-}
-
 static bool
 best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_t *sp, rtime_t *time) {
     uint64_t offset_state = router->tdata->n_stop_points * round;
