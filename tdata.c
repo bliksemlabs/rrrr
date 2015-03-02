@@ -196,7 +196,7 @@ spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, sp
     for (sa_index = sa_index_offset;
          sa_index < td->n_stop_areas;
          ++sa_index) {
-        if (strcasestr(td->string_pool + td->stop_area_ids[sa_index],
+        if (!strcmp(td->string_pool + td->stop_area_ids[sa_index],
                 stop_area_name)) {
             return sa_index;
         }
@@ -209,7 +209,7 @@ spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, s
     for (sp_index = sp_index_offset;
          sp_index < td->n_stop_points;
          ++sp_index) {
-        if (strcasestr(tdata_stop_point_id_for_index(td, sp_index),
+        if (!strcmp(tdata_stop_point_id_for_index(td, sp_index),
                 stop_point_id)) {
             return sp_index;
         }
