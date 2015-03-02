@@ -117,7 +117,7 @@ struct router_request {
     jpidx_t onboard_journey_pattern;
 
     /* onboard departure, vehicle_journey offset within the journey_pattern */
-    uint32_t onboard_journey_pattern_vjoffset;
+    jp_vjoffset_t onboard_journey_pattern_vjoffset;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
