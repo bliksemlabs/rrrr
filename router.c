@@ -1358,7 +1358,9 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
 
 bool router_route(router_t *router, router_request_t *req) {
     uint8_t i_round, n_rounds;
-
+    #ifdef RRRR_DEV
+    router_request_dump(req, router->tdata);
+    #endif
     /* populate router->states */
     if (!initialize_states (router)) {
         fprintf(stderr, "States could not be initialised.\n");
