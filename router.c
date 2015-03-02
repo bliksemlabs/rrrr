@@ -949,10 +949,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
         #endif
 
-        if (jp_index != 9253){
-            continue;
-        }
-
         for (jpp_offset = (req->arrive_by ? jp->n_stops - 1 : 0);
                 req->arrive_by ? jpp_offset >= 0 :
                 jpp_offset < jp->n_stops;
