@@ -185,9 +185,6 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, rtime_
     street_network_t target = req->arrive_by ? req->entry : req->exit;
     int32_t i_target = target.n_points;
 
-    #ifdef RRRR_DEBUG
-    fprintf (stderr, "Reversal - Hashgrid results:\n");
-    #endif
     while (i_target){
         --i_target;
         sp_index = target.stop_points[i_target];
@@ -216,7 +213,6 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, rtime_
                 return false;
             }
         }
-
         return true;
     }
 
@@ -268,56 +264,11 @@ router_request_reverse(router_t *router, router_request_t *req) {
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
-    {
-        street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
-        int32_t i_target = target->n_points;
-        best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
-
-        while (i_target) {
-            spidx_t sp_index;
-            --i_target;
-            sp_index = target->stop_points[i_target];
-            if (router->best_time[sp_index] != UNREACHED) {
-                if (req->arrive_by) {
-                    if (router->best_time[sp_index] - target->durations[i_target] > best_time) {
-                        best_sp_index = sp_index;
-                        best_time = router->best_time[sp_index] - target->durations[i_target];
-                    }
-                } else {
-                    if (router->best_time[sp_index] + target->durations[i_target] < best_time) {
-                        best_sp_index = sp_index;
-                        best_time = router->best_time[sp_index] + target->durations[i_target];
-                    }
-                }
-                #ifdef RRRR_DEBUG
-                fprintf(stderr, "TT %d %s %s %d : %d seconds\n", sp_index,
-                        tdata_stop_point_id_for_index(router->tdata, sp_index),
-                        tdata_stop_point_name_for_index(router->tdata, sp_index),
-                        router->best_time[sp_index], RTIME_TO_SEC(target->durations[i_target]));
-                #endif
-            }
-        }
-
-        /* TODO: Ideally we should implement a o_transfers option here to find
-         * the stop_point that requires the least transfers and is the best
-         * with respect to arrival time. This might be a different stop
-         * than the stop_point that is the best with most transfers.
-         */
-
-    }
-
-    if (best_sp_index == NONE) return false;
-    {
-        /* find the solution with the most transfers and the earliest arrival */
-        uint8_t r;
-        for (r = 0; r <= max_transfers; ++r) {
-            if (router->states_time[r * router->tdata->n_stop_points + best_sp_index] != UNREACHED) {
-                round = r;
-                /* Instead of the earliest arrival (most transfers)
-                * use the solution with the least transfers.
-                */
-                if (req->optimise == o_transfers) break;
-            }
+    while (max_transfers){
+        max_transfers--;
+        if (best_sp_by_round(router, req, max_transfers, &best_time)){
+            round = (uint8_t) (max_transfers+1);
+            break;
         }
     }
 
