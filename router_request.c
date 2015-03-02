@@ -256,7 +256,6 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
  */
 bool
 router_request_reverse(router_t *router, router_request_t *req) {
-    spidx_t best_sp_index = NONE;
     uint8_t max_transfers = req->max_transfers;
     uint8_t round = UINT8_MAX;
     rtime_t best_time;
