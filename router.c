@@ -874,8 +874,8 @@ target_pruning (router_t *router, router_request_t *req, time_t time) {
         sp_idx = target->stop_points[i_target];
         duration = target->durations[i_target];
         if ((router->best_time[sp_idx] != UNREACHED) &&
-            (req->arrive_by ? time - duration < router->best_time[sp_idx]
-                            : time + duration > router->best_time[sp_idx])) {
+            (req->arrive_by ? time + duration < router->best_time[sp_idx]
+                            : time - duration > router->best_time[sp_idx])) {
             #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
             fprintf(stderr, "    (target pruning)\n");
             #endif
