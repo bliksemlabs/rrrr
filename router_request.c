@@ -174,7 +174,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
 }
 
 static bool
-best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_t *sp, rtime_t *time) {
+best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, rtime_t *time) {
     uint64_t offset_state = router->tdata->n_stop_points * round;
     spidx_t sp_index;
     spidx_t best_sp_index = STOP_NONE;
@@ -205,7 +205,6 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
         }
     }
 
-    *sp = best_sp_index;
     *time = best_time;
 
     if (best_sp_index != STOP_NONE) {
@@ -224,13 +223,7 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
 }
 
 static void
-reverse_request (router_request_t *req, uint8_t round, spidx_t best_sp_index, rtime_t best_time) {
-    if (!req->arrive_by) {
-        req->to_stop_point = (spidx_t) best_sp_index;
-    } else {
-        req->from_stop_point = (spidx_t) best_sp_index;
-    }
-
+reverse_request (router_request_t *req, uint8_t round, rtime_t best_time) {
     req->time_cutoff = req->time;
     req->time = best_time;
 
@@ -240,7 +233,6 @@ reverse_request (router_request_t *req, uint8_t round, spidx_t best_sp_index, rt
 
 bool
 router_request_reverse_all(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n) {
-    spidx_t best_sp_index;
     rtime_t best_time;
     int8_t round;
 
@@ -249,9 +241,9 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
     round = (int8_t) req->max_transfers;
 
     do {
-        if (best_sp_by_round(router, req, (uint8_t) round, &best_sp_index, &best_time)) {
+        if (best_sp_by_round(router, req, (uint8_t) round, &best_time)) {
             ret[*ret_n] = *req;
-            reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
+            reverse_request(&ret[*ret_n], (uint8_t) round, best_time);
             (*ret_n)++;
         }
         round--;
