@@ -60,6 +60,7 @@ router_request_initialize(router_request_t *req) {
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
     req->from_stop_point = req->to_stop_point = req->via_stop_point = STOP_NONE;
+    req->from_stop_area = req->to_stop_area = STOP_NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
     req->arrive_by = true;
@@ -359,8 +360,10 @@ bool
 range_check(router_request_t *req, tdata_t *tdata) {
     return !(req->walk_speed < 0.1 ||
              req->from_stop_point >= tdata->n_stop_points ||
-             req->to_stop_point   >= tdata->n_stop_points
-            );
+             req->to_stop_point   >= tdata->n_stop_points ||
+             req->from_stop_area   >= tdata->n_stop_areas ||
+             req->to_stop_area   >= tdata->n_stop_areas
+    );
 }
 
 /* router_request_dump prints the current request structure to the screen */
