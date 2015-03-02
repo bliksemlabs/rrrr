@@ -972,14 +972,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                                                        sp_index));
             #endif
 
-            if (vj_index != NONE &&
-                    /* When currently on a vehicle, skip stops where
-                     * alighting is not allowed at the route-point.
-                     */
-                    ((!forboarding && req->arrive_by) ||
-                     (!foralighting && !req->arrive_by))) {
-                continue;
-            } else if (vj_index == NONE &&
+            if (vj_index == NONE &&
                     /* When looking to board a vehicle, skip stops where
                      * boarding is not allowed at the route-point.
                      */
@@ -1028,7 +1021,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                         fprintf (stderr, "    [reboarding here] vj = %s\n",
                                          btimetext(vj_stoptime, buf));
                         #endif
-                        attempt_board = true;
+                        attempt_board = req->arrive_by ? foralighting : forboarding;
                     }
                 }
             }
