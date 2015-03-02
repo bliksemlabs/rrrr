@@ -247,6 +247,9 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             /* Skip the targets which were not reached by a vhicle in the round */
             if (router->states_time[i_state + sp_index] == UNREACHED) continue;
 
+            #ifdef RRRR_DEV
+            printf("Itinerary from target %s [%d]\n",tdata_stop_point_name_for_index(router->tdata, sp_index),sp_index);
+            #endif
             /* the slot in which record a leg,
             * reversing them for forward vehicle_journey's
             */
