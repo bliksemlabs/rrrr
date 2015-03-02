@@ -12,9 +12,7 @@
 #include "geometry.h"
 #include "rrrr_types.h"
 
-#ifdef RRRR_FEATURE_LATLON
 #include "hashgrid.h"
-#endif
 
 #ifdef RRRR_FEATURE_REALTIME
 #include "gtfs-realtime.pb-c.h"
@@ -230,10 +228,8 @@ struct tdata {
     TransitRealtime__FeedMessage *alerts;
     #endif
     #endif
-    #ifdef RRRR_FEATURE_LATLON
     /* The latlon lookup for each stop_point */
     hashgrid_t hg;
-    #endif
 };
 
 bool tdata_load(tdata_t *td, char *filename);
@@ -250,7 +246,9 @@ uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, jpidx_t jp
 
 spidx_t tdata_stop_areaidx_for_index(tdata_t *td, spidx_t sp_index);
 
-spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sa_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
+
+spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
@@ -317,17 +315,21 @@ const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
-const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sp_index);
+latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t saindex);
+
+latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
 
 spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
 
-spidx_t tdata_stop_pointidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
 
 spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
@@ -374,9 +376,7 @@ rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_ind
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
-#ifdef RRRR_FEATURE_LATLON
 bool tdata_hashgrid_setup (tdata_t *tdata);
-#endif
 
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
 bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);

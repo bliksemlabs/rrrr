@@ -75,7 +75,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
         btimetext((rtime_t) (leg->t0 - time_offset), ct0);
         btimetext((rtime_t) (leg->t1 - time_offset), ct1);
 
-        if (leg->journey_pattern == WALK) {
+        if (leg->journey_pattern >= WALK) {
             operator_name = "";
             short_name = "walk";
             headsign = "walk";
@@ -86,7 +86,8 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
              * place.
              */
             if (leg->sp_from == ONBOARD) continue;
-            if (leg->sp_from == leg->sp_to) leg_mode = "WAIT";
+            else if (leg->journey_pattern == STREET) leg_mode = "STREET";
+            else if (leg->sp_from == leg->sp_to) leg_mode = "WAIT";
             else leg_mode = "WALK";
         } else {
             operator_name = tdata_operator_name_for_journey_pattern(tdata, leg->journey_pattern);
@@ -104,7 +105,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
             leg_mode = tdata_physical_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
 
             #ifdef RRRR_FEATURE_REALTIME_ALERTS
-            if (leg->journey_pattern != WALK && tdata->alerts) {
+            if (leg->journey_pattern < WALK && tdata->alerts) {
                 leg_add_alerts (leg, tdata, date, &alert_msg);
             }
             #else

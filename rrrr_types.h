@@ -8,7 +8,6 @@
 
 #include "config.h"
 #include "hashgrid.h"
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
@@ -89,35 +88,46 @@ typedef enum tmode {
     m_all       = 255
 } tmode_t;
 
+typedef struct street_network street_network_t;
+struct street_network {
+    spidx_t n_points;
+    /* Used to mark stop_point as po for the itinerary */
+    spidx_t stop_points[RRRR_MAX_ENTRY_EXIT_POINTS];
+    /* Used to mark duration from origin to stop_point */
+    rtime_t durations[RRRR_MAX_ENTRY_EXIT_POINTS];
+};
+
 typedef struct router_request router_request_t;
 struct router_request {
-#ifdef RRRR_FEATURE_LATLON
+    /* Requested stop_point as start-location */
+    spidx_t from_stop_point;
+
+    /* Requested stop_area as start-location */
+    spidx_t from_stop_area;
+
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
-    hashgrid_result_t from_hg_result;
 
-    /* actual destination in wgs84 presented to the planner */
-    latlon_t to_latlon;
-    hashgrid_result_t to_hg_result;
-
-    /* actual intermediate in wgs84 presented to the planner */
-    latlon_t via_latlon;
-    hashgrid_result_t via_hg_result;
-#endif
-    /* (nearest) start stop_point index from the users perspective */
-    spidx_t from_stop_point;
+    /* Requested stop_area as end-location */
+    spidx_t to_stop_area;
 
     /* (nearest) destination stop_point index from the users perspective */
     spidx_t to_stop_point;
 
+    /* actual destination in wgs84 presented to the planner */
+    latlon_t to_latlon;
+
     /* preferred transfer stop_point index from the users perspective */
     spidx_t via_stop_point;
+
+    /* actual intermediate in wgs84 presented to the planner */
+    latlon_t via_latlon;
 
     /* onboard departure, journey_pattern index from the users perspective */
     jpidx_t onboard_journey_pattern;
 
     /* onboard departure, vehicle_journey offset within the journey_pattern */
-    uint32_t onboard_journey_pattern_vjoffset;
+    jp_vjoffset_t onboard_journey_pattern_vjoffset;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
@@ -148,11 +158,6 @@ struct router_request {
 
     /* the maximum distance the hashgrid will search through for alternative stops */
     uint16_t walk_max_distance;
-
-#ifdef FEATURE_OPERATOR_FILTER
-    /* Filter the journey_patterns by the operating operator */
-    uint16_t operator;
-#endif
 
     /* the largest number of transfers to allow in the result */
     uint8_t max_transfers;
@@ -194,6 +199,11 @@ struct router_request {
 
     /* whether to show the intermediate stops in the output */
     bool intermediatestops;
+
+    /* Mark durations to various stop-points from the request start-position of the itinerary */
+    street_network_t entry;
+    /* Mark durations from various stop-points to the request end-position of the itinerary */
+    street_network_t exit;
 };
 
 
@@ -219,7 +229,8 @@ struct router_request {
 
 #define UNREACHED UINT16_MAX
 #define NONE      (UINT16_MAX)
-#define WALK      (UINT16_MAX - 1)
+#define STREET    (UINT16_MAX - 1)
+#define WALK      (UINT16_MAX - 2)
 
 #define STOP_NONE ((spidx_t) -1)
 #define ONBOARD   ((spidx_t) -2)

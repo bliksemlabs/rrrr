@@ -123,7 +123,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
 
     polyline_t pl;
 
-    if (leg->journey_pattern == WALK) mode = "WALK"; else {
+    if (leg->journey_pattern >= WALK) mode = "WALK"; else {
         put_servicedate(leg, date, servicedate);
 
         #ifdef RRRR_FEATURE_REALTIME_EXPANDED
@@ -180,7 +180,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         json_kv(j, "agencyId", operator_id);
         json_kv(j, "agencyName", operator_name);
         json_kv(j, "agencyUrl", operator_url);
-        if (leg->journey_pattern != WALK){
+        if (leg->journey_pattern < WALK){
             json_kv(j, "agencyTimeZoneOffset", agencyTzOffset);
         }
         json_kv(j, "wheelchairAccessible", wheelchair_accessible);
@@ -308,7 +308,7 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
             for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
                 uint32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
                 json_leg (j, leg, tdata, req, date);
-                if (leg->journey_pattern == WALK) {
+                if (leg->journey_pattern >= WALK) {
                     if (leg->sp_from == leg->sp_to) {
                         waitingtime += leg_duration;
                     } else {

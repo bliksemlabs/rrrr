@@ -90,13 +90,6 @@ void router_teardown(router_t *router) {
 
 void router_reset(router_t *router) {
 
-    /* Make sure both origin and target are initialised with NONE, so it
-     * becomes possible to validate that they have been set to a valid
-     * stop_point index.
-     */
-    router->origin = STOP_NONE;
-    router->target = STOP_NONE;
-
     /* The best times to arrive at a stop_point scratch space is initialised with
      * UNREACHED. This allows to compare for a lesser time candidate in the
      * search.
@@ -310,7 +303,6 @@ static void unflag_banned_stop_points(router_t *router, router_request_t *req) {
 }
 #endif
 
-#ifdef RRRR_FEATURE_LATLON
 /* Because the first round begins with so few reached stops, the initial state
  * doesn't get its own full array of states
  * Instead we reuse one of the later rounds (round 1) for the initial state.
@@ -326,8 +318,7 @@ static void initialize_transfers_full (router_t *router, uint32_t round) {
         states_walk_time[i_state] = UNREACHED;
     } while (i_state);
 }
-#else
-
+#if 0
 /* Because the first round begins with so few reached stops, the initial state
  * doesn't get its own full array of states. Instead we reuse one of the later
  * rounds (round 1) for the initial state. This means we need to reset the
@@ -351,8 +342,26 @@ static void initialize_transfers (router_t *router,
         states_walk_time[sp_index_to] = UNREACHED;
     }
 }
-#endif
 
+/* Evaluate the performance of initialize_transfers_full, with this advance method. */
+static void initialize_transfers_n (router_t *router, uint8_t round,
+                                    spidx_t *sp_index_from, uint8_t n_stops) {
+    do {
+        rtime_t *states_walk_time;
+        uint32_t t, tN;
+        n_stops--;
+
+        states_walk_time = router->states_walk_time + (round * router->tdata->n_stop_points);
+        t  = router->tdata->stop_points[sp_index_from[n_stops]    ].transfers_offset;
+        tN = router->tdata->stop_points[sp_index_from[n_stops] + 1].transfers_offset;
+        states_walk_time[sp_index_from[n_stops]] = UNREACHED;
+        for ( ; t < tN ; ++t) {
+            spidx_t sp_index_to = router->tdata->transfer_target_stops[t];
+            states_walk_time[sp_index_to] = UNREACHED;
+        }
+    } while (n_stops);
+}
+#endif
 
 /* Get the departure or arrival time of the given vj on the given
  * service day, applying realtime data as needed.
@@ -420,28 +429,28 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 
 /* TODO: change the function name of tdata_next */
 static bool
-tdata_next (router_t *router, router_request_t *req,
+tdata_next (tdata_t *tdata, serviceday_t *servicedays, bool arrive_by,
             jpidx_t jp_index, jp_vjoffset_t vj_offset, rtime_t qtime,
             spidx_t *ret_sp_index, rtime_t *ret_stop_time) {
 
-    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
-    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
+    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(tdata, jp_index);
+    journey_pattern_t *jp = tdata->journey_patterns + jp_index;
     uint32_t jpp_i;
 
     *ret_sp_index = STOP_NONE;
     *ret_stop_time = UNREACHED;
 
     for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
-        /* TODO: check if the arrive = false flag works with req->arrive_by */
+        /* TODO: check if the arrive = false flag works with arrive_by */
 
-        rtime_t time = tdata_stoptime (router->tdata, &(router->servicedays[1]),
+        rtime_t time = tdata_stoptime (tdata, &(servicedays[1]),
                 jp_index, vj_offset, (jppidx_t) jpp_i, false);
 
         /* Find stop_point immediately after the given time on the given vj. */
-        if (req->arrive_by ? time > qtime : time < qtime) {
+        if (arrive_by ? time > qtime : time < qtime) {
             if (*ret_stop_time == UNREACHED ||
-                (req->arrive_by ? time < *ret_stop_time :
-                                  time > *ret_stop_time)) {
+                (arrive_by ? time < *ret_stop_time :
+                             time > *ret_stop_time)) {
                 *ret_sp_index = (spidx_t) journey_pattern_points[jpp_i];
                 *ret_stop_time = time;
             }
@@ -459,7 +468,7 @@ tdata_next (router_t *router, router_request_t *req,
  * in the ride phase and stored in the walk time member of states.
  */
 static void apply_transfers (router_t *router, router_request_t *req,
-                      uint32_t round, bool transfer, bool initial) {
+                      uint32_t round, bool transfer) {
     rtime_t *states_time = router->states_time + (round * router->tdata->n_stop_points);
     rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stop_points);
     spidx_t *states_walk_from = router->states_walk_from + (round * router->tdata->n_stop_points);
@@ -511,9 +520,7 @@ static void apply_transfers (router_t *router, router_request_t *req,
             /* This state's best time is still its own.
              * No improvements from other transfers.
              */
-            if (initial){
-                states_walk_time[sp_index_from] = time_from;
-            }else if (req->arrive_by){
+            if (req->arrive_by){
                 states_walk_time[sp_index_from] = time_from - sp_waittime;
             }else{
                 states_walk_time[sp_index_from] = time_from + sp_waittime;
@@ -854,6 +861,35 @@ write_state(router_t *router, router_request_t *req,
     return true;
 }
 
+static bool
+target_pruning (router_t *router, router_request_t *req, time_t time) {
+    street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
+    int32_t i_target = target->n_points;
+
+    /* Target pruning, section 3.1 of RAPTOR paper. */
+    while (i_target) {
+        spidx_t sp_idx;
+        rtime_t duration;
+        --i_target;
+        sp_idx = target->stop_points[i_target];
+        duration = target->durations[i_target];
+        if ((router->best_time[sp_idx] != UNREACHED) &&
+            (req->arrive_by ? time + duration < router->best_time[sp_idx]
+                            : time - duration > router->best_time[sp_idx])) {
+            #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
+            fprintf(stderr, "    (target pruning)\n");
+            #endif
+
+            /* We cannot break out of this journey_pattern entirely,
+             * because re-boarding may occur at a later stop.
+             */
+            return true;
+        }
+    } while (i_target);
+
+    return false;
+}
+
 static void router_round(router_t *router, router_request_t *req, uint8_t round) {
     /*  TODO restrict pointers? */
     rtime_t *states_walk_time = router->states_walk_time + (((round == 0) ? 1 : round - 1) * router->tdata->n_stop_points);
@@ -1071,18 +1107,10 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 #endif
 
                 /* Target pruning, section 3.1 of RAPTOR paper. */
-                if ((router->best_time[router->target] != UNREACHED) &&
-                    (req->arrive_by ? time < router->best_time[router->target]
-                                    : time > router->best_time[router->target])) {
-                    #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
-                    fprintf(stderr, "    (target pruning)\n");
-                    #endif
-
-                    /* We cannot break out of this journey_pattern entirely,
-                     * because re-boarding may occur at a later stop.
-                     */
+                if (target_pruning (router, req, time)) {
                     continue;
                 }
+
                 if ((req->time_cutoff != UNREACHED) &&
                     (req->arrive_by ? time < req->time_cutoff
                                     : time > req->time_cutoff)) {
@@ -1143,18 +1171,14 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
     /* Also updates the list of journey_patterns for next round
      * based on stops that were touched in this round.
      */
-    apply_transfers(router, req, round, true,false);
+    apply_transfers(router, req, round, true);
 
     /* Initialize the stops in round 1 that were used as
      * starting points for round 0.
      */
     /*  TODO: also must be done for the hashgrid */
     if (round == 0) {
-        #ifdef RRRR_FEATURE_LATLON
         initialize_transfers_full (router, 1);
-        #else
-        initialize_transfers (router, 1, router->origin);
-        #endif
     }
 
      /*  TODO add arrival hashgrid timings */
@@ -1165,6 +1189,8 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 }
 
 static bool initialize_origin_onboard (router_t *router, router_request_t *req) {
+    /* TODO */
+#if 0
     /* We cannot expand the start vj into the temporary round (1)
      * during initialization because we may be able to reach the
      * destination on that starting vj.
@@ -1176,19 +1202,20 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
     spidx_t sp_index;
     rtime_t stop_time;
 
-    if (tdata_next (router, req,
-                    req->onboard_journey_pattern, (jp_vjoffset_t) req->onboard_journey_pattern_vjoffset,
+    if (tdata_next (router->tdata, router->servicedays, req->arrive_by,
+                    req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
                     req->time, &sp_index, &stop_time) ){
         uint64_t i_state;
 
         req->from_stop_point = ONBOARD;
 
         /* Initialize the origin */
-        router->origin = sp_index;
-        router->best_time[router->origin] = stop_time;
+        router->origin_stop_points[0] = sp_index;
+        router->n_origins  = 1;
+        router->best_time[sp_index] = stop_time;
 
         /* Set the origin stop_point in the "2nd round" */
-        i_state = router->tdata->n_stop_points + router->origin;
+        i_state = router->tdata->n_stop_points + sp_index;
         router->states_time[i_state]      = stop_time;
         router->states_walk_time[i_state] = stop_time;
 
@@ -1201,204 +1228,78 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
 
         return true;
     }
-
+#endif
     return false;
 }
 
-static bool initialize_origin_index (router_t *router, router_request_t *req) {
-    uint32_t i_state;
-
-    router->origin = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
-
-    if (router->origin == STOP_NONE) return false;
-
-    router->best_time[router->origin] = req->time;
-
-    /* TODO: This is a hack to communicate the origin time to itinerary
-     * renderer. It would be better to just include rtime_t in request
-     * structs.  eliminate this now that we have rtimes in requests.
+static bool stop_point_is_banned(router_request_t *req, spidx_t sp_index){
+    /* TODO: this is terrible. For each result we explicitly remove if it
+     * is banned. While banning doesn't happen that often a more elegant
+     * way would be to just overwrite the state and best_time.
+     * Sadly that might not give us an accurate best_sp_index.
      */
-    router->states_time[router->origin] = req->time;
-    bitset_clear(router->updated_stop_points);
 
-    /* This is inefficient, as it depends on iterating over
-     * a bitset with only one bit true.
-     */
-    bitset_set(router->updated_stop_points, router->origin);
+    #if RRRR_MAX_BANNED_STOP_POINTS > 0
+    /* if a stop_point is banned, we should not act upon it here */
+    if (set_in_sp (req->banned_stops, req->n_banned_stops,
+            (spidx_t) sp_index)) return true;
+    #endif
 
-    /* We will use round 1 to hold the initial state for round 0.
-     * Round 1 must then be re-initialized before use.
-     */
-    i_state = router->tdata->n_stop_points + router->origin;
-    router->states_time[i_state] = req->time;
-
-    /* the rest of these should be unnecessary */
-    router->states_ride_from[i_state] = STOP_NONE;
-    router->states_back_journey_pattern[i_state] = NONE;
-    router->states_back_vehicle_journey[i_state] = NONE;
-    router->states_board_time[i_state] = UNREACHED;
-
-    /* Apply transfers to initial state,
-     * which also initializes the updated journey_patterns bitset.
-     */
-    apply_transfers(router, req, 1, true,true);
-
-    return true;
+    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
+    /* if a stop_point is banned hard, we should not act upon it here */
+    if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
+            (spidx_t) sp_index)) return true;
+    #endif
+    return false;
 }
 
-static bool initialize_target_index (router_t *router, router_request_t *req) {
-    router->target = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
-
-    return (router->target != STOP_NONE);
-}
-
-#ifdef RRRR_FEATURE_LATLON
-static bool latlon_best_stop_point_index(router_t *router, router_request_t *req,
-        hashgrid_result_t *hg_result) {
-    double distance, best_distance = INFINITY;
-    uint32_t sp_index, best_sp_index = HASHGRID_NONE;
-
-    hashgrid_result_reset(hg_result);
-    sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-
-    while (sp_index != HASHGRID_NONE) {
+static bool initialize_origins(router_t *router, router_request_t *req){
+    street_network_t *origin = req->arrive_by ? &req->exit : &req->entry;
+    int32_t i_origin = origin->n_points;
+    if (i_origin == 0) { return false; }
+    #ifdef RRRR_DEV
+    fprintf(stderr,"\n INITIALIZING ORIGINS\n");
+    #endif
+    while (i_origin){
+        rtime_t start_time;
+        spidx_t sp_index;
+        rtime_t duration_to_origin;
         uint32_t i_state;
-        rtime_t extra_walktime;
+        --i_origin;
 
-        /* TODO: this is terrible. For each result we explicitly remove if it
-         * is banned. While banning doesn't happen that often a more elegant
-         * way would be to just overwrite the state and best_time.
-         * Sadly that might not give us an accurate best_sp_index.
-         */
-
-        #if RRRR_MAX_BANNED_STOP_POINTS > 0
-        /* if a stop_point is banned, we should not act upon it here */
-        if (set_in_sp (req->banned_stops, req->n_banned_stops,
-                       (spidx_t) sp_index)) continue;
-        #endif
-
-        #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
-        /* if a stop_point is banned hard, we should not act upon it here */
-        if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
-                       (spidx_t) sp_index)) continue;
-        #endif
-
+        duration_to_origin = origin->durations[i_origin];
+        sp_index = origin->stop_points[i_origin];
         i_state = router->tdata->n_stop_points + sp_index;
-        extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
-                                                     req->walk_speed));
-
-        if (req->arrive_by) {
-            router->best_time[sp_index] = req->time - extra_walktime;
-            router->states_time[i_state]  = req->time - extra_walktime;
-        } else {
-            router->best_time[sp_index] = req->time + extra_walktime;
-            router->states_time[i_state]  = req->time + extra_walktime;
+        if (stop_point_is_banned(req,sp_index)){
+            continue;
         }
+        #ifdef RRRR_DEV
+        fprintf (stderr, "ORIGIN %d :%d %s %s : %d seconds\n", i_origin, sp_index,
+                tdata_stop_point_id_for_index(router->tdata, sp_index),
+                tdata_stop_point_name_for_index(router->tdata, sp_index),
+                RTIME_TO_SEC(origin->durations[i_origin]));
+        #endif
 
-        /*  the rest of these should be unnecessary */
+        start_time = req->arrive_by ? req->time - duration_to_origin :
+                req->time + duration_to_origin;
+        router->best_time[sp_index] = start_time;
+        router->states_time[i_state] = start_time;
+        router->states_walk_time[i_state] = start_time;
+        router->states_walk_from[i_state] = sp_index;
         router->states_ride_from[i_state] = STOP_NONE;
         router->states_back_journey_pattern[i_state] = NONE;
         router->states_back_vehicle_journey[i_state] = NONE;
         router->states_board_time[i_state] = UNREACHED;
 
-        bitset_set(router->updated_stop_points, sp_index);
+        flag_journey_patterns_for_stop_point(router, req, (spidx_t) sp_index);
+    };
 
-        if (distance < best_distance) {
-            best_distance = distance;
-            best_sp_index = sp_index;
-        }
 
-        #ifdef RRRR_INFO
-        fprintf (stderr, "%d %s %s (%.0fm)\n",
-                         sp_index,
-                         tdata_stop_point_id_for_index(router->tdata, sp_index),
-                         tdata_stop_point_name_for_index(router->tdata, sp_index),
-                         distance);
-        #endif
-
-        /* get the next potential start stop_point */
-        sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-    }
-
-    router->origin = (spidx_t) best_sp_index;
-
-    if (router->origin == STOP_NONE) return false;
-
-    /*  TODO eliminate this now that we have rtimes in requests */
-    router->states_time[router->origin] = req->time;
-
-    /* TODO this silences a warning, but what exactly is required here */
-    apply_transfers(router, req, 1, false, false);
-
+    #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+    unflag_banned_journey_patterns(router, req);
+    #endif
     return true;
 }
-
-static bool initialize_origin_latlon (router_t *router, router_request_t *req) {
-    if (req->arrive_by) {
-        if (req->to_latlon.lat == 0.0 &&
-            req->to_latlon.lon == 0.0) {
-            return false;
-        }
-
-        if (req->to_hg_result.hg == NULL) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->to_latlon);
-            hashgrid_query (&router->tdata->hg, &req->to_hg_result,
-                            coord, req->walk_max_distance);
-        }
-        return latlon_best_stop_point_index(router, req, &req->to_hg_result);
-    } else {
-        if (req->from_latlon.lat == 0.0 &&
-            req->from_latlon.lon == 0.0) {
-            return false;
-        }
-
-        if (req->from_hg_result.hg == NULL ) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->from_latlon);
-            hashgrid_query (&router->tdata->hg, &req->from_hg_result,
-                            coord, req->walk_max_distance);
-        }
-        return latlon_best_stop_point_index(router, req, &req->from_hg_result);
-    }
-
-    return false;
-}
-
-static bool initialize_target_latlon (router_t *router, router_request_t *req) {
-    if (req->arrive_by) {
-        if (req->from_latlon.lat == 0.0 &&
-            req->from_latlon.lon == 0.0) {
-            return false;
-        }
-
-        if (req->from_hg_result.hg == NULL) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->from_latlon);
-            hashgrid_query (&router->tdata->hg, &req->from_hg_result,
-                            coord, req->walk_max_distance);
-        }
-        hashgrid_result_reset (&req->from_hg_result);
-        router->target = (spidx_t) hashgrid_result_closest (&req->from_hg_result);
-    } else {
-        if (req->to_latlon.lat == 0.0 &&
-            req->to_latlon.lon == 0.0) {
-            return false;
-        }
-
-        if (req->to_hg_result.hg == NULL ) {
-            coord_t coord;
-            coord_from_latlon (&coord, &req->to_latlon);
-            hashgrid_query (&router->tdata->hg, &req->to_hg_result,
-                            coord, req->walk_max_distance);
-        }
-        hashgrid_result_reset (&req->to_hg_result);
-        router->target = (spidx_t) hashgrid_result_closest (&req->to_hg_result);
-    }
-
-    return (router->target != STOP_NONE);
-}
-#endif
 
 static bool initialize_origin (router_t *router, router_request_t *req) {
     /* In this function we are setting up all initial required elements of the
@@ -1451,46 +1352,15 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
             return false;
         }
     } else {
-        #ifdef RRRR_FEATURE_LATLON
-        /* In the first two searches the LATLON search will find the best
-         * values for req->to and req->from the final interation have both
-         * set to the walk optimum. For the geographic optimisation to start
-         * a latlon must be set and the stop_point_index must be set to NONE.
-         */
-        if (( req->arrive_by ? req->to_stop_point == STOP_NONE : req->from_stop_point == STOP_NONE)) {
-            /* search the target based on latlon */
-            return initialize_origin_latlon (router, req);
-        } else
-        #endif
-        {
-            /* search the origin based on a provided index */
-            return initialize_origin_index (router, req);
-        }
+        return initialize_origins(router,req);
     }
 }
-
-static bool initialize_target (router_t *router, router_request_t *req) {
-    /* In the first two searches the LATLON search will find the best
-     * values for req->to and req->from the final interation have both
-     * set to the walk optimum. For the geographic optimisation to start
-     * a latlon must be set and the stop_point_index must be set to NONE.
-     */
-    #ifdef RRRR_FEATURE_LATLON
-    if (( req->arrive_by ? req->from_stop_point == STOP_NONE : req->to_stop_point == STOP_NONE)) {
-        /* search the target based on latlon */
-        return initialize_target_latlon (router, req);
-    } else
-    #endif
-    {
-        /* search the origin based on a provided index */
-        return initialize_target_index (router, req);
-    }
-}
-
 
 bool router_route(router_t *router, router_request_t *req) {
     uint8_t i_round, n_rounds;
-
+    #ifdef RRRR_DEV
+    router_request_dump(req, router->tdata);
+    #endif
     /* populate router->states */
     if (!initialize_states (router)) {
         fprintf(stderr, "States could not be initialised.\n");
@@ -1503,7 +1373,7 @@ bool router_route(router_t *router, router_request_t *req) {
         return false;
     }
 
-    #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
     /* populate router->banned_journey_patterns first, as unflag_banned_journey_patterns
      * is used via initialize_origin, apply_transfers
      */
@@ -1515,9 +1385,7 @@ bool router_route(router_t *router, router_request_t *req) {
         fprintf(stderr, "Search origin could not be initialised.\n");
         return false;
     }
-
-    /* populate router->target */
-    if (!initialize_target (router, req)) {
+    if (req->arrive_by ? req->exit.n_points == 0 : req->entry.n_points == 0){
         fprintf(stderr, "Search target could not be initialised.\n");
         return false;
     }

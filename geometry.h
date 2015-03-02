@@ -7,6 +7,7 @@
 #define _GEOMETRY_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
 
 typedef struct coord coord_t;

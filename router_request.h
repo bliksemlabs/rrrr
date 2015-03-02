@@ -17,5 +17,4 @@ time_t router_request_to_date (router_request_t *req, tdata_t *tdata, struct tm 
 time_t router_request_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 bool range_check(router_request_t *req, tdata_t *router);
 void router_request_dump(router_request_t *req, tdata_t *tdata);
-
 #endif
