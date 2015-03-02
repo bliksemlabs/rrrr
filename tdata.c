@@ -178,13 +178,26 @@ spidx_t tdata_stop_areaidx_for_index(tdata_t *td, spidx_t sp_index) {
     return td->stop_area_for_stop_point[sp_index];
 }
 
-spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sa_index_offset) {
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset) {
     spidx_t sa_index;
     for (sa_index = sa_index_offset;
          sa_index < td->n_stop_areas;
          ++sa_index) {
         if (strcasestr(td->string_pool + td->stop_area_nameidx[sa_index],
-                stop_point_name)) {
+                stop_area_name)) {
+            return sa_index;
+        }
+    }
+    return STOP_NONE;
+}
+
+spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset) {
+    spidx_t sa_index;
+    for (sa_index = sa_index_offset;
+         sa_index < td->n_stop_areas;
+         ++sa_index) {
+        if (strcasestr(td->string_pool + td->stop_area_ids[sa_index],
+                stop_area_name)) {
             return sa_index;
         }
     }

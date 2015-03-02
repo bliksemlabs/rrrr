@@ -246,7 +246,9 @@ uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, jpidx_t jp
 
 spidx_t tdata_stop_areaidx_for_index(tdata_t *td, spidx_t sp_index);
 
-spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sa_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
+
+spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
 uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
@@ -327,7 +329,7 @@ const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
 
 spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
 
-spidx_t tdata_stop_pointidx_by_stop_area_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
 
 spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
