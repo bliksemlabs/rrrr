@@ -12,14 +12,9 @@ bool streetnetwork_stoppoint_durations(latlon_t *latlon, float walk_speed, uint1
 
     sp_index = hashgrid_result_next_filtered(&hg_result, &distance);
     while (sp_index != HASHGRID_NONE) {
-        sn->stop_points[sn->n_points] = (spidx_t) sp_index;
-        sn->durations[sn->n_points] = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
+        rtime_t duration = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) /
                 walk_speed));
-        ++sn->n_points;
-        #if RRRR_DEBUG
-        printf("STREET sp_index: %d, duration %d seconds\n",
-        sp_index, SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) / walk_speed)));
-        #endif
+        street_network_mark_duration_to_stop_point(sn, sp_index, duration);
         /* get the next potential start stop_point */
         sp_index = hashgrid_result_next_filtered(&hg_result, &distance);
     }
