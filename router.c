@@ -578,7 +578,6 @@ static void apply_transfers (router_t *router, router_request_t *req,
                 #endif
                 states_walk_time[sp_index_to] = time_to;
                 states_walk_from[sp_index_to] = (spidx_t) sp_index_from;
-                router->best_time[sp_index_to] = time_to;
                 bitset_set(router->updated_walk_stop_points, sp_index_to);
             }
         }
