@@ -213,6 +213,7 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
     fprintf (stderr, "Reversal - Hashgrid results:\n");
     #endif
     while (i_target){
+        --i_target;
         sp_index = target.stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
             if (req->arrive_by) {
@@ -229,7 +230,6 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
                 }
             }
         }
-        --i_target;
     }
 
     *sp = best_sp_index;
