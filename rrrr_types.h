@@ -99,23 +99,29 @@ struct street_network {
 
 typedef struct router_request router_request_t;
 struct router_request {
+    /* Requested stop_point as start-location */
+    spidx_t from_stop_point;
+
+    /* Requested stop_area as start-location */
+    spidx_t from_stop_area;
+
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
 
-    /* actual destination in wgs84 presented to the planner */
-    latlon_t to_latlon;
-
-    /* actual intermediate in wgs84 presented to the planner */
-    latlon_t via_latlon;
-
-    /* (nearest) start stop_point index from the users perspective */
-    spidx_t from_stop_point;
+    /* Requested stop_area as end-location */
+    spidx_t to_stop_area;
 
     /* (nearest) destination stop_point index from the users perspective */
     spidx_t to_stop_point;
 
+    /* actual destination in wgs84 presented to the planner */
+    latlon_t to_latlon;
+
     /* preferred transfer stop_point index from the users perspective */
     spidx_t via_stop_point;
+
+    /* actual intermediate in wgs84 presented to the planner */
+    latlon_t via_latlon;
 
     /* onboard departure, journey_pattern index from the users perspective */
     jpidx_t onboard_journey_pattern;
