@@ -689,6 +689,7 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
 
             if (req->arrive_by ? time < req->time_cutoff
                                : time > req->time_cutoff){
+                if (jp_overlap) continue;
                 return;
             }
 
