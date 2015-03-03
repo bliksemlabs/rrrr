@@ -246,7 +246,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             spidx_t sp_index = target->stop_points[i_target];
             rtime_t duration = target->durations[i_target];
 
-            /* Skip the targets which were not reached by a vhicle in the round */
+            /* Skip the targets which were not reached by a vhicle in the round or have worse times than the cutoff */
             if (router->states_time[i_state + sp_index] == UNREACHED ||
                     (req ->arrive_by ? router->states_time[i_state + sp_index] - duration < req->time_cutoff :
                                        router->states_time[i_state + sp_index] + duration > req->time_cutoff)) continue;
