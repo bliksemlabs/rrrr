@@ -318,50 +318,6 @@ static void initialize_transfers_full (router_t *router, uint32_t round) {
         states_walk_time[i_state] = UNREACHED;
     } while (i_state);
 }
-#if 0
-/* Because the first round begins with so few reached stops, the initial state
- * doesn't get its own full array of states. Instead we reuse one of the later
- * rounds (round 1) for the initial state. This means we need to reset the
- * walks in round 1 back to UNREACHED before using them in routing. Rather
- * than iterating over all of them, we only initialize the stops that can be
- * reached by transfers.
- * Alternatively we could instead initialize walks to UNREACHED at the
- * beginning of the transfer calculation function.
- * We should not however reset the best times for those stops reached from the
- * initial stop_point on foot. This will prevent finding circuitous itineraries that
- * return to them.
- */
-static void initialize_transfers (router_t *router,
-                                  uint32_t round, spidx_t sp_index_from) {
-    rtime_t *states_walk_time = router->states_walk_time + (round * router->tdata->n_stop_points);
-    uint32_t t  = router->tdata->stop_points[sp_index_from    ].transfers_offset;
-    uint32_t tN = router->tdata->stop_points[sp_index_from + 1].transfers_offset;
-    states_walk_time[sp_index_from] = UNREACHED;
-    for ( ; t < tN ; ++t) {
-        spidx_t sp_index_to = router->tdata->transfer_target_stops[t];
-        states_walk_time[sp_index_to] = UNREACHED;
-    }
-}
-
-/* Evaluate the performance of initialize_transfers_full, with this advance method. */
-static void initialize_transfers_n (router_t *router, uint8_t round,
-                                    spidx_t *sp_index_from, uint8_t n_stops) {
-    do {
-        rtime_t *states_walk_time;
-        uint32_t t, tN;
-        n_stops--;
-
-        states_walk_time = router->states_walk_time + (round * router->tdata->n_stop_points);
-        t  = router->tdata->stop_points[sp_index_from[n_stops]    ].transfers_offset;
-        tN = router->tdata->stop_points[sp_index_from[n_stops] + 1].transfers_offset;
-        states_walk_time[sp_index_from[n_stops]] = UNREACHED;
-        for ( ; t < tN ; ++t) {
-            spidx_t sp_index_to = router->tdata->transfer_target_stops[t];
-            states_walk_time[sp_index_to] = UNREACHED;
-        }
-    } while (n_stops);
-}
-#endif
 
 /* Get the departure or arrival time of the given vj on the given
  * service day, applying realtime data as needed.
