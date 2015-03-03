@@ -848,6 +848,9 @@ write_state(router_t *router, router_request_t *req,
     #endif
 
     {   /* Target pruning, section 3.1 of RAPTOR paper. */
+        /* TODO consider a buffer that allows for less optimal (in time) trips
+           but for more optimal trips in other factors (price, no operator change,etc.)
+         */
         street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
         int32_t i_target = target->n_points;
         while (i_target){
