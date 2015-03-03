@@ -143,6 +143,7 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
         return false;
     }
 
+    /*reversal is meaningless/useless in on-board */
     if (req->onboard_journey_pattern == NONE) {
         for (i = 0; i < n_reversals; ++i) {
             if (!router_request_reverse(router, req)) {
@@ -155,8 +156,6 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
             }
 
         }
-    }else{
-        street_network_mark_duration_to_stop_point(&req->entry, req->from_stop_point, 0);
     }
 
     if ( ! router_result_to_plan (plan, router, req) ) {
@@ -186,6 +185,11 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
            req->from_stop_point != NONE &&
          ! router_result_to_plan (plan, router, req) ) {
         return false;
+    }
+
+    if (req->from_stop_point == ONBOARD){
+        /*reversal is meaningless/useless in on-board */
+        return true;
     }
 
     /* We first add virtual request so we will never do them again */
