@@ -836,7 +836,7 @@ write_state(router_t *router, router_request_t *req,
     }
     #endif
 
-    router->best_time[sp_index]    = time;
+    router->best_time[sp_index]                  = time;
     router->states_time[i_state]                 = time;
     router->states_back_journey_pattern[i_state] = jp_index;
     router->states_back_vehicle_journey[i_state] = vj_offset;
@@ -846,6 +846,27 @@ write_state(router_t *router, router_request_t *req,
     router->states_back_journey_pattern_point[i_state] = board_jpp_offset;
     router->states_journey_pattern_point[i_state]      = jpp_offset;
     #endif
+
+    {   /* Target pruning, section 3.1 of RAPTOR paper. */
+        street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
+        int32_t i_target = target->n_points;
+        while (i_target){
+            --i_target;
+            if (target->stop_points[i_target] == sp_index
+                    && (( req->arrive_by && time - target->durations[i_target] > req->time_cutoff) ||
+                        (!req->arrive_by && time + target->durations[i_target] < req->time_cutoff))){
+                req->time_cutoff = req->arrive_by ? time - target->durations[i_target] :
+                                                    time + target->durations[i_target];
+                #ifdef RRRR_DEV
+                {
+                    char time32[12];
+                    btimetext(time, time32);
+                    printf("Relaxed time_cutoff to %s\n",time32);
+                }
+                #endif
+            }
+        }
+    }
 
     #ifdef RRRR_STRICT
     if (req->arrive_by && board_time < time) {
@@ -860,35 +881,6 @@ write_state(router_t *router, router_request_t *req,
     #endif
 
     return true;
-}
-
-static bool
-target_pruning (router_t *router, router_request_t *req, time_t time) {
-    street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
-    int32_t i_target = target->n_points;
-
-    /* Target pruning, section 3.1 of RAPTOR paper. */
-    while (i_target) {
-        spidx_t sp_idx;
-        rtime_t duration;
-        --i_target;
-        sp_idx = target->stop_points[i_target];
-        duration = target->durations[i_target];
-        if ((router->best_time[sp_idx] != UNREACHED) &&
-            (req->arrive_by ? time + duration < router->best_time[sp_idx]
-                            : time - duration > router->best_time[sp_idx])) {
-            #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
-            fprintf(stderr, "    (target pruning)\n");
-            #endif
-
-            /* We cannot break out of this journey_pattern entirely,
-             * because re-boarding may occur at a later stop.
-             */
-            return true;
-        }
-    } while (i_target);
-
-    return false;
 }
 
 static void router_round(router_t *router, router_request_t *req, uint8_t round) {
@@ -1088,11 +1080,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 fprintf(stderr, "    on board vj %d considering time %s \n",
                                 vj_index, timetext(time));
                 #endif
-
-                /* Target pruning, section 3.1 of RAPTOR paper. */
-                if (target_pruning (router, req, time)) {
-                    continue;
-                }
 
                 if ((req->time_cutoff != UNREACHED) &&
                     (req->arrive_by ? time < req->time_cutoff
