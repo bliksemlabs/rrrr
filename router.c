@@ -413,12 +413,6 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 
     time_adjusted = time + serviceday->midnight;
 
-    /*
-    printf ("boarding at stop_point %d, time is: %s \n", journey_pattern_point, timetext (time));
-    printf ("   after adjusting: %s \n", timetext (time_adjusted));
-    printf ("   midnight: %d \n", serviceday->midnight);
-    */
-
     /* Detect overflow (this will still not catch wrapping due to negative
      * delays on small positive times) actually this happens naturally with
      * times like '03:00+1day' transposed to serviceday 'tomorrow'
@@ -429,30 +423,37 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
 
 /* TODO: change the function name of tdata_next */
 static bool
-tdata_next (tdata_t *tdata, serviceday_t *servicedays, bool arrive_by,
+tdata_next (router_t *router, bool arrive_by,
             jpidx_t jp_index, jp_vjoffset_t vj_offset, rtime_t qtime,
-            spidx_t *ret_sp_index, rtime_t *ret_stop_time) {
+            spidx_t *ret_sp_index, rtime_t *ret_stop_time, jppidx_t * ret_jpp_offset) {
 
-    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(tdata, jp_index);
-    journey_pattern_t *jp = tdata->journey_patterns + jp_index;
+    spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, jp_index);
+    journey_pattern_t *jp = router->tdata->journey_patterns + jp_index;
+    serviceday_t *serviceday;
     uint32_t jpp_i;
 
     *ret_sp_index = STOP_NONE;
     *ret_stop_time = UNREACHED;
+    *ret_jpp_offset = 0;
 
-    for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
-        /* TODO: check if the arrive = false flag works with arrive_by */
+    for (serviceday  = router->servicedays;
+         serviceday <= router->servicedays + router->n_servicedays;
+         ++serviceday) {
 
-        rtime_t time = tdata_stoptime (tdata, &(servicedays[1]),
-                jp_index, vj_offset, (jppidx_t) jpp_i, false);
+        for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
+            /* TODO: check if the arrive = false flag works with arrive_by */
+            rtime_t time = tdata_stoptime(router->tdata, serviceday,
+                    jp_index, vj_offset, (jppidx_t) jpp_i, false);
 
-        /* Find stop_point immediately after the given time on the given vj. */
-        if (arrive_by ? time > qtime : time < qtime) {
-            if (*ret_stop_time == UNREACHED ||
-                (arrive_by ? time < *ret_stop_time :
-                             time > *ret_stop_time)) {
-                *ret_sp_index = (spidx_t) journey_pattern_points[jpp_i];
-                *ret_stop_time = time;
+            /* Find stop_point immediately after the given time on the given vj. */
+            if (arrive_by ? time > qtime : time < qtime) {
+                if (*ret_stop_time == UNREACHED ||
+                        (arrive_by ? time < *ret_stop_time :
+                                time > *ret_stop_time)) {
+                    *ret_sp_index = (spidx_t) journey_pattern_points[jpp_i];
+                    *ret_stop_time = time;
+                    *ret_jpp_offset = jpp_i;
+                }
             }
         }
     }
@@ -860,13 +861,6 @@ write_state(router_t *router, router_request_t *req,
                         (!req->arrive_by && time + target->durations[i_target] < req->time_cutoff))){
                 req->time_cutoff = req->arrive_by ? time - target->durations[i_target] :
                                                     time + target->durations[i_target];
-                #ifdef RRRR_DEV
-                {
-                    char time32[12];
-                    btimetext(time, time32);
-                    printf("Relaxed time_cutoff to %s\n",time32);
-                }
-                #endif
             }
         }
     }
@@ -1079,11 +1073,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     continue;
                 }
 
-                #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
-                fprintf(stderr, "    on board vj %d considering time %s \n",
-                                vj_index, timetext(time));
-                #endif
-
                 if ((req->time_cutoff != UNREACHED) &&
                     (req->arrive_by ? time < req->time_cutoff
                                     : time > req->time_cutoff)) {
@@ -1162,8 +1151,6 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 }
 
 static bool initialize_origin_onboard (router_t *router, router_request_t *req) {
-    /* TODO */
-#if 0
     /* We cannot expand the start vj into the temporary round (1)
      * during initialization because we may be able to reach the
      * destination on that starting vj.
@@ -1174,34 +1161,18 @@ static bool initialize_origin_onboard (router_t *router, router_request_t *req) 
      */
     spidx_t sp_index;
     rtime_t stop_time;
+    jppidx_t jpp_offset;
 
-    if (tdata_next (router->tdata, router->servicedays, req->arrive_by,
+    if (tdata_next (router, req->arrive_by,
                     req->onboard_journey_pattern, req->onboard_journey_pattern_vjoffset,
-                    req->time, &sp_index, &stop_time) ){
-        uint64_t i_state;
-
+                    req->time, &sp_index, &stop_time, &jpp_offset) ){
+        uint64_t i_state = router->tdata->n_stop_points + sp_index;
         req->from_stop_point = ONBOARD;
-
-        /* Initialize the origin */
-        router->origin_stop_points[0] = sp_index;
-        router->n_origins  = 1;
-        router->best_time[sp_index] = stop_time;
-
-        /* Set the origin stop_point in the "2nd round" */
-        i_state = router->tdata->n_stop_points + sp_index;
-        router->states_time[i_state]      = stop_time;
         router->states_walk_time[i_state] = stop_time;
-
-        /* When starting on board, only flag one journey_pattern and
-         * do not apply transfers, only a single walk.
-         */
-        bitset_clear (router->updated_stop_points);
-        bitset_clear (router->updated_journey_patterns);
-        bitset_set (router->updated_journey_patterns, req->onboard_journey_pattern);
-
+        bitset_set(router->updated_journey_patterns, req->onboard_journey_pattern);
+        router_round(router, req, 0);
         return true;
-    }
-#endif
+    };
     return false;
 }
 
@@ -1313,17 +1284,8 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      */
 
     /* We are starting on board a vj, not at a station. */
-    if (req->onboard_journey_pattern != NONE && req->onboard_journey_pattern_vjoffset != NONE) {
-
-        /* On-board departure only makes sense for depart-after requests. */
-        if (!req->arrive_by) {
-            return initialize_origin_onboard (router, req);
-
-        } else {
-            fprintf (stderr, "An arrive-by search does not make any" \
-                             "sense if you are starting on-board.\n");
-            return false;
-        }
+    if (!req->arrive_by && req->onboard_journey_pattern != NONE && req->onboard_journey_pattern_vjoffset != NONE) {
+        return initialize_origin_onboard (router, req);
     } else {
         return initialize_origins(router,req);
     }
@@ -1346,7 +1308,7 @@ bool router_route(router_t *router, router_request_t *req) {
         return false;
     }
 
-#if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
+    #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
     /* populate router->banned_journey_patterns first, as unflag_banned_journey_patterns
      * is used via initialize_origin, apply_transfers
      */
@@ -1358,7 +1320,7 @@ bool router_route(router_t *router, router_request_t *req) {
         fprintf(stderr, "Search origin could not be initialised.\n");
         return false;
     }
-    if (req->arrive_by ? req->exit.n_points == 0 : req->entry.n_points == 0){
+    if (req->arrive_by ? req->entry.n_points == 0 : req->exit.n_points == 0){
         fprintf(stderr, "Search target could not be initialised.\n");
         return false;
     }
@@ -1371,7 +1333,7 @@ bool router_route(router_t *router, router_request_t *req) {
     }
 
     /*  Iterate over rounds. In round N, we have made N transfers. */
-    for (i_round = 0; i_round < n_rounds; ++i_round) {
+    for (i_round = (uint8_t) (req->onboard_journey_pattern != NONE ? 1 : 0); i_round < n_rounds; ++i_round) {
         router_round(router, req, i_round);
     }
 

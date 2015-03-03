@@ -60,7 +60,7 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
         street_network_mark_duration_to_stop_point(&req->exit, req->from_stop_point, 0);
     }else if (req->from_latlon.lat != 0.0 && req->from_latlon.lon != 0.0){
         streetnetwork_stoppoint_durations(&req->from_latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
-    }else{
+    }else if (req->onboard_journey_pattern == NONE){
         printf("No coord for entry\n");
         return false;
     }
