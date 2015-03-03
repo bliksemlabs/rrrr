@@ -76,7 +76,7 @@ int main (int argc, char *argv[]) {
                         "[ --verbose ] [ --randomize ]\n"
                         "[ --arrive=YYYY-MM-DDTHH:MM:SS | "
                           "--depart=YYYY-MM-DDTHH:MM:SS ]\n"
-                        "[ --from-idx=idx | --from-id=id | --from-sp-idx=idx | --from-sp-id=id | --from-latlon=Y,X ]\n"
+                        "[ --from-idx=idx | --from-id=id | --from-jp-vj-offset=jpidx,vj_offset | --from-sp-idx=idx | --from-sp-id=id | --from-latlon=Y,X ]\n"
                         "[ --via-idx=idx  | --via-id=id  | --via-latlon=Y,X ]\n"
                         "[ --to-idx=idx   | --to-id=id   | --to-sp-idx=idx   | --to-sp-id=id   | --to-latlon=Y,X ]\n",argv[0]);
         fprintf(stderr,
@@ -90,7 +90,7 @@ int main (int argc, char *argv[]) {
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-                        "[ --banned-vj-offset=jp_idx,trip_offset ]\n"
+                        "[ --banned-vj-offset=jp_idx,vj_offset ]\n"
 #endif
 #if RRRR_FEATURE_REALTIME_ALERTS == 1
                         "[ --gtfsrt-alerts=filename.pb ]\n"
