@@ -170,6 +170,16 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][14], &req.from_latlon);
                     }
+                    else if (strncmp(argv[i], "--from-jp-vj-offset=", 20) == 0) {
+                        char *endptr;
+                        jpidx_t jp;
+                        if (strtojpidx (&argv[i][20], &tdata, &jp, &endptr)) {
+                            jp_vjoffset_t vj_o;
+                            strtovjoffset (++endptr, &tdata, jp, &vj_o, NULL);
+                            req.onboard_journey_pattern = jp;
+                            req.onboard_journey_pattern_vjoffset = vj_o;
+                        }
+                    }
                     break;
 
                 #ifdef RRRR_FEATURE_REALTIME
