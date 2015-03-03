@@ -1320,7 +1320,7 @@ bool router_route(router_t *router, router_request_t *req) {
         fprintf(stderr, "Search origin could not be initialised.\n");
         return false;
     }
-    if (req->arrive_by ? req->entry.n_points == 0 : req->exit.n_points == 0){
+    if (req->from_stop_point != ONBOARD && req->arrive_by ? req->entry.n_points == 0 : req->exit.n_points == 0){
         fprintf(stderr, "Search target could not be initialised.\n");
         return false;
     }
@@ -1333,7 +1333,7 @@ bool router_route(router_t *router, router_request_t *req) {
     }
 
     /*  Iterate over rounds. In round N, we have made N transfers. */
-    for (i_round = (uint8_t) (req->onboard_journey_pattern != NONE ? 1 : 0); i_round < n_rounds; ++i_round) {
+    for (i_round = (uint8_t) (req->from_stop_point == ONBOARD ? 1 : 0); i_round < n_rounds; ++i_round) {
         router_round(router, req, i_round);
     }
 

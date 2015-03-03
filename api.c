@@ -143,16 +143,20 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
         return false;
     }
 
-    for (i = 0; i < n_reversals; ++i) {
-        if ( ! router_request_reverse (router, req)) {
-            return false;
-        }
+    if (req->onboard_journey_pattern == NONE) {
+        for (i = 0; i < n_reversals; ++i) {
+            if (!router_request_reverse(router, req)) {
+                return false;
+            }
 
-        router_reset (router);
-        if ( ! router_route (router, req)) {
-            return false;
-        }
+            router_reset(router);
+            if (!router_route(router, req)) {
+                return false;
+            }
 
+        }
+    }else{
+        street_network_mark_duration_to_stop_point(&req->entry, req->from_stop_point, 0);
     }
 
     if ( ! router_result_to_plan (plan, router, req) ) {
