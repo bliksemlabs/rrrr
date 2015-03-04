@@ -278,7 +278,7 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                     fprintf (stderr, "ERROR: stop_point idx %d out of range.\n", sp_index);
                     return false;
                 }
-                
+
                 /* Walk phase */
                 j_walk = j_state + sp_index;
                 if (router->states_walk_time[j_walk] == UNREACHED) {
@@ -338,7 +338,6 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                 * This is inferred, not stored explicitly.
                 */
                 spidx_t origin_stop_point = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
-                rtime_t duration;
                 leg_t *prev;
 
                 l->sp_from = origin_stop_point;
