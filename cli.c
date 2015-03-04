@@ -408,11 +408,12 @@ int main (int argc, char *argv[]) {
      *  PHASE THREE: RENDER THE RESULTS
      *
      * * * * * * * * * * * * * * * * * * */
-
-     char result_buf[OUTPUT_LEN];
-     plan.req = req;
-     plan_render_text (&plan, &tdata, result_buf, OUTPUT_LEN);
-     puts(result_buf);
+    {
+        char result_buf[OUTPUT_LEN];
+        plan.req = req;
+        plan_render_text(&plan, &tdata, result_buf, OUTPUT_LEN);
+        puts(result_buf);
+    }
 
     /* * * * * * * * * * * * * * * * * * *
      *  PHASE FOUR: DESTRUCTION
