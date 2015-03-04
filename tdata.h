@@ -357,6 +357,8 @@ latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
 
 const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
 
+const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
+
 const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t saindex);
 
 spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
@@ -389,8 +391,6 @@ uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index);
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
 
 const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
-
-const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
 
 latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index);
 
