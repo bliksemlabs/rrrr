@@ -259,39 +259,76 @@ stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
 #endif
 
-const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
-
-const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index);
-
-uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index);
-
-const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
-
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
-
-int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index);
-
-int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index);
-
-int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
-
-int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
-
-rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
-
-rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
-
-int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
-
-uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
+/* * * * * * * * * * * * * * * * * * *
+ *
+ * GENERAL FUNCTIONS
+ *
+ * * * * * * * * * * * * * * * * * * */
 
 const char *tdata_timezone(tdata_t *td);
+
+bool tdata_hashgrid_setup (tdata_t *tdata);
+
+bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
+bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
+bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr);
+
+#ifdef RRRR_FEATURE_REALTIME
+bool tdata_realtime_setup (tdata_t *tdata);
+#endif
+
+void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max);
+void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur);
+void tdata_modes (tdata_t *tdata, tmode_t *m);
+
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  OPERATOR:
+ *  An operator is a company responsible for a line
+ *
+ * * * * * * * * * * * * * * * * * * */
 
 const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
+
+uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  PHYSICAL_MODE:
+ *  Physical_mode is the type of transport used for a line. For example BUS, TRAIN or TRAM, etc.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+const char *tdata_name_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index);
+
+const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index);
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  COMMERCIAL_MODE:
+ *  Commercial_mode is the type of transport used to market a line. For example R-NET, Intercity, Expressbus, etc.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
+
+const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
+
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  LINE:
+ *  An line is a collection of routes, used to communicate a logical path for multiple journeys
+ *  by linenumbers, colors and names.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_name_index);
 
 const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
 
@@ -301,45 +338,35 @@ const char *tdata_line_color_text_for_index(tdata_t *td, uint32_t line_code_inde
 
 const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_name_index);
 
-const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_name_index);
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  ROUTE:
+ *  An route is a collection of journey_patterns, that all match a common commercially used direction,
+ *  This direction is given by the operator and does not necessarily match any physical reality.
+ *
+ * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
+/* TODO No function definied for the type, however it would make sense to add id's to data for routes to be able to request them */
 
-const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
-
-const char *tdata_name_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index);
-
-const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index);
-
-const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
-
-const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
-
-const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
-
-latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
-
-const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
-
-const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t saindex);
-
-latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index);
-
-const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
-
-spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
-
-spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
-
-spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
-
-jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t start_index);
-
-calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  JOURNEY_PATTERN:
+ *  A journey pattern is an ordered list of stop_points.
+ *  Two vehicles that serve exactly the same stop_points in exactly the same order and attributes (forboarding/foralighting/etc.)
+ *  belong to to the same journey_pattern.
+ *
+ * * * * * * * * * * * * * * * * * * */
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,jppidx_t jpp_offset);
+
+/* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
+vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
@@ -363,31 +390,97 @@ const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_inde
 
 const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
+jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t start_index);
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  VEHICLE_JOURNEY:
+ * A journey is a single run of a vehicle along a journey_pattern.
+ * For example, vehicle bus 23 leaving at 14:20 from stop_area Amsterdam Central Station.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
+
+const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
+int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index);
+
+int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index);
+
+int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
+int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+
 /* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
 
-/* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
-vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  STOP_TIME:
+ *  A stop_time represents the time when a vehicle is planned to arrive and to leave a stop_point.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+/* Return stop_time in seconds to/from midnight in the time-offset used by tdata */
+rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+/* Return stop_time in seconds to/from midnight local-time */
+rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+/* Return stop_time in seconds to/from midnight UTC */
+int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ * STOP_AREA:
+ * A stop_area is a collection of stop_points.
+ * Generally there are at least two stop_points per stop_area, one per direction of a line.
+ * Now think of a hub, you will have more than one line.
+ * Therefore your stop_area will contain more than two stop_points.
+ * In particular cases your stop_area can contain only one stop_point.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
+
+const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
+
+const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t saindex);
+
+spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
+
+
+/* * * * * * * * * * * * * * * * * * *
+ *
+ *  STOP_POINT:
+ *  A stop_point is the location where a vehicle can stop.
+ *
+ * * * * * * * * * * * * * * * * * * */
+
+const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index);
+
+uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
+
+latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index);
+
+const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
+
+spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
+
+spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
 /* Get the minimum waittime a passenger has to wait before transferring to another vehicle */
 rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index);
 rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_index_from, spidx_t sp_index_to);
-
-const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
-
-bool tdata_hashgrid_setup (tdata_t *tdata);
-
-bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
-bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
-bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr);
-
-#ifdef RRRR_FEATURE_REALTIME
-bool tdata_realtime_setup (tdata_t *tdata);
-#endif
-
-void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max);
-void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur);
-void tdata_modes (tdata_t *tdata, tmode_t *m);
 
 #endif /* _TDATA_H */
