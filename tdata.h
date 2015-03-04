@@ -164,20 +164,20 @@ bool tdata_load(tdata_t *td, char *filename);
 
 void tdata_close(tdata_t *td);
 
+/* Return timezone used in general for timetable, eg 'Europe/Amsterdam */
 const char *tdata_timezone(tdata_t *td);
 
 bool tdata_hashgrid_setup (tdata_t *tdata);
-
-bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
-bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
-bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr);
 
 #ifdef RRRR_FEATURE_REALTIME
 bool tdata_realtime_setup (tdata_t *tdata);
 #endif
 
+/* Return UTC epoch of start and end midnights with the valditiy of the timetable */
 void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max);
+/* Return the lower-left and upper-right of the extends of all stop_point's in the timetable */
 void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur);
+/* Return the mode enum of all journey_patterns in the timetable */
 void tdata_modes (tdata_t *tdata, tmode_t *m);
 
 
@@ -319,6 +319,8 @@ int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjof
    be shifted in time to get the true scheduled arrival and departure times. */
 stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
 
+/* Parse string with vj offset (within journey_pattern) to jp_vj_offset_t */
+bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -348,6 +350,9 @@ int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp
  *
  * * * * * * * * * * * * * * * * * * */
 
+/* Parse string with journey_pattenr index to jp_index*/
+bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
+
 latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
 
 const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
@@ -373,6 +378,9 @@ spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, sp
 uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
 
 const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index);
+
+/* Parse string with stop_point index to sp_index */
+bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
 
 uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
 
