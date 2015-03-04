@@ -194,8 +194,6 @@ const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index);
 
 const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
 
-uint32_t tdata_operatoridx_by_operator_name(tdata_t *td, char *operator_name, uint32_t start_index);
-
 /* * * * * * * * * * * * * * * * * * *
  *
  *  PHYSICAL_MODE:
