@@ -17,20 +17,7 @@
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 #include "tdata_realtime_expanded.h"
 #endif
-
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <string.h>
-#include <strings.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "config.h"
-#include "bitset.h"
 
 const char *tdata_timezone(tdata_t *td){
     return td->string_pool + td->timezone;
