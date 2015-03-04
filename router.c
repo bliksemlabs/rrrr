@@ -1206,37 +1206,22 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      * routing engine we also infer what the requestee wants to do, the
      * following use cases can be observed:
      *
-     * 0) from is actually onboard an existing vj
-     * 1) from/to a station, req->from and/or req->to are filled
-     * 2) from/to a coordinate, req->from_coord and/or req->to_coord are filled
+     * 0) from onboard an existing vj. We have a set of stop_points where we can exit the transit-network to reach
+     *    the destination location
+     * 1) From/to a location, that has duration of 0 or more, to more than one stop_point.
+     *    Theses durations are previously calculated using the street_network and
+     *    stored in the router_request_t structure under either entry (counter-clockwise) or exit (clockwise).
+     *    The same is mirrored for the exit of the public transit network.
      *
      * Given 0, we calculate the previous stop_point from an existing running vj
      * and determine the best way to the destination.
      *
-     * Given 1, the user is actually at a stop_point and wants to leave from there,
-     * in the second round transfers are applied which may move the user by
-     * feet to a different stop. We consider the origin and destination as
-     * constraint, explicitly enforced by the user.
-     * "I am here, only move me if it is strictly required."
-     *
-     * Given 2, the user is at a location, which may be stop. We start with a
-     * search around this coordinate up to a maximum walk distances,
-     * configurable by the user. The first forward search starts from all
-     * found locations. Based on the distance, a weight factor and the
-     * walk-speed an extra time calculated and encounted for.
-     * A normal search will match up to the stop_point which is the closest to the
-     * destination.
-     * TODO: We store all possible paths from the forward search to all
-     * possible destinations.
-     * The backward search uses the best times for all near by stops, again
-     * the extra walk time is added. The search will now unambiously determine
-     * the last possible departure.
-     * From the second forward search we only search for the best plan to the
-     * best destination. This plan will be marked as "best".
-     *
-     * De overweging om bij een alternatieve eerdere halte uit te stappen
-     * en te gaan lopen baseren op het feit dat een andere, niet dezelfde
-     * back_journey_pattern wordt gebruikt
+     * Given 1, we set all the stop_point's to req->time with the duration it takes to get to that stop_point.
+     * In the first round all these stop_point's are a candidate to enter the public-transit network.
+     * After the execution of router_route we have a router_state, where we check using the list of exit stop_points,
+     * the earliest arrival-time at our destination.
+     * This time is then used for a backward-search, where we determine the latest departure-time from our start-location.
+     * For clockwise searches we possible execute a third search where we get the earliest travel-possibility for each leg.
      */
 
     /* We are starting on board a vj, not at a station. */
