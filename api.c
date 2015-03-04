@@ -36,15 +36,15 @@ static bool dump_exits_and_entries(router_request_t *req, tdata_t *tdata){
 }
 #endif
 
-static bool mark_stop_area_in_streetnetwork(spidx_t sa_index, rtime_t duration, tdata_t *tdata, street_network_t *sn){
-    int32_t sp_idx = tdata->n_stop_points;
-    while (sp_idx){
-        --sp_idx;
-        if (tdata->stop_area_for_stop_point[sp_idx] == sa_index){
+static void
+mark_stop_area_in_streetnetwork(spidx_t sa_index, rtime_t duration, tdata_t *tdata, street_network_t *sn){
+    spidx_t sp_idx = (spidx_t) tdata->n_stop_points;
+    do {
+        sp_idx--;
+        if (tdata->stop_area_for_stop_point[sp_idx] == sa_index) {
             street_network_mark_duration_to_stop_point(sn, sp_idx, duration);
         }
-    }
-    return true;
+    } while (sp_idx);
 }
 
 static bool search_streetnetwork(router_t *router, router_request_t *req){
