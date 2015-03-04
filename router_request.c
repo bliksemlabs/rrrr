@@ -286,7 +286,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
     #ifdef RRRR_DEBUG
     router_request_dump(req, router->tdata);
     range_check(req, router->tdata);
-    /* TODO: range-check the resulting request here? */
     #endif
     return true;
 }
