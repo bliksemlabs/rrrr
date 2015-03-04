@@ -149,15 +149,8 @@ struct tdata {
     hashgrid_t hg;
 };
 
-bool tdata_load(tdata_t *td, char *filename);
-
-void tdata_close(tdata_t *td);
-
 #ifdef RRRR_DEBUG
 void tdata_dump(tdata_t *td);
-#endif
-
-#ifdef RRRR_DEBUG
 void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
 #endif
 
@@ -166,6 +159,10 @@ void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index
  * GENERAL FUNCTIONS
  *
  * * * * * * * * * * * * * * * * * * */
+
+bool tdata_load(tdata_t *td, char *filename);
+
+void tdata_close(tdata_t *td);
 
 const char *tdata_timezone(tdata_t *td);
 
