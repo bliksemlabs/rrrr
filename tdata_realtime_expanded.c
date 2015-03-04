@@ -136,7 +136,7 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     tdata->vjs[vj_index].stop_times_offset = stop_times_offset;
 
     for (sp_index = 0; sp_index < n_sp; ++sp_index) {
-        tdata->journey_pattern_points[journey_pattern_point_offset] = NONE;
+        tdata->journey_pattern_points[journey_pattern_point_offset] = JPP_NONE;
         journey_pattern_point_offset++;
 
         /* Initialise the timetable */
@@ -200,7 +200,7 @@ static void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uin
 
                 uint32_t sp_index = radixtree_find (tdata->stop_point_id_index, stop_id);
                 if (tdata->journey_pattern_points[journey_pattern_point_offset] != sp_index &&
-                    tdata->journey_pattern_points[journey_pattern_point_offset] != NONE) {
+                    tdata->journey_pattern_points[journey_pattern_point_offset] != JPP_NONE) {
                     tdata_rt_journey_patterns_at_stop_point_remove(tdata, tdata->journey_pattern_points[journey_pattern_point_offset], jp_index);
                 }
                 /* TODO: Should this be communicated in GTFS-RT? */
@@ -264,7 +264,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
             for (sp_index = jp_new->n_stops;
                  sp_index < n_sp;
                  ++sp_index) {
-                tdata->journey_pattern_points[jp_new->journey_pattern_point_offset + sp_index] = NONE;
+                tdata->journey_pattern_points[jp_new->journey_pattern_point_offset + sp_index] = JPP_NONE;
             }
             jp_new->n_stops = n_sp;
         }

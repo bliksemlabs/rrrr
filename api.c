@@ -48,29 +48,29 @@ mark_stop_area_in_streetnetwork(spidx_t sa_index, rtime_t duration, tdata_t *tda
 }
 
 static bool search_streetnetwork(router_t *router, router_request_t *req){
-    if (req->from_stop_area != NONE) {
+    if (req->from_stop_area != STOP_NONE) {
         latlon_t *latlon;
         latlon = tdata_stop_area_coord_for_index(router->tdata, req->from_stop_area);
         streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
         mark_stop_area_in_streetnetwork(req->from_stop_area,0,router->tdata,&req->entry);
-    }else if (req->from_stop_point != NONE){
+    }else if (req->from_stop_point != STOP_NONE){
         latlon_t *latlon;
         latlon = tdata_stop_point_coord_for_index(router->tdata, req->from_stop_point);
         streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
         street_network_mark_duration_to_stop_point(&req->exit, req->from_stop_point, 0);
     }else if (req->from_latlon.lat != 0.0 && req->from_latlon.lon != 0.0){
         streetnetwork_stoppoint_durations(&req->from_latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
-    }else if (req->onboard_journey_pattern == NONE){
+    }else if (req->onboard_journey_pattern == JP_NONE){
         printf("No coord for entry\n");
         return false;
     }
 
-    if (req->to_stop_area != NONE) {
+    if (req->to_stop_area != STOP_NONE) {
         latlon_t *latlon;
         latlon = tdata_stop_area_coord_for_index(router->tdata, req->to_stop_area);
         streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->exit);
         mark_stop_area_in_streetnetwork(req->to_stop_area,0,router->tdata,&req->exit);
-    }else if (req->to_stop_point != NONE){
+    }else if (req->to_stop_point != STOP_NONE){
         latlon_t *latlon;
         latlon = tdata_stop_point_coord_for_index(router->tdata, req->to_stop_point);
         streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->exit);
@@ -146,7 +146,7 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
     }
 
     /*reversal is meaningless/useless in on-board */
-    if (req->onboard_journey_pattern == NONE) {
+    if (req->onboard_journey_pattern == JP_NONE) {
         for (i = 0; i < n_reversals; ++i) {
             if (!router_request_reverse(router, req)) {
                 return false;
@@ -184,7 +184,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     }
 
     if ( ! req->arrive_by &&
-           req->from_stop_point != NONE &&
+           req->from_stop_point != STOP_NONE &&
          ! router_result_to_plan (plan, router, req) ) {
         return false;
     }

@@ -72,7 +72,7 @@ router_request_initialize(router_request_t *req) {
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
-    rrrr_memset (req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
+    rrrr_memset (req->banned_journey_patterns, JP_NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     req->n_banned_stops = 0;
@@ -84,11 +84,11 @@ router_request_initialize(router_request_t *req) {
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     req->n_banned_vjs = 0;
-    rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    rrrr_memset (req->banned_vjs_journey_pattern, VJ_NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
-    req->onboard_journey_pattern = NONE;
-    req->onboard_journey_pattern_vjoffset = NONE;
+    req->onboard_journey_pattern = JP_NONE;
+    req->onboard_journey_pattern_vjoffset = VJ_NONE;
     req->intermediatestops = false;
 
     req->from_latlon.lat = 0.0f;
@@ -148,7 +148,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
-    rrrr_memset (req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
+    rrrr_memset (req->banned_journey_patterns, JP_NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     req->n_banned_stops = 0;
@@ -160,7 +160,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     req->n_banned_vjs = 0;
-    rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    rrrr_memset (req->banned_vjs_journey_pattern, JP_NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
     req->intermediatestops = false;

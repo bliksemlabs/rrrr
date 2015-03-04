@@ -599,7 +599,7 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
          * scanning additional days. Note that day list is
          * reversed for arrive-by searches.
          */
-        if (*best_vj != NONE && !jp_overlap) break;
+        if (*best_vj != VJ_NONE && !jp_overlap) break;
 
         for (i_vj_offset = req->arrive_by ? jp->n_vjs - 1: 0;
              req->arrive_by ? i_vj_offset >= 0
@@ -856,8 +856,8 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         /* Service day on which that vj was boarded */
         serviceday_t *board_serviceday = NULL;
 
-        /* vj index within the journey_pattern. NONE means not yet boarded. */
-        jp_vjoffset_t vj_index = NONE;
+        /* vj index within the journey_pattern. VJ_NONE means not yet boarded. */
+        jp_vjoffset_t vj_index = VJ_NONE;
 
         /* stop_point index where that vj was boarded */
         spidx_t       board_sp  = 0;
@@ -886,7 +886,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         fprintf (stderr, "  actual first time: %d \n", tdata_depart(router->tdata, jp_index, 0, 0));
         fprintf (stderr, "  actual last time:  %d \n", tdata_arrive(router->tdata, jp_index, jp->n_vjs - 1, jp->n_stops - 1));
         fprintf(stderr, "  journey_pattern %d: %s;%s\n", jp_index, tdata_line_code_for_journey_pattern(router->tdata, jp_index), tdata_headsign_for_journey_pattern(router->tdata, jp_index));
-        tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
+        tdata_dump_journey_pattern(router->tdata, jp_index, VJ_NONE);
         #endif
 
         for (jpp_offset = (req->arrive_by ? jp->n_stops - 1 : 0);
@@ -914,13 +914,13 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
             #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
             /* If a stop_point in in banned_stop_points_hard, we do not want to transit
-             * through this stationwe reset the current vj to NONE and skip
+             * through this stationwe reset the current vj to VJ_NONE and skip
              * the currect stop. This effectively splits the journey_pattern in two,
              * and forces a re-board afterwards.
              */
             if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
                            (spidx_t) sp_index)) {
-                vj_index = NONE;
+                vj_index = VJ_NONE;
                 continue;
             }
             #endif
@@ -933,9 +933,9 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
-                if (vj_index == NONE || req->via_stop_point == sp_index) {
+                if (vj_index == VJ_NONE || req->via_stop_point == sp_index) {
                     attempt_board = true;
-                } else if (vj_index != NONE && req->via_stop_point != STOP_NONE &&
+                } else if (vj_index != VJ_NONE && req->via_stop_point != STOP_NONE &&
                                            req->via_stop_point == board_sp) {
                     attempt_board = false;
                 } else {
@@ -967,7 +967,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                  * reduces speed by ~20 percent over binary search.
                  */
                 serviceday_t *best_serviceday = NULL;
-                jp_vjoffset_t best_vj = NONE;
+                jp_vjoffset_t best_vj = VJ_NONE;
                 rtime_t  best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
 
                 #ifdef RRRR_INFO
@@ -975,10 +975,10 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                                  sp_index);
                 #endif
                 #ifdef RRRR_TDATA
-                tdata_dump_journey_pattern(router->tdata, jp_index, NONE);
+                tdata_dump_journey_pattern(router->tdata, jp_index, VJ_NONE);
                 #endif
 
-                if (vj_index == NONE) {
+                if (vj_index == VJ_NONE) {
                     board_vehicle_journeys_within_days(router, req, (jpidx_t) jp_index, (jppidx_t) jpp_offset,
                             prev_time, &best_serviceday,
                             &best_vj, &best_time);
@@ -988,7 +988,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                             &best_vj, &best_time);
                 }
 
-                if (best_vj != NONE) {
+                if (best_vj != VJ_NONE) {
                     #ifdef RRRR_INFO
                     char buf[13];
                     fprintf(stderr, "    boarding vj %d at %s \n",
@@ -1016,7 +1016,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 continue;  /*  to the next stop_point in the journey_pattern */
 
             /*  We have already boarded a vehicle_journey along this journey_pattern. */
-            } else if (vj_index != NONE) {
+            } else if (vj_index != VJ_NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
                                                (jpidx_t) jp_index, vj_index,
                                                (jppidx_t ) jpp_offset,
@@ -1187,8 +1187,8 @@ static bool initialize_origins(router_t *router, router_request_t *req){
         router->states_walk_time[i_state] = start_time;
         router->states_walk_from[i_state] = sp_index;
         router->states_ride_from[i_state] = STOP_NONE;
-        router->states_back_journey_pattern[i_state] = NONE;
-        router->states_back_vehicle_journey[i_state] = NONE;
+        router->states_back_journey_pattern[i_state] = JP_NONE;
+        router->states_back_vehicle_journey[i_state] = VJ_NONE;
         router->states_board_time[i_state] = UNREACHED;
 
         flag_journey_patterns_for_stop_point(router, req, (spidx_t) sp_index);
@@ -1225,7 +1225,7 @@ static bool initialize_origin (router_t *router, router_request_t *req) {
      */
 
     /* We are starting on board a vj, not at a station. */
-    if (!req->arrive_by && req->onboard_journey_pattern != NONE && req->onboard_journey_pattern_vjoffset != NONE) {
+    if (!req->arrive_by && req->onboard_journey_pattern != JP_NONE && req->onboard_journey_pattern_vjoffset != VJ_NONE) {
         return initialize_origin_onboard (router, req);
     } else {
         return initialize_origins(router,req);

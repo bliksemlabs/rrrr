@@ -313,12 +313,12 @@ struct router_request {
 #define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
 
 #define UNREACHED UINT16_MAX
-#define NONE      (UINT16_MAX)
 #define STREET    (UINT16_MAX - 1)
 #define WALK      (UINT16_MAX - 2)
 
 #define OP_NONE   ((opidx_t) -1)
 #define JP_NONE   ((jpidx_t) -1)
+#define JPP_NONE  ((jppidx_t) -1)
 #define VJ_NONE   ((jp_vjoffset_t) -1)
 #define STOP_NONE ((spidx_t) -1)
 #define ONBOARD   ((spidx_t) -2)

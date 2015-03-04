@@ -24,7 +24,7 @@ void router_state_dump (router_t *router, uint64_t i_state) {
                      );
 
     /* TODO */
-    if (router->states_back_journey_pattern[i_state] == NONE) fprintf (stderr, "NONE\n");
+    if (router->states_back_journey_pattern[i_state] == JP_NONE) fprintf (stderr, "NONE\n");
     else fprintf (stderr, "%d\n", router->states_back_journey_pattern[i_state]);
 }
 

@@ -25,7 +25,7 @@ const char *tdata_timezone(tdata_t *td){
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = td->journey_patterns[jp_index].route_index;
     return tdata_line_id_for_index(td,td->line_for_route[route_index]);
 }
@@ -214,7 +214,7 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
             return jp_index;
         }
     }
-    return NONE;
+    return JP_NONE;
 }
 
 calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
@@ -223,56 +223,56 @@ calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
 }
 
 const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset]);
 }
 
 const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset) {
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     return td->string_pool + ((td->journey_pattern_point_headsigns)[(td->journey_patterns)[jp_index].journey_pattern_point_offset + jpp_offset]);
 }
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_code_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_color_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_color_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_color_text_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_color_text_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_name_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     return tdata_name_for_commercial_mode_index(td,(td->commercial_mode_for_jp)[jp_index]);
 }
 
 const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     return tdata_id_for_commercial_mode_index(td,(td->commercial_mode_for_jp)[jp_index]);
 }
 
 const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
     return tdata_name_for_physical_mode_index(td,(td->physical_mode_for_line)[line_index]);
@@ -280,7 +280,7 @@ const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp
 
 const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
     return tdata_id_for_physical_mode_index(td,(td->physical_mode_for_line)[line_index]);
@@ -288,7 +288,7 @@ const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_i
 
 const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
     return tdata_operator_id_for_index(td, td->operator_for_line[line_index]);
@@ -296,7 +296,7 @@ const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index)
 
 const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
     return tdata_operator_name_for_index(td, td->operator_for_line[line_index]);
@@ -304,7 +304,7 @@ const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_inde
 
 const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
-    if (jp_index == NONE) return "NONE";
+    if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
     return tdata_operator_url_for_index(td, td->operator_for_line[line_index]);
@@ -439,8 +439,8 @@ void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index
         tdata_headsign_for_journey_pattern(td, jp_index),
         jp_index, jp.n_stops, jp.n_vjs);
 
-    for (ti = (vj_index == NONE ? 0 : vj_index);
-         ti < (vj_index == NONE ? jp.n_vjs :
+    for (ti = (vj_index == VJ_NONE ? 0 : vj_index);
+         ti < (vj_index == VJ_NONE ? jp.n_vjs :
                                     vj_index + 1);
          ++ti) {
         stoptime_t *times = tdata_timedemand_type(td, jp_index, ti);
@@ -519,7 +519,7 @@ void tdata_dump(tdata_t *td) {
          *        tdata_route_desc_for_index(td, i),
          *        tdata_vehicle_journey_ids_for_route(td, i));
          */
-        tdata_dump_journey_pattern(td, i, NONE);
+        tdata_dump_journey_pattern(td, i, VJ_NONE);
     }
 }
 #endif
