@@ -175,7 +175,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
 }
 
 static bool
-best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, rtime_t *time) {
+best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime_t *time) {
     uint64_t offset_state = router->tdata->n_stop_points * round;
     spidx_t sp_index;
     spidx_t best_sp_index = STOP_NONE;
@@ -238,7 +238,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
     round = (int8_t) req->max_transfers;
 
     do {
-        if (best_sp_by_round(router, req, (uint8_t) round, &best_time)) {
+        if (best_time_by_round(router, req, (uint8_t) round, &best_time)) {
             ret[*ret_n] = *req;
             reverse_request(&ret[*ret_n], (uint8_t) round, best_time);
             (*ret_n)++;
@@ -265,7 +265,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
 
     while (max_transfers){
         max_transfers--;
-        if (best_sp_by_round(router, req, max_transfers, &best_time)){
+        if (best_time_by_round(router, req, max_transfers, &best_time)){
             round = (uint8_t) (max_transfers+1);
             break;
         }
