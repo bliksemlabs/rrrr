@@ -625,7 +625,7 @@ bool tdata_realtime_setup (tdata_t *tdata) {
 
 void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max) {
     *min = tdata->calendar_start_time;
-    *max = tdata->calendar_start_time + (tdata->n_days - 1) * 86400;
+    *max = tdata->calendar_start_time + (tdata->n_days - 1) * SEC_IN_ONE_DAY;
 }
 
 void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur) {
