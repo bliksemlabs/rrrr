@@ -65,6 +65,7 @@ int main (int argc, char *argv[]) {
     memset (&cli_args, 0, sizeof(cli_args));
 
     plan.n_itineraries = 0;
+    cli_args.repeat = 1;
 
     /* * * * * * * * * * * * * * * * * * * * * *
      * PHASE ZERO: HANDLE COMMANDLINE ARGUMENTS
@@ -379,35 +380,43 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
-    /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
-     * this erases the set cutoff time from reversals in previous requests in the repeat function
-     */
-    if (req.arrive_by) {
-        req.time_cutoff = 0;
-    } else {
-        req.time_cutoff = UNREACHED;
+    while (cli_args.repeat){
+        --cli_args.repeat;
+
+        /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
+         * this erases the set cutoff time from reversals in previous requests in the repeat function
+         */
+        if (req.arrive_by) {
+            req.time_cutoff = 0;
+        } else {
+            req.time_cutoff = UNREACHED;
+        }
+
+        /* The router is now able to take a request, and to search
+         * the first arrival time at the target, given the requests
+         * origin.
+         */
+
+        if (!router_route_full_reversal(&router, &req, &plan)) {
+            status = EXIT_FAILURE;
+            goto clean_exit;
+        }
+
+        /* * * * * * * * * * * * * * * * * * *
+         *  PHASE THREE: RENDER THE RESULTS
+         *
+         * * * * * * * * * * * * * * * * * * */
+
+        if (!cli_args.repeat){
+            char result_buf[OUTPUT_LEN];
+            plan.req = req;
+            plan_render_text (&plan, &tdata, result_buf, OUTPUT_LEN);
+            puts(result_buf);
+        }else{
+            plan.n_itineraries=0;
+        }
     }
 
-    /* The router is now able to take a request, and to search
-     * the first arrival time at the target, given the requests
-     * origin.
-     */
-
-    if ( ! router_route_full_reversal (&router, &req, &plan) ) {
-        status = EXIT_FAILURE;
-        goto clean_exit;
-    }
-
-    /* * * * * * * * * * * * * * * * * * *
-     *  PHASE THREE: RENDER THE RESULTS
-     *
-     * * * * * * * * * * * * * * * * * * */
-    {
-        char result_buf[OUTPUT_LEN];
-        plan.req = req;
-        plan_render_text (&plan, &tdata, result_buf, OUTPUT_LEN);
-        puts(result_buf);
-    }
 
     /* * * * * * * * * * * * * * * * * * *
      *  PHASE FOUR: DESTRUCTION
