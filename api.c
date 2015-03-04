@@ -127,11 +127,13 @@ bool router_route_first_departure (router_t *router, router_request_t *req, plan
  * render exactly the same vehicle_journey. This is not always true, especially not
  * when there are multiple paths with exactly the same transittime.
  *
- *
  * For an arrive_by counter clockwise search, we must make the result
  * clockwise. Only one reversal is required. For the more regular clockwise
  * search, the compression is handled in the first reversal (ccw) and made
  * clockwise in the second reversal.
+ *
+ * Note that for request that start onboard of a vehicle_journey we do not perform any
+ * reversals since there is no wait-time to be compressed
  */
 bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_t *plan) {
     uint8_t i;
