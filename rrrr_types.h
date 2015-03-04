@@ -33,6 +33,8 @@ typedef uint16_t jp_vjoffset_t;
 
 typedef uint16_t jppidx_t;
 
+typedef uint16_t opidx_t;
+
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
@@ -315,6 +317,9 @@ struct router_request {
 #define STREET    (UINT16_MAX - 1)
 #define WALK      (UINT16_MAX - 2)
 
+#define OP_NONE   ((opidx_t) -1)
+#define JP_NONE   ((jpidx_t) -1)
+#define VJ_NONE   ((jp_vjoffset_t) -1)
 #define STOP_NONE ((spidx_t) -1)
 #define ONBOARD   ((spidx_t) -2)
 

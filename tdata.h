@@ -188,11 +188,11 @@ void tdata_modes (tdata_t *tdata, tmode_t *m);
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index);
+const char *tdata_operator_id_for_index(tdata_t *td, opidx_t operator_index);
 
-const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index);
+const char *tdata_operator_name_for_index(tdata_t *td, opidx_t operator_index);
 
-const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index);
+const char *tdata_operator_url_for_index(tdata_t *td, opidx_t operator_index);
 
 /* * * * * * * * * * * * * * * * * * *
  *

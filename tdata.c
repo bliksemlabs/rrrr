@@ -79,15 +79,15 @@ int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjof
     return tdata_time_offset_for_index(td, td->journey_patterns[jp_index].vj_offset + vj_index);
 }
 
-const char *tdata_operator_id_for_index(tdata_t *td, uint32_t operator_index) {
+const char *tdata_operator_id_for_index(tdata_t *td, opidx_t operator_index) {
     return td->string_pool + (td->operator_ids[operator_index]);
 }
 
-const char *tdata_operator_name_for_index(tdata_t *td, uint32_t operator_index) {
+const char *tdata_operator_name_for_index(tdata_t *td, opidx_t operator_index) {
     return td->string_pool + (td->operator_names[operator_index]);
 }
 
-const char *tdata_operator_url_for_index(tdata_t *td, uint32_t operator_index) {
+const char *tdata_operator_url_for_index(tdata_t *td, opidx_t operator_index) {
     return td->string_pool + (td->operator_urls[operator_index]);
 }
 
