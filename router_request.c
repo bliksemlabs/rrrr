@@ -258,17 +258,21 @@ router_request_reverse(router_t *router, router_request_t *req) {
     uint8_t max_transfers = req->max_transfers;
     uint8_t round = UINT8_MAX;
     rtime_t best_time;
+
+    /* we should not have ended up here */
+    if (max_transfers == 0) return false;
+
     /* range-check to keep search within states array */
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
-    while (max_transfers){
+    do {
         max_transfers--;
         if (best_time_by_round(router, req, max_transfers, &best_time)){
             round = (uint8_t) (max_transfers+1);
             break;
         }
-    }
+    } while (max_transfers);
 
     /* In the case that no solution was found,
      * the request will remain unchanged.
