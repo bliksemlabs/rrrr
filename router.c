@@ -408,7 +408,7 @@ tdata_next (router_t *router, bool arrive_by,
                                 time > *ret_stop_time)) {
                     *ret_sp_index = (spidx_t) journey_pattern_points[jpp_i];
                     *ret_stop_time = time;
-                    *ret_jpp_offset = jpp_i;
+                    *ret_jpp_offset = (jppidx_t) jpp_i;
                 }
             }
         }
