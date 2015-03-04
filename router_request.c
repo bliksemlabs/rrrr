@@ -100,7 +100,6 @@ router_request_initialize(router_request_t *req) {
 /* Initializes the router request then fills in its time and datemask fields
  * from the given epoch time.
  */
-/* TODO: if we set the date mask in the router itself we wouldn't need the tdata here. */
 void
 router_request_from_epoch(router_request_t *req, tdata_t *tdata,
                           time_t epochtime) {
