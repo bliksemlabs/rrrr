@@ -110,7 +110,7 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     fprintf (stderr, "calendar_start_time: %s [%ld]\n", etime, tdata->calendar_start_time);
     #endif
     calendar_t cal_day;
-    time_t request_time = (epochtime - tdata->calendar_start_time + tdata->utc_offset);
+    time_t request_time = (epochtime - (time_t) tdata->calendar_start_time + tdata->utc_offset);
 
     req->time =  RTIME_ONE_DAY + SEC_TO_RTIME(request_time%SEC_IN_ONE_DAY);
     req->time_rounded = ((request_time%SEC_IN_ONE_DAY) % 4) > 0;
