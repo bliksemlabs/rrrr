@@ -290,12 +290,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
     /* TODO: range-check the resulting request here? */
     #endif
     return true;
-
-    /* Eigenlijk zou in de counter clockwise stap een walkleg niet naar de
-     * target moeten gaan, maar naar de de fictieve arrival / departure halte.
-     * Zou mooi zijn om een punt te introduceren die dat faciliteert, dan zou
-     * je op dat punt een apply_hashgrid kunnen doen, ipv apply_transfers.
-     */
 }
 
 /* Check the given request against the characteristics of the router that will
