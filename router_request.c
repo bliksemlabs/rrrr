@@ -91,10 +91,10 @@ router_request_initialize(router_request_t *req) {
     req->onboard_journey_pattern_vjoffset = NONE;
     req->intermediatestops = false;
 
-    req->from_latlon.lat = 0.0;
-    req->from_latlon.lon = 0.0;
-    req->to_latlon.lat = 0.0;
-    req->to_latlon.lon = 0.0;
+    req->from_latlon.lat = 0.0f;
+    req->from_latlon.lon = 0.0f;
+    req->to_latlon.lat = 0.0f;
+    req->to_latlon.lon = 0.0f;
 }
 
 /* Initializes the router request then fills in its time and datemask fields
