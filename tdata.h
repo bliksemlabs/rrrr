@@ -151,7 +151,7 @@ struct tdata {
 
 #ifdef RRRR_DEBUG
 void tdata_dump(tdata_t *td);
-void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, uint32_t vj_index);
+void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 #endif
 
 /* * * * * * * * * * * * * * * * * * *
@@ -303,22 +303,22 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
 
 const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
 
-const char *tdata_vehicle_journey_id_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+const char *tdata_vehicle_journey_id_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
-int32_t tdata_utc_offset_for_index(tdata_t *td, uint32_t vj_index);
+int32_t tdata_utc_offset_for_vj_index(tdata_t *td, uint32_t vj_index);
 
-int32_t tdata_time_offset_for_index(tdata_t *td, uint32_t vj_index);
+int32_t tdata_time_offset_for_vj_index(tdata_t *td, uint32_t vj_index);
 
-int32_t tdata_utc_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+int32_t tdata_utc_offset_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
-int32_t tdata_time_offset_for_jp_vj_index(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+int32_t tdata_time_offset_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
 /* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
-stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_index);
+stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
 /* Parse string with vj offset (within journey_pattern) to jp_vj_offset_t */
-bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_o, char **endptr);
+bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_offset, char **endptr);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -328,13 +328,13 @@ bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_
  * * * * * * * * * * * * * * * * * * */
 
 /* Return stop_time in seconds to/from midnight in the time-offset used by tdata */
-rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
 
 /* Return stop_time in seconds to/from midnight local-time */
-rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
 
 /* Return stop_time in seconds to/from midnight UTC */
-int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_index, bool arrival);
+int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
 
 
 /* * * * * * * * * * * * * * * * * * *

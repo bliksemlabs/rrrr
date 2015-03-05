@@ -57,7 +57,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
                        char *b, char *b_end) {
     leg_t *leg;
     int32_t time_offset = itin->n_legs < 2 ? 0 :
-            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(tdata, itin->legs[1].journey_pattern, itin->legs[1].vj));
+            SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_offset(tdata, itin->legs[1].journey_pattern, itin->legs[1].vj));
 
     b += sprintf (b, "\nITIN %d rides \n", itin->n_rides);
 
@@ -93,7 +93,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
             operator_name = tdata_operator_name_for_journey_pattern(tdata, leg->journey_pattern);
             short_name = tdata_line_code_for_journey_pattern(tdata, leg->journey_pattern);
             commercial_mode = tdata_commercial_mode_name_for_journey_pattern(tdata, leg->journey_pattern);
-            vj_id = tdata_vehicle_journey_id_for_jp_vj_index(tdata, leg->journey_pattern, leg->vj);
+            vj_id = tdata_vehicle_journey_id_for_jp_vj_offset(tdata, leg->journey_pattern, leg->vj);
             #ifdef RRRR_FEATURE_REALTIME_EXPANDED
             headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
             d0 = leg->d0 / 60.0f;
@@ -111,7 +111,7 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
             #else
             UNUSED(date);
             #endif
-            time_offset = SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_index(tdata, leg->journey_pattern, leg->vj));
+            time_offset = SIGNED_SEC_TO_RTIME(tdata_time_offset_for_jp_vj_offset(tdata, leg->journey_pattern, leg->vj));
         }
 
         /* TODO: we are able to calculate the maximum length required for each line

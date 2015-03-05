@@ -857,7 +857,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
         serviceday_t *board_serviceday = NULL;
 
         /* vj index within the journey_pattern. VJ_NONE means not yet boarded. */
-        jp_vjoffset_t vj_index = VJ_NONE;
+        jp_vjoffset_t vj_offset = VJ_NONE;
 
         /* stop_point index where that vj was boarded */
         spidx_t       board_sp  = 0;
@@ -871,7 +871,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
         /* Iterate over stop_point indexes within the route. Each one corresponds to
          * a global stop_point index. Note that the stop times array should be
-         * accessed with [vj_index][jpp_offset] not [vj_index][jpp_offset].
+         * accessed with [vj_offset][jpp_offset] not [vj_offset][jpp_offset].
          *
          * The iteration variable is signed to allow ending the iteration at
          * the beginning of the route, hence we decrement to 0 and need to
@@ -920,7 +920,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
              */
             if (set_in_sp (req->banned_stop_points_hard, req->n_banned_stop_points_hard,
                            (spidx_t) sp_index)) {
-                vj_index = VJ_NONE;
+                vj_offset = VJ_NONE;
                 continue;
             }
             #endif
@@ -933,15 +933,15 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
 
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
-                if (vj_index == VJ_NONE || req->via_stop_point == sp_index) {
+                if (vj_offset == VJ_NONE || req->via_stop_point == sp_index) {
                     attempt_board = true;
-                } else if (vj_index != VJ_NONE && req->via_stop_point != STOP_NONE &&
+                } else if (vj_offset != VJ_NONE && req->via_stop_point != STOP_NONE &&
                                            req->via_stop_point == board_sp) {
                     attempt_board = false;
                 } else {
                     rtime_t vj_stoptime = tdata_stoptime (router->tdata,
                                                         board_serviceday,
-                            (jpidx_t) jp_index, vj_index, (jppidx_t) jpp_offset,
+                            (jpidx_t) jp_index, vj_offset, (jppidx_t) jpp_offset,
                                                         req->arrive_by);
                     if (vj_stoptime == UNREACHED) {
                         attempt_board = false;
@@ -978,13 +978,13 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 tdata_dump_journey_pattern(router->tdata, jp_index, VJ_NONE);
                 #endif
 
-                if (vj_index == VJ_NONE) {
+                if (vj_offset == VJ_NONE) {
                     board_vehicle_journeys_within_days(router, req, (jpidx_t) jp_index, (jppidx_t) jpp_offset,
                             prev_time, &best_serviceday,
                             &best_vj, &best_time);
                 }else{
                     reboard_vehicle_journeys_within_days(router, req, (jpidx_t) jp_index, (jppidx_t) jpp_offset,
-                            board_serviceday, vj_index, prev_time, &best_serviceday,
+                            board_serviceday, vj_offset, prev_time, &best_serviceday,
                             &best_vj, &best_time);
                 }
 
@@ -1006,7 +1006,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                         board_sp = (spidx_t) sp_index;
                         board_jpp = (jppidx_t) jpp_offset;
                         board_serviceday = best_serviceday;
-                        vj_index = best_vj;
+                        vj_offset = best_vj;
                     }
                 } else {
                     #ifdef RRRR_DEBUG_VEHICLE_JOURNEY
@@ -1016,9 +1016,9 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                 continue;  /*  to the next stop_point in the journey_pattern */
 
             /*  We have already boarded a vehicle_journey along this journey_pattern. */
-            } else if (vj_index != VJ_NONE) {
+            } else if (vj_offset != VJ_NONE) {
                 rtime_t time = tdata_stoptime (router->tdata, board_serviceday,
-                                               (jpidx_t) jp_index, vj_index,
+                                               (jpidx_t) jp_index, vj_offset,
                                                (jppidx_t ) jpp_offset,
                                                !req->arrive_by);
 
@@ -1065,10 +1065,10 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                     #ifdef RRRR_DEBUG
                     fprintf(stderr, "ERROR: setting state to time before" \
                                     "start time. journey_pattern %d vj %d stop_point %d \n",
-                                    jp_index, vj_index, sp_index);
+                                    jp_index, vj_offset, sp_index);
                     #endif
                 } else {
-                    write_state(router, req, round, (jpidx_t) jp_index, vj_index,
+                    write_state(router, req, round, (jpidx_t) jp_index, vj_offset,
                             (spidx_t) sp_index, (jppidx_t) jpp_offset, time,
                             board_sp, board_jpp, board_time);
 
