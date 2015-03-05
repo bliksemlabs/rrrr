@@ -82,7 +82,7 @@ static void tdata_apply_gtfsrt_time (TransitRealtime__TripUpdate__StopTimeUpdate
     }
 }
 
-static void tdata_realtime_free_vj_index(tdata_t *tdata, uint32_t vj_index) {
+static void tdata_realtime_free_vj_index(tdata_t *tdata, vjidx_t vj_index) {
     if (tdata->vj_stoptimes[vj_index]) {
         free(tdata->vj_stoptimes[vj_index]);
         tdata->vj_stoptimes[vj_index] = NULL;
@@ -114,20 +114,20 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, uint32_t vj_index) {
  * will contain.
  */
 
-static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
+static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
         uint16_t n_sp, uint16_t n_vjs,
         uint16_t attributes, uint16_t route_index) {
     journey_pattern_t *new;
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
-    uint32_t vj_index = tdata->n_vjs;
+    vjidx_t vj_index = (vjidx_t) tdata->n_vjs;
     spidx_t sp_index;
     uint16_t i_vj;
 
     new = &tdata->journey_patterns[tdata->n_journey_patterns];
 
     new->journey_pattern_point_offset = journey_pattern_point_offset;
-    new->vj_offset = vj_index;
+    new->vj_index = vj_index;
     new->n_stops = n_sp;
     new->n_vjs = n_vjs;
     new->attributes = attributes;
@@ -178,10 +178,10 @@ static uint32_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     tdata->n_vj_active += n_vjs;
     tdata->n_journey_pattern_active++;
 
-    return tdata->n_journey_patterns++;
+    return (jpidx_t) tdata->n_journey_patterns++;
 }
 
-static void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uint32_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_apply_stop_time_update (tdata_t *tdata, jpidx_t jp_index, vjidx_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
     uint32_t journey_pattern_point_offset = tdata->journey_patterns[jp_index].journey_pattern_point_offset;
     uint32_t rs = 0;
     uint32_t i_stu;
@@ -224,7 +224,7 @@ static void tdata_apply_stop_time_update (tdata_t *tdata, uint32_t jp_index, uin
     tdata->journey_pattern_point_attributes[journey_pattern_point_offset] = rsa_boarding;
 }
 
-static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_index, int16_t cal_day, uint16_t n_sp, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, vjidx_t vj_index, int16_t cal_day, uint16_t n_sp, TransitRealtime__TripUpdate *rt_trip_update) {
     TransitRealtime__TripDescriptor *rt_trip = rt_trip_update->trip;
     journey_pattern_t *jp_new = NULL;
     char *vj_id_new;
@@ -258,7 +258,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
             #ifdef RRRR_DEBUG
             fprintf (stderr, "WARNING: this is changed vehicle_journey %s being CHANGED again!\n", vj_id_new);
             #endif
-            tdata->vj_stoptimes[jp_new->vj_offset] = (stoptime_t *) realloc(tdata->vj_stoptimes[jp_new->vj_offset], sizeof(stoptime_t) * n_sp);
+            tdata->vj_stoptimes[jp_new->vj_index] = (stoptime_t *) realloc(tdata->vj_stoptimes[jp_new->vj_index], sizeof(stoptime_t) * n_sp);
 
             /* Only initialises if the length of the list increased */
             for (sp_index = jp_new->n_stops;
@@ -291,7 +291,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
          * NOTE: if we would have allocated multiple vehicle_journeys this
          * should be a for loop over n_vjs.
          */
-        vj_index = jp_new->vj_offset;
+        vj_index = jp_new->vj_index;
 
         for (i_vj = 0; i_vj < 1; ++i_vj) {
             tdata->vjs[vj_index].vj_attributes = vj->vj_attributes;
@@ -301,15 +301,15 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, uint32_t vj_i
         }
 
         /* Restore the first vj_index again */
-        vj_index = jp_new->vj_offset;
+        vj_index = jp_new->vj_index;
     }
 
-    tdata_apply_stop_time_update (tdata, jp_index, vj_index, rt_trip_update);
+    tdata_apply_stop_time_update (tdata, (jpidx_t) jp_index, vj_index, rt_trip_update);
 
     /* being blissfully naive, a journey_pattern having only one vehicle_journey,
      * will have the same start and end time as its vehicle_journey
      */
-    jp_new->min_time = tdata->vj_stoptimes[jp_new->vj_offset][0].arrival;
+    jp_new->min_time = tdata->vj_stoptimes[jp_new->vj_index][0].arrival;
     jp_new->max_time = tdata->vj_stoptimes[vj_index][jp_new->n_stops - 1].departure;
 
 }
@@ -334,7 +334,7 @@ static void tdata_realtime_journey_pattern_type(TransitRealtime__TripUpdate *rt_
     }
 }
 
-static void tdata_realtime_apply_tripupdates (tdata_t *tdata, uint32_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
+static void tdata_realtime_apply_tripupdates (tdata_t *tdata, vjidx_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
     TransitRealtime__TripUpdate__StopTimeUpdate *rt_stop_time_update_prev = NULL;
     TransitRealtime__TripUpdate__StopTimeUpdate *rt_stop_time_update;
     journey_pattern_t *jp;
@@ -433,7 +433,7 @@ bool tdata_alloc_expanded(tdata_t *td) {
     for (i_jp = 0; i_jp < td->n_journey_patterns; ++i_jp) {
         uint32_t i_vj;
         for (i_vj = 0; i_vj < td->journey_patterns[i_jp].n_vjs; ++i_vj) {
-            td->vjs_in_journey_pattern[td->journey_patterns[i_jp].vj_offset + i_vj] =
+            td->vjs_in_journey_pattern[td->journey_patterns[i_jp].vj_index + i_vj] =
                     i_jp;
         }
     }
@@ -513,7 +513,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
         if (rt_trip_update) {
             TransitRealtime__TripDescriptor *rt_trip = rt_trip_update->trip;
             struct tm ltm;
-            uint32_t vj_index;
+            vjidx_t vj_index;
             time_t epochtime;
             int16_t cal_day;
             char date_buf[9];
@@ -521,7 +521,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
             if (rt_trip == NULL) continue;
 
-            vj_index = radixtree_find (tdata->vjid_index, rt_trip->trip_id);
+            vj_index = (vjidx_t) radixtree_find (tdata->vjid_index, rt_trip->trip_id);
             if (vj_index == RADIXTREE_NONE) {
                 #ifdef RRRR_DEBUG
                 fprintf (stderr, "    trip id was not found in the radix tree.\n");
@@ -645,10 +645,13 @@ fail_clean_fd:
 }
 
 void tdata_clear_gtfsrt (tdata_t *tdata) {
-    uint32_t i_vj_index;
-    for (i_vj_index = 0; i_vj_index < tdata->n_vjs; ++i_vj_index) {
-        tdata_realtime_free_vj_index(tdata, i_vj_index);
-    }
+    vjidx_t vj_index = tdata->n_vjs;
+
+    do {
+        vj_index--;
+        tdata_realtime_free_vj_index(tdata, vj_index);
+    } while (vj_index);
+
     memcpy (tdata->vj_active, tdata->vj_active_orig,
             sizeof(calendar_t) * tdata->n_vjs);
     memcpy (tdata->journey_pattern_active, tdata->journey_pattern_active_orig,

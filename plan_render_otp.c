@@ -276,7 +276,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
                 }
 
                 if (visible) {
-                    vehicle_journey_t vj = tdata->vjs[tdata->journey_patterns[leg->journey_pattern].vj_offset + leg->vj];
+                    vehicle_journey_t vj = tdata->vjs[tdata->journey_patterns[leg->journey_pattern].vj_index + leg->vj];
                     rtime_t arrival = vj.begin_time + tdata->stop_times[vj.stop_times_offset + i_jpp].arrival;
                     rtime_t departure = vj.begin_time + tdata->stop_times[vj.stop_times_offset + i_jpp].departure;
 

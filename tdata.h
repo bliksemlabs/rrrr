@@ -301,13 +301,13 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_vehicle_journey_id_for_index(tdata_t *td, uint32_t vj_index);
+const char *tdata_vehicle_journey_id_for_index(tdata_t *td, vjidx_t vj_index);
 
 const char *tdata_vehicle_journey_id_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
-int32_t tdata_utc_offset_for_vj_index(tdata_t *td, uint32_t vj_index);
+int32_t tdata_utc_offset_for_vj_index(tdata_t *td, vjidx_t vj_index);
 
-int32_t tdata_time_offset_for_vj_index(tdata_t *td, uint32_t vj_index);
+int32_t tdata_time_offset_for_vj_index(tdata_t *td, vjidx_t vj_index);
 
 int32_t tdata_utc_offset_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 

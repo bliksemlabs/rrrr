@@ -37,10 +37,10 @@ static void leg_add_walk (leg_t *leg, router_t *router,
 static void leg_add_ride_delay (leg_t *leg, router_t *router, uint64_t i_ride) {
     journey_pattern_t *jp;
     vehicle_journey_t *vj;
-    uint32_t vj_index;
+    vjidx_t vj_index;
 
     jp = router->tdata->journey_patterns + router->states_back_journey_pattern[i_ride];
-    vj_index = jp->vj_offset + router->states_back_vehicle_journey[i_ride];
+    vj_index = jp->vj_index + router->states_back_vehicle_journey[i_ride];
     vj = router->tdata->vjs + vj_index;
 
     if (router->tdata->vj_stoptimes[vj_index] &&

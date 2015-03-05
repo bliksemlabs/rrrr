@@ -92,7 +92,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
     int ret_nonincreasing = 0;
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
-        vehicle_journey_t *vjs = tdata->vjs + jp.vj_offset;
+        vehicle_journey_t *vjs = tdata->vjs + jp.vj_index;
 
         #ifdef RRRR_DEBUG
         /* statistics on errors, instead of early bail out */
@@ -246,6 +246,7 @@ bool tdata_validation_check_coherent (tdata_t *tdata) {
 
     return  (tdata_validation_check_nstop_points(tdata) &&
              tdata->n_journey_patterns > 0 &&
+             tdata->n_vjs > 0 &&
              tdata->n_journey_patterns < ((jpidx_t) -1) &&
              tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&

@@ -338,7 +338,7 @@ tdata_stoptime (tdata_t* tdata, serviceday_t *serviceday,
     if (serviceday->apply_realtime) {
 
         /* the expanded stoptimes can be found at the same row as the vehicle_journey */
-        vj_stoptimes = tdata->vj_stoptimes[tdata->journey_patterns[jp_index].vj_offset + vj_offset];
+        vj_stoptimes = tdata->vj_stoptimes[tdata->journey_patterns[jp_index].vj_index + vj_offset];
 
         if (vj_stoptimes) {
             /* if the expanded stoptimes have been added,

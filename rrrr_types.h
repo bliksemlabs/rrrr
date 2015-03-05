@@ -27,6 +27,8 @@ typedef uint16_t rtime_t;
 
 typedef uint16_t spidx_t;
 
+typedef uint32_t vjidx_t;
+
 typedef uint16_t jpidx_t;
 
 typedef uint16_t jp_vjoffset_t;
@@ -62,7 +64,7 @@ struct stop_point {
 typedef struct journey_pattern journey_pattern_t;
 struct journey_pattern {
     uint32_t journey_pattern_point_offset;
-    uint32_t vj_offset;
+    vjidx_t vj_index;
     jppidx_t n_stops;
     jp_vjoffset_t n_vjs;
     uint16_t attributes;
