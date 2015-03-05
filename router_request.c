@@ -188,16 +188,12 @@ best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime
         --i_target;
         sp_index = target.stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
-            if (req->arrive_by) {
-                if (round_best_time[sp_index] - target.durations[i_target] > best_time) {
-                    best_sp_index = (spidx_t) sp_index;
-                    best_time = round_best_time[sp_index] - target.durations[i_target];
-                }
-            } else {
-                if (round_best_time[sp_index] + target.durations[i_target] < best_time) {
-                    best_sp_index = (spidx_t) sp_index;
-                    best_time = round_best_time[sp_index] + target.durations[i_target];
-                }
+            if (req->arrive_by && round_best_time[sp_index] - target.durations[i_target] > best_time) {
+                best_sp_index = (spidx_t) sp_index;
+                best_time = round_best_time[sp_index] - target.durations[i_target];
+            } else if (!req->arrive_by && round_best_time[sp_index] + target.durations[i_target] < best_time) {
+                best_sp_index = (spidx_t) sp_index;
+                best_time = round_best_time[sp_index] + target.durations[i_target];
             }
         }
     }
