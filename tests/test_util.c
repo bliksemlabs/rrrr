@@ -93,7 +93,7 @@ START_TEST (test_btimetext)
         ck_assert_str_eq(out, "10:09:08 +1D");
 
         out = btimetext(RTIME_THREE_DAYS, buf);
-        ck_assert_str_eq(out, "OVERFLOW");
+        ck_assert_str_eq(out, "00:00:00 +2D");
     }
 END_TEST
 
