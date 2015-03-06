@@ -30,6 +30,17 @@ START_TEST (test_median_uneven)
     }
 END_TEST
 
+START_TEST (test_renderbits)
+    {
+        char out[34];
+        uint32_t data;
+
+        data = 14;
+        renderBits(&data, 1, out);
+        ck_assert_str_eq(out, "00001110");
+    }
+END_TEST
+
 Suite *make_util_suite(void);
 
 Suite *make_util_suite(void) {
@@ -37,6 +48,7 @@ Suite *make_util_suite(void) {
     TCase *tc_core = tcase_create("Core");
     tcase_add_test  (tc_core, test_median_even);
     tcase_add_test  (tc_core, test_median_uneven);
+    tcase_add_test  (tc_core, test_renderbits);
     suite_add_tcase(s, tc_core);
     return s;
 }
