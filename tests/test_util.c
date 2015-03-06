@@ -41,6 +41,14 @@ START_TEST (test_renderbits)
     }
 END_TEST
 
+START_TEST (test_strtoepoch)
+    {
+        time_t out;
+        out = strtoepoch("2013-12-11T10:09:08");
+        ck_assert_int_eq(out, 1386752948);
+    }
+END_TEST
+
 Suite *make_util_suite(void);
 
 Suite *make_util_suite(void) {
@@ -49,6 +57,7 @@ Suite *make_util_suite(void) {
     tcase_add_test  (tc_core, test_median_even);
     tcase_add_test  (tc_core, test_median_uneven);
     tcase_add_test  (tc_core, test_renderbits);
+    tcase_add_test  (tc_core, test_strtoepoch);
     suite_add_tcase(s, tc_core);
     return s;
 }
