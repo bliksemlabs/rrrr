@@ -181,19 +181,19 @@ best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime
     rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
     rtime_t *round_best_time = &router->states_time[offset_state];
 
-    street_network_t target = req->arrive_by ? req->entry : req->exit;
-    int32_t i_target = target.n_points;
+    street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
+    int32_t i_target = target->n_points;
 
     while (i_target){
         --i_target;
-        sp_index = target.stop_points[i_target];
+        sp_index = target->stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
-            if (req->arrive_by && round_best_time[sp_index] - target.durations[i_target] > best_time) {
+            if (req->arrive_by && round_best_time[sp_index] - target->durations[i_target] > best_time) {
                 best_sp_index = (spidx_t) sp_index;
-                best_time = round_best_time[sp_index] - target.durations[i_target];
-            } else if (!req->arrive_by && round_best_time[sp_index] + target.durations[i_target] < best_time) {
+                best_time = round_best_time[sp_index] - target->durations[i_target];
+            } else if (!req->arrive_by && round_best_time[sp_index] + target->durations[i_target] < best_time) {
                 best_sp_index = (spidx_t) sp_index;
-                best_time = round_best_time[sp_index] + target.durations[i_target];
+                best_time = round_best_time[sp_index] + target->durations[i_target];
             }
         }
     }
@@ -214,13 +214,40 @@ best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime
     return false;
 }
 
+/* Reverse request and eliminate targets that are not reached at best_time
+ * We could do this in best_time_to_round in one single loop but that would either require a second loop like this
+ * or multiple resets when a better best_time is found.
+ * There are multiple targets necessary for the reversal in the theoretical case that there are
+ * an equal arrival_time on multiple stop_point's but a less travel duration on one of them.
+ * In the third reversal we expect routing between one origin and one target.
+ */
 static void
-reverse_request (router_request_t *req, uint8_t round, rtime_t best_time) {
-    req->time_cutoff = req->time;
-    req->time = best_time;
+reverse_request (router_t *router, router_request_t *req, router_request_t *new_req, uint8_t round, rtime_t best_time) {
+    uint64_t offset_state = router->tdata->n_stop_points * round;
+    spidx_t sp_index;
+    rtime_t *round_best_time = &router->states_time[offset_state];
 
-    req->max_transfers = round;
-    req->arrive_by = !(req->arrive_by);
+    street_network_t target = req->arrive_by ? req->entry : req->exit;
+    int32_t i_target = target.n_points;
+    street_network_t *best_target = new_req->arrive_by ? &new_req->entry : &new_req->exit;
+    best_target->n_points = 0;
+
+    while (i_target){
+        --i_target;
+        sp_index = target.stop_points[i_target];
+        if (round_best_time[sp_index] != UNREACHED &&
+            best_time == (req->arrive_by ? round_best_time[sp_index] - target.durations[i_target]
+                                        : round_best_time[sp_index] + target.durations[i_target])) {
+            best_target->stop_points[best_target->n_points] = sp_index;
+            best_target->durations[best_target->n_points] = target.durations[i_target];
+            ++best_target->n_points;
+        }
+    }
+
+    new_req->time_cutoff = new_req->time;
+    new_req->time = best_time;
+    new_req->max_transfers = round;
+    new_req->arrive_by = !(new_req->arrive_by);
 }
 
 bool
@@ -235,7 +262,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
     do {
         if (best_time_by_round(router, req, (uint8_t) round, &best_time)) {
             ret[*ret_n] = *req;
-            reverse_request(&ret[*ret_n], (uint8_t) round, best_time);
+            reverse_request(router,req,&ret[*ret_n], (uint8_t) round, best_time);
             (*ret_n)++;
         }
         round--;
