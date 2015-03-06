@@ -62,6 +62,18 @@ START_TEST (test_epoch_to_rtime)
     }
 END_TEST
 
+START_TEST (test_rrrrandom)
+    {
+        uint32_t limit = 32;
+        uint32_t a = rrrrandom(limit);
+        uint32_t b = rrrrandom(limit);
+
+        ck_assert_int_le(a, limit);
+        ck_assert_int_le(b, limit);
+        ck_assert_int_ne(a, b);
+    }
+END_TEST
+
 Suite *make_util_suite(void);
 
 Suite *make_util_suite(void) {
@@ -72,6 +84,7 @@ Suite *make_util_suite(void) {
     tcase_add_test  (tc_core, test_renderbits);
     tcase_add_test  (tc_core, test_strtoepoch);
     tcase_add_test  (tc_core, test_epoch_to_rtime);
+    tcase_add_test  (tc_core, test_rrrrandom);
     suite_add_tcase(s, tc_core);
     return s;
 }
