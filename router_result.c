@@ -244,12 +244,9 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             /* signed int because we will be decreasing */
             int16_t j_transfer;
             spidx_t sp_index = target->stop_points[i_target];
-            rtime_t duration = target->durations[i_target];
 
             /* Skip the targets which were not reached by a vhicle in the round or have worse times than the cutoff */
-            if (router->states_time[i_state + sp_index] == UNREACHED ||
-                    (req ->arrive_by ? router->states_time[i_state + sp_index] - duration < req->time_cutoff :
-                                       router->states_time[i_state + sp_index] + duration > req->time_cutoff)) continue;
+            if (router->states_time[i_state + sp_index] == UNREACHED ) continue;
 
             #ifdef RRRR_DEV
             printf("Itinerary from target %s [%d]\n",tdata_stop_point_name_for_index(router->tdata, sp_index),sp_index);
@@ -334,8 +331,9 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                     return false;
                 }
             } else {
+                rtime_t duration;
                 /* The initial walk leg leading out of the search origin.
-                * This is inferred, not stored explicitly.
+                *  This is inferred from the list with origins, not stored explicitly.
                 */
                 spidx_t origin_stop_point = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
                 leg_t *prev;
