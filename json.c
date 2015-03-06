@@ -19,13 +19,15 @@ static bool remaining(json_t *j, size_t n) {
     return false;
 }
 
-/* Overflow-checked copy of a single char to the buffer. */
+/* Overflow-checked copy of a single char to the buffer.
+ */
 static void check(json_t *j, char c) {
     if (j->b >= j->buf_end) j->overflowed = true;
     else *(j->b++) = c;
 }
 
-/* Add a comma to the buffer, but only if we are currently in a list. */
+/* Add a comma to the buffer, but only if we are currently in a list.
+ */
 static void comma(json_t *j) {
     if (j->in_list) check(j, ',');
 }
@@ -70,8 +72,11 @@ static void ekey (json_t *j, const char *k) {
     j->in_list = true;
 }
 
+
 /* public functions (eventually) */
 
+/* Initialise the struct to store the JSON document.
+ */
 void json_init (json_t *j, char *buf, size_t buflen) {
     j->buf_start = j->b = buf;
     j->buf_end = j->b + buflen - 1;
@@ -79,31 +84,43 @@ void json_init (json_t *j, char *buf, size_t buflen) {
     j->overflowed = false;
 }
 
+/* Add a string value to the JSON document.
+ */
 void json_kv(json_t *j, const char *key, const char *value) {
     ekey(j, key);
     string(j, value);
 }
 
+/* Add a signed integer value to the JSON document.
+ */
 void json_kd(json_t *j, const char *key, int value) {
     ekey(j, key);
     if (remaining(j, 11)) j->b += sprintf(j->b, "%d", value);
 }
 
+/* Add a floating point value to the JSON document.
+ */
 void json_kf(json_t *j, const char *key, double value) {
     ekey(j, key);
     if (remaining(j, 12)) j->b += sprintf(j->b, "%5.5f", value);
 }
 
+/* Add a long signed integer to the JSON document.
+ */
 void json_kl(json_t *j, const char *key, int64_t value) {
     ekey(j, key);
     if (remaining(j, 21)) j->b += sprintf(j->b, "%" PRId64 , value);
 }
 
+/* Add a boolean value to the JSON document.
+ */
 void json_kb(json_t *j, const char *key, bool value) {
     ekey(j, key);
     if (remaining(j, 5)) j->b += sprintf(j->b, value ? "true" : "false");
 }
 
+/* Start a new object inside the JSON document.
+ */
 void json_key_obj(json_t *j, const char *key) {
     if (key)
         ekey(j, key);
@@ -113,40 +130,56 @@ void json_key_obj(json_t *j, const char *key) {
     j->in_list = false;
 }
 
+/* Start a new array inside the JSON document.
+ */
 void json_key_arr(json_t *j, const char *key) {
     ekey(j, key);
     check(j, '[');
     j->in_list = false;
 }
 
+/* Start an new object, inside a list.
+ */
 void json_obj(json_t *j) {
-    comma(j );
+    comma(j);
     check(j, '{');
     j->in_list = false;
 }
 
+/* Start a new array, inside a list.
+ */
 void json_arr(json_t *j) {
     comma(j);
     check(j, '[');
     j->in_list = false;
 }
 
+/* Close an object in the JSON document.
+ */
 void json_end_obj(json_t *j) {
     check(j, '}');
     j->in_list = true;
 }
 
+/* Close an array in the JSON document.
+ */
 void json_end_arr(json_t *j) {
     check(j, ']');
     j->in_list = true;
 }
 
+/* Return the length in bytes of the JSON document.
+ */
 size_t json_length(json_t *j) {
     return (size_t) (j->b - j->buf_start);
 }
 
+#ifdef RRRR_DEBUG
+/* Dump the current JSON document for debugging
+ */
 void json_dump(json_t *j) {
     *j->b = '\0';
-    if (j->overflowed) printf ("[JSON OVERFLOW]\n");
-    printf("%s\n", j->buf_start);
+    if (j->overflowed) fprintf (stderr, "[JSON OVERFLOW]\n");
+    fprintf(stderr, "%s\n", j->buf_start);
 }
+#endif

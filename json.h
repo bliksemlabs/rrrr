@@ -28,5 +28,8 @@ void json_obj(json_t *j);
 void json_arr(json_t *j);
 void json_end_obj(json_t *j);
 void json_end_arr(json_t *j);
-void json_dump(json_t *j);
 size_t json_length(json_t *j);
+
+#ifdef RRRR_DEBUG
+void json_dump(json_t *j);
+#endif
