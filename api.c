@@ -184,7 +184,6 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     }
 
     if ( ! req->arrive_by &&
-           req->from_stop_point != STOP_NONE &&
          ! router_result_to_plan (plan, router, req) ) {
         return false;
     }
@@ -196,9 +195,10 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
 
     /* We first add virtual request so we will never do them again */
     for (n_req = 0; n_req < plan->n_itineraries; ++n_req) {
-        req_storage[n_req] = *req;
         req_storage[n_req].time = plan->itineraries[n_req].legs[0].t0;
         req_storage[n_req].max_transfers = (uint8_t) (plan->itineraries[n_req].n_rides - 1);
+        req_storage[n_req].entry.n_points = 1;
+        req_storage[n_req].entry.stop_points[0] = plan->itineraries[n_req].legs[0].sp_to;
     }
 
     /* Fetch the first possible time to get out of here by transit */
