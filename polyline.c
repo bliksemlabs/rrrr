@@ -41,7 +41,7 @@
 
 #include "polyline.h"
 
-int encode_double (double c, char *buf) {
+static int encode_offset (uint32_t binary, char *buf) {
     char *b = buf;
     /* 31 == (2^5 - 1) == 00000 00000 00000 00000 00000 11111 */
     uint32_t mask = 31;
@@ -50,7 +50,6 @@ int encode_double (double c, char *buf) {
      * one '?' chunk, allowing zero coordinates and deltas
      */
     uint32_t last_chunk = 0;
-    uint32_t binary = (uint32_t) (round(1e5 * c));
     uint8_t i;
 
     /* printf ("%+10.5f %+10d ", c, binary); */
@@ -83,17 +82,9 @@ int encode_double (double c, char *buf) {
     return (int) (b - buf);
 }
 
-/* Our latlon_t contains floats, so results will not be exactly like examples. */
-int encode_latlon (latlon_t ll, char *buf) {
-    int nc = 0;
-    nc += encode_double (ll.lat, buf);
-    nc += encode_double (ll.lon, buf + nc);
-    return nc;
-}
-
 void polyline_begin (polyline_t *pl) {
-    pl->last_lat = 0.0;
-    pl->last_lon = 0.0;
+    pl->last_lat = 0;
+    pl->last_lon = 0;
     pl->buf_cur = pl->buf;
     *pl->buf_cur = '\0';
     pl->n_points = 0;
@@ -104,7 +95,10 @@ void polyline_begin (polyline_t *pl) {
 
 /* Allows preserving precision by not using float-based latlon_t. */
 void polyline_point (polyline_t *pl, double lat, double lon) {
-    double dlat, dlon;
+    uint32_t dlat, dlon;
+
+    uint32_t ilat = (uint32_t) (round(1e5 * lat));
+    uint32_t ilon = (uint32_t) (round(1e5 * lon));
 
     /* check for potential buffer overflow */
     if (pl->buf_cur >= pl->buf_max) return;
@@ -112,12 +106,12 @@ void polyline_point (polyline_t *pl, double lat, double lon) {
     /* encoded polylines are variable-width,
      * and use coordinate differences to save space.
      */
-    dlat = lat - pl->last_lat;
-    dlon = lon - pl->last_lon;
-    pl->buf_cur += encode_double (dlat, pl->buf_cur);
-    pl->buf_cur += encode_double (dlon, pl->buf_cur);
-    pl->last_lat = lat;
-    pl->last_lon = lon;
+    dlat = ilat - pl->last_lat;
+    dlon = ilon - pl->last_lon;
+    pl->buf_cur += encode_offset (dlat, pl->buf_cur);
+    pl->buf_cur += encode_offset (dlon, pl->buf_cur);
+    pl->last_lat = ilat;
+    pl->last_lon = ilon;
     pl->n_points += 1;
 }
 
