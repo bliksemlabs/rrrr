@@ -53,7 +53,7 @@ START_TEST (test_epoch_to_rtime)
     {
         struct tm tm_out;
         rtime_t rtime;
-        rtime_t rtime_expected = (36548 >> 2) + 21600;
+        rtime_t rtime_expected = SEC_TO_RTIME(36548) + RTIME_ONE_DAY;
 
         rtime = epoch_to_rtime(1386752948, &tm_out);
         ck_assert_int_eq(rtime, rtime_expected);
@@ -74,6 +74,29 @@ START_TEST (test_rrrrandom)
     }
 END_TEST
 
+START_TEST (test_btimetext)
+    {
+        char *out;
+        char buf[13];
+        rtime_t rt = SEC_TO_RTIME(36548);
+
+        out = btimetext(UNREACHED, buf);
+        ck_assert_str_eq(out, "   --   ");
+
+        out = btimetext(rt, buf);
+        ck_assert_str_eq(out, "10:09:08 -1D");
+
+        out = btimetext(rt + RTIME_ONE_DAY, buf);
+        ck_assert_str_eq(out, "10:09:08");
+
+        out = btimetext(rt + RTIME_TWO_DAYS, buf);
+        ck_assert_str_eq(out, "10:09:08 +1D");
+
+        out = btimetext(RTIME_THREE_DAYS, buf);
+        ck_assert_str_eq(out, "OVERFLOW");
+    }
+END_TEST
+
 Suite *make_util_suite(void);
 
 Suite *make_util_suite(void) {
@@ -85,6 +108,7 @@ Suite *make_util_suite(void) {
     tcase_add_test  (tc_core, test_strtoepoch);
     tcase_add_test  (tc_core, test_epoch_to_rtime);
     tcase_add_test  (tc_core, test_rrrrandom);
+    tcase_add_test  (tc_core, test_btimetext);
     suite_add_tcase(s, tc_core);
     return s;
 }
