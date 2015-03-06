@@ -7,8 +7,11 @@ include_directories(. ..)
 set(SOURCE_FILES
     ../bitset.c
     ../bitset.h
+    ../util.c
+    ../util.h
     run_tests.c
     test_bitset.c
+    test_util.c
     #test_hashgrid.c
     #test_radixtree.c
     )

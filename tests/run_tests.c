@@ -3,6 +3,7 @@
 
 /* could be in a header, but simpler here */
 Suite *make_bitset_suite (void);
+Suite *make_util_suite (void);
 
 #if 0
 Suite *make_hashgrid_suite (void);
@@ -19,6 +20,7 @@ int main (void) {
     SRunner *sr;
     sr = srunner_create (make_master_suite ());
     srunner_add_suite (sr, make_bitset_suite ());
+    srunner_add_suite (sr, make_util_suite ());
     #if 0
     srunner_add_suite (sr, make_hashgrid_suite ());
     srunner_add_suite (sr, make_radixtree_suite ());
