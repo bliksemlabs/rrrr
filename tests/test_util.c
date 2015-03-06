@@ -49,6 +49,19 @@ START_TEST (test_strtoepoch)
     }
 END_TEST
 
+START_TEST (test_epoch_to_rtime)
+    {
+        struct tm tm_out;
+        rtime_t rtime;
+        rtime_t rtime_expected = (36548 >> 2) + 21600;
+
+        rtime = epoch_to_rtime(1386752948, &tm_out);
+        ck_assert_int_eq(rtime, rtime_expected);
+        rtime = epoch_to_rtime(36548, &tm_out);
+        ck_assert_int_eq(rtime, rtime_expected);
+    }
+END_TEST
+
 Suite *make_util_suite(void);
 
 Suite *make_util_suite(void) {
@@ -58,6 +71,7 @@ Suite *make_util_suite(void) {
     tcase_add_test  (tc_core, test_median_uneven);
     tcase_add_test  (tc_core, test_renderbits);
     tcase_add_test  (tc_core, test_strtoepoch);
+    tcase_add_test  (tc_core, test_epoch_to_rtime);
     suite_add_tcase(s, tc_core);
     return s;
 }
