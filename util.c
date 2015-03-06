@@ -18,11 +18,9 @@ char *btimetext(rtime_t rt, char *buf) {
     if (rt == UNREACHED) {
         strcpy(buf, "   --   ");
         return buf;
-    }
-
-    if (rt >= RTIME_THREE_DAYS) {
-        day = " +2D";
-        rt -= RTIME_THREE_DAYS;
+    } else if (rt >= RTIME_THREE_DAYS) {
+        strcpy(buf, "OVERFLOW");
+        return buf;
     } else if (rt >= RTIME_TWO_DAYS) {
         day = " +1D";
         rt -= RTIME_TWO_DAYS;
