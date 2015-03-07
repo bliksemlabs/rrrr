@@ -243,7 +243,7 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
     /* Follow the chain of states backward */
     for (j_transfer = i_transfer; j_transfer >= 0; --j_transfer) {
         uint64_t j_walk, j_ride, j_state;
-        spidx_t walk_stop_point;
+        spidx_t walk_stop_point = sp_index;
         spidx_t ride_stop_point;
 
         j_state = ((uint64_t) j_transfer) * router->tdata->n_stop_points;
@@ -253,13 +253,13 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
             return false;
         }
 
+        /* Walk phase */
+        j_walk = j_state + sp_index;
         if (j_transfer != i_transfer) {
             /* Do not run this block for the origin street_network leg as it will create interference on
                itineraries with a longer travel duration.
              */
 
-            /* Walk phase */
-            j_walk = j_state + sp_index;
             if (router->states_walk_time[j_walk] == UNREACHED) {
                 fprintf(stderr, "ERROR: stop_point idx %d was unreached by walking.\n", sp_index);
                 return false;
