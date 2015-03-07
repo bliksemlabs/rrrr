@@ -7,6 +7,8 @@ include_directories(. ..)
 set(SOURCE_FILES
     ../bitset.c
     ../bitset.h
+    ../geometry.c
+    ../geometry.h
     ../json.c
     ../json.h
     ../polyline.c
@@ -15,6 +17,7 @@ set(SOURCE_FILES
     ../util.h
     run_tests.c
     test_bitset.c
+    test_geometry.c
     test_json.c
     test_polyline.c
     test_util.c
