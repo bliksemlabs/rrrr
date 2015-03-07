@@ -67,8 +67,10 @@ static void string (json_t *j, const char *s) {
  */
 static void ekey (json_t *j, const char *k) {
     comma(j);
-    string(j, k);
-    check(j, ':');
+    if (k) {
+        string(j, k);
+        check(j, ':');
+    }
     j->in_list = true;
 }
 
@@ -82,6 +84,12 @@ void json_init (json_t *j, char *buf, size_t buflen) {
     j->buf_end = j->b + buflen - 1;
     j->in_list = false;
     j->overflowed = false;
+}
+
+/* Finish the JSON document
+ */
+void json_end (json_t *j) {
+    *j->b = '\0';
 }
 
 /* Add a string value to the JSON document.
@@ -122,10 +130,7 @@ void json_kb(json_t *j, const char *key, bool value) {
 /* Start a new object inside the JSON document.
  */
 void json_key_obj(json_t *j, const char *key) {
-    if (key)
-        ekey(j, key);
-    else
-        comma(j);
+    ekey(j, key);
     check(j, '{');
     j->in_list = false;
 }
@@ -134,22 +139,6 @@ void json_key_obj(json_t *j, const char *key) {
  */
 void json_key_arr(json_t *j, const char *key) {
     ekey(j, key);
-    check(j, '[');
-    j->in_list = false;
-}
-
-/* Start an new object, inside a list.
- */
-void json_obj(json_t *j) {
-    comma(j);
-    check(j, '{');
-    j->in_list = false;
-}
-
-/* Start a new array, inside a list.
- */
-void json_arr(json_t *j) {
-    comma(j);
     check(j, '[');
     j->in_list = false;
 }
