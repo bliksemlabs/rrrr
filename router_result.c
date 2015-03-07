@@ -246,14 +246,11 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             spidx_t sp_index = target->stop_points[i_target];
 
             /* Skip the targets which were not reached by a vhicle in the round or have worse times than the cutoff */
-            if (router->states_time[i_state + sp_index] == UNREACHED ) continue;
+            if (router->states_time[i_state + sp_index] == UNREACHED) continue;
 
-            #ifdef RRRR_DEV
-            printf("Itinerary from target %s [%d]\n",tdata_stop_point_name_for_index(router->tdata, sp_index),sp_index);
-            #endif
             /* the slot in which record a leg,
-            * reversing them for forward vehicle_journey's
-            */
+             * reversing them for forward vehicle_journey's
+             */
             l = itin->legs;
 
             itin->n_rides = (uint8_t) (i_transfer + 1);
@@ -276,16 +273,22 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
                     return false;
                 }
 
-                /* Walk phase */
-                j_walk = j_state + sp_index;
-                if (router->states_walk_time[j_walk] == UNREACHED) {
-                    fprintf (stderr, "ERROR: stop_point idx %d was unreached by walking.\n", sp_index);
-                    return false;
-                }
-                walk_stop_point = sp_index;
+                if (j_transfer != i_transfer) {
+                    /* Do not run this block for the origin street_network leg as it will create interference on
+                       itineraries with a longer travel duration.
+                     */
 
-                /* follow the chain of states backward */
-                sp_index = router->states_walk_from[j_walk];
+                    /* Walk phase */
+                    j_walk = j_state + sp_index;
+                    if (router->states_walk_time[j_walk] == UNREACHED) {
+                        fprintf(stderr, "ERROR: stop_point idx %d was unreached by walking.\n", sp_index);
+                        return false;
+                    }
+                    walk_stop_point = sp_index;
+
+                    /* follow the chain of states backward */
+                    sp_index = router->states_walk_from[j_walk];
+                }
 
                 /* Ride phase */
                 j_ride = j_state + sp_index;
