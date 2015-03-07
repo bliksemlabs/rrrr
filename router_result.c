@@ -348,6 +348,45 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
     return true;
 }
 
+/* Returns whether given round n, the given target (i_target) is the best target, or that a different target has a
+ * better time for the same vehicle journey. Optionally (optimizeOnLessStreet) it also checks whether is is the target
+ * with the least distance/duration on the street_network.
+ */
+bool best_target_for_jp_vj(router_t *router, router_request_t *req, uint64_t i_state, street_network_t *target, spidx_t i_target, bool optimizeOnLessStreet){
+    spidx_t sp_index = target->stop_points[i_target];
+    jpidx_t jp_index = router->states_back_journey_pattern[i_state + sp_index];
+    jp_vjoffset_t vj_index = router->states_back_vehicle_journey[i_state + sp_index];
+
+    rtime_t best_sn_duration = target->durations[i_target];
+    spidx_t target_least_sn_duration = i_target;
+
+    rtime_t best_time = router->states_time[i_state + sp_index] + best_sn_duration;
+    spidx_t target_best = i_target;
+    int32_t i_otarget = target->n_points;
+    while (i_otarget){
+        rtime_t duration;
+        --i_otarget;
+        sp_index = target->stop_points[i_otarget];
+        duration = target->durations[i_otarget];
+        if (i_target == i_otarget ||
+                router->states_back_journey_pattern[i_state + sp_index] != jp_index ||
+                router->states_back_vehicle_journey[i_state + sp_index] != vj_index){
+            continue;
+        }
+        if (optimizeOnLessStreet && target->durations[i_otarget] < best_sn_duration){
+            best_sn_duration = target_least_sn_duration;
+            target_least_sn_duration = (spidx_t) i_otarget;
+        }
+        if (req->arrive_by ? router->states_time[i_state + sp_index] - duration > best_time :
+                                   router->states_time[i_state + sp_index] + duration < best_time){
+            best_time = req->arrive_by ? router->states_time[i_state + sp_index] - duration:
+                                         router->states_time[i_state + sp_index] + duration;
+            target_best = (spidx_t) i_otarget;
+        }
+    }
+    return i_target == target_best || (optimizeOnLessStreet && i_target == target_least_sn_duration);
+}
+
 bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req) {
     itinerary_t *itin;
     uint8_t i_transfer;
@@ -370,8 +409,9 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             spidx_t sp_index = target->stop_points[i_target];
 
             /* Skip the targets which were not reached by a vhicle in the round or have worse times than the cutoff */
-            if (router->states_time[i_state + sp_index] == UNREACHED) continue;
-            
+            if (router->states_time[i_state + sp_index] == UNREACHED ||
+                    !best_target_for_jp_vj(router, req, i_state, target, i_target,true)) continue;
+
             /* Work backward from the targets to the origin */
             if (render_itinerary(router,req,itin,i_transfer,target,i_target)) {
                 /* Move to the next itinerary in the plan. */

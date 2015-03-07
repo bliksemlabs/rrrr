@@ -15,6 +15,10 @@
 /*Maximum stops to enter or exit a journey */
 #define RRRR_MAX_ENTRY_EXIT_POINTS 2500
 
+/* Default value of whether the reversal algorithm should also optimize on distance to stop_points
+ * Increases workload for router but could increase quality of itineraries for (some) passengers */
+#define RRRR_DEFAULT_OPTIMIZE_ON_DISTANCE_TO_SP true
+
 /* Maximum distance in meters to travel by feet from the
  * origin to the first stop_point, and from the last stop_point to
  * the destination.

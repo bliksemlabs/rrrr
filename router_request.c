@@ -63,6 +63,7 @@ router_request_initialize(router_request_t *req) {
     req->from_stop_area = req->to_stop_area = STOP_NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
+    req->optimize_on_street_duration = RRRR_DEFAULT_OPTIMIZE_ON_DISTANCE_TO_SP;
     req->arrive_by = true;
     req->time_rounded = false;
     req->calendar_wrapped = false;

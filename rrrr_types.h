@@ -287,6 +287,10 @@ struct router_request {
     /* whether to show the intermediate stops in the output */
     bool intermediatestops;
 
+    /* Whether to include boarding/disembarking stop_points that are closer by start/end location
+     * when possible */
+    bool optimize_on_street_duration;
+
     /* Mark durations to various stop-points from the request start-position of the itinerary */
     street_network_t entry;
     /* Mark durations from various stop-points to the request end-position of the itinerary */
