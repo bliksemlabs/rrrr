@@ -14,6 +14,7 @@ before_install:
   - ./configure >/dev/null
   - make >/dev/null
   - sudo make install >/dev/null
+  - cd ..
 
 before_script:
   - mkdir build
