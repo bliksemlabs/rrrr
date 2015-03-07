@@ -14,7 +14,7 @@ static void leg_swap (leg_t *leg) {
     leg->sp_to = temp.sp_from;
     leg->t0 = temp.t1;
     leg->t1 = temp.t0;
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDE
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     leg->jpp0 = temp.jpp1;
     leg->jpp1 = temp.jpp0;
     #endif
