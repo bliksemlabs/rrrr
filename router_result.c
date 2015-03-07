@@ -268,6 +268,16 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
 
             /* follow the chain of states backward */
             sp_index = router->states_walk_from[j_walk];
+            {
+                /* Stop rendering itineraries that are sub-optimal in the sense
+                 *  that they do end at a less than optimal target *.
+                 */
+                rtime_t duration_on_sn = duration_on_streetnetwerk(target, sp_index);
+                if (duration_on_sn != UNREACHED &&
+                        duration_on_sn <= duration_target) {
+                    return false;
+                }
+            }
         }
 
         /* Ride phase */
@@ -279,17 +289,6 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
         ride_stop_point = sp_index;
         /* follow the chain of states backward */
         sp_index = router->states_ride_from[j_ride];
-
-        {
-            /* Stop rendering itineraries that are sub-optimal in the sense
-             *  that they do end at a less than optimal target *.
-             */
-            rtime_t duration_on_sn = duration_on_streetnetwerk(target, sp_index);
-            if (duration_on_sn != UNREACHED &&
-                    duration_on_sn > duration_target) {
-                return false;
-            }
-        }
 
         if (j_transfer == i_transfer){
             /* Street-network origin phase */
