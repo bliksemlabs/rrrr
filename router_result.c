@@ -348,7 +348,6 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
     return true;
 }
 
-/* TODO: move the innerloop of router_result_to_plan to a seperate function */
 bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req) {
     itinerary_t *itin;
     uint8_t i_transfer;
@@ -366,11 +365,13 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
         street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
         i_state = (((uint64_t) i_transfer) * router->tdata->n_stop_points);
 
+        /* Scan targets for optimal itinaries with i_transfer transfers */
         for (i_target = 0; i_target < target->n_points; ++i_target) {
             spidx_t sp_index = target->stop_points[i_target];
 
             /* Skip the targets which were not reached by a vhicle in the round or have worse times than the cutoff */
             if (router->states_time[i_state + sp_index] == UNREACHED) continue;
+            
             /* Work backward from the targets to the origin */
             if (render_itinerary(router,req,itin,i_transfer,target,i_target)) {
                 /* Move to the next itinerary in the plan. */
