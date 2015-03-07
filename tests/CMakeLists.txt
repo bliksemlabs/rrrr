@@ -7,12 +7,15 @@ include_directories(. ..)
 set(SOURCE_FILES
     ../bitset.c
     ../bitset.h
+    ../json.c
+    ../json.h
     ../polyline.c
     ../polyline.h
     ../util.c
     ../util.h
     run_tests.c
     test_bitset.c
+    test_json.c
     test_polyline.c
     test_util.c
     #test_hashgrid.c

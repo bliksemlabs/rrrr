@@ -3,6 +3,7 @@
 
 /* could be in a header, but simpler here */
 Suite *make_bitset_suite (void);
+Suite *make_json_suite (void);
 Suite *make_polyline_suite (void);
 Suite *make_util_suite (void);
 
@@ -21,6 +22,7 @@ int main (void) {
     SRunner *sr;
     sr = srunner_create (make_master_suite ());
     srunner_add_suite (sr, make_bitset_suite ());
+    srunner_add_suite (sr, make_json_suite ());
     srunner_add_suite (sr, make_polyline_suite ());
     srunner_add_suite (sr, make_util_suite ());
     #if 0
