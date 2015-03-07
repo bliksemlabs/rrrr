@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-rtime_t origin_duration(router_request_t *pT, spidx_t to);
-
 /* Reverse the times and stops in a leg.
  * Used for creating arrive-by itineraries.
  */
@@ -71,6 +69,8 @@ static void leg_add_ride (leg_t *leg, router_t *router,
     leg_add_ride_delay (leg, router, i_ride);
     #endif
 }
+
+
 
 /* Checks charateristics that should be the same for all vj plans produced
  * by this router:
