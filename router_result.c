@@ -270,7 +270,7 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
             sp_index = router->states_walk_from[j_walk];
             {
                 /* Stop rendering itineraries that are sub-optimal in the sense
-                 *  that they do end at a less than optimal target *.
+                 *  that they do travel through a more optimal target *.
                  */
                 rtime_t duration_on_sn = duration_on_streetnetwerk(target, sp_index);
                 if (duration_on_sn != UNREACHED &&
