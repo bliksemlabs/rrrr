@@ -208,16 +208,15 @@ static void leg_add_target (leg_t *leg, router_t *router, router_request_t *req,
     if (req->arrive_by) leg_swap(leg);
 }
 
-rtime_t origin_duration(router_request_t *req, spidx_t to){
-    street_network_t origin = req->arrive_by ? req->exit : req->entry;
-    spidx_t i_origin = origin.n_points;
+rtime_t duration_on_streetnetwerk(street_network_t *sn, spidx_t to){
+    spidx_t i_origin = sn->n_points;
     while (i_origin){
         --i_origin;
-        if (origin.stop_points[i_origin] == to){
-            return origin.durations[i_origin];
+        if (sn->stop_points[i_origin] == to){
+            return sn->durations[i_origin];
         }
     }
-    return 0;
+    return UNREACHED;
 }
 
 bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *itin,
@@ -227,6 +226,7 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
     /* signed int because we will be decreasing */
     int16_t j_transfer;
     spidx_t sp_index = target->stop_points[i_target];
+    rtime_t duration_target = target->durations[i_target];
 
     /* the slot in which record a leg,
      * reversing them for forward vehicle_journey's
@@ -280,6 +280,17 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
         /* follow the chain of states backward */
         sp_index = router->states_ride_from[j_ride];
 
+        {
+            /* Stop rendering itineraries that are sub-optimal in the sense
+             *  that they do end at a less than optimal target *.
+             */
+            rtime_t duration_on_sn = duration_on_streetnetwerk(target, sp_index);
+            if (duration_on_sn != UNREACHED &&
+                    duration_on_sn > duration_target) {
+                return false;
+            }
+        }
+
         if (j_transfer == i_transfer){
             /* Street-network origin phase */
             leg_add_target(l, router, req, j_ride,i_target);
@@ -328,7 +339,7 @@ bool render_itinerary(router_t *router, router_request_t * req, itinerary_t *iti
         */
         prev = (l - (req->arrive_by ? 1 : -1));
         l->t1 = (req->arrive_by ? prev->t1 : prev->t0);
-        duration = origin_duration (req, l->sp_to);
+        duration = duration_on_streetnetwerk(req->arrive_by ? &req->exit : &req->entry, l->sp_to);
         l->t0 = (rtime_t) (l->t1 + (req->arrive_by ? +duration : -duration));
         l->journey_pattern = STREET;
         l->vj = STREET;
