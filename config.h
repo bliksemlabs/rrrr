@@ -14,7 +14,7 @@
 
 /* Extra-travel duration allowed within the same round to get a more wide set of possibilities
  * for more passenger comfort(less walking, less transfers, cheaper) */
-#define RRRR_DEFAULT_COMFORT_BUFFER 200 /* 10 minutes */
+#define RRRR_DEFAULT_COMFORT_BUFFER 100 /* 5 minutes */
 
 /*Maximum stops to enter or exit a journey */
 #define RRRR_MAX_ENTRY_EXIT_POINTS 2500
