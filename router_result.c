@@ -83,7 +83,6 @@ static bool check_plan_invariants (plan_t *plan) {
     rtime_t prev_target_time = UNREACHED;
     uint8_t i_itinerary;
     bool fail = false;
-
     /* Loop over all itineraries in this plan. */
     for (i_itinerary = 0; i_itinerary < plan->n_itineraries; ++i_itinerary) {
         itinerary_t *itin = plan->itineraries + i_itinerary;
@@ -433,9 +432,9 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
             spidx_t sp_index = target->stop_points[i_target];
 
             /* Skip the targets which were not reached by a vhicle in the round or have worse times than the best_time */
-            if (router->states_time[i_state + sp_index] == UNREACHED ||
-                    (req->arrive_by ? router->states_time[i_state + sp_index] - duration < best_time_round :
-                                      router->states_time[i_state + sp_index] + duration > best_time_round) ||
+            if (router->states_time[i_state + sp_index] == UNREACHED  ||
+                    (req->arrive_by ? router->states_time[i_state + sp_index] - duration < best_time_round - req->comfort_buffer :
+                                      router->states_time[i_state + sp_index] + duration > best_time_round + req->comfort_buffer) ||
                     !best_target_for_jp_vj(router, req, i_state, target, i_target,req->optimize_on_street_duration)) {
                 continue;
             }
