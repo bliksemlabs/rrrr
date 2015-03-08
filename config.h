@@ -12,6 +12,10 @@
 /* Speed by foot, in meter per second */
 #define RRRR_DEFAULT_WALK_SPEED 1.5
 
+/* Extra-travel duration allowed within the same round to get a more wide set of possibilities
+ * for more passenger comfort(less walking, less transfers, cheaper) */
+#define RRRR_DEFAULT_COMFORT_BUFFER 200 /* 10 minutes */
+
 /*Maximum stops to enter or exit a journey */
 #define RRRR_MAX_ENTRY_EXIT_POINTS 2500
 
@@ -31,6 +35,8 @@
 #define RRRR_MAX_BANNED_VEHICLE_JOURNEYS 1
 
 #define RRRR_WALK_COMP 1.2
+
+#define RRRR_DEV
 
 #define RRRR_BANNED_JOURNEY_PATTERNS_BITMASK 0
 

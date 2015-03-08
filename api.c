@@ -148,6 +148,10 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
     /*reversal is meaningless/useless in on-board */
     if (req->onboard_journey_pattern == JP_NONE) {
         for (i = 0; i < n_reversals; ++i) {
+            if (i == 2) {
+                /* Disable the comfort buffer search for the third search */
+                req->comfort_buffer = 0;
+            }
             if (!router_request_reverse(router, req)) {
                 return false;
             }
@@ -227,6 +231,9 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
 
     for (; i_rev < n_req; ++i_rev) {
         router_reset (router);
+
+        /* Disable the comfort buffer search for the last search */
+        req_storage[i_rev].comfort_buffer = 0;
 
         if ( ! router_route (router, &req_storage[i_rev]) ) {
             return false;

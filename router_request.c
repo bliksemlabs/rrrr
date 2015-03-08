@@ -56,6 +56,7 @@ void
 router_request_initialize(router_request_t *req) {
     req->exit.n_points = 0;
     req->entry.n_points = 0;
+    req->comfort_buffer = RRRR_DEFAULT_COMFORT_BUFFER;
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
