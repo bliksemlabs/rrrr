@@ -172,6 +172,7 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
  */
 bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t *plan) {
     router_request_t req_storage[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
+    plan_t work_plan;
     uint8_t i_rev;
     uint8_t n_req;
     uint8_t n2_req;
@@ -184,8 +185,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     }
 
     if ( ! req->arrive_by &&
-           req->from_stop_point != STOP_NONE &&
-         ! router_result_to_plan (plan, router, req) ) {
+         ! router_result_to_plan (&work_plan, router, req) ) {
         return false;
     }
 
@@ -226,6 +226,30 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     n2_req = n_req;
 
     for (; i_rev < n_req; ++i_rev) {
+        bool reroute = true;
+        /* Check if we can skip the third reversal if we rendered a fitting itinerary in the first forward search */
+        if (!req_storage[i_rev].arrive_by &&
+                req_storage[i_rev].entry.n_points == 1 &&
+                req_storage[i_rev].exit.n_points == 1){
+            int16_t i_itin;
+            for (i_itin = 0; i_itin < work_plan.n_itineraries;++i_itin){
+                leg_t first_leg = work_plan.itineraries[i_itin].legs[0];
+                leg_t last_leg = work_plan.itineraries[i_itin].legs[work_plan.itineraries[i_itin].n_legs-1];
+                if (work_plan.itineraries[i_itin].n_rides == req_storage[i_rev].max_transfers+1 &&
+                        first_leg.sp_to == req_storage[i_rev].entry.stop_points[0] &&
+                        last_leg.sp_from == req_storage[i_rev].exit.stop_points[0] &&
+                        first_leg.t0 == req_storage[i_rev].time &&
+                        last_leg.t1 == req_storage[i_rev].time_cutoff){
+                    plan->itineraries[plan->n_itineraries] = work_plan.itineraries[i_itin];
+                    ++plan->n_itineraries;
+                    reroute = false;
+                    break;
+                }
+            }
+        }
+
+        if (!reroute) continue;
+
         router_reset (router);
 
         if ( ! router_route (router, &req_storage[i_rev]) ) {
