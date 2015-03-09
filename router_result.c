@@ -85,7 +85,7 @@ static bool check_plan_invariants(plan_t *plan) {
     rtime_t prev_target_time = UNREACHED;
     uint8_t i_itinerary;
     bool fail = false;
-    return true;
+
     /* Loop over all itineraries in this plan. */
     for (i_itinerary = 0; i_itinerary < plan->n_itineraries; ++i_itinerary) {
         itinerary_t *itin = plan->itineraries + i_itinerary;
