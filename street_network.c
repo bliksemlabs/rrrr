@@ -21,7 +21,7 @@ street_network_mark_duration_to_stop_point(street_network_t *sn,
     }
 
     /* An additional duration should be added, is there enough room? */
-    if (i >= RRRR_MAX_ENTRY_EXIT_POINTS) {
+    if (sn->n_points >= RRRR_MAX_ENTRY_EXIT_POINTS) {
         return false;
     }
 
