@@ -1,5 +1,10 @@
 #include "street_network.h"
 
+void
+street_network_init (street_network_t *sn) {
+    sn->n_points = 0;
+}
+
 bool street_network_mark_duration_to_stop_point(street_network_t *sn, spidx_t sp_index, rtime_t duration){
     int32_t i = sn->n_points;
     while (i){
