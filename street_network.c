@@ -5,6 +5,17 @@ street_network_init (street_network_t *sn) {
     sn->n_points = 0;
 }
 
+rtime_t street_network_duration(spidx_t sp_index, street_network_t *sn){
+    spidx_t i_origin = sn->n_points;
+    while (i_origin) {
+        --i_origin;
+        if (sn->stop_points[i_origin] == sp_index) {
+            return sn->durations[i_origin];
+        }
+    }
+    return UNREACHED;
+}
+
 bool
 street_network_mark_duration_to_stop_point(street_network_t *sn,
                                            spidx_t sp_index,
