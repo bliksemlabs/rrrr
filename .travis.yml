@@ -5,6 +5,7 @@ compiler:
   - clang
 
 before_install:
+  - export TZ=Europe/Amsterdam
   - sudo apt-get update >/dev/null
   - sudo apt-get -q install libprotobuf-c0-dev protobuf-c-compiler
   - sudo pip install pytz python-dateutil
