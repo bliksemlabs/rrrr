@@ -32,6 +32,11 @@ START_TEST (test_mark_duration)
         ck_assert_int_eq (sn->stop_points[1], 3);
         ck_assert_int_eq (sn->stop_points[2], 2);
 
+        ck_assert_int_eq(street_network_duration(555, sn), UNREACHED);
+        ck_assert_int_eq(street_network_duration(3, sn), 200);
+        ck_assert_int_eq(street_network_duration(2, sn), 50);
+        ck_assert_int_eq(street_network_duration(1, sn), 100);
+
         sn->n_points = RRRR_MAX_ENTRY_EXIT_POINTS;
         rrrr_memset(sn->stop_points, 0, RRRR_MAX_ENTRY_EXIT_POINTS);
         out = street_network_mark_duration_to_stop_point (sn, 4, 100);
