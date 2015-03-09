@@ -56,6 +56,7 @@ void
 router_request_initialize(router_request_t *req) {
     req->exit.n_points = 0;
     req->entry.n_points = 0;
+    req->comfort_buffer = RRRR_DEFAULT_COMFORT_BUFFER;
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
@@ -63,6 +64,7 @@ router_request_initialize(router_request_t *req) {
     req->from_stop_area = req->to_stop_area = STOP_NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
+    req->optimize_on_street_duration = RRRR_DEFAULT_OPTIMIZE_ON_DISTANCE_TO_SP;
     req->arrive_by = true;
     req->time_rounded = false;
     req->calendar_wrapped = false;
@@ -261,9 +263,26 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
 
     do {
         if (best_time_by_round(router, req, (uint8_t) round, &best_time)) {
+            bool add_request = true;
             ret[*ret_n] = *req;
             reverse_request(router,req,&ret[*ret_n], (uint8_t) round, best_time);
-            (*ret_n)++;
+            /* Our optimisation is only about the last clockwise search */
+            if (!ret[*ret_n].arrive_by) {
+                /* If we previously processed the same request, skip third reversal */
+                uint8_t j_ret;
+                for (j_ret = 0; j_ret < *ret_n; ++j_ret) {
+                    if (!ret[j_ret].arrive_by &&
+                            ret[j_ret].time == ret[*ret_n].time &&
+                            ret[j_ret].entry.n_points == 1 && ret[*ret_n].entry.n_points == 1 &&
+                            ret[j_ret].entry.stop_points[0] == ret[*ret_n].entry.stop_points[0]) {
+                        ret[j_ret].max_transfers = MAX(ret[j_ret].max_transfers, ret[*ret_n].max_transfers);
+                        ret[j_ret].time_cutoff = MAX(ret[j_ret].time_cutoff, ret[*ret_n].time_cutoff);
+                        add_request = false;
+                        break;
+                    }
+                }
+            }
+            if (add_request) (*ret_n)++;
         }
         round--;
     } while (round >= 0);

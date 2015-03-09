@@ -813,10 +813,10 @@ write_state(router_t *router, router_request_t *req,
         while (i_target){
             --i_target;
             if (target->stop_points[i_target] == sp_index
-                    && (( req->arrive_by && time - target->durations[i_target] > req->time_cutoff) ||
-                        (!req->arrive_by && time + target->durations[i_target] < req->time_cutoff))){
-                req->time_cutoff = req->arrive_by ? time - target->durations[i_target] :
-                                                    time + target->durations[i_target];
+                    && (( req->arrive_by && time - target->durations[i_target] - req->comfort_buffer > req->time_cutoff) ||
+                        (!req->arrive_by && time + target->durations[i_target] + req->comfort_buffer < req->time_cutoff))){
+                req->time_cutoff = req->arrive_by ? time - target->durations[i_target] - req->comfort_buffer :
+                                                    time + target->durations[i_target] + req->comfort_buffer;
             }
         }
     }
@@ -1085,6 +1085,12 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
      */
     unflag_banned_stop_points(router, req);
     #endif
+
+    if (req->arrive_by && req->time_cutoff != 0){
+        req->time_cutoff += req->comfort_buffer;
+    }else if (!req->arrive_by && req->time_cutoff != UNREACHED){
+        req->time_cutoff -= req->comfort_buffer;
+    }
 
     /* Also updates the list of journey_patterns for next round
      * based on stops that were touched in this round.

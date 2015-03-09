@@ -240,6 +240,10 @@ struct router_request {
     /* the departure or arrival time at which to search, in internal rtime */
     rtime_t time;
 
+    /* Extra-travel duration allowed within the same round to get a more wide set of possibilities
+     * for more passenger comfort(less walking, less transfers, cheaper) */
+    rtime_t comfort_buffer;
+
     /* the latest (or earliest in arrive_by) acceptable time to reach the destination */
     rtime_t time_cutoff;
 
@@ -286,6 +290,10 @@ struct router_request {
 
     /* whether to show the intermediate stops in the output */
     bool intermediatestops;
+
+    /* Whether to include boarding/disembarking stop_points that are closer by start/end location
+     * when possible */
+    bool optimize_on_street_duration;
 
     /* Mark durations to various stop-points from the request start-position of the itinerary */
     street_network_t entry;
