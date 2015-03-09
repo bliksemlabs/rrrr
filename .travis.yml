@@ -5,9 +5,17 @@ compiler:
   - clang
 
 before_install:
+  - export TZ=Europe/Amsterdam
   - sudo apt-get update >/dev/null
-  - sudo apt-get -q install check libprotobuf-c0-dev protobuf-c-compiler
+  - sudo apt-get -q install libprotobuf-c0-dev protobuf-c-compiler
   - sudo pip install pytz python-dateutil
+  - wget http://softlayer-ams.dl.sourceforge.net/project/check/check/0.9.14/check-0.9.14.tar.gz
+  - tar zxf check-0.9.14.tar.gz
+  - cd check-0.9.14
+  - ./configure >/dev/null
+  - make >/dev/null
+  - sudo make install >/dev/null
+  - cd ..
 
 before_script:
   - mkdir build

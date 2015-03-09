@@ -30,6 +30,8 @@ void coord_from_meters (coord_t*, double meters_x, double meters_y);
 
 double coord_distance_meters (coord_t*, coord_t*);
 
+double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2);
+
 double coord_distance_ersatz (coord_t *c1, coord_t *c2);
 
 double ersatz_from_distance (double meters);
