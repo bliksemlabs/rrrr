@@ -1094,13 +1094,10 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
     /* Initialize the stops in round 1 that were used as
      * starting points for round 0.
      */
-    /*  TODO: also must be done for the hashgrid */
     if (round == 0) {
         initialize_transfers_full (router, 1);
     }
-
-     /*  TODO add arrival hashgrid timings */
-
+    
     #ifdef RRRR_DEBUG
     dump_results(router);
     #endif
