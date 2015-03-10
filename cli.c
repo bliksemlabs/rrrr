@@ -64,7 +64,7 @@ int main (int argc, char *argv[]) {
     memset (&router,   0, sizeof(router_t));
     memset (&cli_args, 0, sizeof(cli_args));
 
-    plan.n_itineraries = 0;
+    router_result_init_plan(&plan);
     cli_args.repeat = 1;
 
     /* * * * * * * * * * * * * * * * * * * * * *
@@ -382,7 +382,7 @@ int main (int argc, char *argv[]) {
 
     while (cli_args.repeat){
         --cli_args.repeat;
-        plan.n_itineraries=0;
+        router_result_init_plan(&plan);
 
         /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
          * this erases the set cutoff time from reversals in previous requests in the repeat function

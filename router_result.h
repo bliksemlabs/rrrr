@@ -86,6 +86,8 @@ bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *re
 
 void router_result_sort (plan_t *plan);
 
+void router_result_init_plan(plan_t *plan);
+
 /* return num of chars written */
 uint32_t router_result_dump(router_t *router, router_request_t *req,
                             uint32_t(*render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen),

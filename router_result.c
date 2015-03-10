@@ -442,6 +442,10 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
     return check_plan_invariants(plan);
 }
 
+void router_result_init_plan(plan_t *plan){
+    plan->n_itineraries = 0;
+}
+
 /* After routing, call to convert the router state into a readable list of
  * itinerary legs. Returns the number of bytes written to the buffer.
  */

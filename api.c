@@ -177,6 +177,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     uint8_t n_req = 0;
     uint8_t n2_req;
 
+    router_result_init_plan(&work_plan);
     router_reset (router);
     search_streetnetwork(router,req);
 
