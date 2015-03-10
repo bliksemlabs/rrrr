@@ -358,7 +358,7 @@ bool best_target_for_jp_vj(router_t *router, router_request_t *req, uint64_t i_s
         --i_otarget;
         sp_index = target->stop_points[i_otarget];
         duration = target->durations[i_otarget];
-        if (i_target == i_otarget ||
+        if (i_target == i_otarget || router->states_time[i_state + sp_index] == UNREACHED ||
                 router->states_back_journey_pattern[i_state + sp_index] != jp_index ||
                 router->states_back_vehicle_journey[i_state + sp_index] != vj_index) {
             continue;
