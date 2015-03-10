@@ -29,10 +29,24 @@ modes_string (tmode_t m, char *dst) {
  * sidx0 and sidx1 are global stop indexes, not stop indexes within the route.
  */
 static void
-polyline_for_leg (polyline_t *pl, tdata_t *tdata, leg_t *leg) {
+polyline_for_leg (polyline_t *pl, tdata_t *tdata, leg_t *leg, router_request_t *req, uint8_t leg_idx) {
     polyline_begin(pl);
 
-    if (leg->journey_pattern == WALK) {
+    if (leg->journey_pattern == STREET && leg_idx == 0){
+        if (req->from_latlon.lat != 0.0 && req->from_latlon.lon != 0.0){
+            polyline_latlon(pl, req->from_latlon);
+        }else if (req->from_stop_area != STOP_NONE){
+            polyline_latlon (pl, tdata->stop_area_coords[req->from_stop_area]);
+        }
+        polyline_latlon (pl, tdata->stop_point_coords[leg->sp_to]);
+    }else if (leg->journey_pattern == STREET) {
+        polyline_latlon (pl, tdata->stop_point_coords[leg->sp_from]);
+        if (req->to_latlon.lat != 0.0 && req->to_latlon.lon != 0.0){
+            polyline_latlon(pl, req->to_latlon);
+        }else if (req->to_stop_area != STOP_NONE){
+            polyline_latlon (pl, tdata->stop_area_coords[req->to_stop_area]);
+        }
+    }else if (leg->journey_pattern == WALK) {
         polyline_latlon (pl, tdata->stop_point_coords[leg->sp_from]);
         polyline_latlon (pl, tdata->stop_point_coords[leg->sp_to]);
     } else {
@@ -98,7 +112,7 @@ static void put_servicedate(leg_t *leg, time_t date, char *servicedate){
 
 static void
 json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
-          router_request_t *req, time_t date) {
+          router_request_t *req, time_t date, uint8_t leg_idx) {
     const char *mode = NULL;
     const char *headsign = NULL;
     const char *linecode = NULL;
@@ -256,7 +270,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     ]
 */
         json_key_obj(j, "legGeometry");
-            polyline_for_leg (&pl, tdata, leg);
+            polyline_for_leg (&pl, tdata, leg, req, leg_idx);
             json_kv(j, "points", polyline_result(&pl));
             json_kv(j, "levels", NULL);
             json_kd(j, "length", (int) polyline_length(&pl));
@@ -297,7 +311,7 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
     int32_t walkdistance = 0;
     int32_t waitingtime = 0;
     int32_t transittime = 0;
-    leg_t *leg;
+    uint8_t leg_idx;
 
     json_obj(j); /* one itinerary */
         json_kl(j, "duration", endtime - starttime);
@@ -305,9 +319,10 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
         json_kl(j, "endTime", endtime);
         json_kd(j, "transfers", itin->n_legs / 2 - 1);
         json_key_arr(j, "legs");
-            for (leg = itin->legs; leg < itin->legs + itin->n_legs; ++leg) {
+            for (leg_idx = 0; leg_idx < itin->n_legs; ++leg_idx) {
+                leg_t *leg = &itin->legs[leg_idx];
                 uint32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
-                json_leg (j, leg, tdata, req, date);
+                json_leg (j, leg, tdata, req, date, leg_idx);
                 if (leg->journey_pattern >= WALK) {
                     if (leg->sp_from == leg->sp_to) {
                         waitingtime += leg_duration;
