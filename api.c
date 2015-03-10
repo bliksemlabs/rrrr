@@ -174,7 +174,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     router_request_t req_storage[RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS];
     plan_t work_plan;
     uint8_t i_rev;
-    uint8_t n_req;
+    uint8_t n_req = 0;
     uint8_t n2_req;
 
     router_reset (router);
@@ -192,13 +192,6 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     if (req->from_stop_point == ONBOARD){
         /*reversal is meaningless/useless in on-board */
         return true;
-    }
-
-    /* We first add virtual request so we will never do them again */
-    for (n_req = 0; n_req < plan->n_itineraries; ++n_req) {
-        req_storage[n_req] = *req;
-        req_storage[n_req].time = plan->itineraries[n_req].legs[0].t0;
-        req_storage[n_req].max_transfers = (uint8_t) (plan->itineraries[n_req].n_rides - 1);
     }
 
     /* Fetch the first possible time to get out of here by transit */
