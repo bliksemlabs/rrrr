@@ -1,7 +1,6 @@
 from model.transit import *
 from gtfsdb import GTFSDatabase
 import sys
-from exporter.timetable3 import export
 import exporter.timetable4
 from datetime import timedelta, date
 
@@ -149,7 +148,6 @@ def main():
     if len(tdata.journey_patterns) == 0 or len(tdata.vehicle_journeys) == 0:
         print "No valid trips in this GTFS file!"
         sys.exit(1)
-    export(tdata)
     exporter.timetable4.export(tdata)
 
 if __name__=='__main__': 

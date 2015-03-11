@@ -1,6 +1,5 @@
 import psycopg2
 from model.transit import *
-from exporter.timetable3 import export
 import exporter.timetable4
 
 def parse_gtfs_time(timestr):
