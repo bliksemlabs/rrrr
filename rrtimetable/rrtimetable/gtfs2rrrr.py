@@ -106,7 +106,7 @@ def convert(gtfsdb, from_date=None):
     
     vj = None
     last_trip_id = None
-    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type in gtfsdb.stop_times():
+    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type,block_id in gtfsdb.stop_times():
         if trip_id != last_trip_id:
             if vj is not None:
                 vj.finish()
@@ -114,7 +114,7 @@ def convert(gtfsdb, from_date=None):
             if service_id not in calendars:
                 continue
             last_trip_id = trip_id
-            vj = VehicleJourney(tdata,trip_id,route_id,str(route_type),headsign=trip_headsign)
+            vj = VehicleJourney(tdata,trip_id,route_id,str(route_type),headsign=trip_headsign,blockref=block_id)
             for date in calendars[service_id]:
                 vj.setIsValidOn(date)
         vj.add_stop(stop_id,arrival_time,departure_time,forboarding=(pickup_type != 1),foralighting=(drop_off_type != 1),headsign=stop_headsign)

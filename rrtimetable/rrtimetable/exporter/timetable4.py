@@ -14,7 +14,11 @@ import datetime
 # We picked a 15 minute resolution for these offsets to allow them to store in int8_t
 
 NUMBER_OF_DAYS = 32
-MIN_WAITTIME = 120
+MIN_WAITTIME = 2 * 60 #2 minutes ( in seconds)
+MAX_INTERLINE_WAITTIME = 5 *60 #5 minutes ( in seconds)
+JP_NONE = 65534
+VJ_NONE = 65534
+
 class Index():
     def __init__(self):
         self.operators = []
@@ -41,6 +45,9 @@ class Index():
         self.vehicle_journeys_in_journey_pattern = {}
         self.connections_from_stop_point = {}
         self.connections_point_to_point = {}
+        self.blocks = {}
+        self.vj_interline_clockwise = {}
+        self.vj_interline_counterclockwise = {}
 
         self.loc_for_string = {}
         self.strings = []
@@ -65,6 +72,10 @@ def make_idx(tdata):
         if vj.journey_pattern.uri not in index.validity_pattern_for_journey_pattern_uri:
             index.validity_pattern_for_journey_pattern_uri[vj.journey_pattern.uri] = set([])
         index.validity_pattern_for_journey_pattern_uri[vj.journey_pattern.uri].update(vj.validity_pattern)
+        if vj.blockref is not None:
+            if (vj.utc_offset,vj.blockref) not in index.blocks:
+                index.blocks[(vj.utc_offset,vj.blockref)] = []
+            index.blocks[(vj.utc_offset,vj.blockref)].append(vj)
 
         if vj.journey_pattern.route.line.operator.uri not in index.idx_for_operator_uri:
             index.idx_for_operator_uri[vj.journey_pattern.route.line.operator.uri] = len(index.idx_for_operator_uri)
@@ -85,9 +96,11 @@ def make_idx(tdata):
         if vj.journey_pattern.uri not in index.idx_for_journey_pattern_uri:
             index.idx_for_journey_pattern_uri[vj.journey_pattern.uri] = len(index.idx_for_journey_pattern_uri)
             index.journey_patterns.append(vj.journey_pattern)
+        vj._jp_idx = index.idx_for_journey_pattern_uri[vj.journey_pattern.uri]
 
         if vj.journey_pattern.uri not in index.vehicle_journeys_in_journey_pattern:
             index.vehicle_journeys_in_journey_pattern[vj.journey_pattern.uri] = []
+        vj._jpvjoffset = len(index.vehicle_journeys_in_journey_pattern[vj.journey_pattern.uri])
         index.vehicle_journeys_in_journey_pattern[vj.journey_pattern.uri].append(vj)
 
         if vj.journey_pattern.commercial_mode.uri not in index.idx_for_commercial_mode_uri:
@@ -114,6 +127,23 @@ def make_idx(tdata):
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
+    
+    for key,vjs in index.blocks.items():
+        if len(vjs) == 1:
+            continue
+        for i in range(len(vjs)-1):
+            from_vj = vjs[i]
+            to_vj = vjs[i+1]
+            if (from_vj.departure_time+from_vj.timedemandgroup.points[-1].totaldrivetime) > to_vj.departure_time:
+                print 'Ignoring VJ interline from %s to %s, timetravel!' % (from_vj.uri,to_vj.uri)
+                continue
+            waittime = to_vj.departure_time - (from_vj.departure_time+from_vj.timedemandgroup.points[-1].totaldrivetime)
+            if waittime > MAX_INTERLINE_WAITTIME:
+                print 'Ignoring VJ interline from %s to %s, wait-time between VJs is %d seconds!' % (from_vj.uri,to_vj.uri,waittime)
+                continue
+            index.vj_interline_clockwise[from_vj.uri] = (to_vj._jp_idx,to_vj._jpvjoffset)
+            index.vj_interline_counterclockwise[to_vj.uri] = (from_vj._jp_idx,from_vj._jpvjoffset)
+
     if len(index.journey_patterns) == 0:
         print "No valid journey_patterns found to export to this timetable. Exiting..."
         sys.exit(1)
@@ -238,16 +268,23 @@ def export_sa_for_sp(tdata,index,out):
     for sp in index.stop_points:
         write_stop_area_idx(out,index,sp.stop_area.uri)
 
+
 vjref_t = Struct('HH')
-def export_vj_transitions(tdata,index,out):
-    index.loc_vj_transfers_backward = tell(out)
+def export_vj_interlines(tdata,index,out):
+    index.loc_vj_interline_backward = tell(out)
     for jp in index.journey_patterns:
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-            out.write(vjref_t.pack(index.n_jp,0))
-    index.loc_vj_transfers_forward = tell(out)
+            if vj.uri in index.vj_interline_counterclockwise:
+                out.write(vjref_t.pack(*index.vj_interline_counterclockwise[vj.uri]))
+            else:
+                out.write(vjref_t.pack(JP_NONE,VJ_NONE))
+    index.loc_vj_interline_forward = tell(out)
     for jp in index.journey_patterns:
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-            out.write(vjref_t.pack(index.n_jp,0))
+            if vj.uri in index.vj_interline_clockwise:
+                out.write(vjref_t.pack(*index.vj_interline_clockwise[vj.uri]))
+            else:
+                out.write(vjref_t.pack(JP_NONE,VJ_NONE))
 
 def export_transfers(tdata,index,out):
     print "saving transfer stops (footpaths)"
@@ -535,8 +572,8 @@ def write_header (out,index) :
         len(index.lines), #n_operator_for_line
         len(index.journey_patterns), #n_commerical_mode_for_jp
         len(index.lines), #n_commerical_mode_for_line
-        index.n_vj, #n_vj_transfers_backward
-        index.n_vj, #n_vj_transfers_foward
+        index.n_vj, #n_vj_interline_backward
+        index.n_vj, #n_vj_interline_foward
         len(index.stop_points), #n_stop_point_waittime
 
         index.loc_stop_points,
@@ -552,8 +589,8 @@ def write_header (out,index) :
         index.loc_transfer_target_stop_points,
         index.loc_transfer_dist_meters,
         index.loc_stop_point_waittime,
-        index.loc_vj_transfers_backward,
-        index.loc_vj_transfers_forward,
+        index.loc_vj_interline_backward,
+        index.loc_vj_interline_forward,
         index.loc_vj_active,
         index.loc_jp_active,
         index.loc_platformcodes,
@@ -606,7 +643,7 @@ def export(tdata):
     export_vj_in_jp(tdata,index,out)
     export_jpp_at_sp(tdata,index,out)
     export_transfers(tdata,index,out)
-    export_vj_transitions(tdata,index,out)
+    export_vj_interlines(tdata,index,out)
     export_stop_indices(tdata,index,out)
     export_stop_point_attributes(tdata,index,out)
     export_jp_structs(tdata,index,out)
