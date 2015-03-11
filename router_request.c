@@ -6,6 +6,7 @@
 #include "config.h"
 #include "router_request.h"
 #include "util.h"
+#include "router_result.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -248,6 +249,25 @@ reverse_request (router_t *router, router_request_t *req, router_request_t *new_
     new_req->time = best_time;
     new_req->max_transfers = round;
     new_req->arrive_by = !(new_req->arrive_by);
+}
+
+bool
+router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan) {
+    int16_t i_itin;
+    int8_t round;
+
+    assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
+
+    for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
+        itinerary_t itin = plan->itineraries[i_itin];
+        ret[*ret_n] = *req;
+        reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
+                req->arrive_by ? itin.legs[0].t0 : itin.legs[itin.n_legs-1].t1);
+        ret[*ret_n].time_cutoff = req->arrive_by ? itin.legs[itin.n_legs-1].t1 : itin.legs[0].t0;
+        router_request_dump(&ret[*ret_n], router->tdata);
+        (*ret_n)++;
+    }
+    return (*ret_n > 0);
 }
 
 bool
