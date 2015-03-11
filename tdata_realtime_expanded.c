@@ -198,7 +198,7 @@ static void tdata_apply_stop_time_update (tdata_t *tdata, jpidx_t jp_index, vjid
             char *stop_id = rt_stop_time_update->stop_id;
             if (stop_id) {
 
-                uint32_t sp_index = radixtree_find (tdata->stop_point_id_index, stop_id);
+                uint32_t sp_index = radixtree_find_exact (tdata->stop_point_id_index, stop_id);
                 if (tdata->journey_pattern_points[journey_pattern_point_offset] != sp_index &&
                     tdata->journey_pattern_points[journey_pattern_point_offset] != JPP_NONE) {
                     tdata_rt_journey_patterns_at_stop_point_remove(tdata, tdata->journey_pattern_points[journey_pattern_point_offset], jp_index);
@@ -247,7 +247,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, vjidx_t vj_in
     vj_id_new[0] = '@';
     strncpy(&vj_id_new[1], rt_trip->trip_id, len);
 
-    jp_index = radixtree_find (tdata->lineid_index, vj_id_new);
+    jp_index = radixtree_find_exact (tdata->lineid_index, vj_id_new);
 
     if (jp_index != RADIXTREE_NONE) {
         /* Fixes the case where a vj changes a second time */
@@ -371,7 +371,7 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, vjidx_t vj_index, 
 
         rt_stop_time_update = rt_trip_update->stop_time_update[i_stu];
         stop_id = rt_stop_time_update->stop_id;
-        sp_index = radixtree_find (tdata->stop_point_id_index, stop_id);
+        sp_index = radixtree_find_exact (tdata->stop_point_id_index, stop_id);
 
 
         if (journey_pattern_points[rs] == sp_index) {
@@ -521,7 +521,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
             if (rt_trip == NULL) continue;
 
-            vj_index = (vjidx_t) radixtree_find (tdata->vjid_index, rt_trip->trip_id);
+            vj_index = (vjidx_t) radixtree_find_exact (tdata->vjid_index, rt_trip->trip_id);
             if (vj_index == RADIXTREE_NONE) {
                 #ifdef RRRR_DEBUG
                 fprintf (stderr, "    trip id was not found in the radix tree.\n");

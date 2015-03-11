@@ -50,7 +50,9 @@ void radixtree_destroy (radixtree_t *r);
 
 bool radixtree_insert (radixtree_t *r, const char *key, uint32_t value);
 
-uint32_t radixtree_find (radixtree_t *r, const char *key);
+rxt_edge_t* radixtree_find (radixtree_t *r, const char *key);
+uint32_t radixtree_find_exact (radixtree_t *r, const char *key);
+uint32_t radixtree_find_prefix (radixtree_t *r, const char *key, rxt_edge_t *result);
 
 #ifdef RRRR_DEBUG
 uint32_t radixtree_edge_count (rxt_edge_t *e);

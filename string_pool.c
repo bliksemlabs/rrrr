@@ -7,7 +7,7 @@
 #include "string.h"
 
 uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const char *str) {
-    uint32_t location = radixtree_find (r, str);
+    uint32_t location = radixtree_find_exact (r, str);
 
     if (location == RADIXTREE_NONE) {
         size_t n = strlen(str);

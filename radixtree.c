@@ -195,7 +195,7 @@ bool radixtree_insert (radixtree_t *r, const char *key, uint32_t value) {
     /* should never happen unless allocation fails, giving a NULL next edge. */
 }
 
-uint32_t radixtree_find (radixtree_t *r, const char *key) {
+rxt_edge_t* radixtree_find (radixtree_t *r, const char *key) {
     const char *k = key;
     rxt_edge_t *e = r->root;
     while (e != NULL) {
@@ -207,13 +207,13 @@ uint32_t radixtree_find (radixtree_t *r, const char *key) {
                 /* prefix char is 0, reached the end of this edge's
                  * prefix string.
                  */
-                if (*k != *p) return RADIXTREE_NONE;
+                if (*k != *p) return NULL;
                 /* key was not in tree */
             }
             /* We have consumed the prefix with or without
              * hitting a terminator byte.
              */
-            if (*k == '\0') return e->value;
+            if (*k == '\0') return e;
             /* This edge consumed the entire key. */
             e = e->child;
             /* Key characters remain, tail-recurse on those
@@ -224,8 +224,41 @@ uint32_t radixtree_find (radixtree_t *r, const char *key) {
         e = e->next;
         /* Next edge in the list on the same tree level */
     }
-    return RADIXTREE_NONE;
+    return NULL;
     /* Ran out of edges to traverse, no match was found. */
+}
+
+uint32_t radixtree_find_exact (radixtree_t *r, const char *key) {
+    rxt_edge_t *e = radixtree_find(r, key);
+    if (e) {
+        return e->value;
+    }
+    return RADIXTREE_NONE;
+}
+
+uint32_t radixtree_find_prefix (radixtree_t *r, const char *key,
+                                rxt_edge_t *result) {
+    rxt_edge_t *e = radixtree_find (r, key);
+    if (result) {
+        /* return the last edge before a branch
+         * TODO: validate this is required or
+         * or e would be already be correct.
+         */
+        while (e && e->child && !e->next) {
+            e = e->child;
+        }
+
+        result = e;
+    }
+
+    while (e && e->child) {
+        e = e->child;
+    }
+
+    if (e) {
+        return e->value;
+    }
+    return RADIXTREE_NONE;
 }
 
 radixtree_t *radixtree_load_strings_from_file (char *filename) {
