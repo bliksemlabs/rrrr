@@ -278,10 +278,20 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
     return (*ret_n > 0);
 }
 
+bool single_origin_equals(router_request_t *req, router_request_t *oreq){
+    street_network_t *origin_l = req->arrive_by ? &req->exit : &req->entry;
+    street_network_t *origin_r = oreq->arrive_by ? &oreq->exit : &oreq->entry;
+    return (req->arrive_by == oreq->arrive_by &&
+            origin_l->n_points == 1 && origin_r->n_points == 1 &&
+            origin_l->stop_points[0] == origin_r->stop_points[0]);
+
+}
+
 bool
 router_request_reverse_all(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n) {
     rtime_t best_time;
     int8_t round;
+    uint8_t i_rev = *ret_n;
 
     assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
 
@@ -289,9 +299,36 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
 
     do {
         if (best_time_by_round(router, req, (uint8_t) round, &best_time)) {
+            bool add_request = true;
             ret[*ret_n] = *req;
             reverse_request(router,req,&ret[*ret_n], (uint8_t) round, best_time);
-            (*ret_n)++;
+            {
+                int16_t i_req = 0;
+                for (;i_req < *ret_n; ++i_req){
+                    router_request_t oreq = ret[i_req];
+                    if (oreq.arrive_by == ret[*ret_n].arrive_by &&
+                            oreq.time == req[*ret_n].time &&
+                            single_origin_equals(&ret[*ret_n], &oreq)){
+                        if (i_req >= i_rev){
+                            /* Equivalent request-parameters found in the subset that still has to be processed.
+                             * Increase max_transfers and time_cutoff if necessary*/
+                            add_request = false;
+                            oreq.max_transfers = MAX(oreq.max_transfers,req[*ret_n].max_transfers);
+                            oreq.time_cutoff = oreq.arrive_by ? MIN(oreq.time_cutoff,req[*ret_n].time_cutoff) :
+                                                                MAX(oreq.time_cutoff,req[*ret_n].time_cutoff);
+                        }else{
+                            /* Equivalent request-parameters found in the subset that was already processed:
+                             * Only add the request if the the other's request was too narrow with regard to transfers
+                             * and/or time to include the itinerary found in this new request.
+                             */
+                            add_request = !(oreq.max_transfers >= req[*ret_n].max_transfers &&
+                                    req->arrive_by ? oreq.time_cutoff <= req[*ret_n].time_cutoff :
+                                                     oreq.time_cutoff >= req[*ret_n].time_cutoff);
+                        }
+                    }
+                }
+            }
+            if (add_request) (*ret_n)++;
         }
         round--;
     } while (round >= 0);
