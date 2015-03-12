@@ -110,8 +110,8 @@ struct vehicle_journey {
 
 typedef struct vehicle_journey_ref vehicle_journey_ref_t;
 struct vehicle_journey_ref {
-    jppidx_t journey_pattern_index;
-    jp_vjoffset_t vehicle_journey_index;
+    jppidx_t jp_index;
+    jp_vjoffset_t vj_offset;
 };
 
 typedef struct stoptime stoptime_t;
