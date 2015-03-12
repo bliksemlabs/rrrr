@@ -16,8 +16,8 @@ import datetime
 NUMBER_OF_DAYS = 32
 MIN_WAITTIME = 2 * 60 #2 minutes ( in seconds)
 MAX_INTERLINE_WAITTIME = 5 *60 #5 minutes ( in seconds)
-JP_NONE = 65534
-VJ_NONE = 65534
+JP_NONE = 65535
+VJ_NONE = 65535
 
 class Index():
     def __init__(self):
