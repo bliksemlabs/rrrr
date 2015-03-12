@@ -184,11 +184,12 @@ best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime
 
     street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
     int32_t i_target = target->n_points;
-
+    printf("BEST TIME BY ROUND %d\n",round);
     while (i_target){
         --i_target;
         sp_index = target->stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
+            printf("%s REACHED\n", tdata_stop_point_name_for_index(router->tdata, sp_index));
             if (req->arrive_by && round_best_time[sp_index] - target->durations[i_target] > best_time) {
                 best_sp_index = (spidx_t) sp_index;
                 best_time = round_best_time[sp_index] - target->durations[i_target];
@@ -343,24 +344,21 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
  */
 bool
 router_request_reverse(router_t *router, router_request_t *req) {
-    uint8_t max_transfers = req->max_transfers;
+    int16_t max_transfers = req->max_transfers;
     uint8_t round = UINT8_MAX;
     rtime_t best_time;
-
-    /* we should not have ended up here */
-    if (max_transfers == 0) return false;
 
     /* range-check to keep search within states array */
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
-    do {
-        max_transfers--;
+    for (; max_transfers >= 0; --max_transfers) {
+        printf("Best time by_round %d",max_transfers);
         if (best_time_by_round(router, req, max_transfers, &best_time)){
-            round = (uint8_t) (max_transfers+1);
+            round = (uint8_t) max_transfers;
             break;
         }
-    } while (max_transfers);
+    }
 
     /* In the case that no solution was found,
      * the request will remain unchanged.
@@ -381,6 +379,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     #endif
     return true;
 }
+
 
 /* Check the given request against the characteristics of the router that will
  * be used. Indexes larger than array lengths for the given router, signed
