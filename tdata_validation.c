@@ -174,6 +174,52 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
     return ret_nonincreasing;
 }
 
+/* Check that all interlines are symmetric.
+ */
+int tdata_validation_symmetric_interlines(tdata_t *tdata) {
+    bool is_valid = true;
+    uint32_t jp_index = 0;
+    /* Check forward */
+    for (; jp_index < tdata->n_journey_patterns; jp_index++) {
+        journey_pattern_t *jp = &tdata->journey_patterns[jp_index];
+        jp_vjoffset_t vj_offset = 0;
+        for (; vj_offset < jp->n_vjs; vj_offset++) {
+            vehicle_journey_ref_t *vj_interline = &tdata->vehicle_journey_transfers_forward[jp->vj_index+vj_offset];
+            if (vj_interline->jp_index != JP_NONE) {
+                journey_pattern_t *jp_next = &tdata->journey_patterns[vj_interline->jp_index];
+                vehicle_journey_ref_t *vj_interline_back = &tdata->vehicle_journey_transfers_backward[jp_next->vj_index+vj_interline->vj_offset];
+                if (vj_interline_back->jp_index != jp_index || vj_interline_back->vj_offset != vj_offset){
+                    is_valid = false;
+                    fprintf (stderr,"VJ transfer not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
+                    jp_index,vj_offset,
+                            vj_interline->jp_index,vj_interline->vj_offset,
+                    vj_interline_back->jp_index,vj_interline_back->vj_offset);
+                }
+            }
+        }
+    }
+
+    for (; jp_index < tdata->n_journey_patterns; jp_index++) {
+        journey_pattern_t *jp = &tdata->journey_patterns[jp_index];
+        jp_vjoffset_t vj_offset = 0;
+        for (; vj_offset < jp->n_vjs; vj_offset++) {
+            vehicle_journey_ref_t *vj_interline = &tdata->vehicle_journey_transfers_backward[jp->vj_index+vj_offset];
+            if (vj_interline->jp_index != JP_NONE) {
+                journey_pattern_t *jp_next = &tdata->journey_patterns[vj_interline->jp_index];
+                vehicle_journey_ref_t *vj_interline_back = &tdata->vehicle_journey_transfers_forward[jp_next->vj_index+vj_interline->vj_offset];
+                if (vj_interline_back->jp_index != jp_index || vj_interline_back->vj_offset != vj_offset){
+                    is_valid = false;
+                    fprintf (stderr,"VJ transfer not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
+                            jp_index,vj_offset,
+                            vj_interline->jp_index,vj_interline->vj_offset,
+                            vj_interline_back->jp_index,vj_interline_back->vj_offset);
+                }
+            }
+        }
+    }
+    return is_valid ? 1 : 0;
+}
+
 /* Check that all transfers are symmetric.
  */
 int tdata_validation_symmetric_transfers(tdata_t *tdata) {
@@ -251,6 +297,7 @@ bool tdata_validation_check_coherent (tdata_t *tdata) {
              tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&
              tdata_validation_increasing_times(tdata) == 0 &&
-             tdata_validation_symmetric_transfers(tdata) == 0);
+             tdata_validation_symmetric_transfers(tdata) == 0 &&
+             tdata_validation_symmetric_interlines(tdata) == 0);
 }
 
