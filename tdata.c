@@ -525,24 +525,27 @@ void tdata_dump(tdata_t *td) {
 #endif
 
 bool tdata_hashgrid_setup (tdata_t *tdata) {
-    coord_t *coords;
     uint32_t i_sp;
 
-    coords = (coord_t *) malloc(sizeof(coord_t) * tdata->n_stop_points);
-    if (!coords) return false;
+    tdata->coords = (coord_t *) malloc(sizeof(coord_t) * tdata->n_stop_points);
+    if (!tdata->coords) return false;
 
     i_sp = tdata->n_stop_points;
     do {
         i_sp--;
-        coord_from_latlon(coords + i_sp,
+        coord_from_latlon(tdata->coords + i_sp,
                           tdata->stop_point_coords + i_sp);
     } while(i_sp);
 
-    if (!hashgrid_init (&tdata->hg, 100, 500.0, coords, tdata->n_stop_points)) {
+    if (!hashgrid_init (&tdata->hg, 100, 500.0, tdata->coords, tdata->n_stop_points)) {
         return false;
     }
 
     return true;
+}
+
+void tdata_hashgrid_teardown (tdata_t *tdata) {
+    free (tdata->coords);
 }
 
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr) {

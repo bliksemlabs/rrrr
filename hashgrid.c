@@ -28,7 +28,7 @@
  * but you have to make sure overflow is happening (-fwrapv?)
  */
 
-static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
+static uint32_t xbin (hashgrid_t *hg, const coord_t *coord) {
     uint32_t x = (uint32_t) abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
     #ifdef RRRR_DEBUG_HASHGRID
@@ -37,7 +37,7 @@ static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
     return x;
 }
 
-static uint32_t ybin (hashgrid_t *hg, coord_t *coord) {
+static uint32_t ybin (hashgrid_t *hg, const coord_t *coord) {
     uint32_t y = (uint32_t) abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
     #ifdef RRRR_DEBUG_HASHGRID
@@ -119,7 +119,7 @@ uint32_t hashgrid_result_next (hashgrid_result_t *r) {
 uint32_t hashgrid_result_next_filtered (hashgrid_result_t *r, double *distance) {
     uint32_t item;
     while ((item = hashgrid_result_next(r)) != HASHGRID_NONE) {
-        coord_t *coord = r->hg->coords + item;
+        const coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
         #ifdef RRRR_DEBUG_HASHGRID
@@ -147,7 +147,7 @@ uint32_t hashgrid_result_closest (hashgrid_result_t *r) {
     uint32_t best_item = HASHGRID_NONE;
     double   best_distance = INFINITY;
     while ((item = hashgrid_result_next(r)) != HASHGRID_NONE) {
-        coord_t *coord = r->hg->coords + item;
+        const coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
         #ifdef RRRR_DEBUG_HASHGRID
@@ -169,7 +169,7 @@ uint32_t hashgrid_result_closest (hashgrid_result_t *r) {
 }
 
 bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
-                    coord_t *coords, uint32_t n_items) {
+                    const coord_t *coords, uint32_t n_items) {
     /* Initialize all struct members. */
     hg->grid_dim = grid_dim;
     hg->coords = coords;
@@ -230,7 +230,7 @@ bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
          */
         uint32_t i_coord;
         for (i_coord = 0; i_coord < n_items; ++i_coord) {
-            coord_t *coord = coords + i_coord;
+            const coord_t *coord = coords + i_coord;
             uint32_t x = xbin (hg, coord);
             uint32_t y = ybin (hg, coord);
             uint32_t i = hg->counts[y * grid_dim + x];
@@ -247,7 +247,6 @@ void hashgrid_teardown (hashgrid_t *hg) {
     /* Free up dynamically allocated arrays.
      * Individual bins do not need to be freed separately from items.
      */
-    free (hg->coords);
     free (hg->counts);
     free (hg->bins);
     free (hg->items);

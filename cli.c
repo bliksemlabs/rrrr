@@ -433,6 +433,9 @@ clean_exit:
     /* Deallocate the scratchspace of the router */
     router_teardown (&router);
 
+    /* Deallocate the hashgrid coordinates */
+    tdata_hashgrid_teardown (&tdata);
+
     /* Unmap the memory and/or deallocate the memory on the heap */
     tdata_close (&tdata);
 
