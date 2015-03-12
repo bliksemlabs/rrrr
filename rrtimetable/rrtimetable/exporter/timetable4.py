@@ -141,8 +141,12 @@ def make_idx(tdata):
             if waittime > MAX_INTERLINE_WAITTIME:
                 print 'Ignoring VJ interline from %s to %s, wait-time between VJs is %d seconds!' % (from_vj.uri,to_vj.uri,waittime)
                 continue
-            index.vj_interline_clockwise[from_vj.uri] = (to_vj._jp_idx,to_vj._jpvjoffset)
-            index.vj_interline_counterclockwise[to_vj.uri] = (from_vj._jp_idx,from_vj._jpvjoffset)
+            if (from_vj.utc_offset,from_vj.uri) in index.vj_interline_clockwise:
+                raise Exception("Vehicle_journey's can only point to ONE other VJ")
+            index.vj_interline_clockwise[(from_vj.utc_offset,from_vj.uri)] = (to_vj._jp_idx,to_vj._jpvjoffset)
+            if (to_vj.utc_offset,to_vj.uri) in index.vj_interline_counterclockwise:
+                raise Exception("Vehicle_journey's can only point to ONE other VJ counterclockwise")
+            index.vj_interline_counterclockwise[(to_vj.utc_offset,to_vj.uri)] = (from_vj._jp_idx,from_vj._jpvjoffset)
 
     if len(index.journey_patterns) == 0:
         print "No valid journey_patterns found to export to this timetable. Exiting..."
@@ -245,6 +249,7 @@ def export_vj_in_jp(tdata,index,out):
         index.vj_ids_offsets.append(tioffset)
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
             vj_attr = 0
+            assert (tioffset - index.vj_ids_offsets[vj._jp_idx]) == vj._jpvjoffset
             out.write(vj_t.pack(index.offset_for_timedemandgroup_uri[vj.timedemandgroup.uri], (vj.departure_time+index.global_utc_offset) >> 2, vj_attr))
             tioffset += 1
 
@@ -272,19 +277,24 @@ def export_sa_for_sp(tdata,index,out):
 vjref_t = Struct('HH')
 def export_vj_interlines(tdata,index,out):
     index.loc_vj_interline_backward = tell(out)
+    n_vjtransfers = 0
     for jp in index.journey_patterns:
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-            if vj.uri in index.vj_interline_counterclockwise:
-                out.write(vjref_t.pack(*index.vj_interline_counterclockwise[vj.uri]))
+            if (vj.utc_offset,vj.uri) in index.vj_interline_counterclockwise:
+                out.write(vjref_t.pack(*index.vj_interline_counterclockwise[(vj.utc_offset,vj.uri)]))
             else:
                 out.write(vjref_t.pack(JP_NONE,VJ_NONE))
+            n_vjtransfers += 1
     index.loc_vj_interline_forward = tell(out)
+    n_vjtransfers_forward = 0
     for jp in index.journey_patterns:
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-            if vj.uri in index.vj_interline_clockwise:
-                out.write(vjref_t.pack(*index.vj_interline_clockwise[vj.uri]))
+            if (vj.utc_offset,vj.uri) in index.vj_interline_clockwise:
+                out.write(vjref_t.pack(*index.vj_interline_clockwise[(vj.utc_offset,vj.uri)]))
             else:
                 out.write(vjref_t.pack(JP_NONE,VJ_NONE))
+            n_vjtransfers_forward += 1
+    assert n_vjtransfers == n_vjtransfers_forward
 
 def export_transfers(tdata,index,out):
     print "saving transfer stops (footpaths)"
@@ -676,5 +686,6 @@ def export(tdata):
     print "rewinding and writing header... ",
     write_header(out,index)
 
+    print ('Number of vehicle_journeys: ',index.n_vj)
     out.flush()
     out.close()
