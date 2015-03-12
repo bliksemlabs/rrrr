@@ -6,7 +6,6 @@
 /* hashgrid.c */
 #include "hashgrid.h"
 
-#include "tdata.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -169,7 +168,7 @@ uint32_t hashgrid_result_closest (hashgrid_result_t *r) {
     return best_item;
 }
 
-void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
+bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
                     coord_t *coords, uint32_t n_items) {
     /* Initialize all struct members. */
     hg->grid_dim = grid_dim;
@@ -180,6 +179,8 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
     hg->counts = (uint32_t *) malloc(sizeof(uint32_t)  * grid_dim * grid_dim);
     hg->bins   = (uint32_t **) malloc(sizeof(uint32_t *) * grid_dim * grid_dim);
     hg->items  = (uint32_t *) malloc(sizeof(uint32_t) * n_items);
+
+    if (!hg->counts || !hg->bins || !hg->items) return false;
 
     {
         /* Initalize all dynamically allocated arrays. */
@@ -237,6 +238,8 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
             hg->counts[y * grid_dim + x] += 1;
         }
     }
+
+    return true;
 }
 
 

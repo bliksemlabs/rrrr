@@ -65,7 +65,7 @@ struct hashgrid_result_s {
     bool has_next;
 };
 
-void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items);
+bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items);
 
 void hashgrid_query (hashgrid_t *, hashgrid_result_t *, coord_t, double radius_meters);
 
