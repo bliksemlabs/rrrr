@@ -538,7 +538,9 @@ bool tdata_hashgrid_setup (tdata_t *tdata) {
                           tdata->stop_point_coords + i_sp);
     } while(i_sp);
 
-    hashgrid_init (&tdata->hg, 100, 500.0, coords, tdata->n_stop_points);
+    if (!hashgrid_init (&tdata->hg, 100, 500.0, coords, tdata->n_stop_points)) {
+        return false;
+    }
 
     return true;
 }
