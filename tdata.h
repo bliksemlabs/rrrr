@@ -147,6 +147,7 @@ struct tdata {
     #endif
     /* The latlon lookup for each stop_point */
     hashgrid_t hg;
+    coord_t *coords;
 };
 
 #ifdef RRRR_DEBUG
@@ -168,6 +169,8 @@ void tdata_close(tdata_t *td);
 const char *tdata_timezone(tdata_t *td);
 
 bool tdata_hashgrid_setup (tdata_t *tdata);
+
+void tdata_hashgrid_teardown (tdata_t *tdata);
 
 #ifdef RRRR_FEATURE_REALTIME
 bool tdata_realtime_setup (tdata_t *tdata);
