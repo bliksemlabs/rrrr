@@ -212,7 +212,9 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     n_req++;
 
     /* first reversal, always required */
-    if ( ! router_request_reverse_plan (router, &req_storage[i_rev], req_storage, &n_req, &work_plan)) {
+    if ( req->arrive_by ?
+            !router_request_reverse_all(router, &req_storage[i_rev], req_storage, &n_req) :
+            !router_request_reverse_plan (router, &req_storage[i_rev], req_storage, &n_req, &work_plan)) {
         return false;
     }
 
