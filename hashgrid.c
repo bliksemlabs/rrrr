@@ -270,7 +270,7 @@ void hashgrid_dump (hashgrid_t *hg) {
         }
         fprintf (stderr, "\n");
     }
-    fprintf (stderr, "total of all counts: %d", total);
+    fprintf (stderr, "total of all counts: %d\n", total);
     /* Bins */
     for (y = 0; y < hg->grid_dim; ++y) {
         uint32_t x;
