@@ -10,6 +10,19 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+/* Mean of Earth's equatorial and meridional circumferences. */
+#define EARTH_CIRCUMFERENCE 40041438.5
+
+/* UINT32_MAX is also the full range of INT32. */
+#define INT32_RANGE UINT32_MAX
+
+/* We could have more resolution in the latitude direction by mapping
+ * 90 degrees to the int32 range instead of 180, but keeping both axes at the
+ * same scale enables efficent distance calculations. In any case the extra
+ * Y resolution is unnecessary, since 1 brad is already just under 1cm.
+ */
+#define METERS_PER_BRAD (EARTH_CIRCUMFERENCE / INT32_RANGE)
+
 typedef struct coord coord_t;
 struct coord {
     int32_t x;
