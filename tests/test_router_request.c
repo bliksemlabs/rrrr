@@ -33,12 +33,13 @@ START_TEST (test_from_epoch)
 
         router_request_from_epoch (req, td, 1425945600);
         ck_assert_int_eq (req->day_mask, 1);
-        router_request_to_date (req, td, &ltm);
+        ck_assert_int_eq (router_request_to_date (req, td, &ltm), 1425945600);
         strftime(date, 11, "%Y-%m-%d", &ltm);
         ck_assert_str_eq (date, "2015-03-10");
 
         router_request_from_epoch (req, td, 1425945600 + 108000);
         ck_assert_int_eq (req->day_mask, 2);
+        ck_assert_int_eq (router_request_to_date (req, td, &ltm), 1425945600 + 86400);
         router_request_to_date (req, td, &ltm);
         strftime(date, 11, "%Y-%m-%d", &ltm);
         ck_assert_str_eq (date, "2015-03-11");
