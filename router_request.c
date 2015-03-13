@@ -122,6 +122,7 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
          * up to the same day of the week.
          */
+        /* TODO: Make 28 depended on tdata->n_days */
         cal_day %= 28;
         fprintf (stderr, "calendar day out of range. wrapping to %u, "
                          "which is on the same day of the week.\n", cal_day);
