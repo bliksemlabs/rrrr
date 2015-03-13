@@ -12,6 +12,7 @@ START_TEST (test_json)
         json_obj(j);
         json_key_obj(j, "tests");
         json_kv(j, "string", "hello");
+        json_kv(j, "tab", "	");
         json_kd(j, "integer", -1);
         json_kf(j, "double", 2.92100f);
         json_kl(j, "long", 12345678912345);
@@ -33,7 +34,7 @@ START_TEST (test_json)
         json_end_obj(j);
         json_end(j);
 
-        ck_assert_str_eq(buf, "{\"tests\":{\"string\":\"hello\",\"integer\":-1,\"double\":2.92100,\"long\":12345678912345,\"bool\":true,\"object\":{}},\"others\":[\"world\",2,50.12300,987654321,false,{},[]]}");
+        ck_assert_str_eq(buf, "{\"tests\":{\"string\":\"hello\",\"tab\":\"\\t\",\"integer\":-1,\"double\":2.92100,\"long\":12345678912345,\"bool\":true,\"object\":{}},\"others\":[\"world\",2,50.12300,987654321,false,{},[]]}");
     }
 END_TEST
 

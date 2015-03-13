@@ -46,14 +46,37 @@ static void string (json_t *j, const char *s) {
     for (c = s; *c != '\0'; ++c) {
         switch (*c) {
         case '\\' :
+            check(j, '\\');
+            check(j, '\\');
+            break;
         case '\b' :
+            check(j, '\\');
+            check(j, 'b');
+            break;
         case '\f' :
+            check(j, '\\');
+            check(j, 'f');
+            break;
         case '\n' :
+            check(j, '\\');
+            check(j, 'n');
+            break;
         case '\r' :
+            check(j, '\\');
+            check(j, 'r');
+            break;
         case '\t' :
+            check(j, '\\');
+            check(j, 't');
+            break;
         case '\v' :
+            check(j, '\\');
+            check(j, 'v');
+            break;
         case '"' :
             check(j, '\\');
+            check(j, '"');
+            break;
         default:
             check(j, *c);
         }
