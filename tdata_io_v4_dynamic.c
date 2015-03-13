@@ -100,7 +100,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
             header->n_operator_for_line < (UINT16_MAX) &&
             header->n_stop_point_ids < ((spidx_t) -2) &&
             header->n_stop_area_ids < ((spidx_t) -2) &&
-            header->n_vj_ids < (UINT32_MAX) ) ) {
+            header->n_vj_ids < (UINT32_MAX) ) &&
+            header->n_vj_time_offsets < (UINT32_MAX) ) {
 
         fprintf(stderr, "The input file %s does not appear to be a valid timetable.\n", filename);
         goto fail_close_fd;
