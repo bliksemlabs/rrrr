@@ -15,7 +15,7 @@
 #endif
 
 bool router_setup(router_t *router, tdata_t *tdata) {
-    uint64_t n_states = tdata->n_stop_points * RRRR_DEFAULT_MAX_ROUNDS;
+    uint64_t n_states = ((uint64_t) RRRR_DEFAULT_MAX_ROUNDS) * tdata->n_stop_points;
     router->tdata = tdata;
     router->best_time = (rtime_t *) malloc(sizeof(rtime_t) * tdata->n_stop_points);
     router->states_back_journey_pattern = (jpidx_t *) malloc(sizeof(jpidx_t) * n_states);
@@ -1237,7 +1237,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
     if (round == 0) {
         initialize_transfers_full (router, 1);
     }
-    
+
     #ifdef RRRR_DEBUG
     dump_results(router);
     #endif

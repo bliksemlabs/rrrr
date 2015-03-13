@@ -177,7 +177,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
 
 static bool
 best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime_t *time) {
-    uint64_t offset_state = router->tdata->n_stop_points * round;
+    uint64_t offset_state = ((uint64_t) round) * router->tdata->n_stop_points;
     spidx_t sp_index;
     spidx_t best_sp_index = STOP_NONE;
     rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
@@ -226,7 +226,7 @@ best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime
  */
 static void
 reverse_request (router_t *router, router_request_t *req, router_request_t *new_req, uint8_t round, rtime_t best_time) {
-    uint64_t offset_state = router->tdata->n_stop_points * round;
+    uint64_t offset_state = ((uint64_t) round) * router->tdata->n_stop_points;
     spidx_t sp_index;
     rtime_t *round_best_time = &router->states_time[offset_state];
 

@@ -412,7 +412,6 @@ plan_render_otp(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
 
 uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     json_t j;
-    latlon_t ll, ur, c;
     float *lon, *lat;
     uint64_t starttime, endtime;
     spidx_t i_stop = (spidx_t) tdata->n_stop_points;
@@ -421,23 +420,6 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     char modes[67];
     char *dst = modes;
 
-    lon = (float *) malloc(sizeof(float) * tdata->n_stop_points);
-    lat = (float *) malloc(sizeof(float) * tdata->n_stop_points);
-
-    if (!lon || !lat) return 0;
-
-    do {
-        i_stop--;
-        lon[i_stop] = tdata->stop_point_coords[i_stop].lon;
-        lat[i_stop] = tdata->stop_point_coords[i_stop].lat;
-    } while (i_stop > 0);
-
-    c.lon = median (lon, tdata->n_stop_points, &ll.lon, &ur.lon);
-    c.lat = median (lat, tdata->n_stop_points, &ll.lat, &ur.lat);
-
-    free (lon);
-    free (lat);
-
     tdata_validity (tdata, &starttime, &endtime);
     tdata_modes (tdata, &m);
 
@@ -445,23 +427,42 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     json_obj(&j);
     json_kl(&j, "startTime", (int64_t) (starttime * 1000));
     json_kl(&j, "endTime",   (int64_t) (endtime * 1000));
-
-    json_kf(&j, "lowerLeftLatitude", ll.lat);
-    json_kf(&j, "lowerLeftLongitude", ll.lon);
-    json_kf(&j, "upperRightLatitude", ur.lat);
-    json_kf(&j, "upperRightLongitude", ur.lon);
-    json_kf(&j, "minLatitude", ll.lat);
-    json_kf(&j, "minLongitude", ll.lon);
-    json_kf(&j, "maxLatitude", ur.lat);
-    json_kf(&j, "maxLongitude", ur.lon);
-
-    json_kf(&j, "centerLatitude", c.lat);
-    json_kf(&j, "centerLongitude", c.lon);
-
     dst = modes_string (m, dst);
     dst[-1] = '\0';
 
     json_kv(&j, "transitModes", modes);
+
+    lon = (float *) malloc(sizeof(float) * tdata->n_stop_points);
+    lat = (float *) malloc(sizeof(float) * tdata->n_stop_points);
+
+    if (lon && lat) {
+        latlon_t ll, ur, c;
+
+        do {
+            i_stop--;
+            lon[i_stop] = tdata->stop_point_coords[i_stop].lon;
+            lat[i_stop] = tdata->stop_point_coords[i_stop].lat;
+        } while (i_stop > 0);
+
+        c.lon = median (lon, tdata->n_stop_points, &ll.lon, &ur.lon);
+        c.lat = median (lat, tdata->n_stop_points, &ll.lat, &ur.lat);
+
+        json_kf(&j, "lowerLeftLatitude", ll.lat);
+        json_kf(&j, "lowerLeftLongitude", ll.lon);
+        json_kf(&j, "upperRightLatitude", ur.lat);
+        json_kf(&j, "upperRightLongitude", ur.lon);
+        json_kf(&j, "minLatitude", ll.lat);
+        json_kf(&j, "minLongitude", ll.lon);
+        json_kf(&j, "maxLatitude", ur.lat);
+        json_kf(&j, "maxLongitude", ur.lon);
+
+        json_kf(&j, "centerLatitude", c.lat);
+        json_kf(&j, "centerLongitude", c.lon);
+    }
+
+    free (lon);
+    free (lat);
+
     json_end_obj(&j);
 
     return (uint32_t) json_length(&j);
