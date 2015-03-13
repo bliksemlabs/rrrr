@@ -46,7 +46,7 @@ struct leg {
 /* An itinerary is a chain of legs leading from one place to another. */
 typedef struct itinerary itinerary_t;
 struct itinerary {
-    leg_t legs[RRRR_DEFAULT_MAX_ROUNDS * 2 + 1];
+    leg_t legs[RRRR_DEFAULT_MAX_ROUNDS * 4 + 1];
     uint8_t n_rides;
     uint8_t n_legs;
 };

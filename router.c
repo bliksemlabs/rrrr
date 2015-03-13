@@ -1322,7 +1322,7 @@ static bool initialize_origins(router_t *router, router_request_t *req){
         router->best_time[sp_index] = start_time;
         router->states_time[i_state] = start_time;
         router->states_walk_time[i_state] = start_time;
-        router->states_walk_from[i_state] = sp_index;
+        router->states_walk_from[i_state] = STOP_NONE;
         router->states_ride_from[i_state] = STOP_NONE;
         router->states_back_journey_pattern[i_state] = JP_NONE;
         router->states_back_vehicle_journey[i_state] = VJ_NONE;

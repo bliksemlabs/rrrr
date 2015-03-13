@@ -190,7 +190,7 @@ int tdata_validation_symmetric_interlines(tdata_t *tdata) {
                 vehicle_journey_ref_t *vj_interline_back = &tdata->vehicle_journey_transfers_backward[jp_next->vj_index+vj_interline->vj_offset];
                 if (vj_interline_back->jp_index != jp_index || vj_interline_back->vj_offset != vj_offset){
                     is_valid = false;
-                    fprintf (stderr,"VJ transfer not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
+                    fprintf (stderr,"VJ transfer (clockwise) not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
                     jp_index,vj_offset,
                             vj_interline->jp_index,vj_interline->vj_offset,
                     vj_interline_back->jp_index,vj_interline_back->vj_offset);
@@ -209,7 +209,7 @@ int tdata_validation_symmetric_interlines(tdata_t *tdata) {
                 vehicle_journey_ref_t *vj_interline_back = &tdata->vehicle_journey_transfers_forward[jp_next->vj_index+vj_interline->vj_offset];
                 if (vj_interline_back->jp_index != jp_index || vj_interline_back->vj_offset != vj_offset){
                     is_valid = false;
-                    fprintf (stderr,"VJ transfer not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
+                    fprintf (stderr,"VJ transfer(counterclockwise) not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
                             jp_index,vj_offset,
                             vj_interline->jp_index,vj_interline->vj_offset,
                             vj_interline_back->jp_index,vj_interline_back->vj_offset);

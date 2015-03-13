@@ -19,18 +19,6 @@ static void leg_swap(leg_t *leg) {
 #endif
 }
 
-static void leg_add_walk(leg_t *leg, router_t *router,
-        uint64_t i_walk, uint64_t i_ride,
-        spidx_t walk_stop_point) {
-    /* Walk phase */
-    leg->sp_from = router->states_walk_from[i_walk];
-    leg->sp_to = walk_stop_point;
-    /* Rendering the walk requires already having the ride arrival time */
-    leg->t0 = router->states_time[i_ride];
-    leg->t1 = router->states_walk_time[i_walk];
-    leg->journey_pattern = WALK;
-    leg->vj = WALK;
-}
 
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 
@@ -59,20 +47,20 @@ static void leg_add_ride_delay(leg_t *leg, router_t *router, uint64_t i_ride) {
 
 #endif
 
-static void leg_add_ride(leg_t *leg, router_t *router,
-        uint64_t i_ride, spidx_t ride_stop_point) {
+static void leg_add_ride(itinerary_t *itin, leg_t *leg, router_t *router,
+        int64_t i_state, spidx_t rid_from_stoppoint) {
+    int64_t i_ride = i_state + rid_from_stoppoint;
     leg->sp_from = router->states_ride_from[i_ride];
-    leg->sp_to = ride_stop_point;
+    leg->sp_to = rid_from_stoppoint;
     leg->t0 = router->states_board_time[i_ride];
     leg->t1 = router->states_time[i_ride];
     leg->journey_pattern = router->states_back_journey_pattern[i_ride];
     leg->vj = router->states_back_vehicle_journey[i_ride];
-
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     leg_add_ride_delay(leg, router, i_ride);
 #endif
+    ++itin->n_legs;
 }
-
 
 /* Checks charateristics that should be the same for all vj plans produced
  * by this router:
@@ -194,148 +182,258 @@ void router_result_sort(plan_t *plan) {
     qsort(&plan->itineraries, plan->n_itineraries, sizeof(itinerary_t), compareItineraries);
 }
 
-static void leg_add_target(leg_t *leg, router_t *router, router_request_t *req,
-        uint64_t i_ride, int32_t i_target) {
-
-    street_network_t target = req->arrive_by ? req->entry : req->exit;
+static void leg_add_target(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
+        int64_t i_state, street_network_t *target, int32_t i_target) {
+    spidx_t sp_index = target->stop_points[i_target];
     /* Target to first transit with streetnetwork phase */
-    leg->sp_from = target.stop_points[i_target];
+    leg->sp_from = sp_index;
     leg->sp_to = req->arrive_by ? req->from_stop_point : req->to_stop_point;
 
     /* Rendering the walk requires already having the ride arrival time */
-    leg->t0 = router->states_time[i_ride];
-    leg->t1 = leg->t0 + target.durations[i_target];
+    leg->t0 = router->states_time[i_state + sp_index];
+    leg->t1 = leg->t0 + target->durations[i_target];
     leg->journey_pattern = STREET;
     leg->vj = STREET;
     if (req->arrive_by) leg_swap(leg);
+    ++itin->n_legs;
+}
+
+static void leg_add_origin(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
+        int64_t i_state, street_network_t *origin, int32_t i_origin, spidx_t board_sp) {
+    spidx_t sp_index = origin->stop_points[i_origin];
+    /* Target to first transit with streetnetwork phase */
+    leg->sp_from = req->arrive_by ? req->to_stop_point : req->from_stop_point;
+    leg->sp_to = sp_index;
+
+    /* Rendering the walk requires already having the ride arrival time */
+    leg->t1 = router->states_board_time[i_state + board_sp];
+    leg->t0 = leg->t1 - origin->durations[i_origin];
+    leg->journey_pattern = STREET;
+    leg->vj = STREET;
+    if (req->arrive_by) leg_swap(leg);
+    ++itin->n_legs;
+}
+
+
+static void leg_add_direct(leg_t *leg, router_request_t *req, rtime_t duration) {
+    /* Target to first transit with streetnetwork phase */
+    leg->sp_from = req->arrive_by ? req->to_stop_point : req->from_stop_point;
+    leg->sp_to = req->arrive_by ? req->from_stop_point : req->to_stop_point;
+
+    /* Rendering the walk requires already having the ride arrival time */
+    leg->t0 = req->time;
+    leg->t1 = leg->t0 + duration;
+    leg->journey_pattern = STREET;
+    leg->vj = STREET;
+    if (req->arrive_by) leg_swap(leg);
+
+}
+
+static void leg_add_vj_interline(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
+        uint64_t i_state, spidx_t board_sp, spidx_t from_sp, spidx_t to_sp) {
+    leg->sp_from = from_sp;
+    leg->sp_to = to_sp;
+
+    /* Rendering the walk requires already having the ride arrival time */
+    leg->t0 = router->states_time[i_state + to_sp];
+    leg->t1 = router->states_board_time[i_state + board_sp];
+    leg->journey_pattern = STAY_ON;
+    leg->vj = STAY_ON;
+    if (req->arrive_by) leg_swap(leg);
+    ++itin->n_legs;
+}
+
+static void leg_add_transfer(itinerary_t *itin, leg_t *leg, router_t *router,
+        int64_t i_state,
+        spidx_t walk_end_stop_point) {
+    /* Walk phase */
+    leg->sp_from = router->states_walk_from[i_state + walk_end_stop_point];
+    leg->sp_to = walk_end_stop_point;
+    /* Rendering the walk requires already having the ride arrival time */
+    leg->t0 = router->states_time[i_state + leg->sp_from];
+    leg->t1 = router->states_walk_time[i_state + walk_end_stop_point];
+    leg->journey_pattern = WALK;
+    leg->vj = WALK;
+    ++itin->n_legs;
+}
+
+void leg_add_onboard(itinerary_t *itin, leg_t *leg, router_request_t *req){
+    leg->sp_from = leg->sp_to = ONBOARD;
+    leg->t0 = leg->t1 = req->time;
+    leg->journey_pattern = leg->vj = STREET;
+    leg->sp_from = ONBOARD;
+    leg->t0 = req->time;
+    ++itin->n_legs;
+}
+
+void reverse_legs(itinerary_t *itin){
+    leg_t legs[itin->n_legs];
+    int32_t i_leg;
+    for (i_leg = 0; i_leg < itin->n_legs; ++i_leg){
+        legs[i_leg] = itin->legs[itin->n_legs-i_leg-1];
+    }
+    for (i_leg = 0; i_leg < itin->n_legs; ++i_leg){
+        itin->legs[i_leg] = legs[i_leg];
+    }
 }
 
 bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin,
-        uint8_t i_transfer, street_network_t *target, spidx_t i_target) {
-
-    leg_t *l;
-    /* signed int because we will be decreasing */
-    int16_t j_transfer;
+        uint8_t round, street_network_t *target, spidx_t i_target) {
+    jppidx_t jp_index;
+    jp_vjoffset_t vj_offset;
+    street_network_t *origin = req->arrive_by ? &req->exit : &req->entry;
     spidx_t sp_index = target->stop_points[i_target];
     rtime_t duration_target = target->durations[i_target];
+    spidx_t current_sp = sp_index;
+    int64_t i_state = (((uint64_t) round) * router->tdata->n_stop_points);
 
-    /* the slot in which record a leg,
-     * reversing them for forward vehicle_journey's
-     */
-    l = itin->legs;
+    itin->n_legs = 0;
+    if (router->states_time[i_state + sp_index] == UNREACHED) {
+        /* Render a itinerary that does not touch the transit network */
+        leg_add_direct(itin->legs + itin->n_legs, req, duration_target);
+        itin->n_rides = 0;
+        return true;
+    } else {
+        /* Append the leg between the target and the first vehicle_journey in the itinerary*/
+        leg_add_target(itin, itin->legs + itin->n_legs, router, req, i_state, target, i_target);
+    }
 
-    itin->n_rides = (uint8_t) (i_transfer + 1);
+    /* Start with the first vehicle_journey and then navigate back through the states to an origin */
+    jp_index = router->states_back_journey_pattern[i_state + sp_index];
+    vj_offset = router->states_back_vehicle_journey[i_state + sp_index];
+    ++itin->n_rides;
+    while (itin->n_legs < 10) {
+        printf("JP is is for line %s\n", tdata_line_id_for_journey_pattern(router->tdata, jp_index));
+        printf("JP_index %d, Destination %s\n", jp_index, tdata_headsign_for_journey_pattern(router->tdata, jp_index));
+        spidx_t board_sp = current_sp;
+        rtime_t current_time;
+        printf("Trip_id %s\n", tdata_vehicle_journey_id_for_jp_vj_offset(router->tdata, jp_index, vj_offset));
+        printf("Add_ride_new From Sp_index %d %s\n", sp_index, tdata_stop_point_name_for_index(router->tdata, current_sp));
+        leg_add_ride(itin, itin->legs + itin->n_legs, router, i_state, current_sp);
 
-    /* always same number of legs for same number of transfers */
-    itin->n_legs = (uint8_t) (itin->n_rides * 2 + 1);
+        printf("Ride from %s [%d] to %s [%d]\n",
+                tdata_stop_point_name_for_index(router->tdata,
+                        (itin->legs + itin->n_legs-1)->sp_from),
+                (itin->legs + itin->n_legs-1)->sp_from,
+                tdata_stop_point_name_for_index(router->tdata,
+                        (itin->legs + itin->n_legs-1)->sp_to),
+                (itin->legs + itin->n_legs-1)->sp_to);
 
-    if (!req->arrive_by) l += itin->n_legs - 1;
 
-    /* Follow the chain of states backward */
-    for (j_transfer = i_transfer; j_transfer >= 0; --j_transfer) {
-        uint64_t j_walk, j_ride, j_state;
-        spidx_t walk_stop_point = sp_index;
-        spidx_t ride_stop_point;
+        printf("%d n_legs\n", itin->n_legs);
+        current_sp = (itin->legs + itin->n_legs - 1)->sp_from;
+        printf("Last leg from %s to %s\n", tdata_stop_point_name_for_index(router->tdata,
+                (itin->legs + itin->n_legs - 1)->sp_from), tdata_stop_point_name_for_index(router->tdata, (itin->legs + itin->n_legs - 1)->sp_to));
+        current_time = (itin->legs + itin->n_legs - 1)->t0;
+        printf("Check interline  at Sp_index %d %s\n", sp_index, tdata_stop_point_name_for_index(router->tdata, current_sp));
 
-        j_state = ((uint64_t) j_transfer) * router->tdata->n_stop_points;
-
-        if (sp_index > router->tdata->n_stop_points) {
-            fprintf(stderr, "ERROR: stop_point idx %d out of range.\n", sp_index);
+        if (itin->n_legs > UINT8_MAX - 2) {
+            /* Infinite loop catch */
+            fprintf(stderr, "Something went terribly wrong during rendering\n");
             return false;
         }
+        #if 0
+        {
+            char time32[32];
+            char time33[32];
+            printf("current_time %d, states_walk_time %d\n",
+                    current_time,
+                    router->states_walk_time[i_state + current_sp]);
 
-        /* Walk phase */
-        j_walk = j_state + sp_index;
-        if (j_transfer != i_transfer) {
-            /* Do not run this block for the origin street_network leg as it will create interference on
-               itineraries with a longer travel duration.
-             */
+            printf("current_time %s, states_walk_time %s\n",
+                    btimetext(current_time, time32),
+                    btimetext(router->states_walk_time[i_state + current_sp], time33));
 
-            if (router->states_walk_time[j_walk] == UNREACHED) {
-                fprintf(stderr, "ERROR: stop_point idx %d was unreached by walking.\n", sp_index);
-                return false;
+            printf("current_sp %d, states_walk_from %d (%s) JP_back %d\n",
+                    current_sp,
+                    router->states_walk_from[i_state + current_sp],
+                    tdata_stop_point_name_for_index(router->tdata, current_sp),
+                    router->states_back_journey_pattern[i_state + current_sp]);
+        }
+        #endif
+
+
+        if (street_network_duration(current_sp, origin) != UNREACHED) {
+            /* Origin reached, completing the itinerary */
+            int32_t i_origin = 0;
+            for (;i_origin < origin->n_points; i_origin++){
+                if (origin->stop_points[i_origin] == current_sp)
+                    break;
             }
-            walk_stop_point = sp_index;
+            leg_add_origin(itin, itin->legs + itin->n_legs, router, req,
+                    i_state, origin, i_origin, board_sp);
+            reverse_legs(itin);
+            return true;
+        }
+        else if (req->onboard_journey_pattern != JP_NONE &&
+                 req->onboard_journey_pattern == jp_index &&
+                 req->onboard_journey_pattern_vjoffset == vj_offset){
+            /* Change the start-position of the first transit leg to ONBOARD */
+            (itin->legs + itin->n_legs-1)->sp_from = ONBOARD;
+            leg_add_onboard(itin, itin->legs + itin->n_legs, req);
+            reverse_legs(itin);
+            return true;
+        }
+        /* Check whether we arrived on this stop_point before the time we could have walked there
+         * This implies a vehicle_journey interline */
+        else if ((req->arrive_by ? current_time > router->states_walk_time[i_state + current_sp] :
+                                   current_time < router->states_walk_time[i_state + current_sp])
+                 || round == 0) {
+            printf("current_sp %d, states_walk_from %d (%s) <%d>\n",
+                    current_sp,
+                    router->states_walk_from[i_state + current_sp],
+                    tdata_stop_point_name_for_index(router->tdata, current_sp),
+                    router->states_walk_from[i_state + current_sp] != current_sp
+            );
 
-            /* follow the chain of states backward */
-            sp_index = router->states_walk_from[j_walk];
-            {
-                /* Stop rendering itineraries that are sub-optimal in the sense
-                 *  that they do travel through a more optimal target *.
-                 */
-                rtime_t duration_on_sn = street_network_duration(sp_index, target);
-                if (duration_on_sn != UNREACHED &&
-                        duration_on_sn <= duration_target) {
-                    return false;
+            journey_pattern_t *jp = &router->tdata->journey_patterns[jp_index];
+            vehicle_journey_ref_t *vj_interline = req->arrive_by ?
+                    &router->tdata->vehicle_journey_transfers_forward[jp->vj_index + vj_offset] :
+                    &router->tdata->vehicle_journey_transfers_backward[jp->vj_index + vj_offset];
+            if (vj_interline->jp_index != JP_NONE) {
+                printf("HELLO %lu\n", i_state);
+                jppidx_t prev_jp_index = vj_interline->jp_index;
+                jp_vjoffset_t prev_vj_offset = vj_interline->vj_offset;
+                printf("Have interline previous jp,vj %d,%d\n", prev_jp_index, prev_vj_offset);
+                journey_pattern_t *prev_jp = &router->tdata->journey_patterns[prev_jp_index];
+                spidx_t last_sp_of_prev_vj = req->arrive_by ? router->tdata->journey_pattern_points[prev_jp->journey_pattern_point_offset] :
+                        router->tdata->journey_pattern_points[prev_jp->journey_pattern_point_offset + prev_jp->n_stops - 1];
+                printf("Last sp %s\n", tdata_stop_point_name_for_index(router->tdata, last_sp_of_prev_vj));
+                if (router->states_time[i_state + last_sp_of_prev_vj] != UNREACHED ||
+                        router->states_back_journey_pattern[i_state + last_sp_of_prev_vj] == prev_jp_index ||
+                        router->states_back_vehicle_journey[i_state + last_sp_of_prev_vj] == prev_vj_offset) {
+                    printf("Add interline!\n");
+                    leg_add_vj_interline(itin, itin->legs + itin->n_legs, router, req, i_state, board_sp, current_sp, last_sp_of_prev_vj);
+                    current_sp = last_sp_of_prev_vj;
+                    jp_index = prev_jp_index;
+                    vj_offset = prev_vj_offset;
+                    continue;
                 }
             }
+        } {
+            printf("Current sp %s [%d]\n", tdata_stop_point_name_for_index(router->tdata, current_sp),
+                    current_sp);
+            i_state -= router->tdata->n_stop_points;
+            leg_add_transfer(itin, itin->legs + itin->n_legs, router, i_state, current_sp);
+            printf("Walk from %s [%d] to %s [%d]\n",
+                    tdata_stop_point_name_for_index(router->tdata,
+                            (itin->legs + itin->n_legs-1)->sp_from),
+                    (itin->legs + itin->n_legs-1)->sp_from,
+                    tdata_stop_point_name_for_index(router->tdata,
+                            (itin->legs + itin->n_legs-1)->sp_to),
+                    (itin->legs + itin->n_legs-1)->sp_to);
+            current_sp = (itin->legs + itin->n_legs-1)->sp_from;
+            ++itin->n_rides;
+            --round;
+            if (router->states_time[i_state + current_sp] == UNREACHED){
+                fprintf(stderr,"Transfer to unreached location\n");
+                return false;
+            }
+            jp_index = router->states_back_journey_pattern[i_state + current_sp];
+            vj_offset = router->states_back_vehicle_journey[i_state + current_sp];
         }
-
-        /* Ride phase */
-        j_ride = j_state + sp_index;
-        if (router->states_time[j_ride] == UNREACHED) {
-            fprintf(stderr, "ERROR: sp %d was unreached by riding.\n", sp_index);
-            return false;
-        }
-        ride_stop_point = sp_index;
-        /* follow the chain of states backward */
-        sp_index = router->states_ride_from[j_ride];
-
-        if (j_transfer == i_transfer) {
-            /* Street-network origin phase */
-            leg_add_target(l, router, req, j_ride, i_target);
-        } else {
-            /* Walk phase */
-            leg_add_walk(l, router, j_walk, j_ride, walk_stop_point);
-        }
-
-        if (req->arrive_by) leg_swap(l);
-        l += (req->arrive_by ? 1 : -1); /* next leg */
-
-        /* Ride phase */
-        leg_add_ride(l, router, j_ride, ride_stop_point);
-
-        if (req->arrive_by) leg_swap(l);
-        l += (req->arrive_by ? 1 : -1);   /* next leg */
-
     }
-    if (req->onboard_journey_pattern_vjoffset != VJ_NONE) {
-        if (!req->arrive_by) {
-            /* Results starting on board do not have an initial walk leg. */
-            l->sp_from = l->sp_to = ONBOARD;
-            l->t0 = l->t1 = req->time;
-            l->journey_pattern = l->vj = WALK;
-            l += 1; /* move back to first transit leg */
-            l->sp_from = ONBOARD;
-            l->t0 = req->time;
-        } else {
-            #ifdef RRRR_DEBUG
-            fprintf(stderr, "We observed an onboard departure with an arrive by.\n");
-            #endif
-            return false;
-        }
-    } else {
-        rtime_t duration;
-        /* The initial walk leg leading out of the search origin.
-        *  This is inferred from the list with origins, not stored explicitly.
-        */
-        spidx_t origin_stop_point = (req->arrive_by ? req->to_stop_point : req->from_stop_point);
-        leg_t *prev;
-
-        l->sp_from = origin_stop_point;
-        l->sp_to = sp_index;
-
-        /* Compress out the wait time from s1 to s0
-        */
-        prev = (l - (req->arrive_by ? 1 : -1));
-        l->t1 = (req->arrive_by ? prev->t1 : prev->t0);
-        duration = street_network_duration(sp_index, req->arrive_by ? &req->exit : &req->entry);
-        l->t0 = (rtime_t) (l->t1 + (req->arrive_by ? +duration : -duration));
-        l->journey_pattern = STREET;
-        l->vj = STREET;
-        if (req->arrive_by) leg_swap(l);
-    }
-    return true;
+    return false;
 }
 
 /* Returns whether given round n, the given target (i_target) is the best target, or that a different target has a
@@ -442,7 +540,7 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
     return check_plan_invariants(plan);
 }
 
-void router_result_init_plan(plan_t *plan){
+void router_result_init_plan(plan_t *plan) {
     plan->n_itineraries = 0;
 }
 
