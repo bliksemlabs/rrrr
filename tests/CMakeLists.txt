@@ -17,6 +17,8 @@ set(SOURCE_FILES
     ../polyline.h
     ../radixtree.c
     ../radixtree.h
+    ../router_request.c
+    ../router_request.h
     ../street_network.c
     ../street_network.h
     ../util.c
@@ -28,6 +30,7 @@ set(SOURCE_FILES
     test_json.c
     test_radixtree.c
     test_polyline.c
+    test_router_request.c
     test_street_network.c
     test_util.c
     )
