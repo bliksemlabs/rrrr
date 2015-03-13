@@ -9,6 +9,8 @@ set(SOURCE_FILES
     ../bitset.h
     ../geometry.c
     ../geometry.h
+    ../hashgrid.c
+    ../hashgrid.h
     ../json.c
     ../json.h
     ../polyline.c
@@ -21,13 +23,13 @@ set(SOURCE_FILES
     ../util.h
     run_tests.c
     test_bitset.c
+    test_hashgrid.c
     test_geometry.c
     test_json.c
     test_radixtree.c
     test_polyline.c
     test_street_network.c
     test_util.c
-    #test_hashgrid.c
     )
 
 add_executable(tests ${SOURCE_FILES})
