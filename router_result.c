@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void router_result_init_plan(plan_t *plan) {
+    plan->n_itineraries = 0;
+}
+
+void router_result_init_itinerary(itinerary_t *itin) {
+    itin->n_legs = 0;
+    itin->n_rides = 0;
+}
 /* Reverse the times and stops in a leg.
  * Used for creating arrive-by itineraries.
  */
@@ -304,11 +312,11 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
     spidx_t current_sp = sp_index;
     int64_t i_state = (((uint64_t) round) * router->tdata->n_stop_points);
 
-    itin->n_legs = 0;
+    router_result_init_itinerary(itin);
+    
     if (router->states_time[i_state + sp_index] == UNREACHED) {
         /* Render a itinerary that does not touch the transit network */
         leg_add_direct(itin->legs + itin->n_legs, req, duration_target);
-        itin->n_rides = 0;
         return true;
     } else {
         /* Append the leg between the target and the first vehicle_journey in the itinerary*/
@@ -556,10 +564,6 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
         };
     }
     return check_plan_invariants(plan);
-}
-
-void router_result_init_plan(plan_t *plan) {
-    plan->n_itineraries = 0;
 }
 
 /* After routing, call to convert the router state into a readable list of
