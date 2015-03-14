@@ -87,7 +87,11 @@ plan_render_itinerary (struct itinerary *itin, tdata_t *tdata, time_t date,
              */
             if (leg->sp_from == ONBOARD) continue;
             else if (leg->journey_pattern == STREET) leg_mode = "STREET";
-            else if (leg->journey_pattern == STAY_ON) leg_mode = "STAY ON";
+            else if (leg->journey_pattern == STAY_ON){
+                leg_mode = "STAY ON";
+                short_name = "";
+                headsign = "";
+            }
             else if (leg->sp_from == leg->sp_to) leg_mode = "WAIT";
             else leg_mode = "WALK";
         } else {
