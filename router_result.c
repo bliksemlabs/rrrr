@@ -60,8 +60,8 @@ static void leg_add_ride(itinerary_t *itin, leg_t *leg, router_t *router, router
     leg->jpp0 = router->states_back_journey_pattern_point[i_ride];
     leg->jpp1 = router->states_journey_pattern_point[i_ride];
     { /* Infer the serviceday using the time */
-        leg->cal_day = 0;
         int8_t i_serviceday = 0;
+        leg->cal_day = 0;
         for (; i_serviceday < router->n_servicedays; ++i_serviceday){
             if (leg->t0 == router->servicedays[i_serviceday].midnight +
                     tdata_stoptime_for_index(router->tdata, leg->journey_pattern, leg->jpp0, leg->vj, req->arrive_by)){
