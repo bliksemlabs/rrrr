@@ -442,6 +442,10 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                 fprintf(stderr,"Transfer to unreached location\n");
                 return false;
             }
+            if (street_network_duration(current_sp,target) < duration_target){
+                /* This journey is sub-optimal as it passes a more optimal target */
+                return false;
+            }
             jp_index = router->states_back_journey_pattern[i_state + current_sp];
             vj_offset = router->states_back_vehicle_journey[i_state + current_sp];
         }
