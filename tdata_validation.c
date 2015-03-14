@@ -217,7 +217,7 @@ int tdata_validation_symmetric_interlines(tdata_t *tdata) {
             }
         }
     }
-    return is_valid ? 1 : 0;
+    return is_valid ? 0 : 1;
 }
 
 /* Check that all transfers are symmetric.
