@@ -302,15 +302,17 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
     jp_index = router->states_back_journey_pattern[i_state + sp_index];
     vj_offset = router->states_back_vehicle_journey[i_state + sp_index];
     ++itin->n_rides;
-    while (itin->n_legs < 10) {
-        printf("JP is is for line %s\n", tdata_line_id_for_journey_pattern(router->tdata, jp_index));
-        printf("JP_index %d, Destination %s\n", jp_index, tdata_headsign_for_journey_pattern(router->tdata, jp_index));
+    while (itin->n_legs < 100) {
         spidx_t board_sp = current_sp;
         rtime_t current_time;
+#ifdef RRRR_INTERLINE_DEBUG
+        printf("JP is is for line %s\n", tdata_line_id_for_journey_pattern(router->tdata, jp_index));
+        printf("JP_index %d, Destination %s\n", jp_index, tdata_headsign_for_journey_pattern(router->tdata, jp_index));
         printf("Trip_id %s\n", tdata_vehicle_journey_id_for_jp_vj_offset(router->tdata, jp_index, vj_offset));
         printf("Add_ride_new From Sp_index %d %s\n", sp_index, tdata_stop_point_name_for_index(router->tdata, current_sp));
+#endif
         leg_add_ride(itin, itin->legs + itin->n_legs, router, i_state, current_sp);
-
+#ifdef RRRR_INTERLINE_DEBUG
         printf("Ride from %s [%d] to %s [%d]\n",
                 tdata_stop_point_name_for_index(router->tdata,
                         (itin->legs + itin->n_legs-1)->sp_from),
@@ -318,24 +320,18 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                 tdata_stop_point_name_for_index(router->tdata,
                         (itin->legs + itin->n_legs-1)->sp_to),
                 (itin->legs + itin->n_legs-1)->sp_to);
+#endif
 
-
-        printf("%d n_legs\n", itin->n_legs);
         current_sp = (itin->legs + itin->n_legs - 1)->sp_from;
-        printf("Last leg from %s to %s\n", tdata_stop_point_name_for_index(router->tdata,
-                (itin->legs + itin->n_legs - 1)->sp_from), tdata_stop_point_name_for_index(router->tdata, (itin->legs + itin->n_legs - 1)->sp_to));
         current_time = (itin->legs + itin->n_legs - 1)->t0;
-        printf("Check interline  at Sp_index %d %s\n", sp_index, tdata_stop_point_name_for_index(router->tdata, current_sp));
-
-        if (itin->n_legs > UINT8_MAX - 2) {
-            /* Infinite loop catch */
-            fprintf(stderr, "Something went terribly wrong during rendering\n");
-            return false;
-        }
-        #if 0
+#ifdef RRRR_INTERLINE_DEBUG
         {
             char time32[32];
             char time33[32];
+            printf("Check interline  at Sp_index %d %s current_time %s, states_walk_time %s, prev_round states_walk_time %s"
+                    "\n", sp_index, tdata_stop_point_name_for_index(router->tdata, current_sp),btimetext(current_time,time32),
+                    btimetext(router->states_walk_time[i_state + current_sp],time32),btimetext(router->states_walk_time[i_state + current_sp + router->tdata->n_stop_points],time33));
+
             printf("current_time %d, states_walk_time %d\n",
                     current_time,
                     router->states_walk_time[i_state + current_sp]);
@@ -350,7 +346,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                     tdata_stop_point_name_for_index(router->tdata, current_sp),
                     router->states_back_journey_pattern[i_state + current_sp]);
         }
-        #endif
+#endif
 
 
         if (street_network_duration(current_sp, origin) != UNREACHED) {
@@ -376,33 +372,32 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
         }
         /* Check whether we arrived on this stop_point before the time we could have walked there
          * This implies a vehicle_journey interline */
-        else if ((req->arrive_by ? current_time > router->states_walk_time[i_state + current_sp] :
-                                   current_time < router->states_walk_time[i_state + current_sp])
-                 || round == 0) {
+        else if (round == 0 ||
+                router->states_walk_time[i_state + current_sp - router->tdata->n_stop_points] == UNREACHED ||
+                (req->arrive_by ? current_time > router->states_walk_time[i_state + current_sp  - router->tdata->n_stop_points] :
+                                  current_time < router->states_walk_time[i_state + current_sp  - router->tdata->n_stop_points])) {
+#ifdef RRRR_INTERLINE_DEBUG
             printf("current_sp %d, states_walk_from %d (%s) <%d>\n",
                     current_sp,
                     router->states_walk_from[i_state + current_sp],
                     tdata_stop_point_name_for_index(router->tdata, current_sp),
                     router->states_walk_from[i_state + current_sp] != current_sp
             );
+#endif
 
             journey_pattern_t *jp = &router->tdata->journey_patterns[jp_index];
             vehicle_journey_ref_t *vj_interline = req->arrive_by ?
                     &router->tdata->vehicle_journey_transfers_forward[jp->vj_index + vj_offset] :
                     &router->tdata->vehicle_journey_transfers_backward[jp->vj_index + vj_offset];
             if (vj_interline->jp_index != JP_NONE) {
-                printf("HELLO %lu\n", i_state);
                 jppidx_t prev_jp_index = vj_interline->jp_index;
                 jp_vjoffset_t prev_vj_offset = vj_interline->vj_offset;
-                printf("Have interline previous jp,vj %d,%d\n", prev_jp_index, prev_vj_offset);
                 journey_pattern_t *prev_jp = &router->tdata->journey_patterns[prev_jp_index];
                 spidx_t last_sp_of_prev_vj = req->arrive_by ? router->tdata->journey_pattern_points[prev_jp->journey_pattern_point_offset] :
                         router->tdata->journey_pattern_points[prev_jp->journey_pattern_point_offset + prev_jp->n_stops - 1];
-                printf("Last sp %s\n", tdata_stop_point_name_for_index(router->tdata, last_sp_of_prev_vj));
                 if (router->states_time[i_state + last_sp_of_prev_vj] != UNREACHED ||
                         router->states_back_journey_pattern[i_state + last_sp_of_prev_vj] == prev_jp_index ||
                         router->states_back_vehicle_journey[i_state + last_sp_of_prev_vj] == prev_vj_offset) {
-                    printf("Add interline!\n");
                     leg_add_vj_interline(itin, itin->legs + itin->n_legs, router, req, i_state, board_sp, current_sp, last_sp_of_prev_vj);
                     current_sp = last_sp_of_prev_vj;
                     jp_index = prev_jp_index;
@@ -410,11 +405,11 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                     continue;
                 }
             }
-        } {
-            printf("Current sp %s [%d]\n", tdata_stop_point_name_for_index(router->tdata, current_sp),
-                    current_sp);
+        }
+        {
             i_state -= router->tdata->n_stop_points;
             leg_add_transfer(itin, itin->legs + itin->n_legs, router, i_state, current_sp);
+#ifdef RRRR_INTERLINE_DEBUG
             printf("Walk from %s [%d] to %s [%d]\n",
                     tdata_stop_point_name_for_index(router->tdata,
                             (itin->legs + itin->n_legs-1)->sp_from),
@@ -422,6 +417,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                     tdata_stop_point_name_for_index(router->tdata,
                             (itin->legs + itin->n_legs-1)->sp_to),
                     (itin->legs + itin->n_legs-1)->sp_to);
+#endif
             current_sp = (itin->legs + itin->n_legs-1)->sp_from;
             ++itin->n_rides;
             --round;
@@ -433,6 +429,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             vj_offset = router->states_back_vehicle_journey[i_state + current_sp];
         }
     }
+    fprintf(stderr, "Something went terribly wrong during rendering\n");
     return false;
 }
 

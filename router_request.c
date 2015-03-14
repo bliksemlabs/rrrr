@@ -185,12 +185,10 @@ best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime
 
     street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
     int32_t i_target = target->n_points;
-    printf("BEST TIME BY ROUND %d\n",round);
     while (i_target){
         --i_target;
         sp_index = target->stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
-            printf("%s REACHED\n", tdata_stop_point_name_for_index(router->tdata, sp_index));
             if (req->arrive_by && round_best_time[sp_index] - target->durations[i_target] > best_time) {
                 best_sp_index = (spidx_t) sp_index;
                 best_time = round_best_time[sp_index] - target->durations[i_target];
@@ -354,7 +352,6 @@ router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     for (; max_transfers >= 0; --max_transfers) {
-        printf("Best time by_round %d",max_transfers);
         if (best_time_by_round(router, req, max_transfers, &best_time)){
             round = (uint8_t) max_transfers;
             break;
