@@ -106,11 +106,11 @@ json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
 static void put_servicedate(leg_t *leg, time_t date, tdata_t *tdata, char *servicedate){
     struct tm ltm;
     #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    UNUSED(date);
     time_t servicedate_time = tdata->calendar_start_time + (SEC_IN_ONE_DAY * leg->cal_day);
+    UNUSED(date);
     #else
-    UNUSED(tdata);
     time_t servicedate_time = date + RTIME_TO_SEC(leg->t0 % RTIME_ONE_DAY);
+    UNUSED(tdata);
     #endif
     rrrr_gmtime_r(&servicedate_time, &ltm);
     strftime(servicedate, 9, "%Y%m%d", &ltm);
