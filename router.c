@@ -278,6 +278,10 @@ static void initialize_banned_journey_patterns (router_t *router, router_request
                        req->banned_journey_patterns[i_banned_jp]);
     } while (i_banned_jp);
 }
+
+static bool journey_pattern_is_banned(router_request_t *req, jpidx_t jp_index){
+    return req->banned_journey_patterns[jp_index];
+}
 #else
 static void unflag_banned_journey_patterns(router_t *router, router_request_t *req) {
     uint8_t i_banned_jp = req->n_banned_journey_patterns;
@@ -287,6 +291,18 @@ static void unflag_banned_journey_patterns(router_t *router, router_request_t *r
         bitset_unset (router->updated_journey_patterns,
                       req->banned_journey_patterns[i_banned_jp]);
     } while (i_banned_jp);
+}
+
+static bool journey_pattern_is_banned(router_request_t *req, jpidx_t jp_index){
+    uint8_t i_banned_jp = req->n_banned_journey_patterns;
+    if (i_banned_jp == 0) return false;
+    do {
+        i_banned_jp--;
+        if (req->banned_journey_patterns[i_banned_jp] == jp_index){
+            return true;
+        }
+    } while (i_banned_jp);
+    return false;
 }
 #endif
 #endif
@@ -855,8 +871,6 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
         /* time when that vj was boarded */
         rtime_t       board_time = board_serviceday->midnight+vj->begin_time;
 
-        /* Is true when there is a vehicle_journey boarded at the last stop */
-        rtime_t       time_at_last_stop = UNREACHED;
         rtime_t       time;
         int32_t       jpp_offset;
 
@@ -870,17 +884,20 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
             }
         }
 
-        #if 0/* RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0*/
+        /* Check if the journey_pattern of this vj-extension is not banned */
+        if (journey_pattern_is_banned(req,jp_index)){
+            return;
+        }
+
+        #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
         /* Break the extension if this vj if it is banned */
         if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
                 req->n_banned_vjs, jp_index,
                 (jp_vjoffset_t) vj_offset)) break;
-         #endif
-
-        #if 0
-        /* Lets assume the VJ extension is by defintion valid because of the earlier journey... */
-        if ( !(board_serviceday->mask & vj_masks[vj_offset])) break;
         #endif
+
+        /* Lets assume the VJ extension is by defintion valid because of the earlier journey... */
+        if ( !(board_serviceday->mask & tdata_vj_masks_for_journey_pattern(router->tdata, jp_index)[vj_offset])) break;
 
         /* Break this vj-extension if this VJ doesn't have all our
          * required attributes
@@ -958,8 +975,15 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
                 bitset_set(router->updated_stop_points, sp_index);
             }
         }
-        time_at_last_stop = time;
         jp_index = JP_NONE;
+        vj_offset = VJ_NONE;
+        vehicle_journey_ref_t *vj_interline = req->arrive_by ?
+                      &router->tdata->vehicle_journey_transfers_backward[jp->vj_index+vj_offset]
+                    : &router->tdata->vehicle_journey_transfers_forward [jp->vj_index+vj_offset];
+        if (vj_interline->jp_index != JP_NONE) {
+            jp_index = vj_interline->jp_index;
+            vj_offset = vj_interline->vj_offset;
+        }
     }
 }
 
