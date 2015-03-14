@@ -57,7 +57,7 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
         latlon_t *latlon;
         latlon = tdata_stop_point_coord_for_index(router->tdata, req->from_stop_point);
         streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
-        street_network_mark_duration_to_stop_point(&req->exit, req->from_stop_point, 0);
+        street_network_mark_duration_to_stop_point(&req->entry, req->from_stop_point, 0);
     }else if (req->from_latlon.lat != 0.0 && req->from_latlon.lon != 0.0){
         streetnetwork_stoppoint_durations(&req->from_latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
     }else if (req->onboard_journey_pattern == JP_NONE){

@@ -110,7 +110,7 @@ static void put_servicedate(leg_t *leg, time_t date, tdata_t *tdata, char *servi
     time_t servicedate_time = tdata->calendar_start_time + (SEC_IN_ONE_DAY * leg->cal_day);
     #else
     UNUSED(tdata);
-    time_t servicedate_time = date + (SEC_IN_ONE_DAY * (leg->t0 % RTIME_ONE_DAY));
+    time_t servicedate_time = date + RTIME_TO_SEC(leg->t0 % RTIME_ONE_DAY);
     #endif
     rrrr_gmtime_r(&servicedate_time, &ltm);
     strftime(servicedate, 9, "%Y%m%d", &ltm);
