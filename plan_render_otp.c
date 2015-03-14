@@ -103,9 +103,13 @@ json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
     json_end_obj(j);
 }
 
-static void put_servicedate(leg_t *leg, time_t date, char *servicedate){
+static void put_servicedate(leg_t *leg, time_t date, tdata_t *tdata, char *servicedate){
     struct tm ltm;
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+    time_t servicedate_time = tdata->calendar_start_time + (SEC_IN_ONE_DAY * leg->cal_day);
+    #else
     time_t servicedate_time = date + (SEC_IN_ONE_DAY * (leg->t0 % RTIME_ONE_DAY));
+    #endif
     rrrr_gmtime_r(&servicedate_time, &ltm);
     strftime(servicedate, 9, "%Y%m%d", &ltm);
 }
@@ -138,7 +142,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     polyline_t pl;
 
     if (leg->journey_pattern >= WALK) mode = "WALK"; else {
-        put_servicedate(leg, date, servicedate);
+        put_servicedate(leg, date, tdata, servicedate);
 
         #ifdef RRRR_FEATURE_REALTIME_EXPANDED
         headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);

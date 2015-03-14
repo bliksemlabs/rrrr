@@ -27,6 +27,11 @@ struct leg {
     /* end time */
     rtime_t  t1;
 
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+    /* Serviceday of the vehicle_journey */
+    calendar_t  cal_day;
+    #endif
+
     #ifdef RRRR_FEATURE_REALTIME
     /* start journey_pattern_point index */
     uint16_t jpp0;

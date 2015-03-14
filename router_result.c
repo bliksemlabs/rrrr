@@ -16,13 +16,15 @@ static void leg_swap(leg_t *leg) {
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
     leg->jpp0 = temp.jpp1;
     leg->jpp1 = temp.jpp0;
+    leg->d0 = temp.d0;
+    leg->d1 = temp.d1;
 #endif
 }
 
 
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 
-static void leg_add_ride_delay(leg_t *leg, router_t *router, uint64_t i_ride) {
+static void leg_add_ride_delay(leg_t *leg, router_t *router, int64_t i_ride) {
     journey_pattern_t *jp;
     vehicle_journey_t *vj;
     vjidx_t vj_index;
@@ -41,13 +43,11 @@ static void leg_add_ride_delay(leg_t *leg, router_t *router, uint64_t i_ride) {
         leg->d1 = 0;
     }
 
-    leg->jpp0 = router->states_back_journey_pattern_point[i_ride];
-    leg->jpp1 = router->states_journey_pattern_point[i_ride];
 }
 
 #endif
 
-static void leg_add_ride(itinerary_t *itin, leg_t *leg, router_t *router,
+static void leg_add_ride(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
         int64_t i_state, spidx_t rid_from_stoppoint) {
     int64_t i_ride = i_state + rid_from_stoppoint;
     leg->sp_from = router->states_ride_from[i_ride];
@@ -57,8 +57,25 @@ static void leg_add_ride(itinerary_t *itin, leg_t *leg, router_t *router,
     leg->journey_pattern = router->states_back_journey_pattern[i_ride];
     leg->vj = router->states_back_vehicle_journey[i_ride];
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+    leg->jpp0 = router->states_back_journey_pattern_point[i_ride];
+    leg->jpp1 = router->states_journey_pattern_point[i_ride];
+    { /* Infer the serviceday using the time */
+        leg->cal_day = 0;
+        int8_t i_serviceday = 0;
+        for (; i_serviceday < router->n_servicedays; ++i_serviceday){
+            if (leg->t0 == router->servicedays[i_serviceday].midnight +
+                    tdata_stoptime_for_index(router->tdata, leg->journey_pattern, leg->jpp0, leg->vj, req->arrive_by)){
+                calendar_t day_mask = router->servicedays[i_serviceday].mask;
+                while (day_mask >>= 1) {
+                    leg->cal_day++;
+                }
+                break;
+            }
+        }
+    }
     leg_add_ride_delay(leg, router, i_ride);
 #endif
+    if (req->arrive_by) leg_swap(leg);
     ++itin->n_legs;
 }
 
@@ -311,7 +328,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
         printf("Trip_id %s\n", tdata_vehicle_journey_id_for_jp_vj_offset(router->tdata, jp_index, vj_offset));
         printf("Add_ride_new From Sp_index %d %s\n", sp_index, tdata_stop_point_name_for_index(router->tdata, current_sp));
 #endif
-        leg_add_ride(itin, itin->legs + itin->n_legs, router, i_state, current_sp);
+        leg_add_ride(itin, itin->legs + itin->n_legs, router, req, i_state, current_sp);
 #ifdef RRRR_INTERLINE_DEBUG
         printf("Ride from %s [%d] to %s [%d]\n",
                 tdata_stop_point_name_for_index(router->tdata,
