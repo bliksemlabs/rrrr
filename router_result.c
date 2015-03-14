@@ -284,7 +284,7 @@ void leg_add_onboard(itinerary_t *itin, leg_t *leg, router_request_t *req){
 }
 
 void reverse_legs(itinerary_t *itin){
-    leg_t legs[itin->n_legs];
+    leg_t legs[MAX_LEGS];
     int32_t i_leg;
     for (i_leg = 0; i_leg < itin->n_legs; ++i_leg){
         legs[i_leg] = itin->legs[itin->n_legs-i_leg-1];
