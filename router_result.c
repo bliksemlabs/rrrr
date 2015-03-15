@@ -233,7 +233,8 @@ static void leg_add_origin(itinerary_t *itin, leg_t *leg, router_t *router, rout
 
     /* Rendering the walk requires already having the ride arrival time */
     leg->t1 = router->states_board_time[i_state + board_sp];
-    leg->t0 = leg->t1 - origin->durations[i_origin];
+    leg->t0 = req->arrive_by ? leg->t1 + origin->durations[i_origin] :
+                               leg->t1 - origin->durations[i_origin];
     leg->journey_pattern = STREET;
     leg->vj = STREET;
     if (req->arrive_by) leg_swap(leg);
