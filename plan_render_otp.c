@@ -103,6 +103,38 @@ json_place (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
     json_end_obj(j);
 }
 
+static void
+json_place_area (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
+            spidx_t stop_area_index, tdata_t *tdata, time_t date) {
+    const char *stop_area_name = tdata_stop_area_name_for_index(tdata, stop_area_index);
+    const char *stop_area_id = tdata_stop_area_id_for_index(tdata, stop_area_index);
+    latlon_t coords = tdata->stop_area_coords[stop_area_index];
+    json_key_obj(j, key);
+        json_kv(j, "name", stop_area_name);
+        json_key_obj(j, "stopId");
+            json_kv(j, "agencyId", "NL");
+            json_kv(j, "id", stop_area_id);
+        json_end_obj(j);
+        json_kv(j, "stopCode", NULL); /* eventually fill it with UserStopCode */
+        json_kv(j, "platformCode", NULL);
+        json_kf(j, "lat", coords.lat);
+        json_kf(j, "lon", coords.lon);
+        json_kv(j, "wheelchairBoarding", NULL);
+        json_kv(j, "visualAccessible", NULL);
+	if (arrival == UNREACHED) {
+        	json_kv(j, "arrival", NULL);
+    } else {
+        	json_kl(j, "arrival", rtime_to_msec(arrival, date, tdata->utc_offset));
+    }
+
+	if (departure == UNREACHED) {
+		json_kv(j, "departure", NULL);
+	} else {
+		json_kl(j, "departure", rtime_to_msec(departure, date, tdata->utc_offset));
+    }
+    json_end_obj(j);
+}
+
 static void put_servicedate(leg_t *leg, time_t date, char *servicedate){
     struct tm ltm;
     time_t servicedate_time = date + RTIME_TO_SEC(leg->t0 % RTIME_ONE_DAY);
@@ -365,8 +397,16 @@ otp_json(json_t *j, plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
             json_kv(j, "time", requesttime);
             json_kb(j, "arriveBy", plan->req.arrive_by);
             json_kf(j, "maxWalkDistance", 2000.0);
-            json_kv(j, "fromPlace", tdata_stop_point_name_for_index(tdata, plan->req.from_stop_point));
-            json_kv(j, "toPlace",   tdata_stop_point_name_for_index(tdata, plan->req.to_stop_point));
+            if (plan->req.from_stop_area != STOP_NONE) {
+                json_kv(j, "fromPlace", tdata_stop_area_name_for_index(tdata, plan->req.from_stop_area));
+            } else {
+                json_kv(j, "fromPlace", tdata_stop_point_name_for_index(tdata, plan->req.from_stop_point));
+            }
+            if (plan->req.to_stop_area != STOP_NONE) {
+                json_kv(j, "toPlace",   tdata_stop_area_name_for_index(tdata, plan->req.to_stop_area));
+            } else {
+                json_kv(j, "toPlace",   tdata_stop_point_name_for_index(tdata, plan->req.to_stop_point));
+            }
             json_kv(j, "date", date);
             if (plan->req.mode == m_all) {
                 json_kv(j, "mode", "TRANSIT,WALK");
@@ -383,8 +423,18 @@ otp_json(json_t *j, plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
         json_end_obj(j);
         json_key_obj(j, "plan");
             json_kl(j, "date", ((int64_t) 1000) * date_seconds);
-            json_place(j, "from", UNREACHED, UNREACHED, plan->req.from_stop_point, tdata, date_seconds);
-            json_place(j, "to", UNREACHED, UNREACHED, plan->req.to_stop_point, tdata, date_seconds);
+            if (plan->req.from_stop_area != STOP_NONE) {
+                json_place_area(j, "from", UNREACHED, UNREACHED, plan->req.from_stop_area, tdata, date_seconds);
+            } else {
+                json_place(j, "from", UNREACHED, UNREACHED, plan->req.from_stop_point, tdata, date_seconds);
+            }
+
+            if (plan->req.to_stop_area != STOP_NONE) {
+                json_place_area(j, "to", UNREACHED, UNREACHED, plan->req.to_stop_area, tdata, date_seconds);
+            } else {
+                json_place(j, "to", UNREACHED, UNREACHED, plan->req.to_stop_point, tdata, date_seconds);
+            }
+
             json_key_arr(j, "itineraries");
                 for (i = 0; i < plan->n_itineraries; ++i) {
                     json_itinerary (j, plan->itineraries + i, tdata, &plan->req, date_seconds);
