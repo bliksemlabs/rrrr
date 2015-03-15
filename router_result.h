@@ -5,7 +5,7 @@
 #include "util.h"
 #include "rrrr_types.h"
 #include "router.h"
-
+#define MAX_LEGS RRRR_DEFAULT_MAX_ROUNDS * 4 + 1
 /* A leg represents one ride or walking transfer. */
 typedef struct leg leg_t;
 struct leg {
@@ -27,6 +27,11 @@ struct leg {
     /* end time */
     rtime_t  t1;
 
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+    /* Serviceday of the vehicle_journey */
+    calendar_t  cal_day;
+    #endif
+
     #ifdef RRRR_FEATURE_REALTIME
     /* start journey_pattern_point index */
     uint16_t jpp0;
@@ -46,7 +51,7 @@ struct leg {
 /* An itinerary is a chain of legs leading from one place to another. */
 typedef struct itinerary itinerary_t;
 struct itinerary {
-    leg_t legs[RRRR_DEFAULT_MAX_ROUNDS * 2 + 1];
+    leg_t legs[MAX_LEGS];
     uint8_t n_rides;
     uint8_t n_legs;
 };
