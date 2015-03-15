@@ -858,21 +858,20 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
     jp_vjoffset_t  vj_offset = interline->vj_offset;
     while (jp_index != JP_NONE){
         journey_pattern_t *jp = &(router->tdata->journey_patterns[jp_index]);
-        vehicle_journey_t *vj = &(tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index)[vj_offset]);
         spidx_t *journey_pattern_points = tdata_points_for_journey_pattern(router->tdata, (jpidx_t) jp_index);
         uint8_t *journey_pattern_point_attributes = tdata_stop_point_attributes_for_journey_pattern(router->tdata, (jpidx_t) jp_index);
 
         /* journey_pattern_point index where that vj was boarded */
-        jppidx_t      board_jpp = (jppidx_t) (req->arrive_by ? jp->n_stops-1 :0);
+        jppidx_t board_jpp = (jppidx_t) (req->arrive_by ? jp->n_stops-1 :0);
 
         /* stop_point index where that vj was boarded */
-        spidx_t       board_sp  = journey_pattern_points[board_jpp];
+        spidx_t board_sp  = journey_pattern_points[board_jpp];
 
         /* time when that vj was boarded */
-        rtime_t       board_time = board_serviceday->midnight+vj->begin_time;
+        rtime_t board_time = tdata_stoptime (router->tdata, board_serviceday, jp_index, vj_offset, board_jpp, !req->arrive_by);
 
-        rtime_t       time;
-        int32_t       jpp_offset;
+        rtime_t time;
+        int32_t jpp_offset;
 
         {
             rtime_t prev_time = states_walk_time[board_sp];
