@@ -185,13 +185,11 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
         return false;
     }
 
-    if ( ! router_result_to_plan (&work_plan, router, req) ) {
-        return false;
-    }
-
     if (req->from_stop_point == ONBOARD){
         /*reversal is meaningless/useless in on-board */
-        return true;
+        return router_result_to_plan (plan, router, req);
+    }else if ( ! router_result_to_plan (&work_plan, router, req) ) {
+        return false;
     }
 
     /* Fetch the first possible time to get out of here by transit */
