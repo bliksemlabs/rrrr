@@ -347,8 +347,8 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                 (itin->legs + itin->n_legs-1)->sp_to);
 #endif
 
-        current_sp = (itin->legs + itin->n_legs - 1)->sp_from;
-        current_time = (itin->legs + itin->n_legs - 1)->t0;
+        current_time = router->states_board_time[i_state + current_sp];
+        current_sp = router->states_ride_from[i_state + current_sp];
 #ifdef RRRR_INTERLINE_DEBUG
         {
             char time32[32];
@@ -383,7 +383,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             }
             leg_add_origin(itin, itin->legs + itin->n_legs, router, req,
                     i_state, origin, i_origin, board_sp);
-            reverse_legs(itin);
+            if (!req->arrive_by) reverse_legs(itin);
             return true;
         }
         else if (req->onboard_journey_pattern != JP_NONE &&
@@ -392,7 +392,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             /* Change the start-position of the first transit leg to ONBOARD */
             (itin->legs + itin->n_legs-1)->sp_from = ONBOARD;
             leg_add_onboard(itin, itin->legs + itin->n_legs, req);
-            reverse_legs(itin);
+            if (!req->arrive_by) reverse_legs(itin);
             return true;
         }
         /* Check whether we arrived on this stop_point before the time we could have walked there
@@ -443,7 +443,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
                             (itin->legs + itin->n_legs-1)->sp_to),
                     (itin->legs + itin->n_legs-1)->sp_to);
 #endif
-            current_sp = (itin->legs + itin->n_legs-1)->sp_from;
+            current_sp = router->states_walk_from[i_state + current_sp];
             ++itin->n_rides;
             --round;
             if (router->states_time[i_state + current_sp] == UNREACHED){
@@ -508,8 +508,9 @@ rtime_t best_time_in_round(router_t *router, router_request_t *req, uint64_t i_s
     for (i_target = 0; i_target < sn->n_points; ++i_target) {
         spidx_t sp_index = sn->stop_points[i_target];
         rtime_t duration = sn->durations[i_target];
-        if (req->arrive_by ? router->states_time[i_state + sp_index] - duration > best_time :
-                router->states_time[i_state + sp_index] + duration < best_time) {
+        if (req->arrive_by ? (router->states_time[i_state + sp_index] != UNREACHED &&
+                              router->states_time[i_state + sp_index] - duration > best_time) :
+                             router->states_time[i_state + sp_index] + duration < best_time) {
             best_time = req->arrive_by ? router->states_time[i_state + sp_index] - duration :
                     router->states_time[i_state + sp_index] + duration;
         }
@@ -550,7 +551,7 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
             /* Skip the targets which were not reached by a vhicle in the round or have worse times than the best_time */
             if (router->states_time[i_state + sp_index] == UNREACHED ||
                     (req->arrive_by ? router->states_time[i_state + sp_index] - duration < best_time_round :
-                            router->states_time[i_state + sp_index] + duration > best_time_round) ||
+                                      router->states_time[i_state + sp_index] + duration > best_time_round) ||
                     !best_target_for_jp_vj(router, req, i_state, target, i_target, false)) {
                 continue;
             }
@@ -560,6 +561,8 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
                 /* Move to the next itinerary in the plan. */
                 plan->n_itineraries += 1;
                 itin += 1;
+            }else{
+                printf("Itin render fault\n");
             }
         };
     }
