@@ -185,14 +185,11 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
         return false;
     }
 
-    if ( ! req->arrive_by &&
-         ! router_result_to_plan (&work_plan, router, req) ) {
-        return false;
-    }
-
     if (req->from_stop_point == ONBOARD){
         /*reversal is meaningless/useless in on-board */
-        return true;
+        return router_result_to_plan (plan, router, req);
+    }else if ( ! router_result_to_plan (&work_plan, router, req) ) {
+        return false;
     }
 
     /* Fetch the first possible time to get out of here by transit */
@@ -212,9 +209,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     n_req++;
 
     /* first reversal, always required */
-    if ( req->arrive_by ?
-            !router_request_reverse_all(router, &req_storage[i_rev], req_storage, &n_req) :
-            !router_request_reverse_plan (router, &req_storage[i_rev], req_storage, &n_req, &work_plan)) {
+    if (!router_request_reverse_plan (router, &req_storage[i_rev], req_storage, &n_req, &work_plan)) {
         return false;
     }
 

@@ -46,7 +46,7 @@ polyline_for_leg (polyline_t *pl, tdata_t *tdata, leg_t *leg, router_request_t *
         }else if (req->to_stop_area != STOP_NONE){
             polyline_latlon (pl, tdata->stop_area_coords[req->to_stop_area]);
         }
-    }else if (leg->journey_pattern == WALK) {
+    }else if (leg->journey_pattern == WALK || leg->journey_pattern == STAY_ON) {
         polyline_latlon (pl, tdata->stop_point_coords[leg->sp_from]);
         polyline_latlon (pl, tdata->stop_point_coords[leg->sp_to]);
     } else {
@@ -135,16 +135,22 @@ json_place_area (json_t *j, const char *key, rtime_t arrival, rtime_t departure,
     json_end_obj(j);
 }
 
-static void put_servicedate(leg_t *leg, time_t date, char *servicedate){
+static void put_servicedate(leg_t *leg, time_t date, tdata_t *tdata, char *servicedate){
     struct tm ltm;
+    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
+    time_t servicedate_time = tdata->calendar_start_time + (SEC_IN_ONE_DAY * leg->cal_day);
+    UNUSED(date);
+    #else
     time_t servicedate_time = date + RTIME_TO_SEC(leg->t0 % RTIME_ONE_DAY);
+    UNUSED(tdata);
+    #endif
     rrrr_gmtime_r(&servicedate_time, &ltm);
     strftime(servicedate, 9, "%Y%m%d", &ltm);
 }
 
 static void
 json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
-          router_request_t *req, time_t date, uint8_t leg_idx) {
+          router_request_t *req, time_t date, uint8_t leg_idx, bool interlineWithPreviousLeg) {
     const char *mode = NULL;
     const char *headsign = NULL;
     const char *linecode = NULL;
@@ -170,7 +176,7 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
     polyline_t pl;
 
     if (leg->journey_pattern >= WALK) mode = "WALK"; else {
-        put_servicedate(leg, date, servicedate);
+        put_servicedate(leg, date, tdata, servicedate);
 
         #ifdef RRRR_FEATURE_REALTIME_EXPANDED
         headsign = tdata_headsign_for_journey_pattern_point(tdata, leg->journey_pattern,leg->jpp0);
@@ -226,6 +232,9 @@ json_leg (json_t *j, leg_t *leg, tdata_t *tdata,
         json_kv(j, "agencyId", operator_id);
         json_kv(j, "agencyName", operator_name);
         json_kv(j, "agencyUrl", operator_url);
+        if (interlineWithPreviousLeg){
+            json_kv(j, "interlineWithPreviousLeg", "true");
+        }
         if (leg->journey_pattern < WALK){
             json_kv(j, "agencyTimeZoneOffset", agencyTzOffset);
         }
@@ -343,6 +352,7 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
     int32_t walkdistance = 0;
     int32_t waitingtime = 0;
     int32_t transittime = 0;
+    bool interlineWithPreviousLeg = false;
     uint8_t leg_idx;
 
     json_obj(j); /* one itinerary */
@@ -354,7 +364,12 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
             for (leg_idx = 0; leg_idx < itin->n_legs; ++leg_idx) {
                 leg_t *leg = &itin->legs[leg_idx];
                 uint32_t leg_duration = RTIME_TO_SEC(leg->t1 - leg->t0);
-                json_leg (j, leg, tdata, req, date, leg_idx);
+                if (leg->journey_pattern == STAY_ON){
+                    interlineWithPreviousLeg = true;
+                    continue;
+                }
+                json_leg (j, leg, tdata, req, date, leg_idx, interlineWithPreviousLeg);
+                interlineWithPreviousLeg = false;
                 if (leg->journey_pattern >= WALK) {
                     if (leg->sp_from == leg->sp_to) {
                         waitingtime += leg_duration;

@@ -130,7 +130,8 @@ def make_idx(tdata):
     
     for key,vjs in index.blocks.items():
         if len(vjs) == 1:
-            continue
+            continue 
+        vjs = sorted(vjs, key= lambda vj: vj.departure_time)
         for i in range(len(vjs)-1):
             from_vj = vjs[i]
             to_vj = vjs[i+1]
