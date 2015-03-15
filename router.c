@@ -975,11 +975,11 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
                 bitset_set(router->updated_stop_points, sp_index);
             }
         }
-        jp_index = JP_NONE;
-        vj_offset = VJ_NONE;
         interline = req->arrive_by ?
                       &router->tdata->vehicle_journey_transfers_backward[jp->vj_index+vj_offset]
                     : &router->tdata->vehicle_journey_transfers_forward [jp->vj_index+vj_offset];
+        jp_index = JP_NONE;
+        vj_offset = VJ_NONE;
         if (interline->jp_index != JP_NONE) {
             jp_index = interline->jp_index;
             vj_offset = interline->vj_offset;
