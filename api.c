@@ -209,9 +209,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     n_req++;
 
     /* first reversal, always required */
-    if ( req->arrive_by ?
-            !router_request_reverse_all(router, &req_storage[i_rev], req_storage, &n_req) :
-            !router_request_reverse_plan (router, &req_storage[i_rev], req_storage, &n_req, &work_plan)) {
+    if (!router_request_reverse_plan (router, &req_storage[i_rev], req_storage, &n_req, &work_plan)) {
         return false;
     }
 
@@ -221,7 +219,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     for (; i_rev < n_req; ++i_rev) {
         bool reroute = true;
         /* Check if we can skip the third reversal if we rendered a fitting itinerary in the first forward search */
-        if (!req->arrive_by && !req_storage[i_rev].arrive_by &&
+        if (!req_storage[i_rev].arrive_by &&
                 req_storage[i_rev].entry.n_points == 1 &&
                 req_storage[i_rev].exit.n_points == 1){
             int16_t i_itin;

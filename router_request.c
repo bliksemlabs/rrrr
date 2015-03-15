@@ -5,10 +5,6 @@
 
 #include "config.h"
 #include "router_request.h"
-#include "util.h"
-#include "router_result.h"
-
-#include <stdio.h>
 #include <assert.h>
 
 /* router_request_to_epoch returns the time-date
@@ -259,15 +255,16 @@ bool
 router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan) {
     int16_t i_itin;
     rtime_t last_arrival = 0;
-
-    assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
+    rtime_t last_departure = 0;
 
     for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
         itinerary_t itin = plan->itineraries[i_itin];
         rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
-        if (last_arrival && itin.legs[0].t0 > last_arrival + duration){
+        if (req->arrive_by ? last_departure && itin.legs[itin.n_legs-1].t1 < last_departure - duration:
+                             last_arrival && itin.legs[0].t0 > last_arrival + duration){
             continue;
         }
+        last_departure = MAX(last_departure,itin.legs[0].t0);
         last_arrival = MAX(last_arrival,itin.legs[itin.n_legs-1].t1);
         ret[*ret_n] = *req;
         reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
