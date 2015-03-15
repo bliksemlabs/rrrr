@@ -359,7 +359,7 @@ json_itinerary (json_t *j, itinerary_t *itin, tdata_t *tdata, router_request_t *
         json_kl(j, "duration", endtime - starttime);
         json_kl(j, "startTime", starttime);
         json_kl(j, "endTime", endtime);
-        json_kd(j, "transfers", itin->n_legs / 2 - 1);
+        json_kd(j, "transfers", itin->n_rides);
         json_key_arr(j, "legs");
             for (leg_idx = 0; leg_idx < itin->n_legs; ++leg_idx) {
                 leg_t *leg = &itin->legs[leg_idx];
