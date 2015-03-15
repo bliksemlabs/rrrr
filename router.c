@@ -905,7 +905,7 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
          */
         if (req->vj_attributes && (req->vj_attributes & tdata_vehicle_journeys_in_journey_pattern(router->tdata, jp_index)[vj_offset].vj_attributes) != req->vj_attributes) break;
 
-        for (jpp_offset = (req->arrive_by ? jp->n_stops - 1 : 0);
+        for (jpp_offset = (req->arrive_by ? jp->n_stops - 2 : 1);
              req->arrive_by ? jpp_offset >= 0 :
                               jpp_offset < jp->n_stops;
              req->arrive_by ? --jpp_offset :
