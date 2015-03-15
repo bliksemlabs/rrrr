@@ -268,7 +268,7 @@ static void leg_add_vj_interline(itinerary_t *itin, leg_t *leg, router_t *router
     ++itin->n_legs;
 }
 
-static void leg_add_transfer(itinerary_t *itin, leg_t *leg, router_t *router,
+static void leg_add_transfer(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
         int64_t i_state,
         spidx_t walk_end_stop_point) {
     /* Walk phase */
@@ -279,6 +279,7 @@ static void leg_add_transfer(itinerary_t *itin, leg_t *leg, router_t *router,
     leg->t1 = router->states_walk_time[i_state + walk_end_stop_point];
     leg->journey_pattern = WALK;
     leg->vj = WALK;
+    if (req->arrive_by) leg_swap(leg);
     ++itin->n_legs;
 }
 
@@ -433,7 +434,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
         }
         {
             i_state -= router->tdata->n_stop_points;
-            leg_add_transfer(itin, itin->legs + itin->n_legs, router, i_state, current_sp);
+            leg_add_transfer(itin, itin->legs + itin->n_legs, router, req, i_state, current_sp);
 #ifdef RRRR_INTERLINE_DEBUG
             printf("Walk from %s [%d] to %s [%d]\n",
                     tdata_stop_point_name_for_index(router->tdata,
