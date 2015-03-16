@@ -388,6 +388,18 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             leg_add_origin(itin, itin->legs + itin->n_legs, router, req,
                     i_state, origin, i_origin, board_sp);
             if (!req->arrive_by) reverse_legs(itin);
+            {
+                rtime_t duration_from_final_sp_to_target_on_sn = street_network_duration(board_sp, target);
+                rtime_t duration_from_first_sp_to_target_on_sp = street_network_duration(itin->legs[0].sp_to, target);
+                if (duration_from_final_sp_to_target_on_sn != UNREACHED &
+                        duration_from_final_sp_to_target_on_sn > duration_from_first_sp_to_target_on_sp) {
+                    /* This transit itinerary actually brings us further away from the target,
+                 * thus ignore this journey and replace it by a direct itinerary on the street_network */
+                    itin->n_legs = 0;
+                    leg_add_direct(itin, itin->legs + itin->n_legs, req, duration_target);
+                    return round == 0;
+                }
+            }
             return true;
         }
         else if (req->onboard_journey_pattern != JP_NONE &&
