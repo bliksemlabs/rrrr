@@ -273,7 +273,6 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
         reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
                 req->arrive_by ? itin.legs[0].t0 : itin.legs[itin.n_legs-1].t1);
         ret[*ret_n].time_cutoff = req->arrive_by ? itin.legs[itin.n_legs-1].t1 : itin.legs[0].t0;
-        router_request_dump(&ret[*ret_n],router->tdata);
         (*ret_n)++;
     }
     return (*ret_n > 0);
