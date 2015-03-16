@@ -259,10 +259,10 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
 
     for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
         itinerary_t itin = plan->itineraries[i_itin];
+        rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
         if (itin.n_legs == 1){
             continue;
         }
-        rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
         if (req->arrive_by ? last_departure && itin.legs[itin.n_legs-1].t1 < last_departure - duration:
                              last_arrival && itin.legs[0].t0 > last_arrival + duration){
             continue;
