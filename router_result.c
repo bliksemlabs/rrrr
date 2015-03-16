@@ -321,7 +321,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             router->states_back_journey_pattern[i_state + sp_index]) {
         /* Render a itinerary that does not touch the transit network */
         leg_add_direct(itin, itin->legs + itin->n_legs, req, duration_target);
-        return true;
+        return round == 0;
     } else {
         /* Append the leg between the target and the first vehicle_journey in the itinerary*/
         leg_add_target(itin, itin->legs + itin->n_legs, router, req, i_state, target, i_target);
@@ -566,7 +566,9 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
                 plan->n_itineraries += 1;
                 itin += 1;
             }else{
-                printf("Itin render fault\n");
+#ifdef RRRR_INTERLINE_DEBUG
+                /*printf("Itin render fault\n");*/
+#endif
             }
         };
     }
