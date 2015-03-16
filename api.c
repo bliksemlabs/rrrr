@@ -191,7 +191,17 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     }else if ( ! router_result_to_plan (&work_plan, router, req) ) {
         return false;
     }
-
+    /* Copy direct (without street_network itineraries to the result */
+    {
+        int16_t i_itin = 0;
+        for (;i_itin < work_plan.n_itineraries;++i_itin) {
+            if (work_plan.itineraries[i_itin].n_legs == 1) {
+                plan->itineraries[plan->n_itineraries] = work_plan.itineraries[i_itin];
+                ++plan->n_itineraries;
+                break;
+            }
+        }
+    }
     /* Fetch the first possible time to get out of here by transit */
     req_storage[n_req] = *req;
     if ( ! req_storage[n_req].arrive_by) {
