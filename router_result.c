@@ -242,7 +242,7 @@ static void leg_add_origin(itinerary_t *itin, leg_t *leg, router_t *router, rout
 }
 
 
-static void leg_add_direct(leg_t *leg, router_request_t *req, rtime_t duration) {
+static void leg_add_direct(itinerary_t *itin, leg_t *leg, router_request_t *req, rtime_t duration) {
     /* Target to first transit with streetnetwork phase */
     leg->sp_from = req->arrive_by ? req->to_stop_point : req->from_stop_point;
     leg->sp_to = req->arrive_by ? req->from_stop_point : req->to_stop_point;
@@ -253,7 +253,7 @@ static void leg_add_direct(leg_t *leg, router_request_t *req, rtime_t duration) 
     leg->journey_pattern = STREET;
     leg->vj = STREET;
     if (req->arrive_by) leg_swap(leg);
-
+    ++itin->n_legs;
 }
 
 static void leg_add_vj_interline(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
@@ -317,9 +317,10 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
 
     router_result_init_itinerary(itin);
     
-    if (router->states_time[i_state + sp_index] == UNREACHED) {
+    if (router->states_time[i_state + sp_index] == UNREACHED ||
+            router->states_back_journey_pattern[i_state + sp_index]) {
         /* Render a itinerary that does not touch the transit network */
-        leg_add_direct(itin->legs + itin->n_legs, req, duration_target);
+        leg_add_direct(itin, itin->legs + itin->n_legs, req, duration_target);
         return true;
     } else {
         /* Append the leg between the target and the first vehicle_journey in the itinerary*/
