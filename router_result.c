@@ -314,6 +314,7 @@ static void render_interlines(router_t *router, itinerary_t *itin){
         leg_t *leg = &itin->legs[i_leg];
         if (leg->journey_pattern == STAY_ON){
             inInterline = true;
+            continue;
         }else if (leg->journey_pattern >= WALK){
             inInterline = false;
             continue;
