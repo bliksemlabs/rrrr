@@ -259,6 +259,9 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
 
     for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
         itinerary_t itin = plan->itineraries[i_itin];
+        if (itin.n_legs == 1){
+            continue;
+        }
         rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
         if (req->arrive_by ? last_departure && itin.legs[itin.n_legs-1].t1 < last_departure - duration:
                              last_arrival && itin.legs[0].t0 > last_arrival + duration){
@@ -270,6 +273,7 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
         reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
                 req->arrive_by ? itin.legs[0].t0 : itin.legs[itin.n_legs-1].t1);
         ret[*ret_n].time_cutoff = req->arrive_by ? itin.legs[itin.n_legs-1].t1 : itin.legs[0].t0;
+        router_request_dump(&ret[*ret_n],router->tdata);
         (*ret_n)++;
     }
     return (*ret_n > 0);
