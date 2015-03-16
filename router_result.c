@@ -322,8 +322,8 @@ static void render_interlines(router_t *router, itinerary_t *itin){
             journey_pattern_t *jp = &router->tdata->journey_patterns[leg->journey_pattern];
             vehicle_journey_ref_t *interline = &router->tdata->vehicle_journey_transfers_forward[jp->vj_index + last_vj_leg->vj];
             if (interline->jp_index == leg->journey_pattern && interline->vj_offset == leg->vj){
-                (&itin->legs[i_leg])->journey_pattern = STAY_ON;
-                (&itin->legs[i_leg])->t1 = leg->t0;
+                (&itin->legs[i_leg - 1])->journey_pattern = STAY_ON;
+                (&itin->legs[i_leg - 1])->t1 = leg->t0;
                 --itin->n_rides;
             }
         }
