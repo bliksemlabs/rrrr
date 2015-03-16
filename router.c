@@ -1153,8 +1153,12 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
                         fprintf(stderr, "ERROR: boarded before start time, "
                                         "vj %d stop_point %d \n",
                                 best_vj, sp_index);
-                    } else {
-                        /* TODO: use a router_state struct for all this? */
+                    } else if (vj_offset != best_vj) {
+                        /* TODO probably better results if we take a transfer cost function into account and
+                         * Check if later transfer-points are better (more buffertime,aircondition, elevators,etc.)
+                         * Currently we take the first possible transfer point as entry point */
+
+                         /* TODO: use a router_state struct for all this? */
                         board_time = best_time;
                         board_sp = (spidx_t) sp_index;
                         board_jpp = (jppidx_t) jpp_offset;
