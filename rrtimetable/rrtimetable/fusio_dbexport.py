@@ -1,6 +1,5 @@
 import psycopg2
 from model.transit import *
-from exporter.timetable3 import export
 import exporter.timetable4
 
 def parse_gtfs_time(timestr):
@@ -27,7 +26,7 @@ def convert(dbname):
     for stop_id,stop_name,stop_lat,stop_lon,stop_timezone in cur.fetchall():
         StopArea(tdata,stop_id,stop_timezone or feed_timezone,name=stop_name,latitude=stop_lat,longitude=stop_lon)
     cur.execute("SELECT stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code FROM fusio.stops WHERE coalesce(location_type,0) = 0")
-    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code,stop_timezone in cur.fetchall():
+    for stop_id,stop_name,stop_lat,stop_lon,stop_timezone,parent_station,platform_code in cur.fetchall():
         stop_area_uri = parent_station
         try:
             StopPoint(tdata,stop_id,stop_area_uri,name=stop_name,latitude=stop_lat,longitude=stop_lon,platformcode=platform_code)
@@ -65,18 +64,18 @@ FROM fusio.lines JOIN fusio.routes USING (line_id) JOIN fusio.trips USING (route
     cur.close()
     cur = conn.cursor('trips')
     cur.execute("""
-SELECT trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,commercial_mode_id
+SELECT trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,commercial_mode_id, block_id
 FROM fusio.trips JOIN fusio.stop_times USING (trip_id) JOIN fusio.routes USING (route_id) JOIN fusio.lines USING (line_id)
 ORDER BY trip_id,stop_sequence
 """)
     vj = None
     last_trip_id = None
-    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,ccmode_id in cur.fetchall():
+    for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,ccmode_id,block_id in cur:
         if trip_id != last_trip_id:
             if vj is not None:
                 vj.finish()
             last_trip_id = trip_id
-            vj = VehicleJourney(tdata,trip_id,route_id,ccmode_id,headsign=trip_headsign)
+            vj = VehicleJourney(tdata,trip_id,route_id,ccmode_id,headsign=trip_headsign,blockref=block_id)
             for date in calendars[service_id]:
                 vj.setIsValidOn(date)
         vj.add_stop(stop_id,parse_gtfs_time(arrival_time),parse_gtfs_time(departure_time),forboarding=(pickup_type != 1),foralighting=(drop_off_type != 1),headsign=stop_headsign)

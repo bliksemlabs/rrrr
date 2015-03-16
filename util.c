@@ -6,6 +6,7 @@
 #include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 /* buffer should always be at least 13 characters long,
  * including terminating null
@@ -127,18 +128,35 @@ time_t strtoepoch (char *time) {
 /* assumes little endian http://stackoverflow.com/a/3974138/778449
  * size in bytes
  */
-void printBits(size_t const size, void const * const ptr) {
+
+void renderBits(const void *ptr, uint32_t size, char *out) {
     unsigned char *b = (unsigned char*) ptr;
     unsigned char byte;
-    int i, j;
-    for (i = size - 1; i >= 0; i--) {
-        for (j = 7; j >= 0; j--) {
-            byte = b[i] & (1 << j);
-            byte >>= j;
-            fprintf(stderr, "%u", byte);
-        }
-    }
-    puts("");
+
+    do {
+        uint8_t char_size = 8;
+        size--;
+
+        do {
+            char_size--;
+            byte = b[size] & (1 << char_size);
+            byte >>= char_size;
+
+            *out = '0' + (char) byte;
+            out++;
+        } while (char_size);
+
+    } while (size);
+
+    *out = '\0';
+    out++;
+}
+
+void printBits(uint32_t const n, void const * const ptr) {
+    char out[34] = "";
+    assert(n << 3 <= 32);
+    renderBits(ptr, n, out);
+    fprintf(stderr, "%s", out);
 }
 #endif
 

@@ -18,23 +18,24 @@
  * indicates an empty edge list. A NULL next-pointer indicates the last edge
  * in the list.
  */
+typedef struct rxt_edge rxt_edge_t;
 struct rxt_edge {
     /* the next parallel edge out of the same parent node,
      * NULL indicates end of list
      */
-    struct rxt_edge *next;
+    rxt_edge_t *next;
 
     /* the first edge in the list reached by traversing this
      * edge (consuming its prefix)
      */
-    struct rxt_edge *child;
+    rxt_edge_t *child;
     uint32_t value;
     char prefix[RRRR_RADIXTREE_PREFIX_SIZE];
 };
 
 typedef struct radixtree_s radixtree_t;
 struct radixtree_s {
-    struct rxt_edge *root;
+    rxt_edge_t *root;
     void *base;
     size_t size;
 };
@@ -49,12 +50,14 @@ void radixtree_destroy (radixtree_t *r);
 
 bool radixtree_insert (radixtree_t *r, const char *key, uint32_t value);
 
-uint32_t radixtree_find (radixtree_t *r, const char *key);
+rxt_edge_t* radixtree_find (radixtree_t *r, const char *key);
+uint32_t radixtree_find_exact (radixtree_t *r, const char *key);
+uint32_t radixtree_find_prefix (radixtree_t *r, const char *key, rxt_edge_t *result);
 
 #ifdef RRRR_DEBUG
-uint32_t radixtree_edge_count (struct rxt_edge *e);
+uint32_t radixtree_edge_count (rxt_edge_t *e);
 
-void radixtree_edge_print (struct rxt_edge *e);
+void radixtree_edge_print (rxt_edge_t *e);
 #endif
 
 #endif /* _RADIXTREE_H */

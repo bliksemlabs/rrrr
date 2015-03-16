@@ -222,7 +222,7 @@ class JourneyPattern:
             return False
 
 class VehicleJourney:
-    def __init__(self,timetable,uri,route_uri,commercial_mode_uri,headsign=None):
+    def __init__(self,timetable,uri,route_uri,commercial_mode_uri,headsign=None,blockref=None):
         self.timetable = timetable
         self.type = 'vehicle_journey'
         self.uri = uri
@@ -235,6 +235,7 @@ class VehicleJourney:
             raise ValueError('Violation of foreign key, route not found')
         if commercial_mode_uri not in timetable.commercial_modes:
             raise ValueError('Violation of foreign key, commercial_mode not found')
+        self.blockref = blockref
         self.commercial_mode = timetable.commercial_modes[commercial_mode_uri]
         self.route = timetable.routes[route_uri]
         self.points = []

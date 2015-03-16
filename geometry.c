@@ -10,19 +10,6 @@
 #include <stdio.h>
 #endif
 
-/* Mean of Earth's equatorial and meridional circumferences. */
-#define EARTH_CIRCUMFERENCE 40041438.5
-
-/* UINT32_MAX is also the full range of INT32. */
-#define INT32_RANGE UINT32_MAX
-
-/* We could have more resolution in the latitude direction by mapping
- * 90 degrees to the int32 range instead of 180, but keeping both axes at the
- * same scale enables efficent distance calculations. In any case the extra
- * Y resolution is unnecessary, since 1 brad is already just under 1cm.
- */
-#define METERS_PER_BRAD (EARTH_CIRCUMFERENCE / INT32_RANGE)
-
 double radians (double degrees);
 double degrees (double radians);
 double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2);
@@ -98,7 +85,7 @@ void coord_from_latlon (coord_t *coord, latlon_t *latlon) {
  *
  * TODO: add meters_from_ersatz
  */
-double coord_distance_ersatz (coord_t *c1, coord_t *c2) {
+double coord_distance_ersatz (const coord_t *c1, const coord_t *c2) {
     double dx = c2->x - c1->x;
     double dy = c2->y - c1->y;
     return (dx * dx) + (dy * dy);
@@ -112,7 +99,7 @@ double ersatz_from_distance (double meters) {
     return d_brads * d_brads;
 }
 
-double coord_distance_meters (coord_t *c1, coord_t *c2) {
+double coord_distance_meters (const coord_t *c1, const coord_t *c2) {
     double dxm = coord_diff_meters(c1->x, c2->x);
     double dym = coord_diff_meters(c1->y, c2->y);
     return sqrt((dxm * dxm) + (dym * dym));
@@ -129,7 +116,7 @@ double latlon_distance_meters (latlon_t *ll1, latlon_t *ll2) {
     return coord_distance_meters (&c1, &c2);
 }
 
-void latlon_from_coord (latlon_t *latlon, coord_t *coord) {
+void latlon_from_coord (latlon_t *latlon, const coord_t *coord) {
     latlon->lat = (float) (coord->y * 180.0f / INT32_MAX);
     latlon->lon = (float) (coord->x * 180.0f / INT32_MAX / xscale_at_y ((uint32_t)coord->y));
 }
@@ -149,7 +136,7 @@ void latlon_dump (latlon_t *latlon) {
     fprintf(stderr, "latlon lat=%f lon=%f \n", latlon->lat, latlon->lon);
 }
 
-void coord_dump (coord_t *coord) {
+void coord_dump (const coord_t *coord) {
     fprintf(stderr, "coordinate x=%d y=%d \n", coord->x, coord->y);
 }
 #endif

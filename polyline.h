@@ -12,17 +12,13 @@
 
 typedef struct polyline polyline_t;
 struct polyline {
-    double last_lat;
-    double last_lon;
     char  *buf_cur;
     char  *buf_max;
+    uint32_t last_lat;
+    uint32_t last_lon;
     uint32_t n_points;
     char   buf[PL_BUFLEN];
 };
-
-int encode_double (double c, char *buf);
-
-int encode_latlon (latlon_t ll, char *buf);
 
 void polyline_begin (polyline_t *pl);
 

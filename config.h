@@ -12,6 +12,9 @@
 /* Speed by foot, in meter per second */
 #define RRRR_DEFAULT_WALK_SPEED 1.5
 
+/*Maximum stops to enter or exit a journey */
+#define RRRR_MAX_ENTRY_EXIT_POINTS 2500
+
 /* Maximum distance in meters to travel by feet from the
  * origin to the first stop_point, and from the last stop_point to
  * the destination.
@@ -22,8 +25,6 @@
 #define RRRR_MAX_BANNED_STOP_POINTS 1
 #define RRRR_MAX_BANNED_STOP_POINTS_HARD 1
 #define RRRR_MAX_BANNED_VEHICLE_JOURNEYS 1
-
-#define RRRR_FEATURE_LATLON 1
 
 #define RRRR_WALK_COMP 1.2
 
@@ -43,6 +44,10 @@
 #define RRRR_FEATURE_REALTIME 1
 
 #define RRRR_DYNAMIC_SLACK 2
+#endif
+
+#ifdef RRRR_DEBUG
+#define RRRR_DEV
 #endif
 
 /* roughly the length of common prefixes in IDs */

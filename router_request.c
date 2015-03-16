@@ -5,9 +5,6 @@
 
 #include "config.h"
 #include "router_request.h"
-#include "util.h"
-
-#include <stdio.h>
 #include <assert.h>
 
 /* router_request_to_epoch returns the time-date
@@ -54,12 +51,13 @@ router_request_to_date (router_request_t *req, tdata_t *tdata,
  */
 void
 router_request_initialize(router_request_t *req) {
-    req->from_hg_result.hg = NULL;
-    req->to_hg_result.hg = NULL;
+    req->exit.n_points = 0;
+    req->entry.n_points = 0;
     req->walk_speed = RRRR_DEFAULT_WALK_SPEED;
     req->walk_slack = RRRR_DEFAULT_WALK_SLACK;
     req->walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
     req->from_stop_point = req->to_stop_point = req->via_stop_point = STOP_NONE;
+    req->from_stop_area = req->to_stop_area = STOP_NONE;
     req->time = UNREACHED;
     req->time_cutoff = UNREACHED;
     req->arrive_by = true;
@@ -71,7 +69,7 @@ router_request_initialize(router_request_t *req) {
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
-    rrrr_memset (req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
+    rrrr_memset (req->banned_journey_patterns, JP_NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     req->n_banned_stops = 0;
@@ -83,29 +81,22 @@ router_request_initialize(router_request_t *req) {
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     req->n_banned_vjs = 0;
-    rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    rrrr_memset (req->banned_vjs_journey_pattern, VJ_NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
-    req->onboard_journey_pattern = NONE;
-    req->onboard_journey_pattern_vjoffset = NONE;
+    req->onboard_journey_pattern = JP_NONE;
+    req->onboard_journey_pattern_vjoffset = VJ_NONE;
     req->intermediatestops = false;
 
-    #ifdef RRRR_FEATURE_LATLON
-    req->from_latlon.lat = 0.0;
-    req->from_latlon.lon = 0.0;
-    req->to_latlon.lat = 0.0;
-    req->to_latlon.lon = 0.0;
-    #endif
-
-    #ifdef RRRR_FEATURE_OPERATOR_FILTER
-    req->operator = OPERATOR_UNFILTERED;
-    #endif
+    req->from_latlon.lat = 0.0f;
+    req->from_latlon.lon = 0.0f;
+    req->to_latlon.lat = 0.0f;
+    req->to_latlon.lon = 0.0f;
 }
 
 /* Initializes the router request then fills in its time and datemask fields
  * from the given epoch time.
  */
-/* TODO: if we set the date mask in the router itself we wouldn't need the tdata here. */
 void
 router_request_from_epoch(router_request_t *req, tdata_t *tdata,
                           time_t epochtime) {
@@ -116,7 +107,7 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
     fprintf (stderr, "calendar_start_time: %s [%ld]\n", etime, tdata->calendar_start_time);
     #endif
     calendar_t cal_day;
-    time_t request_time = (epochtime - tdata->calendar_start_time + tdata->utc_offset);
+    time_t request_time = (epochtime - (time_t) tdata->calendar_start_time + tdata->utc_offset);
 
     req->time =  RTIME_ONE_DAY + SEC_TO_RTIME(request_time%SEC_IN_ONE_DAY);
     req->time_rounded = ((request_time%SEC_IN_ONE_DAY) % 4) > 0;
@@ -127,6 +118,7 @@ router_request_from_epoch(router_request_t *req, tdata_t *tdata,
          * wrap to validity range 28 is a multiple of 7, so we always wrap
          * up to the same day of the week.
          */
+        /* TODO: Make 28 depended on tdata->n_days */
         cal_day %= 28;
         fprintf (stderr, "calendar day out of range. wrapping to %u, "
                          "which is on the same day of the week.\n", cal_day);
@@ -154,7 +146,7 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->optimise = o_all;
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     req->n_banned_journey_patterns = 0;
-    rrrr_memset (req->banned_journey_patterns, NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
+    rrrr_memset (req->banned_journey_patterns, JP_NONE, RRRR_MAX_BANNED_JOURNEY_PATTERNS);
     #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     req->n_banned_stops = 0;
@@ -166,101 +158,43 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     req->n_banned_vjs = 0;
-    rrrr_memset (req->banned_vjs_journey_pattern, NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    rrrr_memset (req->banned_vjs_journey_pattern, JP_NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
     req->intermediatestops = false;
     req->from_stop_point = (spidx_t) rrrrandom(tdata->n_stop_points);
     req->to_stop_point = (spidx_t) rrrrandom(tdata->n_stop_points);
 
-    #ifdef RRRR_FEATURE_LATLON
     req->from_latlon = tdata->stop_point_coords[rrrrandom(tdata->n_stop_points)];
     req->to_latlon = tdata->stop_point_coords[rrrrandom(tdata->n_stop_points)];
     req->from_stop_point = STOP_NONE;
     req->to_stop_point = STOP_NONE;
-    #endif
-
-    #ifdef RRRR_FEATURE_OPERATOR_FILTER
-    req->operator = OPERATOR_UNFILTERED;
-    #endif
 }
 
-/* router_request_next updates the current request structure with
- * the next request using the rtime_t resolution (4s)
- */
-void
-router_request_next(router_request_t *req, rtime_t inc) {
-    req->time += inc;
-
-    if (req->time >= 21600) {
-        req->day_mask++;
-        req->time -= 21600;
-    }
-
-    req->time_cutoff = UNREACHED;
-    req->time_rounded = false;
-    req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
-}
-
-#ifdef RRRR_FEATURE_LATLON
 static bool
-best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_t *sp, rtime_t *time) {
-    hashgrid_result_t *hg_result;
-    uint64_t offset_state = router->tdata->n_stop_points * round;
-    uint32_t sp_index; /* uint32_t because of hashgrid result */
-    double distance;
+best_time_by_round(router_t *router, router_request_t *req, uint8_t round, rtime_t *time) {
+    uint64_t offset_state = ((uint64_t) round) * router->tdata->n_stop_points;
+    spidx_t sp_index;
     spidx_t best_sp_index = STOP_NONE;
     rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
     rtime_t *round_best_time = &router->states_time[offset_state];
 
-    if (req->arrive_by) {
-        hg_result = &req->from_hg_result;
-    } else {
-        hg_result = &req->to_hg_result;
-    }
-
-    hashgrid_result_reset(hg_result);
-
-    #ifdef RRRR_DEBUG
-    fprintf (stderr, "Reversal - Hashgrid results:\n");
-    #endif
-
-    sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-
-    while (sp_index != HASHGRID_NONE) {
-        rtime_t extra_walktime = 0;
-
+    street_network_t *target = req->arrive_by ? &req->entry : &req->exit;
+    int32_t i_target = target->n_points;
+    while (i_target){
+        --i_target;
+        sp_index = target->stop_points[i_target];
         if (round_best_time[sp_index] != UNREACHED) {
-            /* TODO: precompute all walktimes from the hashgrid */
-            extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) / req->walk_speed));
-
-            if (req->arrive_by) {
-                round_best_time[sp_index] -= extra_walktime;
-                if (round_best_time[sp_index] > best_time) {
-                    best_sp_index = (spidx_t) sp_index;
-                    best_time = round_best_time[sp_index];
-                }
-            } else {
-                round_best_time[sp_index] += extra_walktime;
-                if (round_best_time[sp_index] < best_time) {
-                    best_sp_index = (spidx_t) sp_index;
-                    best_time = round_best_time[sp_index];
-                }
+            if (req->arrive_by && round_best_time[sp_index] - target->durations[i_target] > best_time) {
+                best_sp_index = (spidx_t) sp_index;
+                best_time = round_best_time[sp_index] - target->durations[i_target];
+            } else if (!req->arrive_by && round_best_time[sp_index] + target->durations[i_target] < best_time) {
+                best_sp_index = (spidx_t) sp_index;
+                best_time = round_best_time[sp_index] + target->durations[i_target];
             }
-
         }
-
-        #ifdef RRRR_DEBUG
-        fprintf (stderr, "%d %s %s (%.0fm) %d %d\n", sp_index,
-                    tdata_stop_point_id_for_index(router->tdata, sp_index),
-                    tdata_stop_point_name_for_index(router->tdata, sp_index),
-                    distance, round_best_time[sp_index], extra_walktime);
-        #endif
-
-        /* get the next potential start stop_point */
-        sp_index = hashgrid_result_next_filtered(hg_result, &distance);
     }
-    *sp = best_sp_index;
+
     *time = best_time;
 
     if (best_sp_index != STOP_NONE) {
@@ -271,80 +205,133 @@ best_sp_by_round (router_t *router, router_request_t *req, uint8_t round, spidx_
                 return false;
             }
         }
-
         return true;
     }
 
     return false;
 }
-#endif
 
+/* Reverse request and eliminate targets that are not reached at best_time
+ * We could do this in best_time_to_round in one single loop but that would either require a second loop like this
+ * or multiple resets when a better best_time is found.
+ * There are multiple targets necessary for the reversal in the theoretical case that there are
+ * an equal arrival_time on multiple stop_point's but a less travel duration on one of them.
+ * In the third reversal we expect routing between one origin and one target.
+ */
 static void
-reverse_request (router_request_t *req, uint8_t round, spidx_t best_sp_index, rtime_t best_time) {
-    if (!req->arrive_by) {
-        req->to_stop_point = (spidx_t) best_sp_index;
-    } else {
-        req->from_stop_point = (spidx_t) best_sp_index;
+reverse_request (router_t *router, router_request_t *req, router_request_t *new_req, uint8_t round, rtime_t best_time) {
+    uint64_t offset_state = ((uint64_t) round) * router->tdata->n_stop_points;
+    spidx_t sp_index;
+    rtime_t *round_best_time = &router->states_time[offset_state];
+
+    street_network_t target = req->arrive_by ? req->entry : req->exit;
+    int32_t i_target = target.n_points;
+    street_network_t *best_target = new_req->arrive_by ? &new_req->entry : &new_req->exit;
+    best_target->n_points = 0;
+
+    while (i_target){
+        --i_target;
+        sp_index = target.stop_points[i_target];
+        if (round_best_time[sp_index] != UNREACHED &&
+            best_time == (req->arrive_by ? round_best_time[sp_index] - target.durations[i_target]
+                                        : round_best_time[sp_index] + target.durations[i_target])) {
+            best_target->stop_points[best_target->n_points] = sp_index;
+            best_target->durations[best_target->n_points] = target.durations[i_target];
+            ++best_target->n_points;
+        }
     }
 
-    req->time_cutoff = req->time;
-    req->time = best_time;
+    new_req->time_cutoff = new_req->time;
+    new_req->time = best_time;
+    new_req->max_transfers = round;
+    new_req->arrive_by = !(new_req->arrive_by);
+}
 
-    req->max_transfers = round;
-    req->arrive_by = !(req->arrive_by);
+/* Use the itineraries in the plan_t to build reversals for time-wait compression.
+ * Make reversal requests between the departure and the arrival of each itinerary.
+ * Filter out itineraries that depart more than a travel duration after the best_arrival.
+ */
+bool
+router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan) {
+    int16_t i_itin;
+    rtime_t last_arrival = 0;
+    rtime_t last_departure = 0;
+
+    for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
+        itinerary_t itin = plan->itineraries[i_itin];
+        rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
+        if (itin.n_legs == 1){
+            continue;
+        }
+        if (req->arrive_by ? last_departure && itin.legs[itin.n_legs-1].t1 < last_departure - duration:
+                             last_arrival && itin.legs[0].t0 > last_arrival + duration){
+            continue;
+        }
+        last_departure = MAX(last_departure,itin.legs[0].t0);
+        last_arrival = MAX(last_arrival,itin.legs[itin.n_legs-1].t1);
+        ret[*ret_n] = *req;
+        reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
+                req->arrive_by ? itin.legs[0].t0 : itin.legs[itin.n_legs-1].t1);
+        ret[*ret_n].time_cutoff = req->arrive_by ? itin.legs[itin.n_legs-1].t1 : itin.legs[0].t0;
+        (*ret_n)++;
+    }
+    return (*ret_n > 0);
+}
+
+bool single_origin_equals(router_request_t *req, router_request_t *oreq){
+    street_network_t *origin_l = req->arrive_by ? &req->exit : &req->entry;
+    street_network_t *origin_r = oreq->arrive_by ? &oreq->exit : &oreq->entry;
+    return (req->arrive_by == oreq->arrive_by &&
+            origin_l->n_points == 1 && origin_r->n_points == 1 &&
+            origin_l->stop_points[0] == origin_r->stop_points[0]);
+
 }
 
 bool
 router_request_reverse_all(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n) {
-    spidx_t best_sp_index;
     rtime_t best_time;
     int8_t round;
+    uint8_t i_rev = *ret_n;
 
     assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
 
     round = (int8_t) req->max_transfers;
 
-    if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
-                          req->to_stop_point == STOP_NONE)) {
-        do {
-            if (best_sp_by_round(router, req, (uint8_t) round, &best_sp_index, &best_time)) {
-                ret[*ret_n] = *req;
-                reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
-                (*ret_n)++;
-            }
-            round--;
-        } while (round >= 0);
-    } else {
-        best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
-        do {
-            best_time = router->states_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
-
-            if (best_time == UNREACHED || best_time < router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index]) {
-                best_time = router->states_walk_time[router->tdata->n_stop_points * (uint8_t) round + best_sp_index];
-            }
-            if (best_time != UNREACHED) {
-                bool add_request = true;
-                ret[*ret_n] = *req;
-                reverse_request(&ret[*ret_n], (uint8_t) round, best_sp_index, best_time);
-
-                /* Our optisation is only about the last clockwise search */
-                if (!ret[*ret_n].arrive_by) {
-                    uint8_t j_ret;
-                    for (j_ret = 0; j_ret < *ret_n; ++j_ret) {
-                        if (!ret[*ret_n].arrive_by &&
-                            ret[j_ret].time == ret[*ret_n].time) {
-                            ret[j_ret].max_transfers = MAX(ret[j_ret].max_transfers, ret[*ret_n].max_transfers);
-                            ret[j_ret].time_cutoff = MAX(ret[j_ret].time_cutoff, ret[*ret_n].time_cutoff);
+    do {
+        if (best_time_by_round(router, req, (uint8_t) round, &best_time)) {
+            bool add_request = true;
+            ret[*ret_n] = *req;
+            reverse_request(router,req,&ret[*ret_n], (uint8_t) round, best_time);
+            {
+                int16_t i_req = 0;
+                for (;i_req < *ret_n; ++i_req){
+                    router_request_t oreq = ret[i_req];
+                    if (oreq.arrive_by == ret[*ret_n].arrive_by &&
+                            oreq.time == req[*ret_n].time &&
+                            single_origin_equals(&ret[*ret_n], &oreq)){
+                        if (i_req >= i_rev){
+                            /* Equivalent request-parameters found in the subset that still has to be processed.
+                             * Increase max_transfers and time_cutoff if necessary*/
                             add_request = false;
-                            break;
+                            oreq.max_transfers = MAX(oreq.max_transfers,req[*ret_n].max_transfers);
+                            oreq.time_cutoff = oreq.arrive_by ? MIN(oreq.time_cutoff,req[*ret_n].time_cutoff) :
+                                                                MAX(oreq.time_cutoff,req[*ret_n].time_cutoff);
+                        }else{
+                            /* Equivalent request-parameters found in the subset that was already processed:
+                             * Only add the request if the the other's request was too narrow with regard to transfers
+                             * and/or time to include the itinerary found in this new request.
+                             */
+                            add_request = !(oreq.max_transfers >= req[*ret_n].max_transfers &&
+                                    req->arrive_by ? oreq.time_cutoff <= req[*ret_n].time_cutoff :
+                                                     oreq.time_cutoff >= req[*ret_n].time_cutoff);
                         }
                     }
                 }
-                if (add_request) (*ret_n)++;
             }
-            round--;
-        } while (round >= 0);
-    }
+            if (add_request) (*ret_n)++;
+        }
+        round--;
+    } while (round >= 0);
 
     return (*ret_n > 0);
 }
@@ -356,101 +343,18 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
  */
 bool
 router_request_reverse(router_t *router, router_request_t *req) {
-    uint32_t best_sp_index = HASHGRID_NONE;
-    uint8_t max_transfers = req->max_transfers;
+    int16_t max_transfers = req->max_transfers;
     uint8_t round = UINT8_MAX;
+    rtime_t best_time;
 
     /* range-check to keep search within states array */
     if (max_transfers >= RRRR_DEFAULT_MAX_ROUNDS)
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
-    #ifdef RRRR_FEATURE_LATLON
-
-    if ((req->arrive_by ? req->from_stop_point == STOP_NONE :
-                          req->to_stop_point == STOP_NONE)) {
-        hashgrid_result_t *hg_result;
-        uint32_t sp_index;
-        double distance;
-        rtime_t best_time = (rtime_t) (req->arrive_by ? 0 : UNREACHED);
-
-        if (req->arrive_by) {
-            hg_result = &req->from_hg_result;
-        } else {
-            hg_result = &req->to_hg_result;
-        }
-
-        hashgrid_result_reset(hg_result);
-
-        #ifdef RRRR_DEBUG
-        fprintf (stderr, "Reversal - Hashgrid results:\n");
-        #endif
-
-        sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-
-        while (sp_index != HASHGRID_NONE) {
-            rtime_t extra_walktime = 0;
-
-            if (router->best_time[sp_index] != UNREACHED) {
-                extra_walktime = SEC_TO_RTIME((uint32_t)((distance * RRRR_WALK_COMP) / req->walk_speed));
-
-                if (req->arrive_by) {
-                    router->best_time[sp_index] -= extra_walktime;
-                    if (router->best_time[sp_index] > best_time) {
-                        best_sp_index = sp_index;
-                        best_time = router->best_time[sp_index];
-                    }
-                } else {
-                    router->best_time[sp_index] += extra_walktime;
-                    if (router->best_time[sp_index] < best_time) {
-                        best_sp_index = sp_index;
-                        best_time = router->best_time[sp_index];
-                    }
-                }
-
-            }
-
-            #ifdef RRRR_DEBUG
-            fprintf (stderr, "%d %s %s (%.0fm) %d %d\n", sp_index,
-                     tdata_stop_point_id_for_index(router->tdata, sp_index),
-                     tdata_stop_point_name_for_index(router->tdata, sp_index),
-                     distance, router->best_time[sp_index], extra_walktime);
-            #endif
-
-            /* get the next potential start stop_point */
-            sp_index = hashgrid_result_next_filtered(hg_result, &distance);
-        }
-
-        if (req->arrive_by) {
-            req->from_stop_point = (spidx_t) best_sp_index;
-        } else {
-            req->to_stop_point = (spidx_t) best_sp_index;
-        }
-
-        /* TODO: Ideally we should implement a o_transfers option here to find
-         * the stop_point that requires the least transfers and is the best
-         * with respect to arrival time. This might be a different stop
-         * than the stop_point that is the best with most transfers.
-         */
-
-    } else
-    #endif
-    {
-        best_sp_index = (req->arrive_by ? req->from_stop_point : req->to_stop_point);
-    }
-
-    if (best_sp_index == HASHGRID_NONE) return false;
-
-    {
-        /* find the solution with the most transfers and the earliest arrival */
-        uint8_t r;
-        for (r = 0; r <= max_transfers; ++r) {
-            if (router->states_walk_time[r * router->tdata->n_stop_points + best_sp_index] != UNREACHED) {
-                round = r;
-                /* Instead of the earliest arrival (most transfers)
-                * use the solution with the least transfers.
-                */
-                if (req->optimise == o_transfers) break;
-            }
+    for (; max_transfers >= 0; --max_transfers) {
+        if (best_time_by_round(router, req, max_transfers, &best_time)){
+            round = (uint8_t) max_transfers;
+            break;
         }
     }
 
@@ -460,8 +364,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
     if (round == UINT8_MAX) return false;
 
     req->time_cutoff = req->time;
-    req->time = router->states_walk_time[round * router->tdata->n_stop_points +
-            best_sp_index];
+    req->time = best_time;
     #if 0
     fprintf (stderr, "State present at round %d \n", round);
     router_state_dump (router, round * router->tdata->n_stop_points + sp_index);
@@ -471,16 +374,10 @@ router_request_reverse(router_t *router, router_request_t *req) {
     #ifdef RRRR_DEBUG
     router_request_dump(req, router->tdata);
     range_check(req, router->tdata);
-    /* TODO: range-check the resulting request here? */
     #endif
     return true;
-
-    /* Eigenlijk zou in de counter clockwise stap een walkleg niet naar de
-     * target moeten gaan, maar naar de de fictieve arrival / departure halte.
-     * Zou mooi zijn om een punt te introduceren die dat faciliteert, dan zou
-     * je op dat punt een apply_hashgrid kunnen doen, ipv apply_transfers.
-     */
 }
+
 
 /* Check the given request against the characteristics of the router that will
  * be used. Indexes larger than array lengths for the given router, signed
@@ -494,15 +391,19 @@ bool
 range_check(router_request_t *req, tdata_t *tdata) {
     return !(req->walk_speed < 0.1 ||
              req->from_stop_point >= tdata->n_stop_points ||
-             req->to_stop_point   >= tdata->n_stop_points
-            );
+             req->to_stop_point   >= tdata->n_stop_points ||
+             req->from_stop_area   >= tdata->n_stop_areas ||
+             req->to_stop_area   >= tdata->n_stop_areas
+    );
 }
 
 /* router_request_dump prints the current request structure to the screen */
 void
 router_request_dump(router_request_t *req, tdata_t *tdata) {
-    const char *from_stop_id = tdata_stop_point_name_for_index(tdata, req->from_stop_point);
-    const char *to_stop_id   = tdata_stop_point_name_for_index(tdata, req->to_stop_point);
+    const char *from_sa_id = tdata_stop_area_name_for_index(tdata, req->from_stop_area);
+    const char *to_sa_id   = tdata_stop_area_name_for_index(tdata, req->to_stop_area);
+    const char *from_sp_id = tdata_stop_point_name_for_index(tdata, req->from_stop_point);
+    const char *to_sp_id   = tdata_stop_point_name_for_index(tdata, req->to_stop_point);
     char time[32], time_cutoff[32], date[11];
     struct tm ltm;
 
@@ -512,8 +413,10 @@ router_request_dump(router_request_t *req, tdata_t *tdata) {
     btimetext(req->time, time);
     btimetext(req->time_cutoff, time_cutoff);
     printf("-- Router Request --\n"
+            "from_stop_area:  %s [%d]\n"
             "from_stop_point:  %s [%d]\n"
             "from_latlon:  %f,%f\n"
+            "to_stop_area:    %s [%d]\n"
             "to_stop_point:    %s [%d]\n"
             "to_latlon:  %f,%f\n"
             "date:  %s\n"
@@ -523,8 +426,12 @@ router_request_dump(router_request_t *req, tdata_t *tdata) {
             "max xfers: %d\n"
             "max time:  %s\n"
             "mode: ",
-            from_stop_id, req->from_stop_point, req->from_latlon.lat, req->from_latlon.lon,
-            to_stop_id,   req->to_stop_point, req->to_latlon.lat,req->to_latlon.lon,
+            from_sa_id, req->from_stop_area,
+            from_sp_id, req->from_stop_point,
+            req->from_latlon.lat, req->from_latlon.lon,
+            to_sa_id, req->to_stop_area,
+            to_sp_id, req->to_stop_point,
+            req->to_latlon.lat,req->to_latlon.lon,
             date, time,
             req->time, req->walk_speed,
             (req->arrive_by ? "true" : "false"),

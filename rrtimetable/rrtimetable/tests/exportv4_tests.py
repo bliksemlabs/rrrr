@@ -1,6 +1,6 @@
 import unittest
 from model.transit import *
-from exporter.timetable3 import export
+from exporter.timetable4 import export
 import datetime
 
 class TestSequenceFunctions(unittest.TestCase):

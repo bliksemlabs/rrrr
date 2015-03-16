@@ -7,10 +7,32 @@ include_directories(. ..)
 set(SOURCE_FILES
     ../bitset.c
     ../bitset.h
+    ../geometry.c
+    ../geometry.h
+    ../hashgrid.c
+    ../hashgrid.h
+    ../json.c
+    ../json.h
+    ../polyline.c
+    ../polyline.h
+    ../radixtree.c
+    ../radixtree.h
+    ../router_request.c
+    ../router_request.h
+    ../street_network.c
+    ../street_network.h
+    ../util.c
+    ../util.h
     run_tests.c
     test_bitset.c
-    #test_hashgrid.c
-    #test_radixtree.c
+    test_hashgrid.c
+    test_geometry.c
+    test_json.c
+    test_radixtree.c
+    test_polyline.c
+    test_router_request.c
+    test_street_network.c
+    test_util.c
     )
 
 add_executable(tests ${SOURCE_FILES})

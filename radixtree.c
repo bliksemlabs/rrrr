@@ -19,8 +19,8 @@
 #include <sys/mman.h>
 #endif
 
-static struct rxt_edge *rxt_edge_new () {
-    struct rxt_edge *e = (struct rxt_edge *) malloc(sizeof(struct rxt_edge));
+static rxt_edge_t *rxt_edge_new () {
+    rxt_edge_t *e = (rxt_edge_t *) malloc(sizeof(rxt_edge_t));
     if (e == NULL) return NULL;
 
     e->next = NULL;
@@ -55,7 +55,7 @@ radixtree_t *radixtree_new () {
  */
 bool radixtree_insert (radixtree_t *r, const char *key, uint32_t value) {
     const char *k = key;
-    struct rxt_edge *e = r->root;
+    rxt_edge_t *e = r->root;
 
     /* Loop over edges labeled to continuation from within nested loops. */
     tail_recurse: while (e != NULL) {
@@ -116,7 +116,7 @@ bool radixtree_insert (radixtree_t *r, const char *key, uint32_t value) {
                      * of the for loop, to avoid goto. Then again purpose of
                      * goto is clear.
                      */
-                    struct rxt_edge *new;
+                    rxt_edge_t *new;
                     uint32_t j;
                     char *n, *o;
 
@@ -195,9 +195,9 @@ bool radixtree_insert (radixtree_t *r, const char *key, uint32_t value) {
     /* should never happen unless allocation fails, giving a NULL next edge. */
 }
 
-uint32_t radixtree_find (radixtree_t *r, const char *key) {
+rxt_edge_t* radixtree_find (radixtree_t *r, const char *key) {
     const char *k = key;
-    struct rxt_edge *e = r->root;
+    rxt_edge_t *e = r->root;
     while (e != NULL) {
         const char *p = e->prefix;
         if (*k == *p) { /* we have a match, consume some characters */
@@ -207,13 +207,13 @@ uint32_t radixtree_find (radixtree_t *r, const char *key) {
                 /* prefix char is 0, reached the end of this edge's
                  * prefix string.
                  */
-                if (*k != *p) return RADIXTREE_NONE;
+                if (*k != *p) return NULL;
                 /* key was not in tree */
             }
             /* We have consumed the prefix with or without
              * hitting a terminator byte.
              */
-            if (*k == '\0') return e->value;
+            if (*k == '\0') return e;
             /* This edge consumed the entire key. */
             e = e->child;
             /* Key characters remain, tail-recurse on those
@@ -224,8 +224,41 @@ uint32_t radixtree_find (radixtree_t *r, const char *key) {
         e = e->next;
         /* Next edge in the list on the same tree level */
     }
-    return RADIXTREE_NONE;
+    return NULL;
     /* Ran out of edges to traverse, no match was found. */
+}
+
+uint32_t radixtree_find_exact (radixtree_t *r, const char *key) {
+    rxt_edge_t *e = radixtree_find(r, key);
+    if (e) {
+        return e->value;
+    }
+    return RADIXTREE_NONE;
+}
+
+uint32_t radixtree_find_prefix (radixtree_t *r, const char *key,
+                                rxt_edge_t *result) {
+    rxt_edge_t *e = radixtree_find (r, key);
+    if (result) {
+        /* return the last edge before a branch
+         * TODO: validate this is required or
+         * or e would be already be correct.
+         */
+        while (e && e->child && !e->next) {
+            e = e->child;
+        }
+
+        result = e;
+    }
+
+    while (e && e->child) {
+        e = e->child;
+    }
+
+    if (e) {
+        return e->value;
+    }
+    return RADIXTREE_NONE;
 }
 
 radixtree_t *radixtree_load_strings_from_file (char *filename) {
@@ -296,9 +329,9 @@ radixtree_t *radixtree_load_strings_from_file (char *filename) {
     #if 0
     rxt_compress (root);
     fprintf (stderr, "total number of edges: %d\n", edge_count(root));
-    fprintf (stderr, "size of one edge: %ld\n", sizeof(struct rxt_edge));
+    fprintf (stderr, "size of one edge: %ld\n", sizeof(rxt_edge_t));
     fprintf (stderr, "total size of all edges: %ld\n",
-                     edge_count(root) * sizeof(struct rxt_edge));
+                     edge_count(root) * sizeof(rxt_edge_t));
     #endif
 
     return r;
@@ -312,7 +345,7 @@ fail_free_r:
     return NULL;
 }
 
-static void rxt_edge_free (struct rxt_edge *e) {
+static void rxt_edge_free (rxt_edge_t *e) {
     if (e == NULL) return;
 
     rxt_edge_free (e->next);
@@ -336,7 +369,7 @@ void radixtree_destroy (radixtree_t *r) {
 }
 
 #ifdef RRRR_DEBUG
-static uint32_t edge_prefix_length (struct rxt_edge *e) {
+static uint32_t edge_prefix_length (rxt_edge_t *e) {
     uint32_t n = 0;
     char *c = e->prefix;
     while (*c != '\0' && n < RRRR_RADIXTREE_PREFIX_SIZE) {
@@ -346,7 +379,7 @@ static uint32_t edge_prefix_length (struct rxt_edge *e) {
     return n;
 }
 
-uint32_t rxt_edge_count (struct rxt_edge *e) {
+uint32_t rxt_edge_count (rxt_edge_t *e) {
     uint32_t n = 0;
     if (e != NULL) {
         n += 1;
@@ -356,7 +389,7 @@ uint32_t rxt_edge_count (struct rxt_edge *e) {
     return n;
 }
 
-void rxt_edge_print (struct rxt_edge *e) {
+void rxt_edge_print (rxt_edge_t *e) {
     if (e == NULL) return;
     fprintf (stderr, "\nedge [%p]\n", (void *) e);
     /* variable width string format character */
@@ -372,22 +405,22 @@ void rxt_edge_print (struct rxt_edge *e) {
 
 #if 0
 /* TODO: returns a compacted copy of the tree */
-struct node *compact (struct rxt_edge *root) {
+struct node *compact (rxt_edge_t *root) {
     return NULL;
 }
 
 /* Compresses paths in place. Not well tested,
  * and only seems to remove a few edges from 600k when using numbers.
  */
-void rxt_compress (struct rxt_edge *root) {
-    struct rxt_edge *e = root;
+void rxt_compress (rxt_edge_t *root) {
+    rxt_edge_t *e = root;
     if (e == NULL) return;
     while (e->child != NULL &&
            e->child->next == NULL && e->value == RADIXTREE_NONE) {
         uint32_t l0 = edge_prefix_length(e);
         uint32_t l1 = edge_prefix_length(e->child);
         if (l0 + l1 <= RRRR_RADIXTREE_PREFIX_SIZE) {
-            struct rxt_edge *new_child;
+            rxt_edge_t *new_child;
             uint32_t i;
             char *c0, *c1;
 
