@@ -305,6 +305,32 @@ void reverse_legs(itinerary_t *itin){
     }
 }
 
+/* Set interline if applicable between legs if not stored within the state structure */
+static void render_interlines(router_t *router, itinerary_t *itin){
+    int16_t i_leg = 0;
+    leg_t *last_vj_leg = NULL;
+    bool inInterline = false;
+    for (;i_leg < itin->n_legs;++i_leg){
+        leg_t *leg = &itin->legs[i_leg];
+        if (leg->journey_pattern == STAY_ON){
+            inInterline = true;
+        }else if (leg->journey_pattern >= WALK){
+            inInterline = false;
+            continue;
+        }
+        if (last_vj_leg && !inInterline){
+            journey_pattern_t *jp = &router->tdata->journey_patterns[leg->journey_pattern];
+            vehicle_journey_ref_t *interline = &router->tdata->vehicle_journey_transfers_forward[jp->vj_index + last_vj_leg->vj];
+            if (interline->jp_index == leg->journey_pattern && interline->vj_offset == leg->vj){
+                (&itin->legs[i_leg])->journey_pattern = STAY_ON;
+                (&itin->legs[i_leg])->t1 = leg->t0;
+                --itin->n_rides;
+            }
+        }
+        last_vj_leg = leg;
+    }
+}
+
 bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin,
         uint8_t round, street_network_t *target, spidx_t i_target) {
     jppidx_t jp_index;
@@ -409,6 +435,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             (itin->legs + itin->n_legs-1)->sp_from = ONBOARD;
             leg_add_onboard(itin, itin->legs + itin->n_legs, req);
             if (!req->arrive_by) reverse_legs(itin);
+            render_interlines(router,itin);
             return true;
         }
         /* Check whether we arrived on this stop_point before the time we could have walked there
