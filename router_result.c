@@ -318,7 +318,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
     router_result_init_itinerary(itin);
     
     if (router->states_time[i_state + sp_index] == UNREACHED ||
-            router->states_back_journey_pattern[i_state + sp_index]) {
+            router->states_back_journey_pattern[i_state + sp_index] == JP_NONE) {
         /* Render a itinerary that does not touch the transit network */
         leg_add_direct(itin, itin->legs + itin->n_legs, req, duration_target);
         return round == 0;
