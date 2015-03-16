@@ -1087,7 +1087,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             /* Only board at placed that have been reached. */
             if (prev_time != UNREACHED) {
                 if (vj_offset == VJ_NONE || req->via_stop_point == sp_index) {
-                    attempt_board = true;
+                    attempt_board = req->arrive_by ? foralighting : forboarding;
                 } else if (vj_offset != VJ_NONE && req->via_stop_point != STOP_NONE &&
                                            req->via_stop_point == board_sp) {
                     attempt_board = false;
