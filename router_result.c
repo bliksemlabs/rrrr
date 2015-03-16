@@ -391,7 +391,7 @@ bool render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin
             {
                 rtime_t duration_from_final_sp_to_target_on_sn = street_network_duration(board_sp, target);
                 rtime_t duration_from_first_sp_to_target_on_sp = street_network_duration(itin->legs[0].sp_to, target);
-                if (duration_from_final_sp_to_target_on_sn != UNREACHED &
+                if (duration_from_final_sp_to_target_on_sn != UNREACHED &&
                         duration_from_final_sp_to_target_on_sn > duration_from_first_sp_to_target_on_sp) {
                     /* This transit itinerary actually brings us further away from the target,
                  * thus ignore this journey and replace it by a direct itinerary on the street_network */
