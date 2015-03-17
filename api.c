@@ -94,6 +94,7 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
  */
 bool router_route_first_departure (router_t *router, router_request_t *req, plan_t *plan) {
     router_reset (router);
+    search_streetnetwork(router,req);
 
     if ( ! router_route (router, req) ) {
         return false;
