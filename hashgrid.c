@@ -5,6 +5,7 @@
 
 /* hashgrid.c */
 #include "hashgrid.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -218,6 +219,7 @@ bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
             for (x = 0; x < grid_dim; ++x) {
                 hg->bins[y * grid_dim + x] = bin;
                 bin += hg->counts[y * grid_dim + x];
+                bin = MIN(bin, hg->items + n_items - 1);
                 /* Reset bin item count for reuse when filling up bins. */
                 hg->counts[y * grid_dim + x] = 0;
             }
