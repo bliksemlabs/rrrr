@@ -268,8 +268,10 @@ int tdata_validation_symmetric_transfers(tdata_t *tdata) {
             }
         }
     }
+    #ifdef RRRR_DEBUG
     fprintf (stderr, "checked %d transfers for symmetry.\n",
                      n_transfers_checked);
+    #endif
 
     return 0;
 }
@@ -288,7 +290,9 @@ static bool tdata_validation_check_nstop_points(tdata_t *tdata) {
 }
 
 bool tdata_validation_check_coherent (tdata_t *tdata) {
+    #ifdef RRRR_DEBUG
     fprintf (stderr, "checking tdata coherency...\n");
+    #endif
 
     return  (tdata_validation_check_nstop_points(tdata) &&
              tdata->n_journey_patterns > 0 &&
