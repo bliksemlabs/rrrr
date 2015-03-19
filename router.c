@@ -408,8 +408,8 @@ tdata_next (router_t *router, bool arrive_by,
     *ret_stop_time = UNREACHED;
     *ret_jpp_offset = 0;
 
-    for (serviceday  = router->servicedays;
-         serviceday <= router->servicedays + router->n_servicedays;
+    for (serviceday = router->servicedays;
+         serviceday < router->servicedays + router->n_servicedays;
          ++serviceday) {
 
         for (jpp_i = 0; jpp_i < jp->n_stops; ++jpp_i) {
@@ -597,8 +597,8 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
 
     /* Search through the servicedays that are assumed to be put in search-order (counterclockwise for arrive_by)
      */
-    for (serviceday  = router->servicedays;
-         serviceday <= router->servicedays + router->n_servicedays;
+    for (serviceday = router->servicedays;
+         serviceday < router->servicedays + router->n_servicedays;
          ++serviceday) {
 
         int32_t i_vj_offset;
