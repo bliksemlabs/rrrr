@@ -307,7 +307,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
                 for (;i_req < *ret_n; ++i_req){
                     router_request_t *oreq = &ret[i_req];
                     if (oreq->arrive_by == ret[*ret_n].arrive_by &&
-                            oreq->time == req[*ret_n].time &&
+                            oreq->time == ret[*ret_n].time &&
                             single_origin_equals(&ret[*ret_n], oreq)){
                         if (i_req >= i_rev){
                             /* Equivalent request-parameters found in the subset that still has to be processed.
