@@ -305,25 +305,25 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
             {
                 int16_t i_req = 0;
                 for (;i_req < *ret_n; ++i_req){
-                    router_request_t oreq = ret[i_req];
-                    if (oreq.arrive_by == ret[*ret_n].arrive_by &&
-                            oreq.time == req[*ret_n].time &&
+                    router_request_t *oreq = &ret[i_req];
+                    if (oreq->arrive_by == ret[*ret_n].arrive_by &&
+                            oreq->time == req[*ret_n].time &&
                             single_origin_equals(&ret[*ret_n], &oreq)){
                         if (i_req >= i_rev){
                             /* Equivalent request-parameters found in the subset that still has to be processed.
                              * Increase max_transfers and time_cutoff if necessary*/
                             add_request = false;
-                            oreq.max_transfers = MAX(oreq.max_transfers,req[*ret_n].max_transfers);
-                            oreq.time_cutoff = oreq.arrive_by ? MIN(oreq.time_cutoff,req[*ret_n].time_cutoff) :
-                                                                MAX(oreq.time_cutoff,req[*ret_n].time_cutoff);
+                            oreq->max_transfers = MAX(oreq->max_transfers,req[*ret_n].max_transfers);
+                            oreq->time_cutoff = oreq->arrive_by ? MIN(oreq->time_cutoff,req[*ret_n].time_cutoff) :
+                                                                  MAX(oreq->time_cutoff,req[*ret_n].time_cutoff);
                         }else{
                             /* Equivalent request-parameters found in the subset that was already processed:
                              * Only add the request if the the other's request was too narrow with regard to transfers
                              * and/or time to include the itinerary found in this new request.
                              */
-                            add_request = !(oreq.max_transfers >= req[*ret_n].max_transfers &&
-                                    req->arrive_by ? oreq.time_cutoff <= req[*ret_n].time_cutoff :
-                                                     oreq.time_cutoff >= req[*ret_n].time_cutoff);
+                            add_request = !(oreq->max_transfers >= req[*ret_n].max_transfers &&
+                                    req->arrive_by ? oreq->time_cutoff <= req[*ret_n].time_cutoff :
+                                                     oreq->time_cutoff >= req[*ret_n].time_cutoff);
                         }
                     }
                 }
