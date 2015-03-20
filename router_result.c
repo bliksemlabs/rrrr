@@ -572,7 +572,7 @@ bool router_result_to_plan(plan_t *plan, router_t *router, router_request_t *req
     /* Loop over the rounds to get ending states of itineraries
      * using different numbers of vehicles
      */
-    for (i_transfer = 0; i_transfer < RRRR_DEFAULT_MAX_ROUNDS; ++i_transfer) {
+    for (i_transfer = 0; i_transfer < req->max_transfers+1; ++i_transfer) {
         /* Work backward from the target to the origin */
         uint64_t i_state;
         spidx_t i_target;
