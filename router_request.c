@@ -316,6 +316,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
                             oreq->max_transfers = MAX(oreq->max_transfers,req[*ret_n].max_transfers);
                             oreq->time_cutoff = oreq->arrive_by ? MIN(oreq->time_cutoff,req[*ret_n].time_cutoff) :
                                                                   MAX(oreq->time_cutoff,req[*ret_n].time_cutoff);
+                            break;
                         }else{
                             /* Equivalent request-parameters found in the subset that was already processed:
                              * Only add the request if the the other's request was too narrow with regard to transfers
@@ -324,6 +325,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
                             add_request = !(oreq->max_transfers >= req[*ret_n].max_transfers &&
                                     req->arrive_by ? oreq->time_cutoff <= req[*ret_n].time_cutoff :
                                                      oreq->time_cutoff >= req[*ret_n].time_cutoff);
+                            if (!add_request) break;
                         }
                     }
                 }
