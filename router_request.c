@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "router_request.h"
+#include "street_network.h"
 #include <assert.h>
 
 /* router_request_to_epoch returns the time-date
@@ -278,14 +279,23 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
     return (*ret_n > 0);
 }
 
-bool single_origin_equals(router_request_t *req, router_request_t *oreq){
-    return true;
+bool origin_equals(router_request_t *req, router_request_t *oreq){
     street_network_t *origin_l = req->arrive_by ? &req->exit : &req->entry;
     street_network_t *origin_r = oreq->arrive_by ? &oreq->exit : &oreq->entry;
-    return (req->arrive_by == oreq->arrive_by &&
-            origin_l->n_points == 1 && origin_r->n_points == 1 &&
-            origin_l->stop_points[0] == origin_r->stop_points[0]);
-
+    if (req->arrive_by != oreq->arrive_by &&
+            origin_l->n_points != origin_r->n_points){
+        printf("return f1\n");
+        return false;
+    }
+    {
+        spidx_t i_origin_l = 0;
+        for (;i_origin_l < origin_l->n_points;i_origin_l++){
+            if (street_network_duration(origin_l->stop_points[i_origin_l],origin_r) != origin_l->durations[i_origin_l]){
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 bool
@@ -308,7 +318,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
                     router_request_t *oreq = &ret[i_req];
                     if (oreq->arrive_by == ret[*ret_n].arrive_by &&
                             oreq->time == ret[*ret_n].time &&
-                            single_origin_equals(&ret[*ret_n], oreq)){
+                            origin_equals(&ret[*ret_n], oreq)){
                         if (i_req >= i_rev){
                             /* Equivalent request-parameters found in the subset that still has to be processed.
                              * Increase max_transfers and time_cutoff if necessary*/
