@@ -17,7 +17,7 @@ bool router_request_reverse_all(router_t *router, router_request_t *req, router_
  * Make reversal requests between the departure and the arrival of each itinerary.
  * Filter out itineraries that depart more than a travel duration after the best_arrival.
  */
-bool router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan);
+bool router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan, uint8_t i_rev);
 time_t router_request_to_date (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 time_t router_request_to_epoch (router_request_t *req, tdata_t *tdata, struct tm *tm_out);
 bool range_check(router_request_t *req, tdata_t *router);

@@ -248,37 +248,6 @@ reverse_request (router_t *router, router_request_t *req, router_request_t *new_
     new_req->arrive_by = !(new_req->arrive_by);
 }
 
-/* Use the itineraries in the plan_t to build reversals for time-wait compression.
- * Make reversal requests between the departure and the arrival of each itinerary.
- * Filter out itineraries that depart more than a travel duration after the best_arrival.
- */
-bool
-router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan) {
-    int16_t i_itin;
-    rtime_t last_arrival = 0;
-    rtime_t last_departure = 0;
-
-    for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
-        itinerary_t itin = plan->itineraries[i_itin];
-        rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
-        if (itin.n_legs == 1){
-            continue;
-        }
-        if (req->arrive_by ? last_departure && itin.legs[itin.n_legs-1].t1 < last_departure - duration:
-                             last_arrival && itin.legs[0].t0 > last_arrival + duration){
-            continue;
-        }
-        last_departure = MAX(last_departure,itin.legs[0].t0);
-        last_arrival = MAX(last_arrival,itin.legs[itin.n_legs-1].t1);
-        ret[*ret_n] = *req;
-        reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
-                req->arrive_by ? itin.legs[0].t0 : itin.legs[itin.n_legs-1].t1);
-        ret[*ret_n].time_cutoff = req->arrive_by ? itin.legs[itin.n_legs-1].t1 : itin.legs[0].t0;
-        (*ret_n)++;
-    }
-    return (*ret_n > 0);
-}
-
 bool origin_equals(router_request_t *req, router_request_t *oreq){
     street_network_t *origin_l = req->arrive_by ? &req->exit : &req->entry;
     street_network_t *origin_r = oreq->arrive_by ? &oreq->exit : &oreq->entry;
@@ -296,6 +265,68 @@ bool origin_equals(router_request_t *req, router_request_t *oreq){
         }
     }
     return true;
+}
+
+/* Use the itineraries in the plan_t to build reversals for time-wait compression.
+ * Make reversal requests between the departure and the arrival of each itinerary.
+ * Filter out itineraries that depart more than a travel duration after the best_arrival.
+ */
+bool
+router_request_reverse_plan(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, plan_t *plan, uint8_t i_rev) {
+    int16_t i_itin;
+    rtime_t last_arrival = 0;
+    rtime_t last_departure = 0;
+
+    for (i_itin = (int16_t) (plan->n_itineraries-1);i_itin >= 0; --i_itin){
+        bool add_request = true;
+        itinerary_t itin = plan->itineraries[i_itin];
+        rtime_t duration = itin.legs[itin.n_legs-1].t1-itin.legs[0].t0;
+        if (itin.n_legs == 1){
+            continue;
+        }
+        if (req->arrive_by ? last_departure && itin.legs[itin.n_legs-1].t1 < last_departure - duration:
+                             last_arrival && itin.legs[0].t0 > last_arrival + duration){
+            continue;
+        }
+        last_departure = MAX(last_departure,itin.legs[0].t0);
+        last_arrival = MAX(last_arrival,itin.legs[itin.n_legs-1].t1);
+        ret[*ret_n] = *req;
+        reverse_request(router,req,&ret[*ret_n], (uint8_t) (itin.n_rides-1),
+                req->arrive_by ? itin.legs[0].t0 : itin.legs[itin.n_legs-1].t1);
+        ret[*ret_n].time_cutoff = req->arrive_by ? itin.legs[itin.n_legs-1].t1 : itin.legs[0].t0;
+
+        {
+            int16_t i_req = 0;
+            for (;i_req < *ret_n; ++i_req){
+                router_request_t *oreq = &ret[i_req];
+                if (oreq->arrive_by == ret[*ret_n].arrive_by &&
+                        oreq->time == ret[*ret_n].time &&
+                        origin_equals(&ret[*ret_n], oreq)){
+                    if (i_req >= i_rev){
+                        /* Equivalent request-parameters found in the subset that still has to be processed.
+                         * Increase max_transfers and time_cutoff if necessary*/
+                        add_request = false;
+                        oreq->max_transfers = MAX(oreq->max_transfers,req[*ret_n].max_transfers);
+                        oreq->time_cutoff = oreq->arrive_by ? MIN(oreq->time_cutoff,req[*ret_n].time_cutoff) :
+                                MAX(oreq->time_cutoff,req[*ret_n].time_cutoff);
+                        break;
+                    }else{
+                        /* Equivalent request-parameters found in the subset that was already processed:
+                         * Only add the request if the the other's request was too narrow with regard to transfers
+                         * and/or time to include the itinerary found in this new request.
+                         */
+                        add_request = !(oreq->max_transfers >= req[*ret_n].max_transfers &&
+                                req->arrive_by ? oreq->time_cutoff <= req[*ret_n].time_cutoff :
+                                oreq->time_cutoff >= req[*ret_n].time_cutoff);
+                        if (!add_request) break;
+                    }
+                }
+            }
+        }
+
+        if (add_request) (*ret_n)++;
+    }
+    return (*ret_n > 0);
 }
 
 bool
