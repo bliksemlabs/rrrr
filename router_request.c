@@ -279,6 +279,7 @@ router_request_reverse_plan(router_t *router, router_request_t *req, router_requ
 }
 
 bool single_origin_equals(router_request_t *req, router_request_t *oreq){
+    return true;
     street_network_t *origin_l = req->arrive_by ? &req->exit : &req->entry;
     street_network_t *origin_r = oreq->arrive_by ? &oreq->exit : &oreq->entry;
     return (req->arrive_by == oreq->arrive_by &&
@@ -288,10 +289,9 @@ bool single_origin_equals(router_request_t *req, router_request_t *oreq){
 }
 
 bool
-router_request_reverse_all(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n) {
+router_request_reverse_all(router_t *router, router_request_t *req, router_request_t *ret, uint8_t *ret_n, uint8_t i_rev) {
     rtime_t best_time;
     int8_t round;
-    uint8_t i_rev = *ret_n;
 
     assert (req->max_transfers <= RRRR_DEFAULT_MAX_ROUNDS);
 
@@ -328,6 +328,7 @@ router_request_reverse_all(router_t *router, router_request_t *req, router_reque
                     }
                 }
             }
+
             if (add_request) (*ret_n)++;
         }
         round--;

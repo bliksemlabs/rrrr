@@ -264,7 +264,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
         }
 
         if ( ! req->arrive_by && i_rev < n2_req &&
-             ! router_request_reverse_all (router, &req_storage[i_rev], req_storage, &n_req)) {
+             ! router_request_reverse_all (router, &req_storage[i_rev], req_storage, &n_req, i_rev)) {
             return false;
         }
     }
