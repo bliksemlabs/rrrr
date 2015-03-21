@@ -630,23 +630,10 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
             fprintf(stderr, "\n");
             #endif
 
-            #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-            /* skip this vj if it is banned */
-            if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
-                           req->n_banned_vjs, jp_index,
-                           (jp_vjoffset_t) i_vj_offset)) continue;
-            #endif
-
             /* skip this vj if it is not running on
              * the current service day
              */
             if ( ! (serviceday->mask & vj_masks[i_vj_offset])) continue;
-            /* skip this vj if it doesn't have all our
-             * required attributes
-             * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
-             * is about 4% more efficient for journeys without specific vj attribute requirements.
-             */
-            if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
 
             /* consider the arrival or departure time on
              * the current service day
@@ -674,6 +661,20 @@ static void board_vehicle_journeys_within_days(router_t *router, router_request_
              */
             if (req->arrive_by ? time <= prev_time && time > *best_time
                                : time >= prev_time && time < *best_time) {
+                /* skip this vj if it doesn't have all our
+                 * required attributes
+                 * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
+                 * is about 4% more efficient for journeys without specific vj attribute requirements.
+                 */
+                if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
+
+                #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+                 /* skip this vj if it is banned */
+                if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
+                               req->n_banned_vjs, jp_index,
+                               (jp_vjoffset_t) i_vj_offset)) continue;
+                #endif
+
                 *best_vj = (jp_vjoffset_t) i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
@@ -733,23 +734,10 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
             fprintf(stderr, "\n");
             #endif
 
-            #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-            /* skip this vj if it is banned */
-            if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
-                           req->n_banned_vjs, jp_index,
-                           (jp_vjoffset_t) i_vj_offset)) continue;
-            #endif
-
             /* skip this vj if it is not running on
              * the current service day
              */
             if ( ! (serviceday->mask & vj_masks[i_vj_offset])) continue;
-            /* skip this vj if it doesn't have all our
-             * required attributes
-             * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
-             * is about 4% more efficient for journeys without specific vj attribute requirements.
-             */
-            if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
 
             /* consider the arrival or departure time on
              * the current service day
@@ -776,6 +764,21 @@ static void reboard_vehicle_journeys_within_days(router_t *router, router_reques
              */
             if (req->arrive_by ? time <= prev_time && time > *best_time
                     : time >= prev_time && time < *best_time) {
+
+                /* skip this vj if it doesn't have all our
+                 * required attributes
+                 * Checking whether we have required req->vj_attributes at all, before checking the attributes of the vehicle_journeys
+                 * is about 4% more efficient for journeys without specific vj attribute requirements.
+                 */
+                if (req->vj_attributes && (req->vj_attributes & vjs_in_journey_pattern[i_vj_offset].vj_attributes) != req->vj_attributes) continue;
+
+                #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+                /* skip this vj if it is banned */
+                if (set_in_vj (req->banned_vjs_journey_pattern, req->banned_vjs_offset,
+                               req->n_banned_vjs, jp_index, (jp_vjoffset_t) i_vj_offset))
+                    continue;
+                #endif
+
                 *best_vj = (jp_vjoffset_t) i_vj_offset;
                 *best_time = time;
                 *best_serviceday = serviceday;
