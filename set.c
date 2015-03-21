@@ -34,10 +34,10 @@ bool set_in_sp (spidx_t *set, uint8_t length, spidx_t value) {
 }
 #endif
 
-#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
+#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
 void set_add_jp (jpidx_t *set,
-                 uint8_t  *length, uint8_t max_length,
-                 jpidx_t value) {
+        uint8_t  *length, uint8_t max_length,
+        jpidx_t value) {
     uint8_t i;
 
     if (*length >= max_length) return;
@@ -49,7 +49,9 @@ void set_add_jp (jpidx_t *set,
     set[*length] = value;
     (*length)++;
 }
+#endif
 
+#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
 void set_add_vj (jpidx_t *set1, jp_vjoffset_t *set2,
                  uint8_t  *length, uint8_t max_length,
                  jpidx_t value1, jp_vjoffset_t value2) {
