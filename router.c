@@ -886,10 +886,12 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
             }
         }
 
+        #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
         /* Check if the journey_pattern of this vj-extension is not banned */
         if (journey_pattern_is_banned(req,jp_index)){
             return;
         }
+        #endif
 
         #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
         /* Break the extension if this vj if it is banned */
