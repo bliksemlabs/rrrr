@@ -855,7 +855,7 @@ write_state(router_t *router, router_request_t *req,
     return true;
 }
 
-static void vehicle_journey_extend(router_t *router, router_request_t *req, uint8_t round, serviceday_t *board_serviceday,
+static void vehicle_journey_extend(router_t *router, router_request_t *req, uint8_t round, serviceday_t *board_serviceday, jpidx_t from_jp_index,
         vehicle_journey_ref_t *interline, rtime_t *states_walk_time) {
     jpidx_t jp_index = interline->jp_index;
     jp_vjoffset_t  vj_offset = interline->vj_offset;
@@ -982,7 +982,7 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
                     : &router->tdata->vehicle_journey_transfers_forward [jp->vj_index+vj_offset];
         jp_index = JP_NONE;
         vj_offset = VJ_NONE;
-        if (interline->jp_index != JP_NONE) {
+        if (interline->jp_index != JP_NONE && interline->jp_index != from_jp_index) {
             jp_index = interline->jp_index;
             vj_offset = interline->vj_offset;
         }
@@ -1242,7 +1242,7 @@ static void router_round(router_t *router, router_request_t *req, uint8_t round)
             vehicle_journey_ref_t *vj_interline = req->arrive_by ? &router->tdata->vehicle_journey_transfers_backward[jp->vj_index+vj_offset]
                                                                  : &router->tdata->vehicle_journey_transfers_forward[jp->vj_index+vj_offset];
             if (vj_interline->jp_index != JP_NONE) {
-                vehicle_journey_extend(router, req, round, board_serviceday, vj_interline, states_walk_time);
+                vehicle_journey_extend(router, req, round, board_serviceday, (jpidx_t) jp_index, vj_interline, states_walk_time);
             }
         }
     }  /*  end for (route) */
