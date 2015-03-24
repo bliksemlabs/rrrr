@@ -121,6 +121,7 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
     vjidx_t vj_index = (vjidx_t) tdata->n_vjs;
+    jpidx_t jp_index = tdata->n_journey_patterns;
     spidx_t sp_index;
     uint16_t i_vj;
 
@@ -146,6 +147,8 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
 
     }
 
+    tdata->commercial_mode_for_jp[jp_index] = 0;
+
     /* add the last journey_pattern index to the lookup table */
     for (i_vj = 0; i_vj < n_vjs; ++i_vj) {
         /* TODO: this doesn't handle multiple vjs! */
@@ -161,6 +164,8 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
 
         tdata->vjs[vj_index].begin_time = UNREACHED;
         tdata->vjs_in_journey_pattern[vj_index] = tdata->n_journey_patterns;
+        tdata->vj_active[vj_index] = 0;
+        tdata->vj_time_offsets[vj_index] = 0;
         vj_index++;
 
         /* TODO: this doesn't handle multiple vjs! */
@@ -177,8 +182,9 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     tdata->n_vj_ids += n_vjs;
     tdata->n_vj_active += n_vjs;
     tdata->n_journey_pattern_active++;
+    tdata->n_journey_patterns++;
 
-    return (jpidx_t) tdata->n_journey_patterns++;
+    return jp_index;
 }
 
 static void tdata_apply_stop_time_update (tdata_t *tdata, jpidx_t jp_index, vjidx_t vj_index, TransitRealtime__TripUpdate *rt_trip_update) {
