@@ -246,6 +246,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, vjidx_t vj_in
     vj_id_new = (char *) alloca (len + 2);
     vj_id_new[0] = '@';
     strncpy(&vj_id_new[1], rt_trip->trip_id, len);
+    vj_id_new[len + 1] = '\0';
 
     jp_index = radixtree_find_exact (tdata->lineid_index, vj_id_new);
 
