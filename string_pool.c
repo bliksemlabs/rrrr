@@ -13,9 +13,10 @@ uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const 
         size_t n = strlen(str);
 
         /* TODO: check if n_pool + n < max */
-        strncpy (&pool[*n_pool], str, n);
+        strncpy(&pool[*n_pool], str, n);
+        pool[*n_pool+n] = '\0';
         location = *n_pool;
-        *n_pool += n;
+        *n_pool += n + 1;
 
         radixtree_insert(r, str, location);
     }
