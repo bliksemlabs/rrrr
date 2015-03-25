@@ -150,6 +150,8 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     }
 
     tdata->commercial_mode_for_jp[jp_index] = 0;
+    tdata->vehicle_journey_transfers_backward[jp_index].jp_index = JP_NONE;
+    tdata->vehicle_journey_transfers_forward[jp_index].jp_index = JP_NONE;
 
     /* add the last journey_pattern index to the lookup table */
     for (i_vj = 0; i_vj < n_vjs; ++i_vj) {
