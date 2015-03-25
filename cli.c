@@ -79,8 +79,12 @@ int main (int argc, char *argv[]) {
                           "--depart=YYYY-MM-DDTHH:MM:SS ]\n"
                         "[ --from-idx=idx | --from-id=id | --from-jp-vj-offset=jpidx,vj_offset | --from-sp-idx=idx | --from-sp-id=id | --from-latlon=Y,X ]\n"
                         "[ --via-idx=idx  | --via-id=id  | --via-latlon=Y,X ]\n"
-                        "[ --to-idx=idx   | --to-id=id   | --to-sp-idx=idx   | --to-sp-id=id   | --to-latlon=Y,X ]\n",argv[0]);
+                        "[ --to-idx=idx   | --to-id=id   | --to-sp-idx=idx   | --to-sp-id=id   | --to-latlon=Y,X ]\n", argv[0]);
+
         fprintf(stderr,
+#if RRRR_MAX_FILTERED_OPERATORS > 0
+                        "[ --operator=name ]\n"
+#endif
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-jp-idx=idx ]\n"
 #endif
@@ -195,6 +199,19 @@ int main (int argc, char *argv[]) {
                         cli_args.gtfsrt_alerts_filename = &argv[i][16];
                     }
                     #endif
+                    break;
+                #endif
+
+                #if RRRR_MAX_FILTERED_OPERATORS > 0
+                case 'o':
+                    if (strncmp(argv[i], "--operator=", 11) == 0) {
+                        opidx_t operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][11], 0);
+                        while (operator != OP_NONE)
+                        {
+                            set_add_uint8 (req.operators, &req.n_operators, RRRR_MAX_FILTERED_OPERATORS, operator);
+                            operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][11], operator + 1);
+                        }
+                    }
                     break;
                 #endif
 

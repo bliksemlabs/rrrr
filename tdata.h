@@ -197,6 +197,10 @@ const char *tdata_operator_name_for_index(tdata_t *td, opidx_t operator_index);
 
 const char *tdata_operator_url_for_index(tdata_t *td, opidx_t operator_index);
 
+opidx_t tdata_operator_idx_by_operator_name(tdata_t *td, const char *operator_name, opidx_t operator_index_offset);
+
+opidx_t tdata_operator_idx_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+
 /* * * * * * * * * * * * * * * * * * *
  *
  *  PHYSICAL_MODE:

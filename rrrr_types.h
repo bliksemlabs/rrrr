@@ -35,7 +35,7 @@ typedef uint16_t jp_vjoffset_t;
 
 typedef uint16_t jppidx_t;
 
-typedef uint16_t opidx_t;
+typedef uint8_t opidx_t;
 
 typedef uint32_t calendar_t;
 
@@ -229,6 +229,12 @@ struct router_request {
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     jpidx_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
     jp_vjoffset_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    #endif
+
+    /* select journey patterns from these operators only */
+    #if RRRR_MAX_FILTERED_OPERATORS > 0
+    opidx_t n_operators;
+    opidx_t operators[RRRR_MAX_FILTERED_OPERATORS];
     #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */

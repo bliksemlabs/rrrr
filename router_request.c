@@ -85,6 +85,10 @@ router_request_initialize(router_request_t *req) {
     rrrr_memset (req->banned_vjs_journey_pattern, VJ_NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     #endif
+    #if RRRR_MAX_FILTERED_OPERATORS > 0
+    req->n_operators = 0;
+    rrrr_memset (req->operators, 0, RRRR_MAX_FILTERED_OPERATORS);
+    #endif
     req->onboard_journey_pattern = JP_NONE;
     req->onboard_journey_pattern_vjoffset = VJ_NONE;
     req->intermediatestops = false;
@@ -161,6 +165,10 @@ router_request_randomize (router_request_t *req, tdata_t *tdata) {
     req->n_banned_vjs = 0;
     rrrr_memset (req->banned_vjs_journey_pattern, JP_NONE, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
     rrrr_memset (req->banned_vjs_offset, 0, RRRR_MAX_BANNED_VEHICLE_JOURNEYS);
+    #endif
+    #if RRRR_MAX_FILTERED_OPERATORS > 0
+    req->n_operators = 0;
+    rrrr_memset (req->operators, 0, RRRR_MAX_FILTERED_OPERATORS);
     #endif
     req->intermediatestops = false;
     req->from_stop_point = (spidx_t) rrrrandom(tdata->n_stop_points);

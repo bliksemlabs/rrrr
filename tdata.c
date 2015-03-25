@@ -286,6 +286,28 @@ const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_i
     return tdata_id_for_physical_mode_index(td,(td->physical_mode_for_line)[line_index]);
 }
 
+opidx_t tdata_operator_idx_by_operator_name(tdata_t *td, const char *operator_name,
+                                            opidx_t operator_index_offset) {
+    opidx_t operator_index;
+    for (operator_index = operator_index_offset;
+         operator_index < td->n_operator_names;
+         ++operator_index) {
+        if (strcasestr(tdata_operator_name_for_index(td, operator_index),
+                       operator_name)) {
+            return operator_index;
+        }
+    }
+    return OP_NONE;
+}
+
+opidx_t tdata_operator_idx_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
+    uint16_t route_index, line_index;
+    if (jp_index == JP_NONE) return OP_NONE;
+    route_index = (td->journey_patterns)[jp_index].route_index;
+    line_index = (td->line_for_route)[route_index];
+    return td->operator_for_line[line_index];
+}
+
 const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
     uint16_t route_index,line_index;
     if (jp_index == JP_NONE) return "NONE";
