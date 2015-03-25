@@ -280,10 +280,6 @@ static void initialize_banned_journey_patterns (router_t *router, router_request
     } while (i_banned_jp);
 }
 
-static bool journey_pattern_is_banned(router_request_t *req, jpidx_t jp_index){
-    return req->banned_journey_patterns[jp_index];
-}
-
 #if RRRR_MAX_FILTERED_OPERATORS > 0
 static void initialize_filtered_operators (router_t *router, router_request_t *req) {
     if (req->n_operators > 0) {
@@ -903,7 +899,7 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
             }
         }
 
-        #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
+        #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 0 && RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
         /* Check if the journey_pattern of this vj-extension is not banned */
         if (journey_pattern_is_banned(req,jp_index)){
             return;
