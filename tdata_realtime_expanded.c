@@ -123,7 +123,7 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
     vjidx_t vj_index = (vjidx_t) tdata->n_vjs;
-    jpidx_t jp_index = tdata->n_journey_patterns;
+    jpidx_t jp_index = (jpidx_t) tdata->n_journey_patterns;
     spidx_t sp_index;
     uint16_t i_vj;
 
