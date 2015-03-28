@@ -436,8 +436,8 @@ static void tdata_realtime_apply_tripupdates (tdata_t *tdata, time_t startdate_m
 
 bool tdata_alloc_expanded(tdata_t *td) {
     uint32_t i_jp;
-    td->vj_stoptimes = (stoptime_t **) calloc(td->n_vjs, sizeof(stoptime_t *));
-    td->vjs_in_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * td->n_vjs);
+    td->vj_stoptimes = (stoptime_t **) calloc(td->n_vjs * RRRR_DYNAMIC_SLACK, sizeof(stoptime_t *));
+    td->vjs_in_journey_pattern = (uint32_t *) malloc(sizeof(uint32_t) * td->n_vjs * RRRR_DYNAMIC_SLACK);
 
     if (!td->vj_stoptimes || !td->vjs_in_journey_pattern) return false;
 
