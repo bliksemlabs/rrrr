@@ -1,4 +1,4 @@
-/* Copyright 2013–2015 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and
  * at https://github.com/bliksemlabs/rrrr/
  */
@@ -55,9 +55,9 @@ uint32_t radixtree_find_exact (radixtree_t *r, const char *key);
 uint32_t radixtree_find_prefix (radixtree_t *r, const char *key, rxt_edge_t *result);
 
 #ifdef RRRR_DEBUG
-uint32_t radixtree_edge_count (rxt_edge_t *e);
+uint32_t rxt_edge_count (rxt_edge_t *e);
 
-void radixtree_edge_print (rxt_edge_t *e);
+void rxt_edge_print (rxt_edge_t *e);
 #endif
 
 #endif /* _RADIXTREE_H */

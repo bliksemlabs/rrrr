@@ -1,4 +1,4 @@
-/* Copyright 2013–2015 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
@@ -256,7 +256,8 @@ reverse_request (router_t *router, router_request_t *req, router_request_t *new_
     new_req->arrive_by = !(new_req->arrive_by);
 }
 
-bool origin_equals(router_request_t *req, router_request_t *oreq){
+static bool
+origin_equals(router_request_t *req, router_request_t *oreq){
     street_network_t *origin_l = req->arrive_by ? &req->exit : &req->entry;
     street_network_t *origin_r = oreq->arrive_by ? &oreq->exit : &oreq->entry;
     if (req->arrive_by != oreq->arrive_by &&
@@ -404,7 +405,7 @@ router_request_reverse(router_t *router, router_request_t *req) {
         max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
 
     for (; max_transfers >= 0; --max_transfers) {
-        if (best_time_by_round(router, req, max_transfers, &best_time)){
+        if (best_time_by_round(router, req, (uint8_t) max_transfers, &best_time)){
             round = (uint8_t) max_transfers;
             break;
         }
