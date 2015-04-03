@@ -291,19 +291,29 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, time_t startd
     }
 
     if (jp_new == NULL) {
-        journey_pattern_t *jp = tdata->journey_patterns + tdata->vjs_in_journey_pattern[vj_index];
-        vehicle_journey_t  *vj = tdata->vjs + vj_index;
+        vj_attribute_mask_t vj_attributes;
         uint16_t i_vj;
 
-        /* remove the planned vj from the operating day */
-        tdata->vj_active[vj_index] &= ~(1 << cal_day);
+        if(vj_index == VJ_NONE) {
+            /* Create a new journey_pattern with default attributes */
+            jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_sp, 1, 1, 0);
+            vj_attributes = vja_none;
+        } else {
+            journey_pattern_t *jp = tdata->journey_patterns + tdata->vjs_in_journey_pattern[vj_index];
+            vehicle_journey_t *vj = tdata->vjs + vj_index;
 
-        /* we fork a new journey_pattern with all of its old properties
-         * having one single vj, which is the modification.
-         */
-        jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_sp, 1,
-                jp->attributes,
-                jp->route_index);
+            /* remove the planned vj from the operating day */
+            tdata->vj_active[vj_index] &= ~(1 << cal_day);
+
+            /* we fork a new journey_pattern with all of its old properties
+             * having one single vj, which is the modification.
+             */
+            jp_index = tdata_new_journey_pattern(tdata, vj_id_new, n_sp, 1,
+                    jp->attributes,
+                    jp->route_index);
+
+            vj_attributes = vj->vj_attributes;
+        }
 
         jp_new = &(tdata->journey_patterns[jp_index]);
 
@@ -314,7 +324,7 @@ static void tdata_realtime_changed_journey_pattern(tdata_t *tdata, time_t startd
         vj_index = jp_new->vj_index;
 
         for (i_vj = 0; i_vj < 1; ++i_vj) {
-            tdata->vjs[vj_index].vj_attributes = vj->vj_attributes;
+            tdata->vjs[vj_index].vj_attributes = vj_attributes;
             tdata->journey_pattern_active[vj_index] |= (1 << cal_day);
             tdata->vj_active[vj_index] |= (1 << cal_day);
             vj_index++;
@@ -541,17 +551,22 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
             if (rt_trip == NULL) continue;
 
-            vj_index = (vjidx_t) radixtree_find_exact (tdata->vjid_index, rt_trip->trip_id);
-            if (vj_index == RADIXTREE_NONE) {
-                #ifdef RRRR_DEBUG
-                fprintf (stderr, "    trip id was not found in the radix tree.\n");
-                #endif
-                continue;
-            }
+            if(rt_trip->schedule_relationship ==
+                TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__ADDED) {
+                vj_index = VJ_NONE;
+            } else {
+                vj_index = (vjidx_t) radixtree_find_exact (tdata->vjid_index, rt_trip->trip_id);
+                if (vj_index == RADIXTREE_NONE) {
+                    #ifdef RRRR_DEBUG
+                    fprintf (stderr, "    trip id was not found in the radix tree.\n");
+                    #endif
+                    continue;
+                }
 
-            if (rt_entity->is_deleted) {
-                tdata_realtime_free_vj_index(tdata, vj_index);
-                continue;
+                if (rt_entity->is_deleted) {
+                    tdata_realtime_free_vj_index(tdata, vj_index);
+                    continue;
+                }
             }
 
             if (!rt_trip->start_date) {
@@ -591,9 +606,13 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
                 tdata->vj_active[vj_index] &= ~(1 << cal_day);
 
             } else if (rt_trip->schedule_relationship ==
-                       TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__SCHEDULED) {
+                       TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__SCHEDULED ||
+                       rt_trip->schedule_relationship ==
+                       TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__ADDED) {
                 /* Mark in the schedule the vj is scheduled */
-                tdata->vj_active[vj_index] |=  (1 << cal_day);
+                if (vj_index != VJ_NONE) {
+                    tdata->vj_active[vj_index] |=  (1 << cal_day);
+                }
 
                 if (rt_trip_update->n_stop_time_update) {
                     uint16_t n_stops;
@@ -602,6 +621,9 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
 
                     tdata_realtime_journey_pattern_type(rt_trip_update, &n_stops, &changed_jp, &nodata_jp);
 
+                    changed_jp |= rt_trip->schedule_relationship ==
+                        TRANSIT_REALTIME__TRIP_DESCRIPTOR__SCHEDULE_RELATIONSHIP__ADDED;
+
                     /* Don't ever continue if we found that n_stops == 0,
                      * this entire journey_pattern doesn't have any data.
                      */
@@ -609,7 +631,9 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
                         /* If data previously was available, we should fall
                          * back to the schedule
                          */
-                        tdata_realtime_free_vj_index(tdata, vj_index);
+                        if (vj_index != VJ_NONE) {
+                            tdata_realtime_free_vj_index(tdata, vj_index);
+                        }
 
                         /* In any case, we are done with processing this entity. */
                         continue;
