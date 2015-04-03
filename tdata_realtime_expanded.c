@@ -119,7 +119,7 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, vjidx_t vj_index) {
 static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
         uint16_t n_sp, uint16_t n_vjs,
         uint16_t attributes, uint16_t route_index) {
-    journey_pattern_t *new;
+    journey_pattern_t *new, *sentinel;
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
     vjidx_t vj_index = (vjidx_t) tdata->n_vjs;
@@ -135,6 +135,15 @@ static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
     new->n_vjs = n_vjs;
     new->attributes = attributes;
     new->route_index = route_index;
+
+    /* Move the sentinel journey pattern one to the right */
+    sentinel = &tdata->journey_patterns[tdata->n_journey_patterns + 1];
+    sentinel->journey_pattern_point_offset = journey_pattern_point_offset + n_sp;
+    sentinel->vj_index = 0;
+    sentinel->n_stops = 0;
+    sentinel->n_vjs = 0;
+    sentinel->attributes = 0;
+    sentinel->route_index = 0;
 
     tdata->vjs[vj_index].stop_times_offset = stop_times_offset;
 
