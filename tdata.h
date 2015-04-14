@@ -54,7 +54,6 @@ struct tdata {
     uint32_t n_vj_active;
     uint32_t n_journey_pattern_active;
     uint32_t n_platformcodes;
-    uint32_t n_stop_point_names;
     uint32_t n_stop_point_nameidx;
     uint32_t n_stop_area_nameidx;
     uint32_t n_operator_ids;
