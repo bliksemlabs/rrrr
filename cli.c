@@ -161,7 +161,7 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
-                        strtospidx (&argv[i][11], &tdata, &req.from_stop_area, NULL);
+                        strtospidx (&argv[i][14], &tdata, &req.from_stop_area, NULL);
                     }
                     else if (strncmp(argv[i], "--from-sp-idx", 14) == 0) {
                         strtospidx (&argv[i][11], &tdata, &req.from_stop_point, NULL);
@@ -170,7 +170,7 @@ int main (int argc, char *argv[]) {
                         req.from_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][10], 0);
                     }
                     else if (strncmp(argv[i], "--from-sp-id=", 13) == 0) {
-                        req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][10], 0);
+                        req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][13], 0);
                     }
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][14], &req.from_latlon);
@@ -229,13 +229,13 @@ int main (int argc, char *argv[]) {
                         strtospidx (&argv[i][9], &tdata, &req.to_stop_area, NULL);
                     }
                     else if (strncmp(argv[i], "--to-sp-idx=", 12) == 0) {
-                        strtospidx (&argv[i][9], &tdata, &req.to_stop_point, NULL);
+                        strtospidx (&argv[i][12], &tdata, &req.to_stop_point, NULL);
                     }
                     else if (strncmp(argv[i], "--to-id=", 8) == 0) {
                         req.to_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][8], 0);
                     }
                     else if (strncmp(argv[i], "--to-sp-id=", 11) == 0) {
-                        req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][8], 0);
+                        req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][11], 0);
                     }
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][12], &req.to_latlon);
