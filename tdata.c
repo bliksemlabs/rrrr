@@ -24,7 +24,7 @@ const char *tdata_timezone(tdata_t *td){
 }
 
 const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index;
+    routeidx_t route_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = td->journey_patterns[jp_index].route_index;
     return tdata_line_id_for_index(td,td->line_for_route[route_index]);
@@ -91,24 +91,24 @@ const char *tdata_operator_url_for_index(tdata_t *td, opidx_t operator_index) {
     return td->string_pool + (td->operator_urls[operator_index]);
 }
 
-const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_index) {
+const char *tdata_line_code_for_index(tdata_t *td, lineidx_t line_index) {
     return td->string_pool + td->line_codes[line_index];
 }
 
-const char *tdata_line_color_for_index(tdata_t *td, uint32_t line_index) {
+const char *tdata_line_color_for_index(tdata_t *td, lineidx_t line_index) {
     return td->string_pool + td->line_colors[line_index];
 }
 
-const char *tdata_line_color_text_for_index(tdata_t *td, uint32_t line_index) {
+const char *tdata_line_color_text_for_index(tdata_t *td, lineidx_t line_index) {
     return td->string_pool + td->line_colors_text[line_index];
 }
 
-const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_index) {
+const char *tdata_line_name_for_index(tdata_t *td, lineidx_t line_index) {
     if (td->line_names == NULL) return NULL;
     return td->string_pool + td->line_names[line_index];
 }
 
-const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_index) {
+const char *tdata_line_id_for_index(tdata_t *td, lineidx_t line_index) {
     if (td->line_names == NULL) return NULL;
     return td->string_pool + td->line_ids[line_index];
 }
@@ -233,28 +233,28 @@ const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_ind
 }
 
 const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index;
+    routeidx_t route_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_code_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_color_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index;
+    routeidx_t route_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_color_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_color_text_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index;
+    routeidx_t route_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_color_text_for_index(td, td->line_for_route[route_index]);
 }
 
 const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index;
+    routeidx_t route_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     return tdata_line_name_for_index(td, td->line_for_route[route_index]);
@@ -271,7 +271,8 @@ const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp
 }
 
 const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index,line_index;
+    routeidx_t route_index;
+    lineidx_t line_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
@@ -279,7 +280,8 @@ const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp
 }
 
 const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index,line_index;
+    routeidx_t route_index;
+    lineidx_t line_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
@@ -301,7 +303,8 @@ opidx_t tdata_operator_idx_by_operator_name(tdata_t *td, const char *operator_na
 }
 
 opidx_t tdata_operator_idx_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index, line_index;
+    routeidx_t route_index;
+    lineidx_t line_index;
     if (jp_index == JP_NONE) return OP_NONE;
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
@@ -309,7 +312,8 @@ opidx_t tdata_operator_idx_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
 }
 
 const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index,line_index;
+    routeidx_t route_index;
+    lineidx_t line_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
@@ -317,7 +321,8 @@ const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index)
 }
 
 const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index,line_index;
+    routeidx_t route_index;
+    lineidx_t line_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];
@@ -325,7 +330,8 @@ const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_inde
 }
 
 const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index) {
-    uint16_t route_index,line_index;
+    routeidx_t route_index;
+    lineidx_t line_index;
     if (jp_index == JP_NONE) return "NONE";
     route_index = (td->journey_patterns)[jp_index].route_index;
     line_index = (td->line_for_route)[route_index];

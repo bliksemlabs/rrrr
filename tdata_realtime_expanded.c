@@ -116,7 +116,7 @@ static void tdata_realtime_free_vj_index(tdata_t *tdata, vjidx_t vj_index) {
 
 static jpidx_t tdata_new_journey_pattern(tdata_t *tdata, char *vj_ids,
         uint16_t n_sp, uint16_t n_vjs,
-        uint16_t attributes, uint16_t route_index) {
+        uint16_t attributes, routeidx_t route_index) {
     journey_pattern_t *new;
     uint32_t journey_pattern_point_offset = tdata->n_journey_pattern_points;
     uint32_t stop_times_offset = tdata->n_stop_times;
@@ -551,7 +551,7 @@ void tdata_apply_gtfsrt_tripupdates (tdata_t *tdata, uint8_t *buf, size_t len) {
             date_buf[4] = '\0';
             ltm.tm_year = (int) strtol(&date_buf[0], NULL, 10) - 1900;
             ltm.tm_isdst = -1;
-            epochtime = mktime(&ltm);
+            epochtime = timegm(&ltm);
 
             cal_day = (int16_t) (((uint64_t)epochtime - tdata->calendar_start_time) / SEC_IN_ONE_DAY);
 

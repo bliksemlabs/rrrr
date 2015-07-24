@@ -37,6 +37,10 @@ typedef uint16_t jppidx_t;
 
 typedef uint8_t opidx_t;
 
+typedef uint16_t lineidx_t;
+
+typedef uint16_t routeidx_t;
+
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
@@ -56,6 +60,21 @@ typedef struct stop_point stop_point_t;
 struct stop_point {
     uint32_t journey_patterns_at_stop_point_offset;
     uint32_t transfers_offset;
+    /* Transfer offset calculation by next item
+     * won't allow to extend the list nor to append
+     * to the end and fragment, adding a new stop
+     * once the transfers have to be extended is
+     * an option, but will not ensure the transfers
+     * are transitive. Low hanging fruit would be
+     * to store the number of transfers.
+     *
+     * By splitting up the struct a dynamic list of
+     * n_transfers can be computed. And in case of
+     * extending an object truly be updated.
+     *
+     * Alternatively references to the old object
+     * Should be updated.
+     */
 };
 
 /* An individual JourneyPattern in the RAPTOR sense:
@@ -68,7 +87,7 @@ struct journey_pattern {
     jppidx_t n_stops;
     jp_vjoffset_t n_vjs;
     uint16_t attributes;
-    uint16_t route_index;
+    routeidx_t route_index;
     rtime_t  min_time;
     rtime_t  max_time;
 };

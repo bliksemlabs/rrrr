@@ -88,13 +88,13 @@ struct tdata {
     uint8_t  *journey_pattern_point_attributes;
     stoptime_t *stop_times;
     vehicle_journey_t *vjs;
-    jpidx_t *journey_patterns_at_stop;
     spidx_t *transfer_target_stops;
     rtime_t  *transfer_durations;
     rtime_t  *stop_point_waittime;
     rtime_t max_time;
     /* optional data:
      * NULL pointer means it is not available */
+    jpidx_t *journey_patterns_at_stop;
     latlon_t *stop_point_coords;
     latlon_t *stop_area_coords;
     spidx_t *stop_area_for_stop_point;
@@ -110,8 +110,8 @@ struct tdata {
     uint32_t *physical_mode_names;
     uint16_t *commercial_mode_for_jp;
     uint16_t *physical_mode_for_line;
-    uint16_t *line_for_route;
-    uint8_t *operator_for_line;
+    lineidx_t *line_for_route;
+    opidx_t *operator_for_line;
     vehicle_journey_ref_t *vehicle_journey_transfers_backward;
     vehicle_journey_ref_t *vehicle_journey_transfers_forward;
     char *string_pool;
@@ -119,6 +119,8 @@ struct tdata {
     uint32_t *line_names;
     calendar_t *vj_active;
     calendar_t *journey_pattern_active;
+    rtime_t *journey_pattern_min;
+    rtime_t *journey_pattern_max;
     uint32_t *journey_pattern_point_headsigns;
     uint32_t *line_ids;
     uint32_t *line_colors;
@@ -231,15 +233,15 @@ const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_line_id_for_index(tdata_t *td, uint32_t line_name_index);
+const char *tdata_line_id_for_index(tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_code_for_index(tdata_t *td, uint32_t line_code_index);
+const char *tdata_line_code_for_index(tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_color_for_index(tdata_t *td, uint32_t line_code_index);
+const char *tdata_line_color_for_index(tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_color_text_for_index(tdata_t *td, uint32_t line_code_index);
+const char *tdata_line_color_text_for_index(tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_name_for_index(tdata_t *td, uint32_t line_name_index);
+const char *tdata_line_name_for_index(tdata_t *td, lineidx_t line_index);
 
 /* * * * * * * * * * * * * * * * * * *
  *
