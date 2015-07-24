@@ -942,6 +942,7 @@ static void vehicle_journey_extend(router_t *router, router_request_t *req, uint
                 continue;
             }
 
+            /* TODO: make this variable and verify */
             if ((req->time_cutoff != UNREACHED) &&
                     (req->arrive_by ? time < req->time_cutoff
                                     : time > req->time_cutoff)) {
