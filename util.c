@@ -106,7 +106,7 @@ time_t strtoepoch (char *time) {
     memset (&ltm, 0, sizeof(struct tm));
     strptime (time, "%Y-%m-%dT%H:%M:%S", &ltm);
     ltm.tm_isdst = -1;
-    return mktime(&ltm);
+    return timegm(&ltm);
 }
 #else
 time_t strtoepoch (char *time) {
@@ -120,7 +120,7 @@ time_t strtoepoch (char *time) {
     ltm.tm_min  = (int) strtol(&endptr[1], &endptr, 10);
     ltm.tm_sec  = (int) strtol(&endptr[1], &endptr, 10);
     ltm.tm_isdst = -1;
-    return mktime(&ltm);
+    return timegm(&ltm);
 }
 #endif
 
@@ -130,7 +130,7 @@ time_t strtoepoch (char *time) {
  */
 
 void renderBits(const void *ptr, uint32_t size, char *out) {
-    unsigned char *b = (unsigned char*) ptr;
+    const unsigned char *b = (const unsigned char*) ptr;
     unsigned char byte;
 
     do {
@@ -162,7 +162,7 @@ void printBits(uint32_t const n, void const * const ptr) {
 
 /* https://answers.yahoo.com/question/index?qid=20091214075728AArnEug */
 static int compareFloats(const void *elem1, const void *elem2) {
-    return (int) (((*((float*) elem1)) - (*((float *) elem2))));
+    return (int) (((*((const float*) elem1)) - (*((const float *) elem2))));
 }
 
 /* http://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean */
