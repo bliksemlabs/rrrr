@@ -2,20 +2,6 @@
 #include <stdlib.h>
 #include "../router_request.h"
 
-const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index) {
-    UNUSED (td);
-    UNUSED (sp_index);
-
-    return "";
-}
-
-const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index) {
-    UNUSED (td);
-    UNUSED (sa_index);
-
-    return "";
-}
-
 START_TEST (test_from_epoch)
     {
         struct tm ltm;

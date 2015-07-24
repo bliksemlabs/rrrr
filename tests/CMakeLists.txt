@@ -21,6 +21,28 @@ set(SOURCE_FILES
     ../router_request.h
     ../street_network.c
     ../street_network.h
+    ../tdata.c
+    ../tdata.h
+    ../gtfs-realtime.pb-c.c
+    ../gtfs-realtime.pb-c.h
+    ../tdata_realtime_alerts.c
+    ../tdata_realtime_alerts.h
+    ../tdata_realtime_expanded.c
+    ../tdata_realtime_expanded.h
+    ../tdata_validation.c
+    ../tdata_validation.h
+    ../tdata_io_v4_dynamic.c
+    ../tdata_io_v4.h
+    ../index_journey_pattern_points.c
+    ../index_journey_pattern_points.h
+    ../index_journey_patterns.c
+    ../index_journey_patterns.h
+    ../index_vehicle_journeys.c
+    ../index_vehicle_journeys.h
+    ../tdata_jit.c
+    ../tdata_jit.h
+    ../string_pool.c
+    ../string_pool.h
     ../util.c
     ../util.h
     run_tests.c
@@ -33,6 +55,7 @@ set(SOURCE_FILES
     test_router_request.c
     test_street_network.c
     test_util.c
+    test_tdata_jit.c
     )
 
 add_executable(tests ${SOURCE_FILES})

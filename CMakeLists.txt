@@ -4,7 +4,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -std=c89 -pedantic -ggdb3 -DRRRR_VALGRIND -DRRRR_STRICT -O3 -march=native")
 if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Wno-padded -Wno-disabled-macro-expansion -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Wno-reserved-id-macro -Wno-documentation-unknown-command -Wno-c99-extensions -Wno-padded -Wno-disabled-macro-expansion -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments")
 endif("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -46,6 +46,12 @@ set(SOURCE_FILES
     gtfs-realtime.pb-c.h
     hashgrid.c
     hashgrid.h
+    index_journey_pattern_points.c
+    index_journey_pattern_points.h
+    index_journey_patterns.c
+    index_journey_patterns.h
+    index_vehicle_journeys.c
+    index_vehicle_journeys.h
     json.c
     json.h
     linkedlist.c
@@ -73,6 +79,8 @@ set(SOURCE_FILES
     string_pool.h
     tdata.c
     tdata.h
+    tdata_jit.h
+    tdata_jit.c
     tdata_io_v4.h
     tdata_io_v4_dynamic.c
     tdata_io_v4_mmap.c
