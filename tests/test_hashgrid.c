@@ -46,11 +46,11 @@ END_TEST
 START_TEST (test_hashgrid_init)
     {
         coord_t coords[2];
-        coord_from_lat_lon(&coords[0], 1.0, 1.0);
-        coord_from_lat_lon(&coords[1], 2.0, 2.0);
-
         hashgrid_t hg;
         hashgrid_result_t result;
+
+        coord_from_lat_lon(&coords[0], 1.0, 1.0);
+        coord_from_lat_lon(&coords[1], 2.0, 2.0);
 
         hashgrid_init(&hg, 100, 500, coords, 2);
         hashgrid_query (&hg, &result, coords[1], 500.0);
