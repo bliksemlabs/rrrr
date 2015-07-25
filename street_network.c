@@ -52,3 +52,12 @@ street_network_mark_duration_to_stop_point(street_network_t *sn,
 
     return true;
 }
+
+void
+street_network_null_duration(street_network_t *sn) {
+    uint32_t i = sn->n_points;
+    while (i) {
+        --i;
+        sn->durations[sn->n_points] = 0;
+    }
+}
