@@ -383,7 +383,7 @@ spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, sp
  * * * * * * * * * * * * * * * * * * */
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-uint32_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
+jpidx_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
 
 const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index);
 
