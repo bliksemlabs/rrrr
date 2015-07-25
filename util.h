@@ -46,6 +46,7 @@
 
 #define rrrr_memset(s, u, n) { size_t i = n; do { i--; s[i] = u; } while (i); }
 
+uint32_t dedupRtime (rtime_t *base, uint32_t n);
 uint32_t rrrrandom(uint32_t limit);
 void printBits(uint32_t const size, void const * const ptr);
 void renderBits(const void *ptr, uint32_t size, char *out);

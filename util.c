@@ -8,6 +8,24 @@
 #include <stdlib.h>
 #include <assert.h>
 
+
+/* TODO:
+ * We might want to make this more generic to something like:
+ * dedup(void *base, size_t num, size_t size, int (*compar)(const void*, const void*))
+ */
+uint32_t dedupRtime (rtime_t *base, uint32_t n) {
+    uint32_t i = 0, j = 0;
+    if (n == 0) return n;
+
+    for (i = 1; i < n; i++) {
+        if (base[i] != base[j]) {
+            j++;
+            base[j] = base[i];
+        }
+    }
+    return j + 1;
+}
+
 /* buffer should always be at least 13 characters long,
  * including terminating null
  */

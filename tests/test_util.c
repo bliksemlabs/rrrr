@@ -97,6 +97,30 @@ START_TEST (test_btimetext)
     }
 END_TEST
 
+START_TEST (test_dedupRtime)
+    {
+        rtime_t i1[11] = {1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 6};
+        rtime_t j1[5] = {1, 2, 3, 4, 6};
+        rtime_t i2[1] = {8};
+        rtime_t j2[1] = {8};
+
+        uint32_t n;
+
+        n = dedupRtime (i1, 11);
+
+        ck_assert_int_eq (n, 5);
+        ck_assert ( memcmp(i1, j1, 5) == 0 );
+
+        n = dedupRtime (i2, 1);
+
+        ck_assert_int_eq (n, 1);
+        ck_assert ( memcmp(i2, j2, 1) == 0 );
+
+    }
+END_TEST
+
+
+
 Suite *make_util_suite(void);
 
 Suite *make_util_suite(void) {
@@ -109,6 +133,7 @@ Suite *make_util_suite(void) {
     tcase_add_test  (tc_core, test_epoch_to_rtime);
     tcase_add_test  (tc_core, test_rrrrandom);
     tcase_add_test  (tc_core, test_btimetext);
+    tcase_add_test  (tc_core, test_dedupRtime);
     suite_add_tcase(s, tc_core);
     return s;
 }
