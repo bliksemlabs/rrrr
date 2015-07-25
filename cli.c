@@ -161,10 +161,10 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
-                        strtospidx (&argv[i][14], &tdata, &req.from_stop_area, NULL);
+                        strtospidx (&argv[i][11], &tdata, &req.from_stop_area, NULL);
                     }
-                    else if (strncmp(argv[i], "--from-sp-idx", 14) == 0) {
-                        strtospidx (&argv[i][11], &tdata, &req.from_stop_point, NULL);
+                    else if (strncmp(argv[i], "--from-sp-idx=", 14) == 0) {
+                        strtospidx (&argv[i][14], &tdata, &req.from_stop_point, NULL);
                     }
                     else if (strncmp(argv[i], "--from-id=", 10) == 0) {
                         req.from_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][10], 0);
