@@ -7,8 +7,11 @@
 
 #include "config.h"
 #include "api.h"
+#include "util.h"
 #include "street_network.h"
 #include "plan_render_text.h"
+
+#include <stdlib.h>
 
 #ifdef RRRR_DEV
 static bool dump_exits_and_entries(router_request_t *req, tdata_t *tdata){
@@ -105,6 +108,62 @@ bool router_route_first_departure (router_t *router, router_request_t *req, plan
     }
 
     return true;
+}
+
+/* If we would like to estimate all possible departures given
+ * a bag of stops in close proximity, we can do so by iterating
+ * over this stop lists find the journey patterns at these stops
+ * iterate over the active journey patterns for that operating
+ * date and return a list of rtime_t candidates.
+ */
+
+static int compareRtime(const void *elem1, const void *elem2) {
+    return (int) (*(const rtime_t *) elem1) - (*(const rtime_t *) elem2);
+}
+
+uint32_t tdata_n_departures_since (tdata_t *td, spidx_t *sps, spidx_t n_stops, rtime_t *result, uint32_t n_results, rtime_t since, rtime_t until) {
+    uint32_t n = 0;
+    while (n_stops) {
+        jpidx_t n_jps;
+        jpidx_t *jp_ret;
+        n_stops--;
+        n_jps = tdata_journey_patterns_for_stop_point (td, sps[n_stops], &jp_ret);
+
+        while (n_jps) {
+            jppidx_t n_jpp;
+            spidx_t *jpp;
+            uint8_t *jpp_a;
+            n_jps--;
+            /* Implement calendar validation for the journey pattern */
+            /* if (router->day_mask & td->journey_pattern_active[n_jps]) */
+
+            jpp = tdata_points_for_journey_pattern(td, jp_ret[n_jps]);
+            jpp_a = tdata_stop_point_attributes_for_journey_pattern(td, jp_ret[n_jps]);
+
+            n_jpp = td->journey_patterns[jp_ret[n_jps]].n_stops;
+            while (n_jpp) {
+                n_jpp--;
+                if (jpp_a[n_jpp] & rsa_boarding && jpp[n_jpp] == sps[n_stops]) {
+                    jp_vjoffset_t n_vjs = td->journey_patterns[n_jps].n_vjs;
+                    while (n_vjs) {
+                        vehicle_journey_t *vj;
+                        rtime_t arrival;
+                        n_vjs--;
+                        vj = &td->vjs[n_vjs];
+                        arrival = vj->begin_time + td->stop_times[vj->stop_times_offset + n_jpp].arrival;
+                        if (arrival >= since && arrival <= until && (n == 0 || result[n - 1] != arrival)) result[n++] = arrival;
+                        if (n == n_results) goto full;
+                    }
+                    /* we can't break here because the same spidx may happen later */
+                }
+            }
+        }
+    }
+
+full:
+    qsort(result, n, sizeof(rtime_t), compareRtime);
+    n = dedupRtime(result, n);
+    return n;
 }
 
 /* Use naive reversal only if you want to show the very best arrival time
