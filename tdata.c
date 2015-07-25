@@ -576,6 +576,15 @@ void tdata_hashgrid_teardown (tdata_t *tdata) {
     free (tdata->coords);
 }
 
+bool strtoopidx (const char *str, tdata_t *td, opidx_t *op, char **endptr) {
+    long op_idx = strtol(str, endptr, 10);
+    if (op_idx >= 0 && op_idx < td->n_operator_ids) {
+        *op = (opidx_t) op_idx;
+        return true;
+    }
+    return false;
+}
+
 bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr) {
     long stop_idx = strtol(str, endptr, 10);
     if (stop_idx >= 0 && stop_idx < td->n_stop_points) {

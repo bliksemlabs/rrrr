@@ -88,6 +88,9 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-jp-idx=idx ]\n"
 #endif
+#if RRRR_MAX_BANNED_OPERATORS > 0
+                        "[ --banned-op-idx=idx | --banned-operator=name ]\n"
+#endif
 #if RRRR_MAX_BANNED_STOP_POINTS > 0
                         "[ --banned-stop-idx=idx ]\n"
 #endif
@@ -253,6 +256,31 @@ int main (int argc, char *argv[]) {
                                        &req.n_banned_journey_patterns,
                                        RRRR_MAX_BANNED_JOURNEY_PATTERNS,
                                        jp);
+                        }
+                    }
+                    #endif
+                    #if RRRR_MAX_BANNED_OPERATORS > 0
+                    else
+                    if (strncmp(argv[i], "--banned-op-idx=", 16) == 0) {
+                        opidx_t op;
+                        if (strtoopidx (&argv[i][16], &tdata, &op, NULL)) {
+                            set_add_uint8 (req.banned_operators,
+                                           &req.n_banned_operators,
+                                           RRRR_MAX_BANNED_OPERATORS,
+                                           op);
+                        }
+                    }
+                    else
+                    if (strncmp(argv[i], "--banned-operator=", 18) == 0) {
+                        opidx_t operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][18], 0);
+                        while (operator != OP_NONE)
+                        {
+                            set_add_uint8 (req.banned_operators,
+                                           &req.n_banned_operators,
+                                           RRRR_MAX_BANNED_OPERATORS,
+                                           operator);
+
+                            operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][18], operator + 1);
                         }
                     }
                     #endif

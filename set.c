@@ -82,7 +82,7 @@ bool set_in_vj (jpidx_t *set1, jp_vjoffset_t *set2, uint8_t length,
 }
 #endif
 
-#if RRRR_MAX_FILTERED_OPERATORS > 0
+#if RRRR_MAX_FILTERED_OPERATORS > 0 || RRRR_MAX_BANNED_OPERATORS > 0
 bool set_in_uint8 (uint8_t *set, uint8_t length, uint8_t value) {
     uint8_t i = length;
 

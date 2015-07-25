@@ -262,6 +262,7 @@ static void flag_journey_patterns_for_stop_point(router_t *router, router_reques
 #if RRRR_BANNED_JOURNEY_PATTERNS_BITMASK == 1
 static void unflag_banned_journey_patterns (router_t *router, router_request_t *req) {
     if (req->n_banned_journey_patterns == 0 &&
+        req->n_banned_operators == 0 &&
         req->n_operators == 0) return;
 
     bitset_mask_and (router->updated_journey_patterns, router->banned_journey_patterns);
@@ -288,6 +289,16 @@ static void initialize_filtered_operators (router_t *router, router_request_t *r
             jp_index--;
             if (!set_in_uint8(req->operators, req->n_operators,
                               tdata_operator_idx_for_journey_pattern(router->tdata, jp_index))) {
+                bitset_unset (router->banned_journey_patterns, jp_index);
+            }
+        }
+    } else if (req->n_banned_operators > 0) {
+        /* TODO: should this be moved into the jp selection? */
+        jpidx_t jp_index = (jpidx_t) router->tdata->n_journey_patterns;
+        while (jp_index) {
+            jp_index--;
+            if (set_in_uint8(req->banned_operators, req->n_banned_operators,
+                             tdata_operator_idx_for_journey_pattern(router->tdata, jp_index))) {
                 bitset_unset (router->banned_journey_patterns, jp_index);
             }
         }
@@ -1436,8 +1447,8 @@ bool router_route(router_t *router, router_request_t *req) {
      */
     initialize_banned_journey_patterns (router, req);
 
-    #if RRRR_MAX_FILTERED_OPERATORS > 0
-    /* populate router->banned_journey_patterns to only include specific operators */
+    #if RRRR_MAX_FILTERED_OPERATORS > 0 || RRRR_MAX_BANNED_OPERATORS > 0
+    /* populate router->banned_journey_patterns to only include or exclude specific operators */
     initialize_filtered_operators (router, req);
     #endif
 

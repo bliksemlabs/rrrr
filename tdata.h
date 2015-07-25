@@ -359,6 +359,8 @@ int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp
 /* Parse string with journey_pattenr index to jp_index*/
 bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
 
+bool strtoopidx (const char *str, tdata_t *td, opidx_t *op, char **endptr);
+
 latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
 
 const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);

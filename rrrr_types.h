@@ -239,6 +239,9 @@ struct router_request {
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     jpidx_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
+    #if RRRR_MAX_BANNED_OPERATORS > 0
+    opidx_t banned_operators[RRRR_MAX_BANNED_OPERATORS];
+    #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     spidx_t banned_stops[RRRR_MAX_BANNED_STOP_POINTS];
     #endif
@@ -286,6 +289,9 @@ struct router_request {
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     uint8_t n_banned_journey_patterns;
+    #endif
+    #if RRRR_MAX_BANNED_OPERATORS > 0
+    uint8_t n_banned_operators;
     #endif
     #if RRRR_MAX_BANNED_STOP_POINTS > 0
     uint8_t n_banned_stops;
