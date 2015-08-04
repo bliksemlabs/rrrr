@@ -659,5 +659,5 @@ void tdata_clear_gtfsrt (tdata_t *tdata) {
 }
 
 #else
-   void tdata_gtfsrt_not_available() {}
+   void tdata_gtfsrt_not_available();
 #endif /* RRRR_FEATURE_REALTIME_EXPANDED */

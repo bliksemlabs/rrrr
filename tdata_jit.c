@@ -1,3 +1,7 @@
+#include "config.h"
+
+#ifdef RRRR_TDATA_IO_DYNAMIC
+
 #include "tdata_jit.h"
 #include "index_journey_pattern_points.h"
 #include "index_journey_patterns.h"
@@ -653,3 +657,6 @@ void tdata_jit_free (tdata_t *td) {
 
     free (td);
 }
+#else
+void tdata_jit_not_available();
+#endif /* RRRR_TDATA_IO_DYNAMIC */

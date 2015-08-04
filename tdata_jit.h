@@ -1,3 +1,6 @@
+#include "config.h"
+
+#ifdef RRRR_TDATA_IO_DYNAMIC
 #include "tdata.h"
 
 bool tdata_journey_patterns_at_stop (tdata_t *td);
@@ -95,3 +98,5 @@ bool tdata_jit_new (tdata_t *td,
                     );
 
 void tdata_jit_free (tdata_t *td);
+
+#endif

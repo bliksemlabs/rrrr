@@ -4,6 +4,8 @@
 #include "../util.h"
 #include "../tdata_jit.h"
 
+#ifdef RRRR_TDATA_IO_DYNAMIC
+
 void dump_journey_patterns_at_stop (const char *filename, tdata_t *tdata);
 void dump_journey_patterns_active  (const char *filename, tdata_t *tdata);
 
@@ -104,3 +106,5 @@ Suite *make_tdata_jit_suite(void) {
     suite_add_tcase(s, tc_core);
     return s;
 }
+
+#endif

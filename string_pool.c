@@ -3,6 +3,10 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
+#include "config.h"
+
+#ifdef RRRR_TDATA_IO_DYNAMIC
+
 #include "string_pool.h"
 #include "string.h"
 
@@ -22,4 +26,6 @@ uint32_t string_pool_append(char *pool, uint32_t *n_pool, radixtree_t *r, const 
 
     return location;
 }
-
+#else
+void string_pool_append_not_available();
+#endif /* RRRR_TDATA_IO_DYNAMIC */
