@@ -3,6 +3,8 @@
 #include <math.h>
 #include "../geometry.h"
 
+#define ck_assert_float_eq(a, b) ck_assert(fabs(a - b) < 0.00001f)
+
 START_TEST (test_strtolatlon)
     {
         latlon_t latlon1;
@@ -11,8 +13,8 @@ START_TEST (test_strtolatlon)
         double distance;
 
         strtolatlon("52.12000,4.50000", &latlon1);
-        ck_assert(latlon1.lat == 52.12000f &&
-                  latlon1.lon == 4.50000f);
+        ck_assert_float_eq(latlon1.lat, 52.12000f);
+        ck_assert_float_eq(latlon1.lon,  4.50000f);
 
         coord_from_latlon(&coord, &latlon1);
         ck_assert(coord.x == 32964396 &&
