@@ -102,7 +102,7 @@ uint32_t hashgrid_result_next (hashgrid_result_t *r) {
 
     ret_item = r->hg->bins[r->y * r->hg->grid_dim + r->x][r->i];
     #ifdef RRRR_DEBUG
-    printf ("x=%d y=%d i=%d item=%d ", r->x, r->y, r->i, ret_item);
+    printf ("x=%d y=%d i=%d item=%d\n", r->x, r->y, r->i, ret_item);
     #endif
     return ret_item;
 }
