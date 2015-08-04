@@ -390,7 +390,7 @@ jpidx_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpi
     stop_point_t *stop0 = &(td->stop_points[sp_index]);
     stop_point_t *stop1 = &(td->stop_points[sp_index + 1]);
     *jp_ret = td->journey_patterns_at_stop + stop0->journey_patterns_at_stop_point_offset;
-    return stop1->journey_patterns_at_stop_point_offset - stop0->journey_patterns_at_stop_point_offset;
+    return (jpidx_t) (stop1->journey_patterns_at_stop_point_offset - stop0->journey_patterns_at_stop_point_offset);
 }
 
 stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset) {
@@ -539,7 +539,7 @@ void tdata_dump(tdata_t *td) {
     }
     printf("\nSTOPIDS\n");
     for (i = 0; i < td->n_stop_points; i++) {
-        printf("stop %03d has id %s \n", i, tdata_stop_point_name_for_index(td, i));
+        printf("stop %03d has id %s \n", i, tdata_stop_point_name_for_index(td, (spidx_t) i));
     }
     for (i = 0; i < td->n_journey_patterns; i++) {
         /* TODO: Remove?
@@ -547,7 +547,7 @@ void tdata_dump(tdata_t *td) {
          *        tdata_route_desc_for_index(td, i),
          *        tdata_vehicle_journey_ids_for_route(td, i));
          */
-        tdata_dump_journey_pattern(td, i, VJ_NONE);
+        tdata_dump_journey_pattern(td, (jpidx_t) i, VJ_NONE);
     }
 }
 #endif
