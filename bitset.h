@@ -70,6 +70,9 @@ bool bitset_get(bitset_t *self, uint32_t index);
  */
 uint32_t bitset_next_set_bit(bitset_t*, uint32_t index);
 
+/* Return the number of bits set in the bitset_t */
+uint32_t bitset_count(bitset_t *self);
+
 #ifdef RRRR_DEBUG
 /* Print a string-representation of this bitset to STDERR */
 void bitset_dump(bitset_t *self);

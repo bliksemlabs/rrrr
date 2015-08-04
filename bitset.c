@@ -151,6 +151,17 @@ uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
     return BITSET_NONE;
 }
 
+uint32_t bitset_count(bitset_t *self) {
+    uint32_t total = 0;
+    uint32_t elem;
+    for (elem = bitset_next_set_bit(self, 0);
+         elem != BITSET_NONE;
+         elem = bitset_next_set_bit(self, elem + 1)) {
+        total++;
+    }
+    return total;
+}
+
 #ifdef RRRR_DEBUG
 
 void bitset_dump(bitset_t *self) {
