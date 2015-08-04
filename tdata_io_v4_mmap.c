@@ -47,8 +47,14 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
         goto fail_close_fd;
     }
 
-    td->base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    td->size = st.st_size;
+    if (st.st_size < (long) sizeof(header)) {
+        fprintf(stderr, "The input file %s is too small.\n", filename);
+        goto fail_close_fd;
+    }
+
+    /* we can cast off_t to size_t since we have checked it is > 0 */
+    td->base = mmap(NULL, (size_t) st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    td->size = (size_t) st.st_size;
     if (td->base == MAP_FAILED) {
         fprintf(stderr, "The input file %s could not be mapped.\n", filename);
         goto fail_close_fd;
@@ -66,6 +72,8 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     td->n_days = header->n_days;
     td->n_stop_areas = header->n_stop_areas;
 
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wcast-align"
     load_mmap (td->base, stop_points, stop_point_t);
     load_mmap (td->base, stop_point_attributes, uint8_t);
     load_mmap (td->base, stop_point_coords, latlon_t);
@@ -110,6 +118,7 @@ bool tdata_io_v4_load(tdata_t *td, char *filename) {
     load_mmap (td->base, stop_area_timezones, uint32_t);
     load_mmap (td->base, vj_ids, uint32_t);
     load_mmap (td->base, vj_time_offsets, int8_t);
+    #pragma clang diagnostic pop
 
     /* Set the maximum drivetime of any day in tdata */
     set_max_time(td);
@@ -137,3 +146,4 @@ void tdata_io_v4_close(tdata_t *td) {
 #else
 void tdata_io_v4_mmap_not_available();
 #endif /* RRRR_TDATA_IO_MMAP */
+
