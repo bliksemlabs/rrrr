@@ -5,18 +5,20 @@
 
 START_TEST (test_hashgrid)
     {
+#if 0
         double distance;
+#endif
         hashgrid_result_t result;
         coord_t qc;
         uint32_t item;
 
-        coord_t coords[7] = { {  0,  0 },
-                              {  0,  1 },
-                              {  1,  0 },
-                              {  1,  1 },
-                              {  0, -1 },
-                              { -1,  0 },
-                              { -1, -1 } };
+        coord_t coords[7] = { {    0,   0 },
+                              {    0,  10 },
+                              {   10,   0 },
+                              {   10,  10 },
+                              {    0, -10 },
+                              {  -10,   0 },
+                              {  -10, -10 } };
 
 
         hashgrid_t hashgrid;
@@ -26,14 +28,18 @@ START_TEST (test_hashgrid)
 
         hashgrid_dump (hg);
 
-#if 0
-        qc.x = 0;
-        qc.y = 1;
+        qc.x = 10;
+        qc.y = 10;
 
         hashgrid_query (hg, &result, qc, 4 * METERS_PER_BRAD);
+        item = hashgrid_result_closest (&result);
+        ck_assert_int_eq (item, 3);
 
+#if 0
+        /* TODO: This part should be tested */
+        hashgrid_query (hg, &result, qc, 4 * METERS_PER_BRAD);
         item = hashgrid_result_next(&result);
-        ck_assert_int_eq (item, 1);
+        ck_assert_int_eq (item, 3);
 
         item = hashgrid_result_next_filtered(&result, &distance);
         ck_assert_int_eq (item, HASHGRID_NONE);
@@ -46,6 +52,8 @@ END_TEST
 START_TEST (test_hashgrid_init)
     {
         coord_t coords[2];
+        double distance;
+
         hashgrid_t hg;
         hashgrid_result_t result;
 
@@ -55,7 +63,7 @@ START_TEST (test_hashgrid_init)
         hashgrid_init(&hg, 100, 500, coords, 2);
         hashgrid_query (&hg, &result, coords[1], 500.0);
 
-        double distance = 0.0;
+        distance = 0.0f;
         while(hashgrid_result_next_filtered(&result, &distance) != HASHGRID_NONE) {
 
         }
