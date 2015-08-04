@@ -3,6 +3,8 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
+#include "config.h"
+
 #ifdef RRRR_TDATA_IO_MMAP
 
 #include "tdata_io_v4.h"
@@ -18,7 +20,7 @@
     td->storage = (type *) (((char *) b) + header->loc_##storage)
 
 /* Set the maximum drivetime of any day in tdata */
-void set_max_time(tdata_t *td){
+static void set_max_time(tdata_t *td){
     jpidx_t jp_index;
     td->max_time = 0;
     for (jp_index = 0; jp_index < td->n_journey_patterns; jp_index++){
