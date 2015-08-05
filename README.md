@@ -23,6 +23,14 @@ clang provides very good error messages and warnings. At present time gcc provid
 1. **check**:
 a unit testing framework for c. http://check.sourceforge.net/.
 
+Dependencies for OSX
+--------------------
+
+1. **brew**
+Install homebrew. http://brew.sh/
+
+1. brew install protobuf-c check pkg-config cmake
+Install the requirements to Cmake would work.
 
 Building transit data
 ---------------------
