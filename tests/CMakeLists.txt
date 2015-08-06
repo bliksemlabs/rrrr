@@ -13,6 +13,7 @@ set(SOURCE_FILES
     ../api.h
     ../bitset.c
     ../bitset.h
+    ../config.h
     ../geometry.c
     ../geometry.h
     ../hashgrid.c
@@ -20,6 +21,8 @@ set(SOURCE_FILES
     ../hashgrid_streetnetwork.c
     ../json.c
     ../json.h
+    ../plan.c
+    ../plan.h
     ../polyline.c
     ../polyline.h
     ../radixtree.c
@@ -44,6 +47,7 @@ set(SOURCE_FILES
     ../tdata_realtime_expanded.h
     ../tdata_validation.c
     ../tdata_validation.h
+    ../tdata_io_v4_mmap.c
     ../tdata_io_v4_dynamic.c
     ../tdata_io_v4.h
     ../index_journey_pattern_points.c
