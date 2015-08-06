@@ -4,7 +4,11 @@ include_directories(${CHECK_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${CHECK_LIBRARIES})
 include_directories(. ..)
 
+set_property(SOURCE ${PROTO_HDRS} ${PROTO_SRCS} PROPERTY GENERATED ON)
+
 set(SOURCE_FILES
+    ${PROTO_HDRS}
+    ${PROTO_SRCS}
     ../api.c
     ../api.h
     ../bitset.c
@@ -34,8 +38,6 @@ set(SOURCE_FILES
     ../street_network.h
     ../tdata.c
     ../tdata.h
-    ../gtfs-realtime.pb-c.c
-    ../gtfs-realtime.pb-c.h
     ../tdata_realtime_alerts.c
     ../tdata_realtime_alerts.h
     ../tdata_realtime_expanded.c
@@ -71,6 +73,7 @@ set(SOURCE_FILES
     )
 
 add_executable(tests ${SOURCE_FILES})
+add_dependencies(tests cli)
 SET_TARGET_PROPERTIES(tests PROPERTIES
   COMPILE_FLAGS "-DRRRR_DEBUG ${SHARED_FLAGS}"
 )
