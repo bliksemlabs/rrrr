@@ -22,7 +22,7 @@ jp_s_cmp(const void *elem1, const void *elem2) {
 }
 
 static jp_s_index_t*
-journey_pattern_stop_index_ordered (tdata_t *td, uint32_t *n) {
+journey_pattern_stop_index_ordered (const tdata_t *td, uint32_t *n) {
     jp_s_index_t *idx;
     uint32_t n_idx;
     jpidx_t jp_index;
@@ -53,7 +53,7 @@ journey_pattern_stop_index_ordered (tdata_t *td, uint32_t *n) {
     return idx;
 }
 
-bool index_journey_pattern_points (tdata_t *td, jpidx_t **jps, uint32_t *n, uint32_t **jpaspo) {
+bool index_journey_pattern_points (const tdata_t *td, jpidx_t **jps, uint32_t *n, uint32_t **jpaspo) {
     jp_s_index_t *idx = NULL;
     jpidx_t *journey_patterns_at_stop = NULL;
     uint32_t *journey_patterns_at_stop_point_offset = NULL;
