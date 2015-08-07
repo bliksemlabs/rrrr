@@ -11,6 +11,9 @@
 /* Maximum iterations the algorithm will run */
 #define RRRR_DEFAULT_MAX_ROUNDS 6
 
+/* Maximum number of itineraries a plan can store < uint_t */
+#define RRRR_DEFAULT_PLAN_ITIN RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS
+
 /* Walk slack in seconds */
 #define RRRR_DEFAULT_WALK_SLACK 0
 
@@ -42,16 +45,25 @@
 #undef RRRR_BANNED_JOURNEY_PATTERNS_BITMASK
 #endif
 
-#if (defined(RRRR_TDATA_IO_MMAP) && defined(RRRR_TDATA_IO_DYNAMIC)) || (!defined(RRRR_TDATA_IO_MMAP) && !defined(RRRR_TDATA_IO_DYNAMIC))
-#define RRRR_TDATA_IO_DYNAMIC 1
-#endif
+/* Explictly enable MMAP */
+#define RRRR_TDATA_IO_MMAP 1
+#undef RRRR_TDATA_IO_DYNAMIC
 
-#ifndef RRRR_TDATA_IO_MMAP
+
+#if (defined(RRRR_TDATA_IO_MMAP) && defined(RRRR_TDATA_IO_DYNAMIC)) || (!defined(RRRR_TDATA_IO_MMAP) && !defined(RRRR_TDATA_IO_DYNAMIC))
+/* We default to using dynamic allocation */
+#define RRRR_TDATA_IO_DYNAMIC 1
 #define RRRR_FEATURE_REALTIME_EXPANDED 1
 #define RRRR_FEATURE_REALTIME_ALERTS 1
 #define RRRR_FEATURE_REALTIME 1
 
 #define RRRR_DYNAMIC_SLACK 2
+
+#else
+/* Condering we are using MMAP, realtime is not available */
+#undef RRRR_FEATURE_REALTIME
+#undef RRRR_FEATURE_REALTIME_ALERTS
+#undef RRRR_FEATURE_REALTIME_EXPANDED
 #endif
 
 #ifdef RRRR_DEBUG
