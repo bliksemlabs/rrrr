@@ -100,11 +100,13 @@ int main (int argc, char *argv[]) {
 #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
                         "[ --banned-vj-offset=jp_idx,vj_offset ]\n"
 #endif
-#if RRRR_FEATURE_REALTIME_ALERTS == 1
+#ifdef RRRR_FEATURE_REALTIME
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
                         "[ --gtfsrt-alerts=filename.pb ]\n"
 #endif
-#if RRRR_FEATURE_REALTIME_EXPANDED == 1
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
                         "[ --gtfsrt-tripupdates=filename.pb ]\n"
+#endif
 #endif
                         "[ --repeat=n ]\n");
     }
