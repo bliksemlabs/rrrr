@@ -17,7 +17,7 @@ void index_vehicle_journeys (const tdata_t *td, uint32_t i, calendar_t *active, 
         v2--;
         mask |= td->vj_active[v2];
         new_max = td->vjs[v2].begin_time + td->stop_times[td->vjs[v2].stop_times_offset + jp->n_stops - 1].departure;
-        
+
         /* it seems that the source data isn't sorted, or realtime is applied */
         if (min[i] > td->vjs[v1].begin_time) min[i] = td->vjs[v1].begin_time;
         if (max[i] < new_max) max[i] = new_max;
