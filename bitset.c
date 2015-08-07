@@ -151,6 +151,7 @@ uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
     return BITSET_NONE;
 }
 
+/* TODO: optimise; http://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer */
 uint32_t bitset_count(bitset_t *self) {
     uint32_t total = 0;
     uint32_t elem;
