@@ -284,7 +284,7 @@ bool tdata_journey_patterns_append (tdata_t *td, uint32_t jpp_offset, vjidx_t vj
 }
 
 bool tdata_journey_patterns_index (tdata_t *td) {
-    return index_journey_patterns (td, &td->journey_pattern_active, &td->journey_pattern_min, &td->journey_pattern_max);
+    return index_journey_patterns (td, &td->journey_pattern_active, &td->journey_pattern_min, &td->journey_pattern_max, &td->max_time);
 }
 
 void tdata_journey_patterns_free (tdata_t *td) {
