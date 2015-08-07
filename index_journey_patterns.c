@@ -20,7 +20,9 @@ bool index_journey_patterns (const tdata_t *td, calendar_t **jp_active,
     while (i) {
         i--;
         index_vehicle_journeys (td, i, active, min, max);
-        if (max_time < max[i]) max_time = max[i];
+        if (max_time < max[i]) {
+            max_time = max[i];
+        }
     }
 
     *jp_active = active;
