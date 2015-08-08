@@ -7,9 +7,13 @@
 
 #include "config.h"
 #include "api.h"
+#include "bitset.h"
+#include "plan.h"
 #include "util.h"
+#include "set.h"
 #include "street_network.h"
 #include "plan_render_text.h"
+#include "router_result.h"
 
 #include <stdlib.h>
 
@@ -109,6 +113,125 @@ bool router_route_first_departure (router_t *router, router_request_t *req, plan
 
     return true;
 }
+
+static void iterate_origins (router_t *router, router_request_t *req,
+                             plan_t *plan, rtime_t *result, uint32_t n) {
+    plan_t work_plan;
+    uint32_t n_results = n;
+    router_result_init_plan (&work_plan);
+
+    while (n_results) {
+        --n_results;
+        req->time = result[n_results] + RTIME_ONE_DAY;
+
+        req->max_transfers = RRRR_DEFAULT_MAX_ROUNDS - 1;
+        /* time_cutoff may remain the highest value observed, if the search runs from last to first, but it seems we are missing some results if we don't apply it */
+        router_reset (router);
+
+        if ( router_route (router, req) ) {
+            int16_t i_itin = 0;
+            router_result_to_plan (&work_plan, router, req);
+            for (;i_itin < work_plan.n_itineraries && plan->n_itineraries < (RRRR_DEFAULT_MAX_ROUNDS * RRRR_DEFAULT_MAX_ROUNDS); ++i_itin) {
+                uint32_t i_plan = plan->n_itineraries;
+                itinerary_t *b = &work_plan.itineraries[i_itin];
+                bool duplicate = false;
+                while (i_plan) {
+                    itinerary_t *a;
+                    i_plan--;
+                    a = &plan->itineraries[i_plan];
+                    if (b->n_legs == 0) {
+                        /* feels like a hack, how can n_itineraries > 0, but n_legs = 0? */
+                        duplicate = true;
+                        break;
+                    }
+                    if (a->n_rides == b->n_rides && a->n_legs == b->n_legs && a->legs[1].sp_from == b->legs[1].sp_from && a->legs[a->n_legs - 1].sp_to == b->legs[b->n_legs - 1].sp_to &&
+                        a->legs[1].t0 == b->legs[1].t0 && a->legs[a->n_legs - 1].t1 == b->legs[b->n_legs - 1].t1) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (!duplicate) {
+                    plan->itineraries[plan->n_itineraries] = work_plan.itineraries[i_itin];
+                    plan->n_itineraries++;
+                }
+            }
+        }
+    }
+}
+
+
+bool router_route_all_departures (router_t *router, router_request_t *req, plan_t *plan) {
+    rtime_t *result = (rtime_t *) malloc(sizeof(rtime_t) * 64);
+    uint32_t n_results;
+
+    search_streetnetwork (router, req);
+    street_network_null_duration (&req->entry);
+    /* router_reset (router); */
+
+    n_results = tdata_n_departures_since (router->tdata,
+                                          req->entry.stop_points, req->entry.n_points,
+                                          result, 64,
+                                          req->time - RTIME_ONE_DAY,
+                                          req->time - RTIME_ONE_DAY + 1200);
+
+    iterate_origins (router, req, plan, result, n_results);
+
+    #if RRRR_MAX_FILTERED_OPERATORS > 0 || RRRR_MAX_BANNED_OPERATORS > 0
+    if (false) {
+        bitset_t *bitset_op;
+        bitset_op = bitset_new (router->tdata->n_operator_ids);
+        bitset_clear (bitset_op);
+
+        if (plan_get_operators (router->tdata, plan, bitset_op)) {
+            opidx_t n = (opidx_t) bitset_count (bitset_op);
+            if (n == 1) {
+                /* the journey advise is completely uniform, we should attempt to
+                 * get some diversity by banning the specific operator.
+                 */
+                opidx_t op = (opidx_t) bitset_next_set_bit (bitset_op, 0);
+                set_add_uint8 (req->banned_operators,
+                            &req->n_banned_operators,
+                            RRRR_MAX_BANNED_OPERATORS,
+                            op);
+                req->time_cutoff = UNREACHED;
+                iterate_origins (router, req, plan, result, n_results);
+
+                /* update our operator list with the output of our last query
+                 */
+                plan_get_operators (router->tdata, plan, bitset_op);
+
+                /* if we have a result, we don't have to count, we already
+                 * know that we have an extra operator here. n++ would suffice.
+                 */
+                n = (opidx_t) bitset_count (bitset_op);
+            }
+
+            if (n > 1) {
+                /* the journey advise is pluriform, we observe multiple operators
+                 * lets see if it is possible to get uniform results for each of them.
+                 */
+                uint32_t op = bitset_next_set_bit (bitset_op, 0);
+
+                while (op != BITSET_NONE) {
+                    req->n_operators = 0;
+                    set_add_uint8 (req->operators, &req->n_operators, RRRR_MAX_FILTERED_OPERATORS, (opidx_t) op);
+                    req->time_cutoff = UNREACHED;
+                    iterate_origins (router, req, plan, result, n_results);
+                    op = bitset_next_set_bit (bitset_op, op + 1);
+                }
+            }
+        }
+        bitset_destroy (bitset_op);
+    }
+    #endif
+
+    free (result);
+
+    router_result_sort(plan);
+    return true;
+}
+
+
 
 /* If we would like to estimate all possible departures given
  * a bag of stops in close proximity, we can do so by iterating
