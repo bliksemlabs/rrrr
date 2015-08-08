@@ -3,6 +3,10 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
+#include "config.h"
+
+#ifdef RRRR_FEATURE_RENDER_OTP
+
 /* plan_render_otp.c renders plan structs to a json-variant of the API output of the OpenTripPlanner project */
 #include "json.h"
 #include "util.h"
@@ -532,3 +536,6 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
 
     return (uint32_t) json_length(&j);
 }
+#else
+void plan_render_otp_not_available();
+#endif /* RRRR_FEATURE_RENDER_OTP */

@@ -3,8 +3,11 @@
  * https://github.com/bliksemlabs/rrrr/
  */
 
-/* plan_render_text.c renders plan structs to a human-readable tabular format */
 #include "config.h"
+
+#ifdef RRRR_FEATURE_RENDER_TEXT
+
+/* plan_render_text.c renders plan structs to a human-readable tabular format */
 #include "plan_render_text.h"
 #include "router_request.h"
 #include <stdio.h>
@@ -176,3 +179,6 @@ plan_render_text(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
     *b = '\0';
     return (uint32_t) (b - buf);
 }
+#else
+void plan_render_text_not_available();
+#endif /* RRRR_FEATURE_RENDER_TEXT */
