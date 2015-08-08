@@ -58,6 +58,8 @@ set(SOURCE_FILES
     linkedlist.h
     plan.c
     plan.h
+    plan_render.c
+    plan_render.h
     plan_render_otp.c
     plan_render_otp.h
     plan_render_text.c

@@ -118,7 +118,7 @@ static void iterate_origins (router_t *router, router_request_t *req,
                              plan_t *plan, rtime_t *result, uint32_t n) {
     plan_t work_plan;
     uint32_t n_results = n;
-    router_result_init_plan (&work_plan);
+    plan_init (&work_plan);
 
     while (n_results) {
         --n_results;
@@ -182,7 +182,7 @@ bool router_route_all_departures (router_t *router, router_request_t *req, plan_
         bitset_op = bitset_new (router->tdata->n_operator_ids);
         bitset_clear (bitset_op);
 
-        if (plan_get_operators (router->tdata, plan, bitset_op)) {
+        if (plan_get_operators (plan, router->tdata, bitset_op)) {
             opidx_t n = (opidx_t) bitset_count (bitset_op);
             if (n == 1) {
                 /* the journey advise is completely uniform, we should attempt to
@@ -198,7 +198,7 @@ bool router_route_all_departures (router_t *router, router_request_t *req, plan_
 
                 /* update our operator list with the output of our last query
                  */
-                plan_get_operators (router->tdata, plan, bitset_op);
+                plan_get_operators (plan, router->tdata, bitset_op);
 
                 /* if we have a result, we don't have to count, we already
                  * know that we have an extra operator here. n++ would suffice.
@@ -227,7 +227,7 @@ bool router_route_all_departures (router_t *router, router_request_t *req, plan_
 
     free (result);
 
-    router_result_sort(plan);
+    plan_sort (plan);
     return true;
 }
 
@@ -360,7 +360,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
     uint8_t n_req = 0;
     uint8_t n2_req;
 
-    router_result_init_plan(&work_plan);
+    plan_init (&work_plan);
     router_reset (router);
     search_streetnetwork(router,req);
 

@@ -5,40 +5,34 @@
 
 #include "plan.h"
 
-#ifdef RRRR_FEATURE_RENDER_TEXT
-#include "plan_render_text.h"
-#endif
+bool itinerary_init (itinerary_t *itin) {
+    itin->n_legs = 0;
+    itin->n_rides = 0;
 
-#ifdef RRRR_FEATURE_RENDER_OTP
-#include "plan_render_otp.h"
-#endif
-
-uint32_t plan_render (plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen,
-                      plan_render_t type) {
-#if !defined (RRRR_FEATURE_RENDER_TEXT) && !defined (RRRR_FEATURE_RENDER_TEXT)
-    UNUSED(plan);
-    UNUSED(tdata);
-    UNUSED(buf);
-    UNUSED(buflen);
-#endif
-
-    switch (type) {
-    case pr_text:
-#ifdef RRRR_FEATURE_RENDER_TEXT
-        return plan_render_text(plan, tdata, buf, buflen);
-#endif
-    case pr_otp:
-#ifdef RRRR_FEATURE_RENDER_OTP
-        return plan_render_otp(plan, tdata, buf, buflen);
-#endif
-    case pr_none:
-        break;
-    }
-
-    return 0;
+    return true;
 }
 
-bool plan_get_operators (tdata_t *td, plan_t *plan, bitset_t *bs) {
+bool plan_init (plan_t *plan) {
+    plan->n_itineraries = 0;
+
+    return true;
+}
+
+static int
+compareItineraries(const void *elem1, const void *elem2) {
+    const itinerary_t *i1 = (const itinerary_t *) elem1;
+    const itinerary_t *i2 = (const itinerary_t *) elem2;
+
+    return ((i1->legs[0].t0 - i2->legs[0].t0) << 4) +
+            i1->legs[i1->n_legs - 1].t1 - i2->legs[i2->n_legs - 1].t1;
+}
+
+void plan_sort (plan_t *plan) {
+    qsort(&plan->itineraries, plan->n_itineraries,
+          sizeof(itinerary_t), compareItineraries);
+}
+
+bool plan_get_operators (plan_t *plan, tdata_t *td, bitset_t *bs) {
     uint8_t n_itineraries;
     n_itineraries = plan->n_itineraries;
 

@@ -10,66 +10,9 @@
 #include "util.h"
 #include "rrrr_types.h"
 #include "router.h"
-#define MAX_LEGS RRRR_DEFAULT_MAX_ROUNDS * 4 + 1
-/* A leg represents one ride or walking transfer. */
-typedef struct leg leg_t;
-struct leg {
-    /* vj index */
-    jp_vjoffset_t vj;
+#include "plan.h"
 
-    /* journey_pattern index */
-    jpidx_t journey_pattern;
-
-    /* from stop_point index */
-    spidx_t sp_from;
-
-    /* to stop_point index */
-    spidx_t sp_to;
-
-    /* start time */
-    rtime_t  t0;
-
-    /* end time */
-    rtime_t  t1;
-
-    #ifdef RRRR_FEATURE_REALTIME_EXPANDED
-    /* Serviceday of the vehicle_journey */
-    calendar_t  cal_day;
-    #endif
-
-    #ifdef RRRR_FEATURE_REALTIME
-    /* start journey_pattern_point index */
-    uint16_t jpp0;
-
-    /* end journey_pattern_point index */
-    uint16_t jpp1;
-
-    /* start delay */
-    int16_t d0;
-
-    /* end delay */
-    int16_t d1;
-    #endif
-};
-
-
-/* An itinerary is a chain of legs leading from one place to another. */
-typedef struct itinerary itinerary_t;
-struct itinerary {
-    leg_t legs[MAX_LEGS];
-    uint8_t n_rides;
-    uint8_t n_legs;
-};
-
-
-/* A plan is several pareto-optimal itineraries connecting the same two stops. */
-typedef struct plan plan_t;
-struct plan {
-    itinerary_t itineraries[RRRR_DEFAULT_PLAN_ITIN];
-    router_request_t req;
-    uint8_t n_itineraries;
-};
-
+#if 0
 /* Structure to temporary store abstracted plans */
 typedef struct result result_t;
 struct result {
@@ -91,12 +34,9 @@ struct result {
     /* transfers in trip */
     uint8_t n_transfers;
 };
+#endif
 
 bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req);
-
-void router_result_sort (plan_t *plan);
-
-void router_result_init_plan(plan_t *plan);
 
 /* return num of chars written */
 uint32_t router_result_dump(router_t *router, router_request_t *req,

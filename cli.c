@@ -13,6 +13,7 @@
 #include "config.h"
 #include "api.h"
 #include "plan.h"
+#include "plan_render.h"
 #include "set.h"
 #include "router_request.h"
 #include "router_result.h"
@@ -65,7 +66,7 @@ int main (int argc, char *argv[]) {
     memset (&router,   0, sizeof(router_t));
     memset (&cli_args, 0, sizeof(cli_args));
 
-    router_result_init_plan(&plan);
+    plan_init (&plan);
     cli_args.repeat = 1;
     cli_args.render_type = 1;
 
@@ -455,7 +456,7 @@ int main (int argc, char *argv[]) {
 
     while (cli_args.repeat){
         --cli_args.repeat;
-        router_result_init_plan(&plan);
+        plan_init (&plan);
 
         /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
          * this erases the set cutoff time from reversals in previous requests in the repeat function

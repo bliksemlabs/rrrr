@@ -6,18 +6,10 @@
 #include "rrrr_types.h"
 #include "router_result.h"
 #include "street_network.h"
+#include "plan.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-void router_result_init_plan(plan_t *plan) {
-    plan->n_itineraries = 0;
-}
-
-static void
-router_result_init_itinerary(itinerary_t *itin) {
-    itin->n_legs = 0;
-    itin->n_rides = 0;
-}
 /* Reverse the times and stops in a leg.
  * Used for creating arrive-by itineraries.
  */
@@ -34,7 +26,6 @@ static void leg_swap(leg_t *leg) {
     leg->d1 = temp.d1;
 #endif
 }
-
 
 #ifdef RRRR_FEATURE_REALTIME_EXPANDED
 
@@ -200,19 +191,6 @@ static bool check_plan_invariants(plan_t *plan) {
     return fail;
 }
 
-static int
-compareItineraries(const void *elem1, const void *elem2) {
-    const itinerary_t *i1 = (const itinerary_t *) elem1;
-    const itinerary_t *i2 = (const itinerary_t *) elem2;
-
-    return ((i1->legs[0].t0 - i2->legs[0].t0) << 3) +
-            i1->legs[i1->n_legs - 1].t1 - i2->legs[i2->n_legs - 1].t1;
-}
-
-void router_result_sort(plan_t *plan) {
-    qsort(&plan->itineraries, plan->n_itineraries, sizeof(itinerary_t), compareItineraries);
-}
-
 static void leg_add_target(itinerary_t *itin, leg_t *leg, router_t *router, router_request_t *req,
         uint64_t i_state, street_network_t *target, int32_t i_target) {
     spidx_t sp_index = target->stop_points[i_target];
@@ -350,7 +328,7 @@ render_itinerary(router_t *router, router_request_t *req, itinerary_t *itin,
     spidx_t current_sp = sp_index;
     uint64_t i_state = (((uint64_t) round) * router->tdata->n_stop_points);
 
-    router_result_init_itinerary(itin);
+    itinerary_init (itin);
 
     if (router->states_time[i_state + sp_index] == UNREACHED ||
             router->states_back_journey_pattern[i_state + sp_index] == JP_NONE) {
