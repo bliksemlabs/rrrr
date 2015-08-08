@@ -12,10 +12,10 @@
 
 #include "config.h"
 #include "api.h"
+#include "plan.h"
 #include "set.h"
 #include "router_request.h"
 #include "router_result.h"
-#include "plan_render_text.h"
 
 #ifdef RRRR_FEATURE_REALTIME
 
@@ -29,13 +29,14 @@
 
 #endif
 
-#define OUTPUT_LEN 8000
+#define OUTPUT_LEN 32000
 
 typedef struct cli_arguments cli_arguments_t;
 struct cli_arguments {
     char *gtfsrt_alerts_filename;
     char *gtfsrt_tripupdates_filename;
     long repeat;
+    plan_render_t render_type;
     bool verbose;
     bool has_latlon;
 };
@@ -66,6 +67,7 @@ int main (int argc, char *argv[]) {
 
     router_result_init_plan(&plan);
     cli_args.repeat = 1;
+    cli_args.render_type = 1;
 
     /* * * * * * * * * * * * * * * * * * * * * *
      * PHASE ZERO: HANDLE COMMANDLINE ARGUMENTS
@@ -108,6 +110,14 @@ int main (int argc, char *argv[]) {
                         "[ --gtfsrt-tripupdates=filename.pb ]\n"
 #endif
 #endif
+                        "[ --render-type=none"
+#ifdef RRRR_FEATURE_RENDER_OTP
+                        "|otp"
+#endif
+#ifdef RRRR_FEATURE_RENDER_TEXT
+                        "|text"
+#endif
+                        " ]\n"
                         "[ --repeat=n ]\n");
     }
 
@@ -227,6 +237,21 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--repeat=", 9) == 0) {
                         cli_args.repeat = strtol(&argv[i][9], NULL, 10);
                     }
+                    else if (strncmp(argv[i], "--render-type=", 14) == 0) {
+                        if (strcmp(&argv[i][14], "none") == 0) {
+                            cli_args.render_type = pr_none;
+                        }
+                        #ifdef RRRR_FEATURE_RENDER_TEXT
+                        if (strcmp(&argv[i][14], "text") == 0) {
+                            cli_args.render_type = pr_text;
+                        }
+                        #endif
+                        #ifdef RRRR_FEATURE_RENDER_OTP
+                        else if (strcmp(&argv[i][14], "otp") == 0) {
+                            cli_args.render_type = pr_otp;
+                        }
+                        #endif
+                    }
                     break;
 
                 case 't':
@@ -245,6 +270,7 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
                         cli_args.has_latlon = strtolatlon(&argv[i][12], &req.to_latlon);
                     }
+
                     break;
 
                 case 'b':
@@ -458,7 +484,7 @@ int main (int argc, char *argv[]) {
     {
         char result_buf[OUTPUT_LEN];
         plan.req = req;
-        plan_render_text(&plan, &tdata, result_buf, OUTPUT_LEN);
+        plan_render (&plan, &tdata, result_buf, OUTPUT_LEN, cli_args.render_type);
         puts(result_buf);
     }
 

@@ -66,6 +66,9 @@
 #undef RRRR_FEATURE_REALTIME_EXPANDED
 #endif
 
+#define RRRR_FEATURE_RENDER_TEXT 1
+#define RRRR_FEATURE_RENDER_OTP 1
+
 #ifdef RRRR_DEBUG
 #define RRRR_DEV
 #endif
@@ -79,4 +82,4 @@
  * could use int indexes into a fixed-size, pre-allocated edge pool.
  */
 
-#endif
+#endif /* _CONFIG_H */

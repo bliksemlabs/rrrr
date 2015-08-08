@@ -10,8 +10,16 @@
 #include "tdata.h"
 #include "router_result.h"
 
+typedef enum plan_render {
+    pr_none = 0,
+    pr_text = 1,
+    pr_otp  = 2
+} plan_render_t;
+
 /* TODO: define structs for plan here */
 
 bool plan_get_operators (tdata_t *td, plan_t *plan, bitset_t *bs);
+uint32_t plan_render (plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen,
+                      plan_render_t type);
 
 #endif /* _PLAN_H */

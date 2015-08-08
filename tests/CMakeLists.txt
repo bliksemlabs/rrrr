@@ -23,6 +23,10 @@ set(SOURCE_FILES
     ../json.h
     ../plan.c
     ../plan.h
+    ../plan_render_otp.c
+    ../plan_render_otp.h
+    ../plan_render_text.c
+    ../plan_render_text.h
     ../polyline.c
     ../polyline.h
     ../radixtree.c
