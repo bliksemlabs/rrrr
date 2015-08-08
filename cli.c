@@ -13,10 +13,17 @@
 #include "config.h"
 #include "api.h"
 #include "plan.h"
-#include "plan_render.h"
 #include "set.h"
 #include "router_request.h"
 #include "router_result.h"
+
+#ifdef RRRR_FEATURE_RENDER_TEXT
+#include "plan_render_text.h"
+#endif
+
+#ifdef RRRR_FEATURE_RENDER_OTP
+#include "plan_render_otp.h"
+#endif
 
 #ifdef RRRR_FEATURE_REALTIME
 
@@ -37,7 +44,7 @@ struct cli_arguments {
     char *gtfsrt_alerts_filename;
     char *gtfsrt_tripupdates_filename;
     long repeat;
-    plan_render_t render_type;
+    uint32_t(*plan_render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen);
     bool verbose;
     bool has_latlon;
 };
@@ -68,7 +75,17 @@ int main (int argc, char *argv[]) {
 
     plan_init (&plan);
     cli_args.repeat = 1;
-    cli_args.render_type = 1;
+
+    /* try to set a default plan_render function. */
+    #ifdef RRRR_FEATURE_RENDER_TEXT
+    cli_args.plan_render = plan_render_text;
+    #else
+    #ifdef RRRR_FEATURE_RENDER_OTP
+    cli_args.plan_render = plan_render_otp;
+    #else
+    cli_args.plan_render = NULL;
+    #endif
+    #endif
 
     /* * * * * * * * * * * * * * * * * * * * * *
      * PHASE ZERO: HANDLE COMMANDLINE ARGUMENTS
@@ -111,7 +128,7 @@ int main (int argc, char *argv[]) {
                         "[ --gtfsrt-tripupdates=filename.pb ]\n"
 #endif
 #endif
-                        "[ --render-type=none"
+                        "[ --render=none"
 #ifdef RRRR_FEATURE_RENDER_OTP
                         "|otp"
 #endif
@@ -238,18 +255,18 @@ int main (int argc, char *argv[]) {
                     else if (strncmp(argv[i], "--repeat=", 9) == 0) {
                         cli_args.repeat = strtol(&argv[i][9], NULL, 10);
                     }
-                    else if (strncmp(argv[i], "--render-type=", 14) == 0) {
-                        if (strcmp(&argv[i][14], "none") == 0) {
-                            cli_args.render_type = pr_none;
+                    else if (strncmp(argv[i], "--render=", 9) == 0) {
+                        if (strcmp(&argv[i][9], "none") == 0) {
+                            cli_args.plan_render = NULL;
                         }
                         #ifdef RRRR_FEATURE_RENDER_TEXT
-                        if (strcmp(&argv[i][14], "text") == 0) {
-                            cli_args.render_type = pr_text;
+                        if (strcmp(&argv[i][9], "text") == 0) {
+                            cli_args.plan_render = plan_render_text;
                         }
                         #endif
                         #ifdef RRRR_FEATURE_RENDER_OTP
-                        else if (strcmp(&argv[i][14], "otp") == 0) {
-                            cli_args.render_type = pr_otp;
+                        else if (strcmp(&argv[i][9], "otp") == 0) {
+                            cli_args.plan_render = plan_render_otp;
                         }
                         #endif
                     }
@@ -482,10 +499,10 @@ int main (int argc, char *argv[]) {
      *  PHASE THREE: RENDER THE RESULTS
      *
      * * * * * * * * * * * * * * * * * * */
-    {
+    if (cli_args.plan_render) {
         char result_buf[OUTPUT_LEN];
         plan.req = req;
-        plan_render (&plan, &tdata, result_buf, OUTPUT_LEN, cli_args.render_type);
+        cli_args.plan_render (&plan, &tdata, result_buf, OUTPUT_LEN);
         puts(result_buf);
     }
 
