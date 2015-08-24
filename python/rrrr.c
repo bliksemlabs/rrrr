@@ -8,27 +8,38 @@
 #include "router_request.h"
 
 typedef struct {
+    /* The object itself */
     PyObject_HEAD
+
+    /* filename of timetable4.dat */
     PyObject *timetable;
+
+    /* json.loads function */
     PyObject *json;
+
+    /* interface to a loaded timetable */
     tdata_t tdata;
+
+    /* interface to the router instance */
     router_t router;
 } Raptor;
 
 static void
-Raptor_dealloc(Raptor* self)
+Raptor_dealloc (Raptor* self)
 {
-    Py_XDECREF(self->timetable);
-    router_teardown(&self->router);
-    tdata_hashgrid_teardown(&self->tdata);
-    tdata_close(&self->tdata);
-    self->ob_type->tp_free((PyObject*)self);
+    /* free the memory used in the object */
+    Py_XDECREF (self->timetable);
+    router_teardown (&self->router);
+    tdata_hashgrid_teardown (&self->tdata);
+    tdata_close (&self->tdata);
+    self->ob_type->tp_free ((PyObject*)self);
 }
 
 static PyObject *
 Raptor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     Raptor *self;
+    PyObject *json;
 
     self = (Raptor *)type->tp_alloc(type, 0);
     if (self != NULL) {
@@ -38,11 +49,16 @@ Raptor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
        
+        /* initialise the memory for the router */
         memset (&self->tdata,  0, sizeof(tdata_t));
         memset (&self->router, 0, sizeof(router_t)); 
     }
     
-    self->json = PyObject_GetAttrString(PyImport_ImportModule("json"), "loads");
+    /* import json */
+    json = PyImport_ImportModule("json");
+
+    /* json.loads() */
+    self->json = PyObject_GetAttrString(json, "loads");
 
     return (PyObject *)self;
 }
@@ -52,11 +68,15 @@ Raptor_init(Raptor *self, PyObject *args, PyObject *kwds)
 {
     PyObject *timetable=NULL, *tmp;
 
-    static char *kwlist[] = {"timetable", NULL};
-
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, 
-                                      &timetable))
-        return -1; 
+    {
+        /* class Raptor: def __init__(timetable) */
+        static char *kwlist[] = {"timetable", NULL};
+        if (! PyArg_ParseTupleAndKeywords(args, kwds,
+                                          "O", kwlist,
+                                          &timetable)) {
+            return -1;
+        }
+    }
 
     if (timetable) {
         tmp = self->timetable;
@@ -64,6 +84,7 @@ Raptor_init(Raptor *self, PyObject *args, PyObject *kwds)
         self->timetable = timetable;
         Py_XDECREF(tmp);
 
+        /* Initialise the journey planner */
         char *filename = PyString_AsString(self->timetable);
         if (! tdata_load(&self->tdata, filename) ||
             ! tdata_hashgrid_setup (&self->tdata) ||
@@ -85,22 +106,38 @@ static PyMemberDef Raptor_members[] = {
 static PyObject *
 Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 {
+    char *from_id = NULL, *from_sp_id = NULL,
+         *to_id = NULL, *to_sp_id = NULL,
+         *operator = NULL;
+    time_t arrive = 0, depart = 0, epoch = 0;
     router_request_t req;
-    router_request_initialize (&req);
-    req.arrive_by = false;
+    plan_t plan;
     #define OUTPUT_LEN 100000
     char result_buf[OUTPUT_LEN];
-    plan_t plan;
-    time_t arrive = 0, depart = 0, epoch = 0;
-    char *from_id = NULL, *from_sp_id = NULL, *to_id = NULL, *to_sp_id = NULL, *operator = NULL;
 
-    static char * list[] = { "from_id", "to_id", "from_sp_id", "to_sp_id", "from_latlon", "to_latlon", "arrive", "depart", "operator" };
-    if (!PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)lls", list, &from_id, &to_id, &from_sp_id, &to_sp_id, &req.from_latlon.lat, &req.from_latlon.lon, &req.to_latlon.lat, &req.to_latlon.lon, &arrive, &depart, operator)) {
-        return NULL;
+    router_request_initialize (&req);
+
+    {
+        static char * list[] = { "from_id", "to_id",
+                                 "from_sp_id", "to_sp_id",
+                                 "from_latlon", "to_latlon",
+                                 "arrive", "depart", "operator" };
+        
+        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)lls",
+                list, &from_id, &to_id,
+                      &from_sp_id, &to_sp_id,
+                      &req.from_latlon.lat, &req.from_latlon.lon,
+                      &req.to_latlon.lat, &req.to_latlon.lon,
+                      &arrive, &depart, operator)) {
+            return NULL;
+        }
     }
 
-    if ( (from_id == NULL && from_sp_id == NULL && (req.from_latlon.lon == 0.0 && req.from_latlon.lat == 0.0 )) || 
-         (  to_id == NULL &&   to_sp_id == NULL && (  req.to_latlon.lon == 0.0 &&   req.to_latlon.lat == 0.0 )) ||
+    /* Validate input */
+    if ( (from_id == NULL && from_sp_id == NULL &&
+          (req.from_latlon.lon == 0.0 && req.from_latlon.lat == 0.0 )) || 
+         (  to_id == NULL &&   to_sp_id == NULL &&
+          (  req.to_latlon.lon == 0.0 &&   req.to_latlon.lat == 0.0 )) ||
          ( arrive == 0    &&     depart == 0)) {
         PyErr_SetString(PyExc_AttributeError, "Missing mandatory input");
         return NULL;
@@ -147,17 +184,17 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 
     /* Filtering related input */
     if (operator) {
-        opidx_t op_idx = tdata_operator_idx_by_operator_name(&self->tdata, operator, 0);
+        opidx_t op_idx = tdata_operator_idx_by_operator_name (&self->tdata, operator, 0);
         while (op_idx != OP_NONE)
         {
             set_add_uint8 (req.operators, &req.n_operators, RRRR_MAX_FILTERED_OPERATORS, op_idx);
-            op_idx = tdata_operator_idx_by_operator_name(&self->tdata, operator, op_idx + 1);
+            op_idx = tdata_operator_idx_by_operator_name (&self->tdata, operator, op_idx + 1);
         }
     }
 
     plan_init (&plan);
     
-    if (!router_route_all_departures(&self->router, &req, &plan)) {
+    if (!router_route_all_departures (&self->router, &req, &plan)) {
         PyErr_SetString(PyExc_AttributeError, "router");
         return NULL;
     }
@@ -165,6 +202,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
     plan.req = req;
     plan_render_otp (&plan, &self->tdata, result_buf, OUTPUT_LEN);
 
+    /* return json.loads(result_buf) */
     return PyObject_CallFunctionObjArgs(self->json, PyString_FromString (result_buf), NULL);
 }
 
@@ -225,19 +263,19 @@ static PyMethodDef module_methods[] = {
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initrrrr(void) 
+initrrrr (void) 
 {
     PyObject* m;
 
-    if (PyType_Ready(&RaptorType) < 0)
+    if (PyType_Ready (&RaptorType) < 0)
         return;
 
-    m = Py_InitModule3("rrrr", module_methods,
-                       "Public transport Journey Planner.");
+    m = Py_InitModule3 ("rrrr", module_methods,
+                        "Public transport Journey Planner.");
 
     if (m == NULL)
       return;
 
-    Py_INCREF(&RaptorType);
-    PyModule_AddObject(m, "Raptor", (PyObject *)&RaptorType);
+    Py_INCREF (&RaptorType);
+    PyModule_AddObject (m, "Raptor", (PyObject *)&RaptorType);
 }
