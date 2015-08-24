@@ -38,7 +38,6 @@ set(SOURCE_FILES
     api.h
     bitset.c
     bitset.h
-    cli.c
     config.h
     geometry.c
     geometry.h
@@ -104,6 +103,7 @@ link_directories(/usr/local/lib)
 link_libraries(m)
 link_libraries(protobuf-c)
 
-add_executable(cli ${SOURCE_FILES})
+add_executable(cli ${SOURCE_FILES} cli.c)
+add_library(rrrr ${SOURCE_FILES})
 
 add_subdirectory(tests)
