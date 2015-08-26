@@ -49,19 +49,20 @@ void bitset_destroy(bitset_t *self) {
 
 void bitset_clear(bitset_t *self) {
     uint32_t i_chunk = self->n_chunks;
-    do {
+    
+    while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] = (bits_t) 0;
-    } while (i_chunk);
+    }
 }
 
 void bitset_black(bitset_t *self) {
     uint32_t i_chunk = self->n_chunks;
     
-    do {
+    while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] = ~((bits_t) 0);
-    } while (i_chunk);
+    }
 
     /* This sets the actual number of bits of capacity opposed to all
      * bits, the only reason to do this is to allow counting.
@@ -74,10 +75,10 @@ void bitset_mask_and(bitset_t *self, bitset_t *mask) {
 
     assert (self->capacity == mask->capacity);
 
-    do {
+    while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] &= mask->chunks[i_chunk];
-    } while (i_chunk);
+    }
 }
 
 /* Our bitset code is storing a long number of bits by packing an array of
@@ -173,12 +174,12 @@ uint32_t bitset_count(bitset_t *self) {
 
 uint32_t bitset_count(bitset_t *self) {
     uint32_t c = 0;
-    uint32_t index = self->n_chunks;
+    uint32_t i_chunk = self->n_chunks;
 
-    while (index) {
+    while (i_chunk) {
         bits_t v;
-        index--;
-        v = self->chunks[index];
+        i_chunk--;
+        v = self->chunks[i_chunk];
         v = v - ((v >> 1) & (bits_t)~(bits_t)0/3);
         v = (v & (bits_t)~(bits_t)0/15*3) + ((v >> 2) & (bits_t)~(bits_t)0/15*3);
         v = (v + (v >> 4)) & (bits_t)~(bits_t)0/255*15;
