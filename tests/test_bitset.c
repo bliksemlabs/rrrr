@@ -11,9 +11,14 @@ START_TEST (test_bitset)
 
         for (i = 0; i < 50000; i += 2)
             bitset_set(bs, i);
+        
+        ck_assert_int_eq (bitset_count(bs), 25000);
+        
         for (i = 1; i < 50000; i += 2)
             bitset_set(bs_inv, i);
 
+        ck_assert_int_eq (bitset_count(bs_inv), 25000);
+        
         for (i = 0; i < 50000; ++i){
             if (i % 2 == 0){
                 ck_assert(bitset_get(bs, i));
@@ -54,12 +59,22 @@ START_TEST (test_bitset)
         ck_assert_int_eq(bitset_count(bs), 0);
         ck_assert_int_eq(BITSET_NONE,bitset_next_set_bit(bs, 0));
 
+        /* Test counting */
+        bitset_set(bs, 49999);
+        bitset_set(bs, 39999);
+        bitset_set(bs, 29999);
+        bitset_set(bs, 19999);
+        bitset_set(bs,  1);
+        bitset_set(bs,  0);
+        ck_assert_int_eq (bitset_count(bs), 5);
+
         /* Test unset */
         bitset_black(bs);
         for (i = 0; i < 50000; i += 2) {
             bitset_unset(bs, i);
         }
 
+        ck_assert_int_eq(bitset_count(bs), 25000);
         ck_assert(!bitset_get(bs, 0));
         ck_assert(bitset_get(bs, 1));
         ck_assert_int_eq(1, bitset_next_set_bit(bs, 1));
