@@ -57,10 +57,16 @@ void bitset_clear(bitset_t *self) {
 
 void bitset_black(bitset_t *self) {
     uint32_t i_chunk = self->n_chunks;
+    
     do {
         i_chunk--;
         self->chunks[i_chunk] = ~((bits_t) 0);
     } while (i_chunk);
+
+    /* This sets the actual number of bits of capacity opposed to all
+     * bits, the only reason to do this is to allow counting.
+     */
+    self->chunks[self->n_chunks - 1] = (((bits_t) 1) << (BS_BITS - (self->capacity & (BS_BITS - 1)))) - 1;
 }
 
 void bitset_mask_and(bitset_t *self, bitset_t *mask) {
@@ -152,6 +158,7 @@ uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
 }
 
 /* TODO: optimise; http://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer */
+#if 0
 uint32_t bitset_count(bitset_t *self) {
     uint32_t total = 0;
     uint32_t elem;
@@ -161,6 +168,23 @@ uint32_t bitset_count(bitset_t *self) {
         total++;
     }
     return total;
+}
+#endif
+
+uint32_t bitset_count(bitset_t *self) {
+    uint32_t c = 0;
+    uint32_t index = self->n_chunks;
+
+    while (index) {
+        bits_t v;
+        index--;
+        v = self->chunks[index];
+        v = v - ((v >> 1) & (bits_t)~(bits_t)0/3);
+        v = (v & (bits_t)~(bits_t)0/15*3) + ((v >> 2) & (bits_t)~(bits_t)0/15*3);
+        v = (v + (v >> 4)) & (bits_t)~(bits_t)0/255*15;
+        c += (bits_t)(v * ((bits_t)~(bits_t)0/255)) >> (sizeof(bits_t) - 1) * 8;
+    }
+    return c;
 }
 
 #ifdef RRRR_DEBUG

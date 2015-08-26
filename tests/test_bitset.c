@@ -44,12 +44,14 @@ START_TEST (test_bitset)
 
         /* Test flipping all bits on */
         bitset_black(bs);
+        ck_assert_int_eq(bitset_count(bs), 50000);
         for (i = 0; i < 50000; ++i) {
             ck_assert(bitset_get(bs, i));
         }
 
         /* Test clearing all bits */
         bitset_clear(bs);
+        ck_assert_int_eq(bitset_count(bs), 0);
         ck_assert_int_eq(BITSET_NONE,bitset_next_set_bit(bs, 0));
 
         /* Test unset */
