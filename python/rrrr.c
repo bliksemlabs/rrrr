@@ -121,13 +121,17 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
         static char * list[] = { "from_id", "to_id",
                                  "from_sp_id", "to_sp_id",
                                  "from_latlon", "to_latlon",
+                                 "from_idx", "to_idx",
+                                 "from_sp_idx", "to_sp_idx",
                                  "arrive", "depart", "operator" };
         
-        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)lls",
+        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHlls",
                 list, &from_id, &to_id,
                       &from_sp_id, &to_sp_id,
                       &req.from_latlon.lat, &req.from_latlon.lon,
                       &req.to_latlon.lat, &req.to_latlon.lon,
+                      &req.from_stop_area, &req.to_stop_area,
+                      &req.from_stop_point, &req.to_stop_point,
                       &arrive, &depart, operator)) {
             return NULL;
         }
@@ -135,8 +139,10 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 
     /* Validate input */
     if ( (from_id == NULL && from_sp_id == NULL &&
+          req.from_stop_area == STOP_NONE && req.from_stop_point == STOP_NONE &&
           (req.from_latlon.lon == 0.0 && req.from_latlon.lat == 0.0 )) || 
-         (  to_id == NULL &&   to_sp_id == NULL &&
+         (to_id == NULL &&   to_sp_id == NULL &&
+          req.to_stop_area == STOP_NONE && req.to_stop_point == STOP_NONE &&
           (  req.to_latlon.lon == 0.0 &&   req.to_latlon.lat == 0.0 )) ||
          ( arrive == 0    &&     depart == 0)) {
         PyErr_SetString(PyExc_AttributeError, "Missing mandatory input");
