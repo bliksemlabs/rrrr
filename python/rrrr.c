@@ -104,6 +104,22 @@ static PyMemberDef Raptor_members[] = {
 };
 
 static PyObject *
+Raptor_stops(Raptor* self, PyObject *args, PyObject *keywords)
+{
+    spidx_t stop_index = (spidx_t) self->tdata.n_stop_points;
+    PyObject *list = PyList_New(stop_index);
+
+    while (stop_index) {
+        const char *stop_name;
+        stop_index--;
+        stop_name = tdata_stop_point_name_for_index(&self->tdata, stop_index);
+        PyList_SetItem (list, stop_index, PyString_FromString (stop_name));
+    }
+
+    return list;
+}
+
+static PyObject *
 Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 {
     char *from_id = NULL, *from_sp_id = NULL,
@@ -215,6 +231,9 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 static PyMethodDef Raptor_methods[] = {
     {"route", (PyCFunction)Raptor_route, METH_VARARGS | METH_KEYWORDS,
      "Return a JSON-OTP formatted set of itineraries"
+    },
+    {"stops", (PyCFunction)Raptor_stops, METH_NOARGS,
+     "Return a List of stops from the timetable"
     },
     {NULL}  /* Sentinel */
 };
