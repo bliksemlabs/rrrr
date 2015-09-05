@@ -54,19 +54,19 @@ mark_stop_area_in_streetnetwork(spidx_t sa_index, rtime_t duration, tdata_t *tda
     } while (sp_idx);
 }
 
-static bool search_streetnetwork(router_t *router, router_request_t *req){
+static bool search_streetnetwork (tdata_t *tdata, router_request_t *req){
     if (req->from_stop_area != STOP_NONE) {
         latlon_t *latlon;
-        latlon = tdata_stop_area_coord_for_index(router->tdata, req->from_stop_area);
-        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
-        mark_stop_area_in_streetnetwork(req->from_stop_area,0,router->tdata,&req->entry);
+        latlon = tdata_stop_area_coord_for_index(tdata, req->from_stop_area);
+        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, tdata, &req->entry);
+        mark_stop_area_in_streetnetwork(req->from_stop_area, 0, tdata, &req->entry);
     }else if (req->from_stop_point != STOP_NONE){
         latlon_t *latlon;
-        latlon = tdata_stop_point_coord_for_index(router->tdata, req->from_stop_point);
-        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
+        latlon = tdata_stop_point_coord_for_index(tdata, req->from_stop_point);
+        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, tdata, &req->entry);
         street_network_mark_duration_to_stop_point(&req->entry, req->from_stop_point, 0);
     }else if (req->from_latlon.lat != 0.0 && req->from_latlon.lon != 0.0){
-        streetnetwork_stoppoint_durations(&req->from_latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->entry);
+        streetnetwork_stoppoint_durations(&req->from_latlon, req->walk_speed, req->walk_max_distance, tdata, &req->entry);
     }else if (req->onboard_journey_pattern == JP_NONE){
         printf("No coord for entry\n");
         return false;
@@ -74,23 +74,23 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
 
     if (req->to_stop_area != STOP_NONE) {
         latlon_t *latlon;
-        latlon = tdata_stop_area_coord_for_index(router->tdata, req->to_stop_area);
-        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->exit);
-        mark_stop_area_in_streetnetwork(req->to_stop_area,0,router->tdata,&req->exit);
+        latlon = tdata_stop_area_coord_for_index(tdata, req->to_stop_area);
+        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, tdata, &req->exit);
+        mark_stop_area_in_streetnetwork(req->to_stop_area, 0, tdata, &req->exit);
     }else if (req->to_stop_point != STOP_NONE){
         latlon_t *latlon;
-        latlon = tdata_stop_point_coord_for_index(router->tdata, req->to_stop_point);
-        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->exit);
+        latlon = tdata_stop_point_coord_for_index(tdata, req->to_stop_point);
+        streetnetwork_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, tdata, &req->exit);
         street_network_mark_duration_to_stop_point(&req->exit, req->to_stop_point, 0);
     }else if (req->to_latlon.lat != 0.0 && req->to_latlon.lon != 0.0){
-        streetnetwork_stoppoint_durations(&req->to_latlon, req->walk_speed, req->walk_max_distance, router->tdata, &req->exit);
+        streetnetwork_stoppoint_durations(&req->to_latlon, req->walk_speed, req->walk_max_distance, tdata, &req->exit);
     }else{
         printf("No coord for exit\n");
         return false;
     }
     #ifdef RRRR_DEV
-    dump_exits_and_entries(req,router->tdata);
-    printf("%d entries, %d exits\n",req->entry.n_points,req->exit.n_points);
+    dump_exits_and_entries(req, tdata);
+    printf("%d entries, %d exits\n", req->entry.n_points, req->exit.n_points);
     #endif
     return true;
 }
@@ -101,7 +101,7 @@ static bool search_streetnetwork(router_t *router, router_request_t *req){
  */
 bool router_route_first_departure (router_t *router, router_request_t *req, plan_t *plan) {
     router_reset (router);
-    search_streetnetwork(router,req);
+    search_streetnetwork (router->tdata, req);
 
     if ( ! router_route (router, req) ) {
         return false;
@@ -164,7 +164,7 @@ bool router_route_all_departures (router_t *router, router_request_t *req, plan_
     rtime_t *result = (rtime_t *) malloc(sizeof(rtime_t) * 64);
     uint32_t n_results;
 
-    search_streetnetwork (router, req);
+    search_streetnetwork (router->tdata, req);
     street_network_null_duration (&req->entry);
     /* router_reset (router); */
 
@@ -323,7 +323,7 @@ bool router_route_naive_reversal (router_t *router, router_request_t *req, plan_
     uint8_t n_reversals = (uint8_t) (req->arrive_by ? 1 : 2);
 
     router_reset (router);
-    search_streetnetwork(router,req);
+    search_streetnetwork (router->tdata, req);
     if ( ! router_route (router, req) ) {
         return false;
     }
@@ -362,7 +362,7 @@ bool router_route_full_reversal (router_t *router, router_request_t *req, plan_t
 
     plan_init (&work_plan);
     router_reset (router);
-    search_streetnetwork(router,req);
+    search_streetnetwork (router->tdata, req);
 
     if ( ! router_route (router, req) ) {
         return false;
