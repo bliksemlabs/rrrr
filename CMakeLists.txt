@@ -93,7 +93,7 @@ set(SOURCE_FILES
     tdata_validation.h
     street_network.h
     street_network.c
-    hashgrid_streetnetwork.c
+    hashgrid_street_network.c
     util.c
     util.h)
 

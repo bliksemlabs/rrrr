@@ -18,7 +18,7 @@ set(SOURCE_FILES
     ../geometry.h
     ../hashgrid.c
     ../hashgrid.h
-    ../hashgrid_streetnetwork.c
+    ../hashgrid_street_network.c
     ../json.c
     ../json.h
     ../plan.c

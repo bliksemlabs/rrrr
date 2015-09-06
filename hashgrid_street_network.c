@@ -5,7 +5,7 @@
 
 #include "street_network.h"
 
-bool streetnetwork_stoppoint_durations(latlon_t *latlon, float walk_speed, uint16_t max_walk_distance, tdata_t *tdata,street_network_t *sn){
+bool street_network_stoppoint_durations(latlon_t *latlon, float walk_speed, uint16_t max_walk_distance, tdata_t *tdata, street_network_t *sn){
     coord_t coord;
     double distance;
     uint32_t sp_index;
