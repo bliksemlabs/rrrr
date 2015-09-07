@@ -23,7 +23,7 @@ void set_add_sp (spidx_t *set,
     (*length)++;
 }
 
-bool set_in_sp (spidx_t *set, uint8_t length, spidx_t value) {
+bool set_in_sp (const spidx_t *set, uint8_t length, spidx_t value) {
     uint8_t i = length;
     if (i == 0) return false;
     do {
@@ -69,7 +69,7 @@ void set_add_vj (jpidx_t *set1, jp_vjoffset_t *set2,
     (*length)++;
 }
 
-bool set_in_vj (jpidx_t *set1, jp_vjoffset_t *set2, uint8_t length,
+bool set_in_vj (const jpidx_t *set1, const jp_vjoffset_t *set2, uint8_t length,
                 jpidx_t value1, jp_vjoffset_t value2) {
     uint8_t i = length;
     if (i == 0) return false;
@@ -83,7 +83,7 @@ bool set_in_vj (jpidx_t *set1, jp_vjoffset_t *set2, uint8_t length,
 #endif
 
 #if RRRR_MAX_FILTERED_OPERATORS > 0 || RRRR_MAX_BANNED_OPERATORS > 0
-bool set_in_uint8 (uint8_t *set, uint8_t length, uint8_t value) {
+bool set_in_uint8 (const uint8_t *set, uint8_t length, uint8_t value) {
     uint8_t i = length;
 
     while (i) {
