@@ -512,3 +512,83 @@ router_request_dump(router_request_t *req, tdata_t *tdata) {
          printf("\b\n");
     }
 }
+
+#ifdef RRRR_DEV
+void
+router_request_dump_exits_and_entries(router_request_t *req, tdata_t *tdata) {
+    spidx_t i;
+    printf("Entries: \n");
+    for (i = 0; i < req->entry.n_points; i++) {
+        spidx_t sp_index = req->entry.stop_points[i];
+        printf("O %d %s %s, %d seconds\n",sp_index,
+                tdata_stop_point_id_for_index(tdata, sp_index),
+                tdata_stop_point_name_for_index(tdata,sp_index),
+                RTIME_TO_SEC(req->entry.durations[i])
+        );
+    }
+    printf("\nExits: \n");
+    for (i = 0; i < req->exit.n_points; i++) {
+        spidx_t sp_index = req->exit.stop_points[i];
+        printf("E %d %s %s, %d seconds\n",sp_index,
+                tdata_stop_point_id_for_index(tdata, sp_index),
+                tdata_stop_point_name_for_index(tdata,sp_index),
+                RTIME_TO_SEC(req->exit.durations[i])
+        );
+    }
+    printf("\n");
+}
+#endif
+
+static void
+mark_stop_area_in_street_network(spidx_t sa_index, rtime_t duration, tdata_t *tdata, street_network_t *sn) {
+    spidx_t sp_idx = (spidx_t) tdata->n_stop_points;
+    do {
+        sp_idx--;
+        if (tdata->stop_area_for_stop_point[sp_idx] == sa_index) {
+            street_network_mark_duration_to_stop_point(sn, sp_idx, duration);
+        }
+    } while (sp_idx);
+}
+
+bool
+router_request_search_street_network (router_request_t *req, tdata_t *tdata) {
+    if (req->from_stop_area != STOP_NONE) {
+        latlon_t *latlon;
+        latlon = tdata_stop_area_coord_for_index (tdata, req->from_stop_area);
+        street_network_stoppoint_durations (latlon, req->walk_speed, req->walk_max_distance, tdata, &req->entry);
+        mark_stop_area_in_street_network (req->from_stop_area, 0, tdata, &req->entry);
+    } else if (req->from_stop_point != STOP_NONE) {
+        latlon_t *latlon;
+        latlon = tdata_stop_point_coord_for_index (tdata, req->from_stop_point);
+        street_network_stoppoint_durations(latlon, req->walk_speed, req->walk_max_distance, tdata, &req->entry);
+        street_network_mark_duration_to_stop_point (&req->entry, req->from_stop_point, 0);
+    } else if (req->from_latlon.lat != 0.0 && req->from_latlon.lon != 0.0) {
+        street_network_stoppoint_durations (&req->from_latlon, req->walk_speed, req->walk_max_distance, tdata, &req->entry);
+    } else if (req->onboard_journey_pattern == JP_NONE) {
+        fprintf(stderr, "No coord for entry\n");
+        return false;
+    }
+
+    if (req->to_stop_area != STOP_NONE) {
+        latlon_t *latlon;
+        latlon = tdata_stop_area_coord_for_index (tdata, req->to_stop_area);
+        street_network_stoppoint_durations (latlon, req->walk_speed, req->walk_max_distance, tdata, &req->exit);
+        mark_stop_area_in_street_network (req->to_stop_area, 0, tdata, &req->exit);
+    } else if (req->to_stop_point != STOP_NONE) {
+        latlon_t *latlon;
+        latlon = tdata_stop_point_coord_for_index (tdata, req->to_stop_point);
+        street_network_stoppoint_durations (latlon, req->walk_speed, req->walk_max_distance, tdata, &req->exit);
+        street_network_mark_duration_to_stop_point (&req->exit, req->to_stop_point, 0);
+    } else if (req->to_latlon.lat != 0.0 && req->to_latlon.lon != 0.0) {
+        street_network_stoppoint_durations (&req->to_latlon, req->walk_speed, req->walk_max_distance, tdata, &req->exit);
+    } else {
+        fprintf(stderr, "No coord for exit\n");
+        return false;
+    }
+    #ifdef RRRR_DEV
+    router_request_dump_exits_and_entries (req, tdata);
+    fprintf (stderr, "%d entries, %d exits\n", req->entry.n_points, req->exit.n_points);
+    #endif
+    return true;
+}
+
