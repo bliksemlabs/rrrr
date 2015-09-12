@@ -468,6 +468,7 @@ otp_json(json_t *j, plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen) {
         json_end_obj(j);
         #endif
     json_end_obj(j);
+    json_end(j);
     /* json_dump(j); */
     return (uint32_t) json_length(j);
 }
@@ -533,6 +534,7 @@ uint32_t metadata_render_otp (tdata_t *tdata, char *buf, uint32_t buflen) {
     free (lat);
 
     json_end_obj(&j);
+    json_end(&j);
 
     return (uint32_t) json_length(&j);
 }
