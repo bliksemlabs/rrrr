@@ -52,7 +52,7 @@ class Index():
         self.loc_for_string = {}
         self.strings = []
         self.string_length = 0
-
+        
     def put_string(self,string):
         if string in self.loc_for_string:
             return self.loc_for_string[string]
@@ -127,10 +127,10 @@ def make_idx(tdata):
         if conn.from_stop_point.uri not in index.connections_from_stop_point:
             index.connections_from_stop_point[conn.from_stop_point.uri] = []
         index.connections_from_stop_point[conn.from_stop_point.uri].append(conn)
-
+    
     for key,vjs in index.blocks.items():
         if len(vjs) == 1:
-            continue
+            continue 
         vjs = sorted(vjs, key= lambda vj: vj.departure_time)
         for i in range(len(vjs)-1):
             from_vj = vjs[i]
@@ -326,7 +326,7 @@ def export_transfers(tdata,index,out):
     index.loc_transfer_dist_meters = tell(out)
 
     for transfer_time in transfertimes:
-        writeshort(out,(int(transfer_time or 0) >> 2))
+        writeshort(out,(int(transfer_time) >> 2))
 
     index.loc_stop_point_waittime = tell(out)
     for sp in index.stop_points:
@@ -395,7 +395,7 @@ def validity_mask(days):
     return mask
 
 def export_vj_validities(tdata,index,out):
-    print "writing bitfields indicating which days each trip is active"
+    print "writing bitfields indicating which days each trip is active" 
     # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
     write_text_comment(out,"VJ ACTIVE BITFIELDS")
     index.loc_vj_active = tell(out)
@@ -405,7 +405,7 @@ def export_vj_validities(tdata,index,out):
             writeint(out,validity_mask(vj.validity_pattern))
 
 def export_jp_validities(tdata,index,out):
-    print "writing bitfields indicating which days each trip is active"
+    print "writing bitfields indicating which days each trip is active" 
     # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
     write_text_comment(out,"JP ACTIVE BITFIELDS")
     index.loc_jp_active = tell(out)
@@ -509,13 +509,13 @@ def export_vj_time_offsets(tdata,index,out):
              writesignedbyte(out,(index.global_utc_offset-vj.utc_offset)/60/15) # n * 15 minutes
 
 def export_vj_uris(tdata,index,out):
-     all_vj_ids = []
+     all_vj_ids = [] 
      for jp in index.journey_patterns:
          for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-             all_vj_ids.append(vj.realtime_uri)
+             all_vj_ids.append(vj.uri)
      index.n_vj = len(all_vj_ids)
-     print "writing trip ids to string table"
-     # note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order.
+     print "writing trip ids to string table" 
+     # note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order. 
      write_text_comment(out,"VJ IDS")
      index.loc_vj_uris = write_list_of_strings(out,index,all_vj_ids)
      index.n_vj = len(all_vj_ids)
@@ -592,7 +592,7 @@ def write_header (out,index) :
         index.loc_stop_point_coords,
         index.loc_journey_patterns,
         index.loc_journey_pattern_points,
-        index.loc_journey_pattern_point_attributes,
+        index.loc_journey_pattern_point_attributes, 
         index.loc_journey_pattern_point_headsigns,
         index.loc_timedemandgroups,
         index.loc_vehicle_journeys,
