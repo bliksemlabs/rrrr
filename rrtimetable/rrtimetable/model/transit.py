@@ -32,7 +32,7 @@ class StopArea:
         self.type = 'stop_area'
         self.uri = uri
         if uri in timetable.stop_areas:
-            raise ValueError('Violation of unique StopArea key') 
+            raise ValueError('Violation of unique StopArea key')
         timetable.stop_areas[uri] = self
         if not utils.validate_timezone(timezone):
             raise Exception("Invalid timezone")
@@ -46,7 +46,7 @@ class CommercialMode:
         self.type = 'commercial_mode'
         self.uri = uri
         if uri in timetable.commercial_modes:
-            raise ValueError('Violation of unique CommercialMode key') 
+            raise ValueError('Violation of unique CommercialMode key')
         timetable.commercial_modes[uri] = self
         self.name = name
 
@@ -64,7 +64,7 @@ class PhysicalMode:
         self.type = 'physical_mode'
         self.uri = uri
         if uri in timetable.physical_modes:
-            raise ValueError('Violation of unique PhysicalMode key') 
+            raise ValueError('Violation of unique PhysicalMode key')
         timetable.physical_modes[uri] = self
         self.name = name
 
@@ -82,10 +82,10 @@ class StopPoint:
         self.type = 'stop_point'
         self.uri = uri
         if stop_area_uri not in timetable.stop_areas:
-            raise ValueError('Violation of foreign key, stop_area not found') 
+            raise ValueError('Violation of foreign key, stop_area not found')
         self.stop_area = timetable.stop_areas[stop_area_uri]
         if uri in timetable.stop_points:
-            raise ValueError('Violation of unique StopPoint key') 
+            raise ValueError('Violation of unique StopPoint key')
         timetable.stop_points[uri] = self
         self.name = name
         self.platformcode = platformcode
@@ -96,9 +96,9 @@ class Connection:
     def __init__(self,timetable,from_stop_point_uri,to_stop_point_uri,min_transfer_time,type=None,):
         self.type = 'connection'
         if from_stop_point_uri not in timetable.stop_points:
-            raise ValueError('Violation of foreign key, from_stop_point not found') 
+            raise ValueError('Violation of foreign key, from_stop_point not found')
         if to_stop_point_uri not in timetable.stop_points:
-            raise ValueError('Violation of foreign key, to_stop_point not found') 
+            raise ValueError('Violation of foreign key, to_stop_point not found')
         if (from_stop_point_uri,to_stop_point_uri) in timetable.connections:
             raise ValueError('Violation of unique key, unique connections between stop_points required')
         self.from_stop_point = timetable.stop_points[from_stop_point_uri]
@@ -112,7 +112,7 @@ class Operator:
         self.type = 'operator'
         self.uri = uri
         if uri in timetable.operators:
-            raise ValueError('Violation of unique Operator key') 
+            raise ValueError('Violation of unique Operator key')
         timetable.operators[uri] = self
         if not utils.validate_timezone(timezone):
             raise Exception("Invalid timezone")
@@ -131,7 +131,7 @@ class Line:
             raise ValueError('Violation of foreign key, physical_mode not found')
         self.physical_mode = timetable.physical_modes[physical_mode_uri]
         if uri in timetable.lines:
-            raise ValueError('Violation of unique Line key') 
+            raise ValueError('Violation of unique Line key')
         timetable.lines[uri] = self
         self.name = name
         self.code = code
@@ -148,7 +148,7 @@ class Route:
         self.line = timetable.lines[line_uri]
         self.route_type = route_type
         if uri in timetable.routes:
-            raise ValueError('Violation of unique Route key') 
+            raise ValueError('Violation of unique Route key')
         timetable.routes[uri] = self
         if direction is not None:
             self.direction = direction
@@ -229,7 +229,7 @@ class VehicleJourney:
         self.headsign = headsign
         self.validity_pattern = set([])
         if uri in timetable.vehicle_journeys:
-            raise ValueError('Violation of unique VehicleJourney key') 
+            raise ValueError('Violation of unique VehicleJourney key')
         timetable.vehicle_journeys[uri] = self
         if route_uri not in timetable.routes:
             raise ValueError('Violation of foreign key, route not found')
