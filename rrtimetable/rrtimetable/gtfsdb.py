@@ -357,7 +357,7 @@ ORDER BY trip_id,stop_sequence
     def routes(self):
         c = self.get_cursor()
         c.execute( """
-SELECT DISTINCT route_id||':'||coalesce(direction_id,0) as route_id,route_id as line_id,coalesce(direction_id,0) as direction_type
+SELECT DISTINCT route_id||':'||coalesce(direction_id,0) as route_id,route_id as line_id,route_type
 FROM trips JOIN routes USING (route_id)
 """)
         ret = list(c)
