@@ -30,7 +30,7 @@ class TestSequenceFunctions(unittest.TestCase):
         sp.name = 'SP1'
         self.assertRaises(ValueError, StopPoint,tdata,'SP1','SA1')
         self.assertEquals(tdata.stop_points['SP1'].name,'SP1')
- 
+
         op = Operator(tdata,'OP1','Europe/Amsterdam')
         op.name = 'OP1'
         self.assertRaises(ValueError, Operator,tdata,'OP1','Europe/Amsterdam')

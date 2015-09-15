@@ -45,7 +45,7 @@ def convert(gtfsdb, from_date=None):
     feed_timezone = determine_timezone(gtfsdb)
     tdata = Timetable(from_date,feed_timezone)
     print "Timetable valid from %s to %s, timezone: %s" % (from_date, from_date + datetime.timedelta(days=MAX_DAYS),feed_timezone)
-    
+
     put_gtfs_modes(tdata)
 
     for agency_id,agency_name,agency_url,agency_timezone in gtfsdb.agencies():
@@ -102,7 +102,7 @@ def convert(gtfsdb, from_date=None):
             if sid not in calendars:
                 calendars[sid] = []
             calendars[sid].append(date)
-    
+
     vj = None
     last_trip_id = None
     for trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type,block_id in gtfsdb.stop_times():
@@ -138,10 +138,10 @@ def main():
     if len(args) < 1:
         print("Loads a GTFS file and generate a timetable suitable for RRRR.\nusage: gtfs2rrrr.py <input.gtfs.zip>")
         exit()
-    
+
     gtfsdb_filename = args[0]+'.gtfsdb'
     gtfs_filename = args[0]
- 
+
     gtfsdb = GTFSDatabase( gtfsdb_filename, overwrite=True )
     gtfsdb.load_gtfs( gtfs_filename, None, reporter=sys.stdout, verbose=options.verbose )
     tdata = convert(gtfsdb, from_date)
@@ -150,5 +150,5 @@ def main():
         sys.exit(1)
     exporter.timetable4.export(tdata)
 
-if __name__=='__main__': 
+if __name__=='__main__':
     main()
