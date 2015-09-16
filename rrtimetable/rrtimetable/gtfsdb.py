@@ -124,8 +124,8 @@ def load_gtfs_table_to_sqlite(fp, gtfs_basename, cc, header=None, verbose=False)
     cc.executemany(insert_template, insert_data())
 
 class GTFSDatabase:
-    TRIPS_DEF = ("trips", (("route_id",   None, None),
-                           ("trip_id",   None, None),
+    TRIPS_DEF = ("trips", (("route_id", None, None),
+                           ("trip_id", None, None),
                            ("realtime_trip_id", None, None),
                            ("service_id", None, None),
                            ("shape_id", None, None),
