@@ -324,6 +324,9 @@ struct router_request {
     street_network_t exit;
 };
 
+#ifndef restrict
+#define restrict __restrict
+#endif
 
 #ifndef _LP64
     #define ZU "%u"
