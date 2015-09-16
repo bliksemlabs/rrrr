@@ -183,6 +183,7 @@ typedef enum optimise {
 
 
 typedef enum tmode {
+    m_none      =   0,
     m_tram      =   1,
     m_subway    =   2,
     m_rail      =   4,
