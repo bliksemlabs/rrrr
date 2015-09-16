@@ -512,7 +512,11 @@ def export_vj_uris(tdata,index,out):
      all_vj_ids = []
      for jp in index.journey_patterns:
          for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
-             all_vj_ids.append(vj.uri)
+            if vj.realtime_uri:
+                all_vj_ids.append(vj.realtime_uri)
+            else:
+                all_vj_ids.append(vj.uri)
+
      index.n_vj = len(all_vj_ids)
      print "writing trip ids to string table"
      # note that trip_ids are ordered by departure time within trip bundles (routes), which are themselves in arbitrary order.

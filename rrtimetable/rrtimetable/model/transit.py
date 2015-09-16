@@ -222,10 +222,11 @@ class JourneyPattern:
             return False
 
 class VehicleJourney:
-    def __init__(self,timetable,uri,route_uri,commercial_mode_uri,headsign=None,blockref=None):
+    def __init__(self,timetable,uri,route_uri,commercial_mode_uri,headsign=None,blockref=None,realtime_uri=None):
         self.timetable = timetable
         self.type = 'vehicle_journey'
         self.uri = uri
+        self.realtime_uri = realtime_uri
         self.headsign = headsign
         self.validity_pattern = set([])
         if uri in timetable.vehicle_journeys:
