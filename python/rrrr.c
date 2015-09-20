@@ -138,6 +138,19 @@ Raptor_stops(Raptor* self, PyObject *args, PyObject *keywords)
 }
 
 static PyObject *
+Raptor_validity(Raptor* self, PyObject *args, PyObject *keywords)
+{
+    uint64_t starttime, endtime;
+    PyObject *py_validity = PyTuple_New(2);
+    tdata_validity (&self->tdata, &starttime, &endtime);
+
+    PyTuple_SetItem (py_validity, 0, PyLong_FromUnsignedLongLong(starttime));
+    PyTuple_SetItem (py_validity, 1, PyLong_FromUnsignedLongLong(endtime));
+
+    return py_validity;
+}
+
+static PyObject *
 Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 {
     char *from_id = NULL, *from_sp_id = NULL,
@@ -259,6 +272,9 @@ static PyMethodDef Raptor_methods[] = {
     },
     {"stops", (PyCFunction)Raptor_stops, METH_NOARGS,
      "Return a List of stops from the timetable"
+    },
+    {"validity", (PyCFunction)Raptor_validity, METH_NOARGS,
+     "Return a Tuple with the validity of the timetable"
     },
     {NULL}  /* Sentinel */
 };
