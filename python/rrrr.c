@@ -139,7 +139,8 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                                  "from_latlon", "to_latlon",
                                  "from_idx", "to_idx",
                                  "from_sp_idx", "to_sp_idx",
-                                 "arrive", "depart", "operator" };
+                                 "arrive", "depart", "operator",
+                                 NULL };
 
         if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHlls",
                 list, &from_id, &to_id,
