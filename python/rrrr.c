@@ -106,17 +106,35 @@ static PyMemberDef Raptor_members[] = {
 static PyObject *
 Raptor_stops(Raptor* self, PyObject *args, PyObject *keywords)
 {
-    spidx_t stop_index = (spidx_t) self->tdata.n_stop_points;
-    PyObject *list = PyList_New(stop_index);
+    /* Number of stops to iterate over */
+    spidx_t sp_index = (spidx_t) self->tdata.n_stop_points;
 
-    while (stop_index) {
+    /* Each list is a column similar to stops.txt */
+    PyObject *py_stop_name = PyList_New(sp_index);
+    PyObject *py_stop_lat  = PyList_New(sp_index);
+    PyObject *py_stop_lon  = PyList_New(sp_index);
+
+    /* The return object stores all list by column name */
+    PyObject *py_stops     = PyDict_New();
+
+    while (sp_index) {
         const char *stop_name;
-        stop_index--;
-        stop_name = tdata_stop_point_name_for_index(&self->tdata, stop_index);
-        PyList_SetItem (list, stop_index, PyString_FromString (stop_name));
+        const latlon_t *latlon;
+        sp_index--;
+
+        stop_name = tdata_stop_point_name_for_index(&self->tdata, sp_index);
+        latlon    = tdata_stop_point_coord_for_index(&self->tdata, sp_index);
+        PyList_SetItem (py_stop_name, sp_index, PyString_FromString (stop_name));
+        PyList_SetItem (py_stop_lat,  sp_index, PyFloat_FromDouble (latlon->lat));
+        PyList_SetItem (py_stop_lon,  sp_index, PyFloat_FromDouble (latlon->lon));
     }
 
-    return list;
+    /* Create stops = {'stop_name: [], 'stop_lat': [], 'stop_lon', []} */
+    PyDict_SetItemString (py_stops, "stop_name", py_stop_name);
+    PyDict_SetItemString (py_stops, "stop_lat",  py_stop_lat);
+    PyDict_SetItemString (py_stops, "stop_lon",  py_stop_lon);
+
+    return py_stops;
 }
 
 static PyObject *
