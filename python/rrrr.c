@@ -48,12 +48,12 @@ Raptor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
-       
+
         /* initialise the memory for the router */
         memset (&self->tdata,  0, sizeof(tdata_t));
-        memset (&self->router, 0, sizeof(router_t)); 
+        memset (&self->router, 0, sizeof(router_t));
     }
-    
+
     /* import json */
     json = PyImport_ImportModule("json");
 
@@ -140,7 +140,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                                  "from_idx", "to_idx",
                                  "from_sp_idx", "to_sp_idx",
                                  "arrive", "depart", "operator" };
-        
+
         if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHlls",
                 list, &from_id, &to_id,
                       &from_sp_id, &to_sp_id,
@@ -148,7 +148,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                       &req.to_latlon.lat, &req.to_latlon.lon,
                       &req.from_stop_area, &req.to_stop_area,
                       &req.from_stop_point, &req.to_stop_point,
-                      &arrive, &depart, operator)) {
+                      &arrive, &depart, &operator)) {
             return NULL;
         }
     }
@@ -156,7 +156,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
     /* Validate input */
     if ( (from_id == NULL && from_sp_id == NULL &&
           req.from_stop_area == STOP_NONE && req.from_stop_point == STOP_NONE &&
-          (req.from_latlon.lon == 0.0 && req.from_latlon.lat == 0.0 )) || 
+          (req.from_latlon.lon == 0.0 && req.from_latlon.lat == 0.0 )) ||
          (to_id == NULL &&   to_sp_id == NULL &&
           req.to_stop_area == STOP_NONE && req.to_stop_point == STOP_NONE &&
           (  req.to_latlon.lon == 0.0 &&   req.to_latlon.lat == 0.0 )) ||
@@ -165,7 +165,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
         return NULL;
     }
 
-    /* Temporal related input */    
+    /* Temporal related input */
     if (arrive != 0) {
         req.arrive_by = true;
         epoch = arrive;
@@ -179,7 +179,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
         req.time++;
     }
     req.time_rounded = false;
-    
+
     if (req.arrive_by) {
         req.time_cutoff = 0;
     } else {
@@ -215,12 +215,12 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
     }
 
     plan_init (&plan);
-    
+
     if (!router_route_all_departures (&self->router, &req, &plan)) {
         PyErr_SetString(PyExc_AttributeError, "router");
         return NULL;
     }
-    
+
     plan.req = req;
     plan_render_otp (&plan, &self->tdata, result_buf, OUTPUT_LEN);
 
@@ -288,7 +288,7 @@ static PyMethodDef module_methods[] = {
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initrrrr (void) 
+initrrrr (void)
 {
     PyObject* m;
 
