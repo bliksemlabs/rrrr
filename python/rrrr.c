@@ -223,7 +223,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 
     plan_init (&plan);
 
-    if (!router_route_all_departures (&self->router, &req, &plan)) {
+    if (!router_route_first_departure (&self->router, &req, &plan)) {
         PyErr_SetString(PyExc_AttributeError, "No results");
         return NULL;
     }
