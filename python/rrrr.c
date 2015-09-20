@@ -124,7 +124,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 {
     char *from_id = NULL, *from_sp_id = NULL,
          *to_id = NULL, *to_sp_id = NULL,
-         *operator = NULL;
+         *operator = NULL, *mode = NULL;
     time_t arrive = 0, depart = 0, epoch = 0;
     router_request_t req;
     plan_t plan;
@@ -139,17 +139,19 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                                  "from_latlon", "to_latlon",
                                  "from_idx", "to_idx",
                                  "from_sp_idx", "to_sp_idx",
-                                 "arrive", "depart", "operator",
+                                 "arrive", "depart",
+                                 "operator", "mode",
                                  NULL };
 
-        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHlls",
+        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHllss",
                 list, &from_id, &to_id,
                       &from_sp_id, &to_sp_id,
                       &req.from_latlon.lat, &req.from_latlon.lon,
                       &req.to_latlon.lat, &req.to_latlon.lon,
                       &req.from_stop_area, &req.to_stop_area,
                       &req.from_stop_point, &req.to_stop_point,
-                      &arrive, &depart, &operator)) {
+                      &arrive, &depart,
+                      &operator, &mode)) {
             return NULL;
         }
     }
@@ -215,10 +217,14 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
         }
     }
 
+    if (mode) {
+        req.mode = strtomode (mode);
+    }
+
     plan_init (&plan);
 
     if (!router_route_all_departures (&self->router, &req, &plan)) {
-        PyErr_SetString(PyExc_AttributeError, "router");
+        PyErr_SetString(PyExc_AttributeError, "No results");
         return NULL;
     }
 

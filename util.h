@@ -55,6 +55,7 @@ char *btimetext(rtime_t rt, char *buf);
 char *timetext(rtime_t t);
 time_t strtoepoch (char *time);
 char * strcasestr(const char *s, const char *find);
+tmode_t strtomode (const char *modes);
 
 double round(double x);
 float median(float *in, uint32_t n, float *min, float *max);

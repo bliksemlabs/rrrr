@@ -8,6 +8,19 @@
 #include <stdlib.h>
 #include <assert.h>
 
+tmode_t strtomode (const char *modes) {
+    /* TODO tokenize additional modes */
+    tmode_t m = m_none;
+    if (0 == strncmp(modes, "TRAM", 4))      m |= m_tram;     else
+    if (0 == strncmp(modes, "SUBWAY", 6))    m |= m_subway;   else
+    if (0 == strncmp(modes, "RAIL", 4))      m |= m_rail;     else
+    if (0 == strncmp(modes, "BUS", 3))       m |= m_bus;      else
+    if (0 == strncmp(modes, "FERRY", 5))     m |= m_ferry;    else
+    if (0 == strncmp(modes, "CABLE_CAR", 9)) m |= m_cablecar; else
+    if (0 == strncmp(modes, "GONDOLA", 7))   m |= m_gondola;  else
+    if (0 == strncmp(modes, "FUNICULAR", 9)) m |= m_funicular;
+    return m;
+}
 
 /* TODO:
  * We might want to make this more generic to something like:
