@@ -156,6 +156,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
     char *from_id = NULL, *from_sp_id = NULL,
          *to_id = NULL, *to_sp_id = NULL,
          *operator = NULL, *mode = NULL;
+    unsigned char api = 0;
     time_t arrive = 0, depart = 0, epoch = 0;
     router_request_t req;
     plan_t plan;
@@ -172,9 +173,10 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                                  "from_sp_idx", "to_sp_idx",
                                  "arrive", "depart",
                                  "operator", "mode",
+                                 "api",
                                  NULL };
 
-        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHllss",
+        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHllssb",
                 list, &from_id, &to_id,
                       &from_sp_id, &to_sp_id,
                       &req.from_latlon.lat, &req.from_latlon.lon,
@@ -182,7 +184,8 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                       &req.from_stop_area, &req.to_stop_area,
                       &req.from_stop_point, &req.to_stop_point,
                       &arrive, &depart,
-                      &operator, &mode)) {
+                      &operator, &mode,
+                      &api)) {
             return NULL;
         }
     }
@@ -254,9 +257,26 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
 
     plan_init (&plan);
 
-    if (!router_route_first_departure (&self->router, &req, &plan)) {
-        PyErr_SetString(PyExc_AttributeError, "No results");
-        return NULL;
+    {
+        bool success = false;
+        switch (api) {
+        case 1:
+            success = router_route_all_departures (&self->router, &req, &plan);
+            break;
+        case 2:
+            success = router_route_naive_reversal (&self->router, &req, &plan);
+            break;
+        case 3:
+            success = router_route_full_reversal (&self->router, &req, &plan);
+            break;
+        default:
+            success = router_route_first_departure (&self->router, &req, &plan);
+        }
+
+        if (!success) {
+            PyErr_SetString(PyExc_AttributeError, "No results");
+            return NULL;
+        }
     }
 
     plan.req = req;
