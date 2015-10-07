@@ -156,8 +156,10 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
     char *from_id = NULL, *from_sp_id = NULL,
          *to_id = NULL, *to_sp_id = NULL,
          *operator = NULL, *mode = NULL;
-    unsigned char api = 0;
+    float walk_speed = RRRR_DEFAULT_WALK_SPEED;
+    unsigned char api = 0, walk_slack = RRRR_DEFAULT_WALK_SLACK;
     time_t arrive = 0, depart = 0, epoch = 0;
+    uint16_t walk_max_distance = RRRR_DEFAULT_WALK_MAX_DISTANCE;
     router_request_t req;
     plan_t plan;
     #define OUTPUT_LEN 100000
@@ -173,10 +175,11 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                                  "from_sp_idx", "to_sp_idx",
                                  "arrive", "depart",
                                  "operator", "mode",
+                                 "walk_speed", "walk_slack", "walk_max_distance",
                                  "api",
                                  NULL };
 
-        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHllssb",
+        if ( !PyArg_ParseTupleAndKeywords(args, keywords, "|ssss(ff)(ff)HHHHllssfbhb",
                 list, &from_id, &to_id,
                       &from_sp_id, &to_sp_id,
                       &req.from_latlon.lat, &req.from_latlon.lon,
@@ -185,6 +188,7 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
                       &req.from_stop_point, &req.to_stop_point,
                       &arrive, &depart,
                       &operator, &mode,
+                      &walk_speed, &walk_slack, &walk_max_distance,
                       &api)) {
             return NULL;
         }
@@ -254,6 +258,10 @@ Raptor_route(Raptor* self, PyObject *args, PyObject *keywords)
     if (mode) {
         req.mode = strtomode (mode);
     }
+
+    req.walk_speed = walk_speed;
+    req.walk_slack = walk_slack;
+    req.walk_max_distance = walk_max_distance;
 
     plan_init (&plan);
 
