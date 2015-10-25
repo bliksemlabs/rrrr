@@ -152,8 +152,8 @@ struct tdata {
 };
 
 #ifdef RRRR_DEBUG
-void tdata_dump(tdata_t *td);
-void tdata_dump_journey_pattern(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
+void tdata_dump(const tdata_t *td);
+void tdata_dump_journey_pattern(const tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 #endif
 
 /* * * * * * * * * * * * * * * * * * *
@@ -167,7 +167,7 @@ bool tdata_load(tdata_t *td, char *filename);
 void tdata_close(tdata_t *td);
 
 /* Return timezone used in general for timetable, eg 'Europe/Amsterdam */
-const char *tdata_timezone(tdata_t *td);
+const char *tdata_timezone(const tdata_t *td);
 
 bool tdata_hashgrid_setup (tdata_t *tdata);
 
@@ -178,11 +178,11 @@ bool tdata_realtime_setup (tdata_t *tdata);
 #endif
 
 /* Return UTC epoch of start and end midnights with the valditiy of the timetable */
-void tdata_validity (tdata_t *tdata, uint64_t *min, uint64_t *max);
+void tdata_validity (const tdata_t *tdata, uint64_t *min, uint64_t *max);
 /* Return the lower-left and upper-right of the extends of all stop_point's in the timetable */
-void tdata_extends (tdata_t *tdata, latlon_t *ll, latlon_t *ur);
+void tdata_extends (const tdata_t *tdata, latlon_t *ll, latlon_t *ur);
 /* Return the mode enum of all journey_patterns in the timetable */
-void tdata_modes (tdata_t *tdata, tmode_t *m);
+void tdata_modes (const tdata_t *tdata, tmode_t *m);
 
 
 /* * * * * * * * * * * * * * * * * * *
@@ -192,15 +192,15 @@ void tdata_modes (tdata_t *tdata, tmode_t *m);
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_operator_id_for_index(tdata_t *td, opidx_t operator_index);
+const char *tdata_operator_id_for_index(const tdata_t *td, opidx_t operator_index);
 
-const char *tdata_operator_name_for_index(tdata_t *td, opidx_t operator_index);
+const char *tdata_operator_name_for_index(const tdata_t *td, opidx_t operator_index);
 
-const char *tdata_operator_url_for_index(tdata_t *td, opidx_t operator_index);
+const char *tdata_operator_url_for_index(const tdata_t *td, opidx_t operator_index);
 
-opidx_t tdata_operator_idx_by_operator_name(tdata_t *td, const char *operator_name, opidx_t operator_index_offset);
+opidx_t tdata_operator_idx_by_operator_name(const tdata_t *td, const char *operator_name, opidx_t operator_index_offset);
 
-opidx_t tdata_operator_idx_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+opidx_t tdata_operator_idx_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -209,9 +209,9 @@ opidx_t tdata_operator_idx_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_name_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index);
+const char *tdata_name_for_physical_mode_index(const tdata_t *td, uint32_t physical_mode_index);
 
-const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode_index);
+const char *tdata_id_for_physical_mode_index(const tdata_t *td, uint32_t physical_mode_index);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -220,9 +220,9 @@ const char *tdata_id_for_physical_mode_index(tdata_t *td, uint32_t physical_mode
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_name_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
+const char *tdata_name_for_commercial_mode_index(const tdata_t *td, uint32_t commercial_mode_index);
 
-const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_mode_index);
+const char *tdata_id_for_commercial_mode_index(const tdata_t *td, uint32_t commercial_mode_index);
 
 
 /* * * * * * * * * * * * * * * * * * *
@@ -233,15 +233,15 @@ const char *tdata_id_for_commercial_mode_index(tdata_t *td, uint32_t commercial_
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_line_id_for_index(tdata_t *td, lineidx_t line_index);
+const char *tdata_line_id_for_index(const tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_code_for_index(tdata_t *td, lineidx_t line_index);
+const char *tdata_line_code_for_index(const tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_color_for_index(tdata_t *td, lineidx_t line_index);
+const char *tdata_line_color_for_index(const tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_color_text_for_index(tdata_t *td, lineidx_t line_index);
+const char *tdata_line_color_text_for_index(const tdata_t *td, lineidx_t line_index);
 
-const char *tdata_line_name_for_index(tdata_t *td, lineidx_t line_index);
+const char *tdata_line_name_for_index(const tdata_t *td, lineidx_t line_index);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -262,44 +262,44 @@ const char *tdata_line_name_for_index(tdata_t *td, lineidx_t line_index);
  *
  * * * * * * * * * * * * * * * * * * */
 
-spidx_t *tdata_points_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+spidx_t *tdata_points_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-stoptime_t *tdata_stoptimes_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+stoptime_t *tdata_stoptimes_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_headsign_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_headsign_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_headsign_for_journey_pattern_point(tdata_t *td, jpidx_t jp_index,jppidx_t jpp_offset);
+const char *tdata_headsign_for_journey_pattern_point(const tdata_t *td, jpidx_t jp_index,jppidx_t jpp_offset);
 
 /* Get a pointer to the array of vehicle_journeys for this journey_pattern. */
-vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(tdata_t *td, jpidx_t jp_index);
+vehicle_journey_t *tdata_vehicle_journeys_in_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_line_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_line_id_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-calendar_t *tdata_vj_masks_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+calendar_t *tdata_vj_masks_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_line_code_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_line_code_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_line_color_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_line_color_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_line_color_text_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_line_color_text_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_line_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_line_name_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_commercial_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_commercial_mode_name_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_commercial_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_commercial_mode_id_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_physical_mode_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_physical_mode_name_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_physical_mode_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_physical_mode_id_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_operator_id_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_operator_id_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_operator_name_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_operator_name_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-const char *tdata_operator_url_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+const char *tdata_operator_url_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t start_index);
+jpidx_t tdata_journey_pattern_idx_by_line_id(const tdata_t *td, char *line_id, jpidx_t start_index);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -309,24 +309,24 @@ jpidx_t tdata_journey_pattern_idx_by_line_id(tdata_t *td, char *line_id, jpidx_t
  *
  * * * * * * * * * * * * * * * * * * */
 
-const char *tdata_vehicle_journey_id_for_index(tdata_t *td, vjidx_t vj_index);
+const char *tdata_vehicle_journey_id_for_index(const tdata_t *td, vjidx_t vj_index);
 
-const char *tdata_vehicle_journey_id_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
+const char *tdata_vehicle_journey_id_for_jp_vj_offset(const tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
-int32_t tdata_utc_offset_for_vj_index(tdata_t *td, vjidx_t vj_index);
+int32_t tdata_utc_offset_for_vj_index(const tdata_t *td, vjidx_t vj_index);
 
-int32_t tdata_time_offset_for_vj_index(tdata_t *td, vjidx_t vj_index);
+int32_t tdata_time_offset_for_vj_index(const tdata_t *td, vjidx_t vj_index);
 
-int32_t tdata_utc_offset_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
+int32_t tdata_utc_offset_for_jp_vj_offset(const tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
-int32_t tdata_time_offset_for_jp_vj_offset(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
+int32_t tdata_time_offset_for_jp_vj_offset(const tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
 /* Returns a pointer to the first stoptime for the VehicleJourney. These are generally TimeDemandTypes that must
    be shifted in time to get the true scheduled arrival and departure times. */
-stoptime_t *tdata_timedemand_type(tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
+stoptime_t *tdata_timedemand_type(const tdata_t *td, jpidx_t jp_index, jp_vjoffset_t vj_offset);
 
 /* Parse string with vj offset (within journey_pattern) to jp_vj_offset_t */
-bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_offset, char **endptr);
+bool strtovjoffset (const char *str, const tdata_t *td, jpidx_t jp_index, jp_vjoffset_t *vj_offset, char **endptr);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -336,13 +336,13 @@ bool strtovjoffset (const char *str, tdata_t *td, jpidx_t jp_index, jp_vjoffset_
  * * * * * * * * * * * * * * * * * * */
 
 /* Return stop_time in seconds to/from midnight in the time-offset used by tdata */
-rtime_t tdata_stoptime_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
+rtime_t tdata_stoptime_for_index(const tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
 
 /* Return stop_time in seconds to/from midnight local-time */
-rtime_t tdata_stoptime_local_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
+rtime_t tdata_stoptime_local_for_index(const tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
 
 /* Return stop_time in seconds to/from midnight UTC */
-int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
+int32_t tdata_stoptime_utc_for_index(const tdata_t *td, jpidx_t jp_index, jppidx_t jpp_offset, jp_vjoffset_t vj_offset, bool arrival);
 
 
 /* * * * * * * * * * * * * * * * * * *
@@ -357,25 +357,25 @@ int32_t tdata_stoptime_utc_for_index(tdata_t *td, jpidx_t jp_index, jppidx_t jpp
  * * * * * * * * * * * * * * * * * * */
 
 /* Parse string with journey_pattenr index to jp_index*/
-bool strtojpidx (const char *str, tdata_t *td, jpidx_t *jp, char **endptr);
+bool strtojpidx (const char *str, const tdata_t *td, jpidx_t *jp, char **endptr);
 
-bool strtoopidx (const char *str, tdata_t *td, opidx_t *op, char **endptr);
+bool strtoopidx (const char *str, const tdata_t *td, opidx_t *op, char **endptr);
 
-latlon_t *tdata_stop_area_coord_for_index(tdata_t *td, spidx_t sa_index);
+latlon_t *tdata_stop_area_coord_for_index(const tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_id_for_index(tdata_t *td, spidx_t sa_index);
+const char *tdata_stop_area_id_for_index(const tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_name_for_index(tdata_t *td, spidx_t sa_index);
+const char *tdata_stop_area_name_for_index(const tdata_t *td, spidx_t sa_index);
 
-const char *tdata_stop_area_timezone_for_index(tdata_t *td, spidx_t saindex);
+const char *tdata_stop_area_timezone_for_index(const tdata_t *td, spidx_t saindex);
 
-spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_name(const tdata_t *td, char *stop_area_name, spidx_t sp_index_offset);
 
-spidx_t tdata_stop_areaidx_for_index(tdata_t *td, spidx_t sp_index);
+spidx_t tdata_stop_areaidx_for_index(const tdata_t *td, spidx_t sp_index);
 
-spidx_t tdata_stop_areaidx_by_stop_area_name(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_name(const tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
 
-spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
+spidx_t tdata_stop_areaidx_by_stop_area_id(const tdata_t *td, char *stop_area_name, spidx_t sa_index_offset);
 
 /* * * * * * * * * * * * * * * * * * *
  *
@@ -385,31 +385,31 @@ spidx_t tdata_stop_areaidx_by_stop_area_id(tdata_t *td, char *stop_area_name, sp
  * * * * * * * * * * * * * * * * * * */
 
 /* TODO: return number of items and store pointer to beginning, to allow restricted pointers */
-jpidx_t tdata_journey_patterns_for_stop_point(tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
+jpidx_t tdata_journey_patterns_for_stop_point(const tdata_t *td, spidx_t sp_index, jpidx_t **jp_ret);
 
-const char *tdata_stop_point_id_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_point_id_for_index(const tdata_t *td, spidx_t sp_index);
 
 /* Parse string with stop_point index to sp_index */
-bool strtospidx (const char *str, tdata_t *td, spidx_t *sp, char **endptr);
+bool strtospidx (const char *str, const tdata_t *td, spidx_t *sp, char **endptr);
 
-uint8_t *tdata_stop_point_attributes_for_journey_pattern(tdata_t *td, jpidx_t jp_index);
+uint8_t *tdata_stop_point_attributes_for_journey_pattern(const tdata_t *td, jpidx_t jp_index);
 
-uint8_t *tdata_stop_point_attributes_for_index(tdata_t *td, spidx_t sp_index);
+uint8_t *tdata_stop_point_attributes_for_index(const tdata_t *td, spidx_t sp_index);
 
-const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_point_name_for_index(const tdata_t *td, spidx_t sp_index);
 
-const char *tdata_stop_point_name_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_stop_point_name_for_index(const tdata_t *td, spidx_t sp_index);
 
-latlon_t *tdata_stop_point_coord_for_index(tdata_t *td, spidx_t sp_index);
+latlon_t *tdata_stop_point_coord_for_index(const tdata_t *td, spidx_t sp_index);
 
-const char *tdata_platformcode_for_index(tdata_t *td, spidx_t sp_index);
+const char *tdata_platformcode_for_index(const tdata_t *td, spidx_t sp_index);
 
-spidx_t tdata_stop_pointidx_by_stop_point_name(tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
+spidx_t tdata_stop_pointidx_by_stop_point_name(const tdata_t *td, char *stop_point_name, spidx_t sp_index_offset);
 
-spidx_t tdata_stop_pointidx_by_stop_point_id(tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
+spidx_t tdata_stop_pointidx_by_stop_point_id(const tdata_t *td, char *stop_point_id, spidx_t sp_index_offset);
 
 /* Get the minimum waittime a passenger has to wait before transferring to another vehicle */
-rtime_t tdata_stop_point_waittime (tdata_t *tdata, spidx_t sp_index);
-rtime_t transfer_duration (tdata_t *tdata, router_request_t *req, spidx_t sp_index_from, spidx_t sp_index_to);
+rtime_t tdata_stop_point_waittime (const tdata_t *tdata, spidx_t sp_index);
+rtime_t transfer_duration (const tdata_t *tdata, router_request_t *req, spidx_t sp_index_from, spidx_t sp_index_to);
 
 #endif /* _TDATA_H */
