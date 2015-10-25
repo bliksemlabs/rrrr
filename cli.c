@@ -162,6 +162,18 @@ int main (int argc, char *argv[]) {
         goto clean_exit;
     }
 
+    /* Report the validity of the timetable.
+     * Requests outside this period will result in interpolation.
+     */
+    {
+        uint64_t starttime, endtime;
+        char start[20], end[20];
+        tdata_validity (&tdata, &starttime, &endtime);
+        strftime(start, 20, "%Y-%m-%d %H:%M:%S", localtime((time_t *) &starttime));
+        strftime(end, 20, "%Y-%m-%d %H:%M:%S", localtime((time_t *) &endtime));
+        printf("Tdata validity: %s %s\n", start, end);
+    }
+
     /* initialise the request */
     router_request_initialize (&req);
 
