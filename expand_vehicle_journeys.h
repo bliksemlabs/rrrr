@@ -1,5 +1,7 @@
 #include "rrrr_types.h"
 #include "tdata.h"
+#include "plan.h"
+#include "router_request.h"
 
 #define METADATA 1
 
@@ -38,8 +40,16 @@ struct csa_router {
     connection_t *connections_arrival;
 };
 
-uint32_t calculate_connections (const tdata_t *td, router_request_t *req);
-bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req, connection_t *connections, conidx_t n_connections);
+bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
+                              connection_t *connections, conidx_t n_connections);
 
 bool csa_router_setup (csa_router_t *router, tdata_t *tdata);
 void csa_router_teardown (csa_router_t *router);
+
+bool csa_router_setup_connections (csa_router_t *router, router_request_t *req);
+void csa_router_teardown_connections (csa_router_t *router);
+
+bool csa_router_route_departure (csa_router_t *router, router_request_t *req);
+bool csa_router_route_arrival (csa_router_t *router, router_request_t *req);
+bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_request_t *req);
+

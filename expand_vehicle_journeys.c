@@ -1,15 +1,14 @@
 #include "config.h"
 #include "expand_vehicle_journeys.h"
-#include "router_request.h"
-#include "plan.h"
 #include "plan_render_text.h"
 #include <stdlib.h>
 #include <string.h>
 
 /* Helper function to fill an existing connection using tdata_t types */
-void add_connection(vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t *stops,
-                    jpidx_t i_jp, jp_vjoffset_t i_vj, jppidx_t i_jpp, rtime_t translate,
-                    connection_t *connection) {
+static void
+add_connection(vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t *stops,
+               jpidx_t i_jp, jp_vjoffset_t i_vj, jppidx_t i_jpp, rtime_t translate,
+               connection_t *connection) {
     connection->departure = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp].departure;
     connection->arrival   = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp + 1].arrival;
     connection->sp_from   = stops[i_jpp];
@@ -21,7 +20,8 @@ void add_connection(vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t
 }
 
 /* Calculate the number of connections per day */
-conidx_t calculate_connections (const tdata_t *td, router_request_t *req) {
+static conidx_t
+calculate_connections (const tdata_t *td, router_request_t *req) {
     jpidx_t i_jp;
     calendar_t yesterday_mask = req->day_mask >> 1;
     calendar_t today_mask     = req->day_mask;
@@ -58,7 +58,8 @@ conidx_t calculate_connections (const tdata_t *td, router_request_t *req) {
 }
 
 /* Expand all trips into connections */
-bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req, connection_t *connections, conidx_t n_connections) {
+bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
+                              connection_t *connections, conidx_t n_connections) {
     jpidx_t i_jp;
     calendar_t yesterday_mask = req->day_mask >> 1;
     calendar_t today_mask     = req->day_mask;
@@ -114,6 +115,7 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req, connecti
     return (n_connections == 0);
 }
 
+#ifdef RRRR_DEBUG
 /* Helper function for debugging */
 void dump_connection(const tdata_t *td, connection_t *connection) {
     char departure[13], arrival[13];
@@ -132,6 +134,7 @@ void dump_connections(const tdata_t *td, connection_t *connections, conidx_t n_c
         dump_connection(td, &connections[i]);
     }
 }
+#endif
 
 /* Router intialisation */
 bool csa_router_setup (csa_router_t *router, tdata_t *tdata) {
@@ -214,7 +217,8 @@ void csa_router_teardown_connections (csa_router_t *router) {
 }
 
 /* Implements an ordinary bsearch, which guarantees an underfitted needle */
-conidx_t csa_binary_search_departure (csa_router_t *router, router_request_t *req) {
+static conidx_t
+csa_binary_search_departure (csa_router_t *router, router_request_t *req) {
     conidx_t low, mid, high;
     low = 0;
     high = router->n_connections - 1;
@@ -234,7 +238,7 @@ conidx_t csa_binary_search_departure (csa_router_t *router, router_request_t *re
 }
 
 /* Implements ordinary, single criteria CSA */
-void csa_router_route_departure (csa_router_t *router, router_request_t *req) {
+bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
     conidx_t i_con;
     /* initialize_origin (router, req); */
 
@@ -259,10 +263,13 @@ void csa_router_route_departure (csa_router_t *router, router_request_t *req) {
             break;
         }
     }
+
+    return (router->states_back_connection[req->to_stop_point] != CON_NONE);
 }
 
 /* Implements a bsearch on a reverse sorted list, which guarantees an underfitted needle */
-conidx_t csa_binary_search_arrival (csa_router_t *router, router_request_t *req) {
+static conidx_t
+csa_binary_search_arrival (csa_router_t *router, router_request_t *req) {
     conidx_t low, mid, high;
     low = 0;
     high = router->n_connections - 1;
@@ -280,7 +287,7 @@ conidx_t csa_binary_search_arrival (csa_router_t *router, router_request_t *req)
 }
 
 /* Implements arrive-by single criteria CSA */
-void csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
+bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
     conidx_t i_con;
     /* initialize_destination (router, req); */
 
@@ -320,12 +327,15 @@ void csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
             break;
         }
     }
+
+    return (router->states_back_connection[req->from_stop_point] != CON_NONE);
 }
 
 /* The chain of connections is traversed backwards,
  * for ordinary searches we must reverse the rendered legs.
  */
-static void reverse_legs (itinerary_t *itin) {
+static void
+reverse_legs (itinerary_t *itin) {
     uint8_t left  = 0;
     uint8_t right = itin->n_legs - 1;
     while (left < right) {
@@ -336,7 +346,8 @@ static void reverse_legs (itinerary_t *itin) {
 }
 
 /* Helper function to render the leg */
-static void render_leg(connection_t *connections, conidx_t prev_idx, conidx_t this_idx, itinerary_t *itin) {
+static void
+render_leg(connection_t *connections, conidx_t prev_idx, conidx_t this_idx, itinerary_t *itin) {
     connection_t *connection = &connections[this_idx];
     leg_t *leg = &itin->legs[itin->n_legs];
 
@@ -362,7 +373,7 @@ static void render_leg(connection_t *connections, conidx_t prev_idx, conidx_t th
 }
 
 /* Render a chain of connections into a plan */
-void csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_request_t *req) {
+bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_request_t *req) {
     /* allows the function to be abstractly used on both arrive-by and depart-by queries */
     connection_t *connections;
 
@@ -416,8 +427,10 @@ void csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
         }
         plan->n_itineraries += 1;
     } else {
-        fprintf(stderr, "No trip found.\n");
+        return false;
     }
+
+    return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -459,7 +472,7 @@ int main(int argc, char *argv[]) {
 
     csa_router_result_to_plan (&plan, &router, &req);
 
-#define OUTPUTLEN 50000
+    #define OUTPUTLEN 50000
     char result_buf[OUTPUTLEN];
     plan_render_text (&plan, &tdata, result_buf, OUTPUTLEN);
     puts(result_buf);
@@ -482,8 +495,10 @@ int main(int argc, char *argv[]) {
     plan_render_text (&plan, &tdata, result_buf, OUTPUTLEN);
     puts(result_buf);
 
+    #ifdef RRRR_DEBUG
     /* dump_connections (&tdata, router.connections_departure, router.n_connections); */
     /* dump_connections (&tdata, router.connections_arrival, router.n_connections); */
+    #endif
 
 clean_exit:
     #ifndef RRRR_VALGRIND
