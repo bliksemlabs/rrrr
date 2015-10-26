@@ -23,7 +23,7 @@ compareItineraries(const void *elem1, const void *elem2) {
     const itinerary_t *i1 = (const itinerary_t *) elem1;
     const itinerary_t *i2 = (const itinerary_t *) elem2;
 
-    return ((i1->legs[0].t0 - i2->legs[0].t0) << 4) +
+    return ((i1->legs[0].t0 - i2->legs[0].t0) << 16) +
             i1->legs[i1->n_legs - 1].t1 - i2->legs[i2->n_legs - 1].t1;
 }
 
