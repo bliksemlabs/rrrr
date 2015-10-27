@@ -10,7 +10,7 @@ add_connection(const tdata_t *td, vehicle_journey_t *vjs, stoptime_t *timedemand
                jpidx_t i_jp, jp_vjoffset_t i_vj, jppidx_t i_jpp, rtime_t translate,
                vjidx_t vj_id, connection_t *connection) {
 
-    connection->departure = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp].departure /* - td->stop_point_waittime[stops[i_jpp]] */;
+    connection->departure = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp].departure - td->stop_point_waittime[stops[i_jpp]];
     connection->arrival   = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp + 1].arrival;
     connection->sp_from   = stops[i_jpp];
     connection->sp_to     = stops[i_jpp + 1];
@@ -317,7 +317,7 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
 
     for (; i_con < router->n_connections; ++i_con) {
         connection_t *con = &router->connections_arrival[i_con];
-        bool onboard  = false && bitset_get (router->onboard, con->vj_id);
+        bool onboard  = bitset_get (router->onboard, con->vj_id);
         bool improves = con->departure > router->best_time[con->sp_from];
 
         if ((onboard || con->arrival <= router->best_time[con->sp_to]) &&
@@ -403,7 +403,7 @@ bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
             leg = &itin->legs[itin->n_legs];
             itin->n_legs += 1;
             leg->sp_from         = connection->sp_from;
-            leg->t0              = connection->departure /* + router->tdata->stop_point_waittime[connection->sp_from]*/;
+            leg->t0              = connection->departure + router->tdata->stop_point_waittime[connection->sp_from];
             leg->sp_to           = connection->sp_to;
             leg->t1              = connection->arrival;
             leg->journey_pattern = connection->journey_pattern;
@@ -411,7 +411,7 @@ bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
         } else {
             if (!req->arrive_by) {
                 leg->sp_from = connection->sp_from;
-                leg->t0      = connection->departure /* + router->tdata->stop_point_waittime[connection->sp_from]*/;
+                leg->t0      = connection->departure + router->tdata->stop_point_waittime[connection->sp_from];
             } else {
                 leg->sp_to   = connection->sp_to;
                 leg->t1      = connection->arrival;
