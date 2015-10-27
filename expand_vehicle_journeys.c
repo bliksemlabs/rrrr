@@ -229,6 +229,32 @@ void csa_router_teardown_connections (csa_router_t *router) {
     free (router->connections_arrival);
 }
 
+/* Transfer on foot */
+static void csa_transfer (csa_router_t *router, router_request_t *req,
+                          conidx_t i_con, spidx_t sp_index_from, rtime_t time_from) {
+    uint32_t tr     = router->tdata->stop_points[sp_index_from].transfers_offset;
+    uint32_t tr_end = router->tdata->stop_points[sp_index_from + 1].transfers_offset;
+
+    for ( ; tr < tr_end ; ++tr) {
+        /* Transfer durations are stored in r_time */
+        spidx_t sp_index_to = router->tdata->transfer_target_stops[tr];
+        rtime_t transfer_duration = router->tdata->transfer_durations[tr] + req->walk_slack;
+        rtime_t time_to = req->arrive_by ? time_from - transfer_duration
+                                         : time_from + transfer_duration;
+
+        if ((req->arrive_by ? time_to > router->best_time[sp_index_to]
+                            : time_to < router->best_time[sp_index_to])) {
+
+            router->best_time[sp_index_to] = time_to;
+            router->states_back_connection[sp_index_to] = i_con;
+
+            if (sp_index_to == req->to_stop_point) {
+                req->time_cutoff = MIN(req->time_cutoff, time_to);
+            }
+        }
+    }
+}
+
 /* Implements an ordinary bsearch, which guarantees an underfitted needle */
 static conidx_t
 csa_binary_search_departure (csa_router_t *router, router_request_t *req) {
@@ -272,6 +298,8 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
             if (!onboard) bitset_set (router->onboard, con->vj_id);
             router->best_time[con->sp_to] = con->arrival;
             router->states_back_connection[con->sp_to] = i_con;
+
+            csa_transfer (router, req, i_con, con->sp_to, con->arrival);
 
             if (con->sp_to == req->to_stop_point) {
                 req->time_cutoff = MIN(req->time_cutoff, con->arrival);
@@ -325,6 +353,8 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
             if (!onboard) bitset_set (router->onboard, con->vj_id);
             router->best_time[con->sp_from] = con->departure;
             router->states_back_connection[con->sp_from] = i_con;
+
+            csa_transfer (router, req, i_con, con->sp_from, con->departure);
 
             if (con->sp_from == req->from_stop_point) {
                 req->time_cutoff = MAX(req->time_cutoff, con->departure);
@@ -425,6 +455,7 @@ bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
         if (!req->arrive_by) {
             reverse_legs(itin);
         }
+        itin->n_rides = itin->n_legs;
         plan->n_itineraries += 1;
     } else {
         return false;
