@@ -6,10 +6,11 @@
 
 /* Helper function to fill an existing connection using tdata_t types */
 static void
-add_connection(vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t *stops,
+add_connection(const tdata_t *td, vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t *stops,
                jpidx_t i_jp, jp_vjoffset_t i_vj, jppidx_t i_jpp, rtime_t translate,
-               connection_t *connection) {
-    connection->departure = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp].departure;
+               vjidx_t vj_id, connection_t *connection) {
+
+    connection->departure = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp].departure /* - td->stop_point_waittime[stops[i_jpp]] */;
     connection->arrival   = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp + 1].arrival;
     connection->sp_from   = stops[i_jpp];
     connection->sp_to     = stops[i_jpp + 1];
@@ -17,17 +18,20 @@ add_connection(vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t *sto
     connection->journey_pattern = i_jp;
     connection->vehicle_journey = i_vj;
 #endif
+    connection->vj_id = vj_id;
 }
 
 /* Calculate the number of connections per day */
-static conidx_t
-calculate_connections (const tdata_t *td, router_request_t *req) {
+static bool
+calculate_connections (const tdata_t *td, router_request_t *req,
+                       conidx_t *n_connections, vjidx_t *n_vjs) {
     jpidx_t i_jp;
     calendar_t yesterday_mask = req->day_mask >> 1;
     calendar_t today_mask     = req->day_mask;
     calendar_t tomorrow_mask  = req->day_mask << 1;
 
-    conidx_t i = 0;
+    conidx_t i_connections = 0;
+    vjidx_t i_vjs = 0;
 
     i_jp = (jpidx_t) td->n_journey_patterns;
     while (i_jp) {
@@ -38,29 +42,35 @@ calculate_connections (const tdata_t *td, router_request_t *req) {
         calendar_t *vj_masks = tdata_vj_masks_for_journey_pattern(td, i_jp);
         jppidx_t i_jpp = td->journey_patterns[i_jp].n_stops - 1;
 
+
         while (i_vj) {
             i_vj--;
             /*
             if (vj_masks[i_vj] & yesterday_mask) {
-                i += i_jpp;
+                i_connections += i_jpp;
             }*/
             if (vj_masks[i_vj] & today_mask) {
-                i += i_jpp;
+                i_connections += i_jpp;
+                i_vjs++;
             }
             /*
             if (vj_masks[i_vj] & tomorrow_mask) {
-                i += i_jpp;
+                i_connections += i_jpp;
             }*/
         }
     }
 
-    return i;
+    *n_connections = i_connections;
+    *n_vjs = i_vjs;
+
+    return true;
 }
 
 /* Expand all trips into connections */
 bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                               connection_t *connections, conidx_t n_connections) {
     jpidx_t i_jp;
+    vjidx_t vj_id = 0;
     calendar_t yesterday_mask = req->day_mask >> 1;
     calendar_t today_mask     = req->day_mask;
     calendar_t tomorrow_mask  = req->day_mask << 1;
@@ -88,7 +98,7 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                 while (i_jpp) {
                     n_connections--;
                     i_jpp--;
-                    add_connection(vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, 0,              &connections[n_connections]);
+                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, 0,              vj_id, &connections[n_connections]);
                 }
             }*/
 
@@ -97,8 +107,9 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                 while (i_jpp) {
                     n_connections--;
                     i_jpp--;
-                    add_connection(vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_ONE_DAY,  &connections[n_connections]);
+                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_ONE_DAY,  vj_id, &connections[n_connections]);
                 }
+                vj_id++;
             }
             /*
             if (vj_masks[i_vj] & tomorrow_mask) {
@@ -106,16 +117,17 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                 while (i_jpp) {
                     n_connections--;
                     i_jpp--;
-                    add_connection(vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_TWO_DAYS, &connections[n_connections]);
+                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_TWO_DAYS, vj_id, &connections[n_connections]);
                 }
             }*/
         }
     }
 
+    printf("%u\n", vj_id);
+
     return (n_connections == 0);
 }
 
-#ifdef RRRR_DEBUG
 /* Helper function for debugging */
 void dump_connection(const tdata_t *td, connection_t *connection) {
     char departure[13], arrival[13];
@@ -124,7 +136,7 @@ void dump_connection(const tdata_t *td, connection_t *connection) {
     btimetext(connection->departure, departure);
     btimetext(connection->arrival,   arrival);
 
-    printf("%s %u %s %s %s %u %u %u\n", departure, connection->departure, sp_from, sp_to, arrival, connection->arrival, connection->journey_pattern, connection->vehicle_journey);
+    printf("%.6u %s %s %.6u %.25s | %.25s %.6u %.5u %.3u\n", connection->vj_id, departure, arrival, connection->departure, sp_from, sp_to, connection->arrival, connection->journey_pattern, connection->vehicle_journey);
 }
 
 /* Dump all connections */
@@ -134,7 +146,6 @@ void dump_connections(const tdata_t *td, connection_t *connections, conidx_t n_c
         dump_connection(td, &connections[i]);
     }
 }
-#endif
 
 /* Router intialisation */
 bool csa_router_setup (csa_router_t *router, tdata_t *tdata) {
@@ -186,9 +197,11 @@ void csa_router_teardown (csa_router_t *router) {
  * 6. Sorts for the arrival series.
  */
 bool csa_router_setup_connections (csa_router_t *router, router_request_t *req) {
-    router->n_connections = calculate_connections (router->tdata, req);
+    calculate_connections (router->tdata, req, &router->n_connections, &router->n_vjs);
+    printf("calc %u\n", router->n_vjs);
     router->connections_departure = (connection_t *) malloc(sizeof(connection_t) * router->n_connections);
     router->connections_arrival   = (connection_t *) malloc(sizeof(connection_t) * router->n_connections);
+    router->onboard = bitset_new (router->n_vjs);
 
     if ( ! (router->connections_departure
             && router->connections_arrival)
@@ -242,6 +255,7 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
     conidx_t i_con;
     /* initialize_origin (router, req); */
 
+    bitset_clear (router->onboard);
     rrrr_memset (router->states_back_connection, CON_NONE, router->tdata->n_stop_points);
     rrrr_memset (router->best_time, UNREACHED, router->tdata->n_stop_points);
     router->best_time[req->from_stop_point] = req->time;
@@ -250,9 +264,12 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
 
     for (; i_con < router->n_connections; ++i_con) {
         connection_t *con = &router->connections_departure[i_con];
+        bool onboard  = bitset_get (router->onboard, con->vj_id);
+        bool improves = con->arrival < router->best_time[con->sp_to];
 
-        if (con->departure >= router->best_time[con->sp_from] &&
-            con->arrival    < router->best_time[con->sp_to]) {
+        if ((onboard || con->departure >= router->best_time[con->sp_from]) &&
+             improves) {
+            if (!onboard) bitset_set (router->onboard, con->vj_id);
             router->best_time[con->sp_to] = con->arrival;
             router->states_back_connection[con->sp_to] = i_con;
 
@@ -291,6 +308,7 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
     conidx_t i_con;
     /* initialize_destination (router, req); */
 
+    bitset_clear (router->onboard);
     rrrr_memset (router->states_back_connection, CON_NONE, router->tdata->n_stop_points);
     rrrr_memset (router->best_time, 0, router->tdata->n_stop_points);
     router->best_time[req->to_stop_point] = req->time;
@@ -299,9 +317,12 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
 
     for (; i_con < router->n_connections; ++i_con) {
         connection_t *con = &router->connections_arrival[i_con];
+        bool onboard  = false && bitset_get (router->onboard, con->vj_id);
+        bool improves = con->departure > router->best_time[con->sp_from];
 
-        if (con->arrival  <= router->best_time[con->sp_to] &&
-            con->departure > router->best_time[con->sp_from]) {
+        if ((onboard || con->arrival <= router->best_time[con->sp_to]) &&
+             improves) {
+            if (!onboard) bitset_set (router->onboard, con->vj_id);
             router->best_time[con->sp_from] = con->departure;
             router->states_back_connection[con->sp_from] = i_con;
 
@@ -345,40 +366,13 @@ reverse_legs (itinerary_t *itin) {
     }
 }
 
-/* Helper function to render the leg */
-static void
-render_leg(connection_t *connections, conidx_t prev_idx, conidx_t this_idx, itinerary_t *itin) {
-    connection_t *connection = &connections[this_idx];
-    leg_t *leg = &itin->legs[itin->n_legs];
-
-    if (leg->journey_pattern != connection->journey_pattern ||
-        leg->vj              != connection->vehicle_journey) {
-
-        if (prev_idx != CON_NONE) {
-            connection_t *prev = &connections[prev_idx];
-            leg->sp_from         = prev->sp_from;
-            leg->t0              = prev->departure;
-
-            itin->n_legs += 1;
-            leg = &itin->legs[itin->n_legs];
-        }
-
-        leg->sp_from         = connection->sp_from;
-        leg->t0              = connection->departure;
-        leg->sp_to           = connection->sp_to;
-        leg->t1              = connection->arrival;
-        leg->journey_pattern = connection->journey_pattern;
-        leg->vj              = connection->vehicle_journey;
-    }
-}
-
 /* Render a chain of connections into a plan */
 bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_request_t *req) {
     /* allows the function to be abstractly used on both arrive-by and depart-by queries */
     connection_t *connections;
 
     /* Iterators */
-    connection_t *connection = NULL;
+    connection_t *connection = NULL, *prev = NULL;
     conidx_t last_idx = CON_NONE;
     conidx_t prev_idx = CON_NONE;
 
@@ -389,10 +383,6 @@ bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
     /* Setup the first leg */
     itinerary_t *itin = &plan->itineraries[plan->n_itineraries];
     itin->n_legs = 0;
-    leg_t *leg = &itin->legs[itin->n_legs];
-    leg->journey_pattern = JP_NONE;
-    leg->vj              = VJ_NONE;
-
     if (req->arrive_by) {
         connections = router->connections_arrival;
         last_idx = router->states_back_connection[req->from_stop_point];
@@ -401,24 +391,34 @@ bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
         last_idx = router->states_back_connection[req->to_stop_point];
     }
 
+    leg_t *leg = &itin->legs[itin->n_legs];
+    leg->journey_pattern = JP_NONE;
+    leg->vj = VJ_NONE;
+
     while (last_idx != CON_NONE) {
         connection = &connections[last_idx];
-        render_leg (connections, prev_idx, last_idx, itin);
-        prev_idx = last_idx;
-        last_idx = router->states_back_connection[(req->arrive_by ? connection->sp_to : connection->sp_from)];
-    }
 
-    if (connection) {
-        leg = &itin->legs[itin->n_legs];
-        if (req->arrive_by) {
-            leg->sp_to = connection->sp_to;
-            leg->t1 = router->best_time[connection->sp_to];
+        if (leg->journey_pattern != connection->journey_pattern ||
+            leg->vj != connection->vehicle_journey) {
+            leg = &itin->legs[itin->n_legs];
+            itin->n_legs += 1;
+            leg->sp_from         = connection->sp_from;
+            leg->t0              = connection->departure /* + router->tdata->stop_point_waittime[connection->sp_from]*/;
+            leg->sp_to           = connection->sp_to;
+            leg->t1              = connection->arrival;
+            leg->journey_pattern = connection->journey_pattern;
+            leg->vj              = connection->vehicle_journey;
         } else {
-            leg->sp_from = connection->sp_from;
-            leg->t0 = router->best_time[connection->sp_from];
+            if (!req->arrive_by) {
+                leg->sp_from = connection->sp_from;
+                leg->t0      = connection->departure /* + router->tdata->stop_point_waittime[connection->sp_from]*/;
+            } else {
+                leg->sp_to   = connection->sp_to;
+                leg->t1      = connection->arrival;
+            }
         }
 
-        itin->n_legs += 1;
+        last_idx = router->states_back_connection[(req->arrive_by ? connection->sp_to : connection->sp_from)];
     }
 
     if (itin->n_legs != 0) {

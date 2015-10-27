@@ -11,6 +11,7 @@ struct connection {
     rtime_t arrival;
     spidx_t sp_from;
     spidx_t sp_to;
+    vjidx_t vj_id;
 
 #ifdef METADATA
     jpidx_t journey_pattern;
@@ -38,6 +39,10 @@ struct csa_router {
     /* The computed connections */
     connection_t *connections_departure;
     connection_t *connections_arrival;
+
+    /* Flag which trip we have boarded and are onboard */
+    vjidx_t n_vjs;
+    bitset_t *onboard;
 };
 
 bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
