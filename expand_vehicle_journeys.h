@@ -11,7 +11,7 @@ struct connection {
     rtime_t arrival;
     spidx_t sp_from;
     spidx_t sp_to;
-    vjidx_t vj_id;
+    vjidx_t vj_index;
 
 #ifdef METADATA
     jpidx_t journey_pattern;

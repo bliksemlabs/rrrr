@@ -8,7 +8,7 @@
 static void
 add_connection(const tdata_t *td, vehicle_journey_t *vjs, stoptime_t *timedemand_type, spidx_t *stops,
                jpidx_t i_jp, jp_vjoffset_t i_vj, jppidx_t i_jpp, rtime_t translate,
-               vjidx_t vj_id, connection_t *connection) {
+               vjidx_t vj_index, connection_t *connection) {
 
     connection->departure = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp].departure - td->stop_point_waittime[stops[i_jpp]];
     connection->arrival   = translate + vjs[i_vj].begin_time + timedemand_type[i_jpp + 1].arrival;
@@ -18,20 +18,19 @@ add_connection(const tdata_t *td, vehicle_journey_t *vjs, stoptime_t *timedemand
     connection->journey_pattern = i_jp;
     connection->vehicle_journey = i_vj;
 #endif
-    connection->vj_id = vj_id;
+    connection->vj_index = vj_index;
 }
 
 /* Calculate the number of connections per day */
 static bool
 calculate_connections (const tdata_t *td, router_request_t *req,
-                       conidx_t *n_connections, vjidx_t *n_vjs) {
+                       conidx_t *n_connections) {
     jpidx_t i_jp;
     calendar_t yesterday_mask = req->day_mask >> 1;
     calendar_t today_mask     = req->day_mask;
     calendar_t tomorrow_mask  = req->day_mask << 1;
 
     conidx_t i_connections = 0;
-    vjidx_t i_vjs = 0;
 
     i_jp = (jpidx_t) td->n_journey_patterns;
     while (i_jp) {
@@ -51,7 +50,6 @@ calculate_connections (const tdata_t *td, router_request_t *req,
             }*/
             if (vj_masks[i_vj] & today_mask) {
                 i_connections += i_jpp;
-                i_vjs++;
             }
             /*
             if (vj_masks[i_vj] & tomorrow_mask) {
@@ -61,7 +59,6 @@ calculate_connections (const tdata_t *td, router_request_t *req,
     }
 
     *n_connections = i_connections;
-    *n_vjs = i_vjs;
 
     return true;
 }
@@ -70,7 +67,6 @@ calculate_connections (const tdata_t *td, router_request_t *req,
 bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                               connection_t *connections, conidx_t n_connections) {
     jpidx_t i_jp;
-    vjidx_t vj_id = 0;
     calendar_t yesterday_mask = req->day_mask >> 1;
     calendar_t today_mask     = req->day_mask;
     calendar_t tomorrow_mask  = req->day_mask << 1;
@@ -88,17 +84,19 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
 
         while (i_vj) {
             stoptime_t *timedemand_type;
+            vjidx_t vj_index;
             jppidx_t i_jpp;
 
             i_vj--;
             timedemand_type = tdata_timedemand_type(td, i_jp, i_vj);
+            vj_index = td->journey_patterns[i_jp].vj_index + i_vj;
             /*
             if (vj_masks[i_vj] & yesterday_mask) {
                 i_jpp = n_stops;
                 while (i_jpp) {
                     n_connections--;
                     i_jpp--;
-                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, 0,              vj_id, &connections[n_connections]);
+                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, 0,              vj_index, &connections[n_connections]);
                 }
             }*/
 
@@ -107,9 +105,8 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                 while (i_jpp) {
                     n_connections--;
                     i_jpp--;
-                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_ONE_DAY,  vj_id, &connections[n_connections]);
+                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_ONE_DAY,  vj_index, &connections[n_connections]);
                 }
-                vj_id++;
             }
             /*
             if (vj_masks[i_vj] & tomorrow_mask) {
@@ -117,13 +114,11 @@ bool expand_vehicle_journeys (const tdata_t *td, router_request_t *req,
                 while (i_jpp) {
                     n_connections--;
                     i_jpp--;
-                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_TWO_DAYS, vj_id, &connections[n_connections]);
+                    add_connection(td, vjs, timedemand_type, stops, i_jp, i_vj, i_jpp, RTIME_TWO_DAYS, vj_index, &connections[n_connections]);
                 }
             }*/
         }
     }
-
-    printf("%u\n", vj_id);
 
     return (n_connections == 0);
 }
@@ -136,7 +131,7 @@ void dump_connection(const tdata_t *td, connection_t *connection) {
     btimetext(connection->departure, departure);
     btimetext(connection->arrival,   arrival);
 
-    printf("%.6u %s %s %.6u %.25s | %.25s %.6u %.5u %.3u\n", connection->vj_id, departure, arrival, connection->departure, sp_from, sp_to, connection->arrival, connection->journey_pattern, connection->vehicle_journey);
+    printf("%.6u %s %s %.6u %.25s | %.25s %.6u %.5u %.3u\n", connection->vj_index, departure, arrival, connection->departure, sp_from, sp_to, connection->arrival, connection->journey_pattern, connection->vehicle_journey);
 }
 
 /* Dump all connections */
@@ -197,11 +192,10 @@ void csa_router_teardown (csa_router_t *router) {
  * 6. Sorts for the arrival series.
  */
 bool csa_router_setup_connections (csa_router_t *router, router_request_t *req) {
-    calculate_connections (router->tdata, req, &router->n_connections, &router->n_vjs);
-    printf("calc %u\n", router->n_vjs);
+    calculate_connections (router->tdata, req, &router->n_connections);
     router->connections_departure = (connection_t *) malloc(sizeof(connection_t) * router->n_connections);
     router->connections_arrival   = (connection_t *) malloc(sizeof(connection_t) * router->n_connections);
-    router->onboard = bitset_new (router->n_vjs);
+    router->onboard = bitset_new (router->tdata->n_vjs);
 
     if ( ! (router->connections_departure
             && router->connections_arrival)
@@ -290,12 +284,12 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
 
     for (; i_con < router->n_connections; ++i_con) {
         connection_t *con = &router->connections_departure[i_con];
-        bool onboard  = bitset_get (router->onboard, con->vj_id);
+        bool onboard  = bitset_get (router->onboard, con->vj_index);
         bool improves = con->arrival < router->best_time[con->sp_to];
 
         if ((onboard || con->departure >= router->best_time[con->sp_from]) &&
              improves) {
-            if (!onboard) bitset_set (router->onboard, con->vj_id);
+            if (!onboard) bitset_set (router->onboard, con->vj_index);
             router->best_time[con->sp_to] = con->arrival;
             router->states_back_connection[con->sp_to] = i_con;
 
@@ -345,12 +339,12 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
 
     for (; i_con < router->n_connections; ++i_con) {
         connection_t *con = &router->connections_arrival[i_con];
-        bool onboard  = bitset_get (router->onboard, con->vj_id);
+        bool onboard  = bitset_get (router->onboard, con->vj_index);
         bool improves = con->departure > router->best_time[con->sp_from];
 
         if ((onboard || con->arrival <= router->best_time[con->sp_to]) &&
              improves) {
-            if (!onboard) bitset_set (router->onboard, con->vj_id);
+            if (!onboard) bitset_set (router->onboard, con->vj_index);
             router->best_time[con->sp_from] = con->departure;
             router->states_back_connection[con->sp_from] = i_con;
 
