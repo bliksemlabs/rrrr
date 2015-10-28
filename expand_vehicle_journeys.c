@@ -270,6 +270,23 @@ csa_binary_search_departure (csa_router_t *router, router_request_t *req) {
     return low;
 }
 
+/* Board all previous trips in the same block */
+void csa_board_forward (csa_router_t *router, vjidx_t vj_index) {
+    vehicle_journey_ref_t *interline;
+
+    bitset_set (router->onboard, vj_index);
+
+    interline = &router->tdata->vehicle_journey_transfers_forward [vj_index];
+
+    while (interline->jp_index != JP_NONE) {
+        vj_index = router->tdata->journey_patterns[interline->jp_index].vj_index + interline->vj_offset;
+
+        bitset_set (router->onboard, vj_index);
+
+        interline = &router->tdata->vehicle_journey_transfers_forward [vj_index];
+    }
+}
+
 /* Implements ordinary, single criteria CSA */
 bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
     conidx_t i_con;
@@ -289,7 +306,7 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
 
         if ((onboard || con->departure >= router->best_time[con->sp_from]) &&
              improves) {
-            if (!onboard) bitset_set (router->onboard, con->vj_index);
+            if (!onboard) csa_board_forward (router, con->vj_index);
             router->best_time[con->sp_to] = con->arrival;
             router->states_back_connection[con->sp_to] = i_con;
 
@@ -325,6 +342,23 @@ csa_binary_search_arrival (csa_router_t *router, router_request_t *req) {
     return low;
 }
 
+/* Board all upcoming trips in the same block */
+void csa_board_backward (csa_router_t *router, vjidx_t vj_index) {
+    vehicle_journey_ref_t *interline;
+
+    bitset_set (router->onboard, vj_index);
+
+    interline = &router->tdata->vehicle_journey_transfers_backward[vj_index];
+
+    while (interline->jp_index != JP_NONE) {
+        vj_index = router->tdata->journey_patterns[interline->jp_index].vj_index + interline->vj_offset;
+
+        bitset_set (router->onboard, vj_index);
+
+        interline = &router->tdata->vehicle_journey_transfers_backward[vj_index];
+    }
+}
+
 /* Implements arrive-by single criteria CSA */
 bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
     conidx_t i_con;
@@ -344,7 +378,7 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
 
         if ((onboard || con->arrival <= router->best_time[con->sp_to]) &&
              improves) {
-            if (!onboard) bitset_set (router->onboard, con->vj_index);
+            if (!onboard) csa_board_backward (router, con->vj_index);
             router->best_time[con->sp_from] = con->departure;
             router->states_back_connection[con->sp_from] = i_con;
 
