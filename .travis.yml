@@ -16,6 +16,7 @@ addons:
     - libprotobuf-c0-dev
     - protobuf-c-compiler
     - check
+    - pkg-config
 
 before_install:
   - export TZ=Europe/Amsterdam
