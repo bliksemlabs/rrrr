@@ -1,14 +1,21 @@
 language: c
 
+sudo: false
+
 compiler:
   - gcc
   - clang
 
+addons:
+  apt:
+    packages:
+    - libprotobuf-c0-dev
+    - protobuf-c-compiler
+    - check
+
 before_install:
   - export TZ=Europe/Amsterdam
-  - sudo apt-get update >/dev/null
-  - sudo apt-get -q install libprotobuf-c0-dev protobuf-c-compiler check
-  - sudo pip install pytz python-dateutil
+  - pip install pytz python-dateutil
 
 before_script:
   - mkdir build
