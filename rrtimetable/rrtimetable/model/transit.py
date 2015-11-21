@@ -182,6 +182,10 @@ class JourneyPatternPoint:
 
 class TimeDemandGroupPoint:
     def __init__(self,drivetime,totaldrivetime):
+        """
+        :param drivetime: drive-time since start of trip
+        :param totaldrivetime: drive-time combined with dwell time at this stoppoint
+        """
         self.type = 'timedemandgrouppoint'
         self.drivetime = drivetime
         self.totaldrivetime = totaldrivetime
