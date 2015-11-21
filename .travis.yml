@@ -6,6 +6,10 @@ compiler:
   - gcc
   - clang
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+
 addons:
   apt:
     packages:
@@ -16,10 +20,9 @@ addons:
 before_install:
   - export TZ=Europe/Amsterdam
 
-install:
-  - pip install pytz python-dateutil
-
 before_script:
+  - pip install pytz python-dateutil --user `whoami`
+  - export PATH=$HOME/.local/bin:$PATH
   - mkdir build
   - cd build
   - cmake ..
