@@ -66,7 +66,7 @@ START_TEST (test_bitset)
         bitset_set(bs, 19999);
         bitset_set(bs,  1);
         bitset_set(bs,  0);
-        ck_assert_int_eq (bitset_count(bs), 5);
+        ck_assert_int_eq (bitset_count(bs), 6);
 
         /* Test unset */
         bitset_black(bs);
