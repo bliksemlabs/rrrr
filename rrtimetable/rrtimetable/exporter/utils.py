@@ -73,7 +73,7 @@ def tell(out) :
         text = '%0.2f MB' % (pos / 1024.0 / 1024.0)
     else :
         text = '%0.2f kB' % (pos / 1024.0)
-    print "  at position %d in output [%s]" % (pos, text)
+    print ("  at position %d in output [%s]" % (pos, text))
     return pos
 
 
