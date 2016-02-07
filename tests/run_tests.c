@@ -35,9 +35,9 @@ int main (void) {
     srunner_add_suite (sr, make_router_request_suite ());
     srunner_add_suite (sr, make_street_network_suite ());
     srunner_add_suite (sr, make_util_suite ());
-    srunner_add_suite (sr, make_tdata_views_suite ());
+    /*srunner_add_suite (sr, make_tdata_views_suite ()); TODO make a utility that builds timetables for testing*/
 #ifdef RRRR_TDATA_IO_DYNAMIC
-    srunner_add_suite (sr, make_tdata_jit_suite ());
+    /*srunner_add_suite (sr, make_tdata_jit_suite ()); TODO: make a utility that builds timetables for testing*/
 #endif
     srunner_set_log (sr, "test.log");
     srunner_run_all (sr, CK_VERBOSE); /* CK_NORMAL */
