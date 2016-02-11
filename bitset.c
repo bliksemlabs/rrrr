@@ -13,7 +13,7 @@
 /* Initialize a pre-allocated bitset struct,
  * allocating memory for bits_t holding the bits.
  */
-static void bitset_init(bitset_t *self, uint32_t capacity) {
+void bitset_init(bitset_t *self, uint32_t capacity) {
     self->capacity = capacity;
     /* round upwards */
     self->n_chunks = (capacity + (BS_BITS - 1)) >> BS_SHIFT;
@@ -49,7 +49,7 @@ void bitset_destroy(bitset_t *self) {
 
 void bitset_clear(bitset_t *self) {
     uint32_t i_chunk = self->n_chunks;
-    
+
     while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] = (bits_t) 0;
@@ -58,7 +58,7 @@ void bitset_clear(bitset_t *self) {
 
 void bitset_black(bitset_t *self) {
     uint32_t i_chunk = self->n_chunks;
-    
+
     while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] = ~((bits_t) 0);

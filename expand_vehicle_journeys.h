@@ -58,3 +58,4 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req);
 bool csa_router_route_arrival (csa_router_t *router, router_request_t *req);
 bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_request_t *req);
 
+void dump_connection(const tdata_t *td, connection_t *connection);

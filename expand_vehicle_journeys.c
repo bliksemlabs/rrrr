@@ -198,7 +198,8 @@ bool csa_router_setup_connections (csa_router_t *router, router_request_t *req) 
     router->onboard = bitset_new (router->tdata->n_vjs);
 
     if ( ! (router->connections_departure
-            && router->connections_arrival)
+            && router->connections_arrival
+            && router->onboard)
        ) {
         fprintf(stderr, "failed to allocate router connections\n");
         return false;
@@ -320,7 +321,7 @@ bool csa_router_route_departure (csa_router_t *router, router_request_t *req) {
         }
     }
 
-    return (router->states_back_connection[req->to_stop_point] != CON_NONE);
+    return req->to_stop_point == STOP_NONE || (router->states_back_connection[req->to_stop_point] != CON_NONE);
 }
 
 /* Implements a bsearch on a reverse sorted list, which guarantees an underfitted needle */
@@ -367,7 +368,14 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
     bitset_clear (router->onboard);
     rrrr_memset (router->states_back_connection, CON_NONE, router->tdata->n_stop_points);
     rrrr_memset (router->best_time, 0, router->tdata->n_stop_points);
-    router->best_time[req->to_stop_point] = req->time;
+
+    street_network_t *origin = &req->exit;
+    spidx_t i_sp = origin->n_points;
+    while (i_sp) {
+        i_sp--;
+        router->best_time[origin->stop_points[i_sp]] = req->time;
+    }
+    /* router->best_time[req->to_stop_point] = req->time; */
 
     i_con = csa_binary_search_arrival (router, req);
 
@@ -407,7 +415,7 @@ bool csa_router_route_arrival (csa_router_t *router, router_request_t *req) {
         }
     }
 
-    return (router->states_back_connection[req->from_stop_point] != CON_NONE);
+    return req->from_stop_point == STOP_NONE || (router->states_back_connection[req->from_stop_point] != CON_NONE);
 }
 
 /* The chain of connections is traversed backwards,
@@ -492,6 +500,274 @@ bool csa_router_result_to_plan (plan_t *plan, csa_router_t *router, router_reque
     return true;
 }
 
+void csa_dump_best_times_departure (const csa_router_t *router, const router_request_t *req) {
+    bool open = false;
+
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+
+        if (router->best_time[i_sp] != UNREACHED) {
+            latlon_t *latlon = &router->tdata->stop_point_coords[i_sp];
+            if (open) puts(",");
+            printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[%.4f,%.4f]},\"properties\":{\"arrival\":%u}}", latlon->lon, latlon->lat, (router->best_time[i_sp] - req->time) << 2);
+            open = true;
+        }
+    }
+
+    puts("]}");
+}
+
+void csa_dump_best_times_arrival (const csa_router_t *router, const router_request_t *req) {
+    bool open = false;
+
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+
+        if (router->best_time[i_sp] != 0) {
+            latlon_t *latlon = &router->tdata->stop_point_coords[i_sp];
+            if (open) puts(",");
+            printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[%.4f,%.4f]},\"properties\":{\"arrival\":%u}}", latlon->lon, latlon->lat, (req->time - router->best_time[i_sp]) << 2);
+            open = true;
+        }
+    }
+
+    puts("]}");
+}
+
+void csa_dump_best_times_arrival_sum (const csa_router_t *router, const router_request_t *req, rtime_t *sum) {
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+        sum[i_sp] += (req->time - router->best_time[i_sp]);
+    }
+}
+
+typedef struct sorted_rtime sorted_rtime_t;
+struct sorted_rtime {
+    rtime_t time;
+    spidx_t sp;
+};
+
+/* Sort two connections by ascending departure and ascending arrival time */
+static int
+compare_rtime(const void *elem1, const void *elem2) {
+    const sorted_rtime_t *i1 = (const sorted_rtime_t *) elem1;
+    const sorted_rtime_t *i2 = (const sorted_rtime_t *) elem2;
+
+    return (i2->time - i1->time);
+}
+
+void csa_dump_result_aggr (const csa_router_t *router, rtime_t *sum) {
+    sorted_rtime_t *sorted = (sorted_rtime_t *) malloc (sizeof(sorted_rtime_t *) * router->tdata->n_stop_points);
+
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+        sorted[i_sp].time = sum[i_sp];
+        sorted[i_sp].sp = i_sp;
+    }
+
+    qsort (sorted, router->tdata->n_stop_points, sizeof(sorted_rtime_t), compare_rtime);
+
+    bool open = false;
+
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+
+    i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+        sorted_rtime_t *needle = &sorted[i_sp];
+        if (needle->time == UNREACHED) {
+            continue;
+        }
+        latlon_t *latlon = &router->tdata->stop_point_coords[needle->sp];
+        if (open) puts(",");
+        printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[%.4f,%.4f]},\"properties\":{\"weight\":%u}}", latlon->lon, latlon->lat, needle->time);
+        open = true;
+    }
+
+    puts("]}");
+    free (sorted);
+}
+
+void csa_dump_connections_arrival (const csa_router_t *router, const router_request_t *req) {
+#if 0
+    bitset_t *used = bitset_new (router->n_connections);
+    bitset_clear(used);
+
+
+    connection_t *connections;
+    if (req->arrive_by) {
+        connections = router->connections_arrival;
+    } else {
+        connections = router->connections_departure;
+    }
+
+    latlon_t *latlon = &router->tdata->stop_point_coords[req->to_stop_point];
+
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+    printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[%.4f,%.4f]},\"properties\":{\"arrival\":%u}}", latlon->lon, latlon->lat, (req->time - router->best_time[req->to_stop_point]) << 2);
+
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+        conidx_t last_idx = router->states_back_connection[i_sp];
+
+        connection_t *connection = NULL;
+        while (last_idx != CON_NONE && !bitset_get(used, last_idx)) {
+            if (!connection) puts(",{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[");
+
+            connection = &connections[last_idx];
+            bitset_set(used, last_idx);
+            latlon = &router->tdata->stop_point_coords[connection->sp_to];
+            printf("[%.4f,%.4f],", latlon->lon, latlon->lat);
+            last_idx = router->states_back_connection[(req->arrive_by ? connection->sp_to : connection->sp_from)];
+        }
+
+        if (connection) {
+            latlon = &router->tdata->stop_point_coords[connection->sp_from];
+            printf("[%.4f,%.4f]]},\"properties\":{}}", latlon->lon, latlon->lat);
+        }
+    }
+
+    puts("]}");
+
+    bitset_destroy(used);
+#endif
+#if 0
+    connection_t *connections;
+    latlon_t *latlon = &router->tdata->stop_point_coords[req->to_stop_point];
+
+    if (req->arrive_by) {
+        connections = router->connections_arrival;
+    } else {
+        connections = router->connections_departure;
+    }
+
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+    printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[%.4f,%.4f]},\"properties\":{\"arrival\":%u}}", latlon->lon, latlon->lat, (req->time - router->best_time[req->to_stop_point]) << 2);
+
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+        conidx_t last_idx = router->states_back_connection[i_sp];
+        puts(",{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[");
+        connection_t *connection = NULL;
+        while (last_idx != CON_NONE) {
+            connection = &connections[last_idx];
+            latlon_t *latlon = &router->tdata->stop_point_coords[connection->sp_to];
+            printf("[%.4f,%.4f],", latlon->lon, latlon->lat);
+            last_idx = router->states_back_connection[(req->arrive_by ? connection->sp_to : connection->sp_from)];
+        }
+
+        if (connection) {
+            latlon_t *latlon = &router->tdata->stop_point_coords[connection->sp_from];
+            printf("[%.4f,%.4f]", latlon->lon, latlon->lat);
+        }
+
+        puts("]},\"properties\":{}}");
+    }
+    puts("]}");
+#endif
+#if 0
+    bitset_t *used = bitset_new (router->n_connections);
+    bitset_clear(used);
+
+    if (req->arrive_by) {
+        connections = router->connections_arrival;
+    } else {
+        connections = router->connections_departure;
+    }
+
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+        conidx_t last_idx = router->states_back_connection[i_sp];
+
+        while (last_idx != CON_NONE) {
+            bool is_used = bitset_get(used, last_idx);
+            if (!is_used) {
+                connection_t *connection;
+                bitset_set(used, last_idx);
+                connection = &connections[last_idx];
+                last_idx = router->states_back_connection[(req->arrive_by ? connection->sp_to : connection->sp_from)];
+            } else {
+                /* if the connection is already present, we already have the sink tree down */
+                break;
+            }
+        }
+    }
+
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+    printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[%.4f,%.4f]},\"properties\":{\"arrival\":%u}}", latlon->lon, latlon->lat, (req->time - router->best_time[req->to_stop_point]) << 2);
+
+    conidx_t i_con;
+    for (i_con  = bitset_next_set_bit (used, 0);
+         i_con != BITSET_NONE;
+         i_con  = bitset_next_set_bit (used, i_con + 1)) {
+            connection_t *con = &router->connections_arrival[i_con];
+
+            latlon_t *latlon_sp_from = &router->tdata->stop_point_coords[con->sp_from];
+            latlon_t *latlon_sp_to   = &router->tdata->stop_point_coords[con->sp_to];
+
+
+            printf(",{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[%.4f,%.4f],[%.4f,%.4f]]},\"properties\":{\"departure\":%u,\"arrival\":%u}}", latlon_sp_from->lon, latlon_sp_from->lat, latlon_sp_to->lon, latlon_sp_to->lat, RTIME_TO_SEC(req->time - con->departure), RTIME_TO_SEC(req->time - con->arrival));
+    }
+
+    puts("]}");
+
+    bitset_destroy(used);
+#endif
+
+#if 1
+    puts("{\"type\":\"FeatureCollection\",\"features\":[");
+    rtime_t best_time = router->best_time[req->to_stop_point]; /* req->time */
+    bool open = false;
+    spidx_t i_sp = router->tdata->n_stop_points;
+    while (i_sp) {
+        i_sp--;
+
+        if (router->states_back_connection[i_sp] != CON_NONE) {
+            connection_t *con = &router->connections_arrival[router->states_back_connection[i_sp]];
+
+            latlon_t *latlon_sp_from = &router->tdata->stop_point_coords[con->sp_from];
+            latlon_t *latlon_sp_to   = &router->tdata->stop_point_coords[con->sp_to];
+            if (open) puts(",");
+            printf("{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[%.4f,%.4f],[%.4f,%.4f]]},\"properties\":{\"departure\":%u,\"arrival\":%u}}", latlon_sp_from->lon, latlon_sp_from->lat, latlon_sp_to->lon, latlon_sp_to->lat, RTIME_TO_SEC(best_time - con->departure), RTIME_TO_SEC(best_time - con->arrival));
+            open = true;
+        }
+    }
+
+    puts("]}");
+#endif
+}
+
+
+
+void csa_scan_all_departure (csa_router_t *router, router_request_t *req) {
+    router_request_t scan_req = *req;
+    scan_req.to_stop_point = STOP_NONE;
+    scan_req.time_cutoff = UNREACHED;
+    csa_router_route_departure (router, &scan_req);
+    csa_dump_best_times_departure (router, &scan_req);
+}
+
+void csa_scan_all_arrival (csa_router_t *router, router_request_t *req) {
+    router_request_t scan_req = *req;
+    scan_req.from_stop_point = STOP_NONE;
+    scan_req.time_cutoff = 0;
+    csa_router_route_arrival (router, &scan_req);
+    /* csa_dump_connections_arrival (router, &scan_req); */
+    /* csa_dump_best_times_arrival (router, &scan_req); */
+}
+
+#if 0
 int main(int argc, char *argv[]) {
     int status = EXIT_SUCCESS;
     csa_router_t router;
@@ -506,7 +782,12 @@ int main(int argc, char *argv[]) {
     }
 
     router_request_initialize (&req);
-    router_request_from_epoch (&req, &tdata, strtoepoch("2015-04-13T09:00:00"));
+    router_request_from_epoch (&req, &tdata, strtoepoch("2015-04-13T12:00:00"));
+
+    if (! tdata_hashgrid_setup (&tdata)) {
+        status = EXIT_FAILURE;
+        goto clean_exit;
+    }
 
     if ( ! csa_router_setup (&router, &tdata)) {
         /* if the memory is not allocated we must exit */
@@ -519,12 +800,27 @@ int main(int argc, char *argv[]) {
         goto clean_exit;
     }
 
-    req.arrive_by = false;
-    req.from_stop_point = 20000;
-    req.to_stop_point = 23000;
+    rtime_t *sum = (rtime_t *) malloc (sizeof(rtime_t) * tdata.n_stop_points);
+    rrrr_memset (sum, 0, router.tdata->n_stop_points);
 
-    router_request_dump(&req, &tdata);
+    req.arrive_by = true;
 
+    strtolatlon("52.2989,5.6237", &req.from_latlon);
+    strtolatlon("52.2989,5.6237", &req.to_latlon);
+    router_request_search_street_network (&req, router.tdata);
+    csa_scan_all_arrival (&router, &req);
+    csa_dump_best_times_arrival_sum (&router, &req, sum);
+
+    strtolatlon("52.089,5.112", &req.from_latlon);
+    strtolatlon("52.089,5.112", &req.to_latlon);
+    router_request_search_street_network (&req, router.tdata);
+    csa_scan_all_arrival (&router, &req);
+
+    csa_dump_best_times_arrival_sum (&router, &req, sum);
+    csa_dump_result_aggr (&router, sum);
+
+
+#if 0
     /* forward search */
 
     csa_router_route_departure (&router, &req);
@@ -558,6 +854,7 @@ int main(int argc, char *argv[]) {
     /* dump_connections (&tdata, router.connections_departure, router.n_connections); */
     /* dump_connections (&tdata, router.connections_arrival, router.n_connections); */
     #endif
+#endif
 
 clean_exit:
     #ifndef RRRR_VALGRIND
@@ -571,7 +868,7 @@ clean_exit:
     csa_router_teardown_connections (&router);
 
     /* Deallocate the hashgrid coordinates */
-    /* tdata_hashgrid_teardown (&tdata); */
+    tdata_hashgrid_teardown (&tdata);
 
     /* Unmap the memory and/or deallocate the memory on the heap */
     tdata_close (&tdata);
@@ -583,3 +880,4 @@ clean_exit:
 fast_exit:
     exit(status);
 }
+#endif

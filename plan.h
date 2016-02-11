@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 
-#define MAX_LEGS RRRR_DEFAULT_MAX_ROUNDS * 4 + 1
+#define MAX_LEGS RRRR_DEFAULT_MAX_ROUNDS * 20 + 1
 
 /* A leg represents one ride or walking transfer. */
 typedef struct leg leg_t;

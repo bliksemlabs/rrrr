@@ -41,6 +41,9 @@ struct bitset_s {
  */
 bitset_t *bitset_new(uint32_t capacity);
 
+/* Initialise the bitset. Already happens within bitset_new */
+void bitset_init(bitset_t *self, uint32_t capacity);
+
 /* De-allocate a bitset_t struct as well as the memory it references
  * internally for the bit fields.
  */
