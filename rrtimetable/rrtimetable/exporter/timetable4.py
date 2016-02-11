@@ -1,5 +1,4 @@
 from utils import *
-import operator
 import sys
 import datetime
 
@@ -167,25 +166,25 @@ def write_stop_area_idx(out,index,stop_area_uri):
     else:
         writeint(out,index.idx_for_stop_area_uri[stop_area_uri])
 
-def write_list_of_strings(out,index,list):
+def write_list_of_strings(out, index, list_of_strings):
     loc = tell(out)
-    for x in list:
+    for x in list_of_strings:
         writeint(out,index.put_string(x or ''))
     return loc
 
-def export_sp_coords(tdata,index,out):
+def export_sp_coords(index, out):
     write_text_comment(out,"STOP POINT COORDS")
     index.loc_stop_point_coords = out.tell()
     for sp in index.stop_points:
         write2floats(out,sp.latitude or 0.0, sp.longitude or 0.0)
 
-def export_sa_coords(tdata,index,out):
+def export_sa_coords(index, out):
     write_text_comment(out,"STOP AREA COORDS")
     index.loc_stop_area_coords = out.tell()
     for sa in index.stop_areas:
         write2floats(out,sa.latitude or 0.0, sa.longitude or 0.0)
 
-def export_journey_pattern_point_stop(tdata,index,out):
+def export_journey_pattern_point_stop(index, out):
     write_text_comment(out,"JOURNEY_PATTERN_POINT STOP")
     index.loc_journey_pattern_points = tell(out)
     index.offset_jpp = []
@@ -198,7 +197,7 @@ def export_journey_pattern_point_stop(tdata,index,out):
             write_stop_point_idx(out,index,jpp.stop_point.uri)
             offset += 1
 
-def export_journey_pattern_point_headsigns(tdata,index,out):
+def export_journey_pattern_point_headsigns(index, out):
     write_text_comment(out,"JOURNEY_PATTERN_POINT HEADSIGN")
     index.loc_journey_pattern_point_headsigns = tell(out)
     index.offset_jpp = []
@@ -209,7 +208,7 @@ def export_journey_pattern_point_headsigns(tdata,index,out):
             writeint(out,index.put_string(jpp.headsign or jp.headsign or ''))
             offset += 1
 
-def export_journey_pattern_point_attributes(tdata,index,out):
+def export_journey_pattern_point_attributes(index, out):
     write_text_comment(out,"STOPS ATTRIBUTES BY JOURNEY_PATTERN")
     index.loc_journey_pattern_point_attributes = tell(out)
     index.offset_jpp_attributes = []
@@ -228,7 +227,7 @@ def export_journey_pattern_point_attributes(tdata,index,out):
             offset += 1
 
 timedemandgroup_t = Struct('HH')
-def export_timedemandgroups(tdata,index,out):
+def export_timedemandgroups(index, out):
     write_text_comment(out,"TIMEDEMANDGROUPS")
     index.loc_timedemandgroups = tell(out)
     index.offset_for_timedemandgroup_uri = {}
@@ -240,7 +239,7 @@ def export_timedemandgroups(tdata,index,out):
             tp_offset += 1
     index.n_tpp = tp_offset
 
-def export_vj_in_jp(tdata,index,out):
+def export_vj_in_jp(index, out):
     write_text_comment(out,"VEHICLE JOURNEYS IN JOURNEY_PATTERN")
     index.loc_vehicle_journeys = tell(out)
     tioffset = 0
@@ -254,7 +253,7 @@ def export_vj_in_jp(tdata,index,out):
             out.write(vj_t.pack(index.offset_for_timedemandgroup_uri[vj.timedemandgroup.uri], (vj.departure_time+index.global_utc_offset) >> 2, vj_attr))
             tioffset += 1
 
-def export_jpp_at_sp(tdata,index,out):
+def export_jpp_at_sp(index, out):
     write_text_comment(out,"JOURNEY_PATTERNS AT STOP")
     index.loc_jp_at_sp = tell(out)
     index.jpp_at_sp_offsets = []
@@ -268,7 +267,7 @@ def export_jpp_at_sp(tdata,index,out):
     index.jpp_at_sp_offsets.append(n_offset) #sentinel
     index.n_jpp_at_sp = n_offset
 
-def export_sa_for_sp(tdata,index,out):
+def export_sa_for_sp(index, out):
     write_text_comment(out,"STOP_POINT -> STOP_AREA")
     index.loc_sa_for_sp = tell(out)
     for sp in index.stop_points:
@@ -335,7 +334,7 @@ def export_transfers(tdata,index,out):
         else:
             writeshort(out,(int(MIN_WAITTIME) >> 2))
 
-def export_stop_indices(tdata,index,out):
+def export_stop_indices(index, out):
     print "saving stop indexes"
     write_text_comment(out,"STOP STRUCTS")
     index.loc_stop_points = tell(out)
@@ -345,7 +344,7 @@ def export_stop_indices(tdata,index,out):
     for stop in zip (index.jpp_at_sp_offsets, index.transfers_offsets) :
         out.write(struct_2i.pack(*stop));
 
-def export_stop_point_attributes(tdata,index,out):
+def export_stop_point_attributes(index, out):
     print "saving stop attributes"
     write_text_comment(out,"STOP Attributes")
     index.loc_stop_point_attributes = tell(out)
@@ -353,7 +352,7 @@ def export_stop_point_attributes(tdata,index,out):
         attr = 0
         writebyte(out,attr)
 
-def export_jp_structs(tdata,index,out):
+def export_jp_structs(index, out):
     print "saving route indexes"
     write_text_comment(out,"ROUTE STRUCTS")
     index.loc_journey_patterns = tell(out)
@@ -394,7 +393,7 @@ def validity_mask(days):
             mask |= 1 << day
     return mask
 
-def export_vj_validities(tdata,index,out):
+def export_vj_validities(index, out):
     print "writing bitfields indicating which days each trip is active"
     # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
     write_text_comment(out,"VJ ACTIVE BITFIELDS")
@@ -404,7 +403,7 @@ def export_vj_validities(tdata,index,out):
         for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
             writeint(out,validity_mask(vj.validity_pattern))
 
-def export_jp_validities(tdata,index,out):
+def export_jp_validities(index, out):
     print "writing bitfields indicating which days each trip is active"
     # note that bitfields are ordered identically to the trip_ids table, and offsets into that table can be reused
     write_text_comment(out,"JP ACTIVE BITFIELDS")
@@ -413,7 +412,7 @@ def export_jp_validities(tdata,index,out):
     for jp in index.journey_patterns:
         writeint(out,validity_mask(index.validity_pattern_for_journey_pattern_uri[jp.uri]))
 
-def export_platform_codes(tdata,index,out):
+def export_platform_codes(index, out):
     print "writing out platformcodes for stops"
     write_text_comment(out,"PLATFORM CODES")
     index.loc_platformcodes = write_list_of_strings(out,index,[sp.platformcode or '' for sp in index.stop_points])
@@ -423,12 +422,12 @@ def export_stop_pointnames(tdata,index,out):
     write_text_comment(out,"STOP POINT NAMES")
     index.loc_stop_nameidx = write_list_of_strings(out,index,[sp.name or '' for sp in index.stop_points])
 
-def export_stop_areanames(tdata,index,out):
+def export_stop_areanames(index, out):
     print "writing out locations for stopareas"
     write_text_comment(out,"STOP AREA NAMES")
     index.loc_stop_areaidx = write_list_of_strings(out,index,[sa.name or '' for sa in index.stop_areas])
 
-def export_operators(tdata,index,out):
+def export_operators(index, out):
     print "writing out opreators to string pool"
     write_text_comment(out,"OPERATOR IDS")
     index.loc_operator_ids = write_list_of_strings(out,index,[op.uri or '' for op in index.operators])
@@ -437,7 +436,7 @@ def export_operators(tdata,index,out):
     write_text_comment(out,"OPERATOR URLS")
     index.loc_operator_urls = write_list_of_strings(out,index,[op.url or '' for op in index.operators])
 
-def export_commercialmodes(tdata,index,out):
+def export_commercialmodes(index, out):
     print "writing out commercial_mode to string table"
     write_text_comment(out,"CCMODE IDS")
     index.loc_commercialmode_ids = write_list_of_strings(out,index,[cc.uri or '' for cc in index.commercial_modes])
@@ -447,7 +446,7 @@ def export_commercialmodes(tdata,index,out):
     for jp in index.journey_patterns:
         writeshort(out,index.idx_for_commercial_mode_uri[jp.commercial_mode.uri])
 
-def export_physicalmodes(tdata,index,out):
+def export_physicalmodes(index, out):
     print "writing out commercial_mode to string table"
     write_text_comment(out,"CCMODE IDS")
     index.loc_physicalmode_ids = write_list_of_strings(out,index,[cc.uri or '' for cc in index.physical_modes])
@@ -457,7 +456,7 @@ def export_physicalmodes(tdata,index,out):
     for l in index.lines:
         writeshort(out,index.idx_for_physical_mode_uri[l.physical_mode.uri])
 
-def export_stringpool(tdata,index,out):
+def export_stringpool(index, out):
     print "writing out stringpool"
     write_text_comment(out,"STRINGPOOL")
     index.loc_stringpool = tell(out)
@@ -467,48 +466,48 @@ def export_stringpool(tdata,index,out):
         written_length += len(string) + 1
     assert written_length == index.string_length
 
-def export_linecodes(tdata,index,out):
+def export_linecodes(index, out):
     write_text_comment(out,"LINE CODES")
     index.loc_line_codes = write_list_of_strings(out,index,[line.code or '' for line in index.lines])
 
-def export_linecolors(tdata,index,out):
+def export_linecolors(index, out):
     write_text_comment(out,"LINE COLOR")
     index.loc_line_color = write_list_of_strings(out,index,[line.color or '' for line in index.lines])
     write_text_comment(out,"LINE COLOR_TEXT")
     index.loc_line_color_text = write_list_of_strings(out,index,[line.color_text or '' for line in index.lines])
 
-def export_linenames(tdata,index,out):
+def export_linenames(index, out):
     write_text_comment(out,"LINE NAMES")
     index.loc_line_names = write_list_of_strings(out,index,[line.name or '' for line in index.lines])
 
-def export_line_uris(tdata,index,out):
+def export_line_uris(index, out):
     print "writing line ids to string table"
     write_text_comment(out,"LINE IDS")
     index.loc_line_uris = write_list_of_strings(out,index,[line.uri for line in index.lines])
 
-def export_sp_uris(tdata,index,out):
+def export_sp_uris(index, out):
     print "writing out sorted stop_point ids to string point list"
     # stopid index was several times bigger than the string table. it's probably better to just store fixed-width ids.
     write_text_comment(out,"STOP_POINT IDS")
     index.loc_stop_point_uris = write_list_of_strings(out,index,[sp.uri for sp in index.stop_points])
 
-def export_sa_uris(tdata,index,out):
+def export_sa_uris(index, out):
     print "writing out sorted stop_area ids to string point list"
     write_text_comment(out,"STOP_AREA IDS")
     index.loc_stop_area_uris = write_list_of_strings(out,index,[sa.uri for sa in index.stop_areas])
 
-def export_sa_timezones(tdata,index,out):
+def export_sa_timezones(index, out):
     write_text_comment(out,"STOP_AREA TIMEZONES")
     index.loc_stop_area_timezones = write_list_of_strings(out,index,[sa.timezone for sa in index.stop_areas])
 
-def export_vj_time_offsets(tdata,index,out):
+def export_vj_time_offsets(index, out):
      print 'Timetable offset from UTC'+str(index.global_utc_offset)
      index.loc_vj_time_offsets = tell(out)
      for jp in index.journey_patterns:
          for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
              writesignedbyte(out,(index.global_utc_offset-vj.utc_offset)/60/15) # n * 15 minutes
 
-def export_vj_uris(tdata,index,out):
+def export_vj_uris(index, out):
      all_vj_ids = []
      for jp in index.journey_patterns:
          for vj in index.vehicle_journeys_in_journey_pattern[jp.uri]:
@@ -524,19 +523,22 @@ def export_vj_uris(tdata,index,out):
      index.loc_vj_uris = write_list_of_strings(out,index,all_vj_ids)
      index.n_vj = len(all_vj_ids)
 
-def export_routes(tdata,index,out):
+def export_routes(index, out):
     index.loc_line_for_route = tell(out)
     for r in index.routes:
         writeshort(out,index.idx_for_line_uri[r.line.uri])
 
-def export_lines(tdata,index,out):
+def export_lines(index, out):
     index.loc_operator_for_line = tell(out)
     for l in index.lines:
         writebyte(out,index.idx_for_operator_uri[l.operator.uri])
 
 def write_header (out,index) :
     """ Write out a file header containing offsets to the beginning of each subsection.
-    Must match struct transit_data_header in transitdata.c """
+    Must match struct transit_data_header in transitdata.c
+    :param out: output filepointer
+    :param index: Index of the datastructure exported
+    """
     out.seek(0)
     htext = "TTABLEV4"
 
@@ -651,40 +653,40 @@ def export(tdata):
     out = open('timetable4.dat','wb')
     out.seek(struct_header.size)
 
-    export_sp_coords(tdata,index,out)
-    export_journey_pattern_point_stop(tdata,index,out)
-    export_journey_pattern_point_attributes(tdata,index,out)
-    export_timedemandgroups(tdata,index,out)
-    export_vj_in_jp(tdata,index,out)
-    export_jpp_at_sp(tdata,index,out)
+    export_sp_coords(index, out)
+    export_journey_pattern_point_stop(index, out)
+    export_journey_pattern_point_attributes(index, out)
+    export_timedemandgroups(index, out)
+    export_vj_in_jp(index, out)
+    export_jpp_at_sp(index, out)
     export_transfers(tdata,index,out)
     export_vj_interlines(tdata,index,out)
-    export_stop_indices(tdata,index,out)
-    export_stop_point_attributes(tdata,index,out)
-    export_jp_structs(tdata,index,out)
-    export_vj_validities(tdata,index,out)
-    export_jp_validities(tdata,index,out)
-    export_platform_codes(tdata,index,out)
-    export_sa_coords(tdata,index,out)
-    export_sa_for_sp(tdata,index,out)
+    export_stop_indices(index, out)
+    export_stop_point_attributes(index, out)
+    export_jp_structs(index, out)
+    export_vj_validities(index, out)
+    export_jp_validities(index, out)
+    export_platform_codes(index, out)
+    export_sa_coords(index, out)
+    export_sa_for_sp(index, out)
     export_stop_pointnames(tdata,index,out)
-    export_stop_areanames(tdata,index,out)
-    export_operators(tdata,index,out)
-    export_commercialmodes(tdata,index,out)
-    export_physicalmodes(tdata,index,out)
-    export_routes(tdata,index,out)
-    export_lines(tdata,index,out)
-    export_linecodes(tdata,index,out)
-    export_linenames(tdata,index,out)
-    export_linecolors(tdata,index,out)
-    export_journey_pattern_point_headsigns(tdata,index,out)
-    export_line_uris(tdata,index,out)
-    export_sp_uris(tdata,index,out)
-    export_sa_uris(tdata,index,out)
-    export_sa_timezones(tdata,index,out)
-    export_vj_time_offsets(tdata,index,out)
-    export_vj_uris(tdata,index,out)
-    export_stringpool(tdata,index,out)
+    export_stop_areanames(index, out)
+    export_operators(index, out)
+    export_commercialmodes(index, out)
+    export_physicalmodes(index, out)
+    export_routes(index, out)
+    export_lines(index, out)
+    export_linecodes(index, out)
+    export_linenames(index, out)
+    export_linecolors(index, out)
+    export_journey_pattern_point_headsigns(index, out)
+    export_line_uris(index, out)
+    export_sp_uris(index, out)
+    export_sa_uris(index, out)
+    export_sa_timezones(index, out)
+    export_vj_time_offsets(index, out)
+    export_vj_uris(index, out)
+    export_stringpool(index, out)
     print "reached end of timetable file"
     write_text_comment(out,"END TTABLEV4")
     index.loc_eof = tell(out)
