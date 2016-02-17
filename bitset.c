@@ -1,17 +1,14 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
 /* bitset.c : compact enumerable bit array */
 #include "bitset.h"
-#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
 #include <assert.h>
-
+#include <string.h>
 
 /* Initialize a pre-allocated bitset struct,
  * allocating memory for bits_t holding the bits.
@@ -51,19 +48,23 @@ void bitset_destroy(bitset_t *self) {
 }
 
 void bitset_clear(bitset_t *self) {
-    uint32_t i_chunk = self->n_chunks;
-    do {
-        i_chunk--;
-        self->chunks[i_chunk] = (bits_t) 0;
-    } while (i_chunk);
+    /* memset uses an SSE implementation when available that is much faster than writing 0s after each other and 
+     * hoping the auto-vectorization kicks in. memset is by a factor of at least to 2 times faster */
+    memset (self->chunks, 0, sizeof (bits_t) * self->n_chunks);
 }
 
 void bitset_black(bitset_t *self) {
     uint32_t i_chunk = self->n_chunks;
-    do {
+    
+    while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] = ~((bits_t) 0);
-    } while (i_chunk);
+    }
+
+    /* This sets the actual number of bits of capacity opposed to all
+     * bits, the only reason to do this is to allow counting.
+     */
+    self->chunks[self->n_chunks - 1] = (((bits_t) 1) << (BS_BITS - (self->capacity & (BS_BITS - 1)))) - 1;
 }
 
 void bitset_mask_and(bitset_t *self, bitset_t *mask) {
@@ -71,10 +72,10 @@ void bitset_mask_and(bitset_t *self, bitset_t *mask) {
 
     assert (self->capacity == mask->capacity);
 
-    do {
+    while (i_chunk) {
         i_chunk--;
         self->chunks[i_chunk] &= mask->chunks[i_chunk];
-    } while (i_chunk);
+    }
 }
 
 /* Our bitset code is storing a long number of bits by packing an array of
@@ -152,6 +153,36 @@ uint32_t bitset_next_set_bit(bitset_t *bs, uint32_t index) {
         }
     }
     return BITSET_NONE;
+}
+
+/* TODO: optimise; http://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer */
+#if 0
+uint32_t bitset_count(bitset_t *self) {
+    uint32_t total = 0;
+    uint32_t elem;
+    for (elem = bitset_next_set_bit(self, 0);
+         elem != BITSET_NONE;
+         elem = bitset_next_set_bit(self, elem + 1)) {
+        total++;
+    }
+    return total;
+}
+#endif
+
+uint32_t bitset_count(bitset_t *self) {
+    uint32_t c = 0;
+    uint32_t i_chunk = self->n_chunks;
+
+    while (i_chunk) {
+        bits_t v;
+        i_chunk--;
+        v = self->chunks[i_chunk];
+        v = v - ((v >> 1) & (bits_t)~(bits_t)0/3);
+        v = (v & (bits_t)~(bits_t)0/15*3) + ((v >> 2) & (bits_t)~(bits_t)0/15*3);
+        v = (v + (v >> 4)) & (bits_t)~(bits_t)0/255*15;
+        c += (bits_t)(v * ((bits_t)~(bits_t)0/255)) >> (sizeof(bits_t) - 1) * 8;
+    }
+    return c;
 }
 
 #ifdef RRRR_DEBUG

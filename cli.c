@@ -1,4 +1,4 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and
  * at https://github.com/bliksemlabs/rrrr/
  */
@@ -10,8 +10,20 @@
 #include <string.h>
 #include <time.h>
 
+#include "config.h"
+#include "api.h"
+#include "plan.h"
+#include "set.h"
 #include "router_request.h"
 #include "router_result.h"
+
+#ifdef RRRR_FEATURE_RENDER_TEXT
+#include "plan_render_text.h"
+#endif
+
+#ifdef RRRR_FEATURE_RENDER_OTP
+#include "plan_render_otp.h"
+#endif
 
 #ifdef RRRR_FEATURE_REALTIME
 
@@ -25,69 +37,17 @@
 
 #endif
 
-#define OUTPUT_LEN 8000
+#define OUTPUT_LEN 32000
 
 typedef struct cli_arguments cli_arguments_t;
 struct cli_arguments {
     char *gtfsrt_alerts_filename;
     char *gtfsrt_tripupdates_filename;
-    uint32_t repeat;
+    long repeat;
+    uint32_t(*plan_render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen);
     bool verbose;
+    bool has_latlon;
 };
-
-#if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-static void set_add_jp (uint32_t *set,
-                        uint8_t  *length, uint8_t max_length,
-                        uint32_t value) {
-    uint8_t i;
-
-    if (*length >= max_length) return;
-
-    for (i = 0; i < *length; ++i) {
-        if (set[i] == value) return;
-    }
-
-    set[*length] = value;
-    (*length)++;
-}
-#endif
-
-#if RRRR_MAX_BANNED_STOPS > 0 || RRRR_MAX_BANNED_STOPS_HARD > 0
-static void set_add_sp (spidx_t *set,
-                        uint8_t  *length, uint8_t max_length,
-                        spidx_t value) {
-    uint8_t i;
-
-    if (*length >= max_length) return;
-
-    for (i = 0; i < *length; ++i) {
-        if (set[i] == value) return;
-    }
-
-    set[*length] = value;
-    (*length)++;
-}
-#endif
-
-
-#if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-static void set_add_trip (uint32_t *set1, uint16_t *set2,
-                          uint8_t  *length, uint8_t max_length,
-                          uint32_t value1, uint16_t value2) {
-    uint8_t i;
-
-    if (*length >= max_length) return;
-
-    for (i = 0; i < *length; ++i) {
-        if (set1[i] == value1 &&
-            set2[i] == value2) return;
-    }
-
-    set1[*length] = value1;
-    set2[*length] = value2;
-    (*length)++;
-}
-#endif
 
 int main (int argc, char *argv[]) {
     /* our return value */
@@ -105,10 +65,27 @@ int main (int argc, char *argv[]) {
     /* the router structure, should not be manually changed */
     router_t router;
 
+    /* the plan structure, created for all the results */
+    plan_t plan;
+
     /* initialise the structs so we can always trust NULL values */
     memset (&tdata,    0, sizeof(tdata_t));
     memset (&router,   0, sizeof(router_t));
     memset (&cli_args, 0, sizeof(cli_args));
+
+    plan_init (&plan);
+    cli_args.repeat = 1;
+
+    /* try to set a default plan_render function. */
+    #ifdef RRRR_FEATURE_RENDER_TEXT
+    cli_args.plan_render = plan_render_text;
+    #else
+    #ifdef RRRR_FEATURE_RENDER_OTP
+    cli_args.plan_render = plan_render_otp;
+    #else
+    cli_args.plan_render = NULL;
+    #endif
+    #endif
 
     /* * * * * * * * * * * * * * * * * * * * * *
      * PHASE ZERO: HANDLE COMMANDLINE ARGUMENTS
@@ -120,29 +97,46 @@ int main (int argc, char *argv[]) {
                         "[ --verbose ] [ --randomize ]\n"
                         "[ --arrive=YYYY-MM-DDTHH:MM:SS | "
                           "--depart=YYYY-MM-DDTHH:MM:SS ]\n"
-                        "[ --from-idx=idx | --from-latlon=Y,X ]\n"
-                        "[ --via-idx=idx  | --via-latlon=Y,X ]\n"
-                        "[ --to-idx=idx   | --to-latlon=Y,X ]\n"
+                        "[ --from-idx=idx | --from-id=id | --from-jp-vj-offset=jpidx,vj_offset | --from-sp-idx=idx | --from-sp-id=id | --from-latlon=Y,X ]\n"
+                        "[ --via-idx=idx  | --via-id=id  | --via-latlon=Y,X ]\n"
+                        "[ --to-idx=idx   | --to-id=id   | --to-sp-idx=idx   | --to-sp-id=id   | --to-latlon=Y,X ]\n", argv[0]);
+
+        fprintf(stderr,
+#if RRRR_MAX_FILTERED_OPERATORS > 0
+                        "[ --operator=name ]\n"
+#endif
 #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                         "[ --banned-jp-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_STOPS > 0
+#if RRRR_MAX_BANNED_OPERATORS > 0
+                        "[ --banned-op-idx=idx | --banned-operator=name ]\n"
+#endif
+#if RRRR_MAX_BANNED_STOP_POINTS > 0
                         "[ --banned-stop-idx=idx ]\n"
 #endif
-#if RRRR_MAX_BANNED_STOP_HARD > 0
+#if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
                         "[ --banned-stop-hard-idx=idx ]\n"
 #endif
 #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-                        "[ --banned-vj-offset=jp_idx,trip_offset ]\n"
+                        "[ --banned-vj-offset=jp_idx,vj_offset ]\n"
 #endif
-#if RRRR_FEATURE_REALTIME_ALERTS == 1
+#ifdef RRRR_FEATURE_REALTIME
+#ifdef RRRR_FEATURE_REALTIME_ALERTS
                         "[ --gtfsrt-alerts=filename.pb ]\n"
 #endif
-#if RRRR_FEATURE_REALTIME_EXPANDED == 1
+#ifdef RRRR_FEATURE_REALTIME_EXPANDED
                         "[ --gtfsrt-tripupdates=filename.pb ]\n"
 #endif
-                        "[ --repeat=n ]\n"
-                        , argv[0]);
+#endif
+                        "[ --render=none"
+#ifdef RRRR_FEATURE_RENDER_OTP
+                        "|otp"
+#endif
+#ifdef RRRR_FEATURE_RENDER_TEXT
+                        "|text"
+#endif
+                        " ]\n"
+                        "[ --repeat=n ]\n");
     }
 
     /* The first mandartory argument is the timetable file. We must initialise
@@ -152,12 +146,12 @@ int main (int argc, char *argv[]) {
      * The tdata_file stores timetable data in binary format.
      * We have several ways to load this data from disk;
      *
-     * 1) memory mapped (tdata_io_v3_mmap.c)
+     * 1) memory mapped (tdata_io_v4_mmap.c)
      * Pro: The operation is resource efficient
      * Con: The operating system has to support it,
      *      the data can't be arbitrary extended
      *
-     * 2) using read into dynamically allocated memory (tdata_io_v3_dynamic.c)
+     * 2) using read into dynamically allocated memory (tdata_io_v4_dynamic.c)
      * Pro: This will work in all C implementations
      * Con: Requires heap memory which stores the timetable in full
      */
@@ -168,11 +162,23 @@ int main (int argc, char *argv[]) {
         goto clean_exit;
     }
 
+    /* Report the validity of the timetable.
+     * Requests outside this period will result in interpolation.
+     */
+    {
+        uint64_t starttime, endtime;
+        char start[20], end[20];
+        tdata_validity (&tdata, &starttime, &endtime);
+        strftime(start, 20, "%Y-%m-%d %H:%M:%S", localtime((time_t *) &starttime));
+        strftime(end, 20, "%Y-%m-%d %H:%M:%S", localtime((time_t *) &endtime));
+        printf("Tdata validity: %s %s\n", start, end);
+    }
+
     /* initialise the request */
     router_request_initialize (&req);
 
     /* initialise the random function */
-    srand(time(NULL));
+    srand((unsigned int) time(NULL));
 
 
     {
@@ -200,14 +206,30 @@ int main (int argc, char *argv[]) {
 
                 case 'f':
                     if (strncmp(argv[i], "--from-idx=", 11) == 0) {
-                        req.from = (uint32_t) strtol(&argv[i][11], NULL, 10);
+                        strtospidx (&argv[i][11], &tdata, &req.from_stop_area, NULL);
                     }
-                    #ifdef RRRR_FEATURE_LATLON
+                    else if (strncmp(argv[i], "--from-sp-idx=", 14) == 0) {
+                        strtospidx (&argv[i][14], &tdata, &req.from_stop_point, NULL);
+                    }
+                    else if (strncmp(argv[i], "--from-id=", 10) == 0) {
+                        req.from_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][10], 0);
+                    }
+                    else if (strncmp(argv[i], "--from-sp-id=", 13) == 0) {
+                        req.from_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][13], 0);
+                    }
                     else if (strncmp(argv[i], "--from-latlon=", 14) == 0) {
-                        /* TODO: check return value */
-                        strtolatlon(&argv[i][14], &req.from_latlon);
+                        cli_args.has_latlon = strtolatlon(&argv[i][14], &req.from_latlon);
                     }
-                    #endif
+                    else if (strncmp(argv[i], "--from-jp-vj-offset=", 20) == 0) {
+                        char *endptr;
+                        jpidx_t jp;
+                        if (strtojpidx (&argv[i][20], &tdata, &jp, &endptr)) {
+                            jp_vjoffset_t vj_o;
+                            strtovjoffset (++endptr, &tdata, jp, &vj_o, NULL);
+                            req.onboard_journey_pattern = jp;
+                            req.onboard_journey_pattern_vjoffset = vj_o;
+                        }
+                    }
                     break;
 
                 #ifdef RRRR_FEATURE_REALTIME
@@ -225,25 +247,60 @@ int main (int argc, char *argv[]) {
                     break;
                 #endif
 
+                #if RRRR_MAX_FILTERED_OPERATORS > 0
+                case 'o':
+                    if (strncmp(argv[i], "--operator=", 11) == 0) {
+                        opidx_t operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][11], 0);
+                        while (operator != OP_NONE)
+                        {
+                            set_add_uint8 (req.operators, &req.n_operators, RRRR_MAX_FILTERED_OPERATORS, operator);
+                            operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][11], operator + 1);
+                        }
+                    }
+                    break;
+                #endif
+
                 case 'r':
                     if (strcmp(argv[i], "--randomize") == 0) {
                         router_request_randomize (&req, &tdata);
                     }
                     else if (strncmp(argv[i], "--repeat=", 9) == 0) {
-                        cli_args.repeat = (uint32_t) strtol(&argv[i][9], NULL, 10);
+                        cli_args.repeat = strtol(&argv[i][9], NULL, 10);
+                    }
+                    else if (strncmp(argv[i], "--render=", 9) == 0) {
+                        if (strcmp(&argv[i][9], "none") == 0) {
+                            cli_args.plan_render = NULL;
+                        }
+                        #ifdef RRRR_FEATURE_RENDER_TEXT
+                        if (strcmp(&argv[i][9], "text") == 0) {
+                            cli_args.plan_render = plan_render_text;
+                        }
+                        #endif
+                        #ifdef RRRR_FEATURE_RENDER_OTP
+                        else if (strcmp(&argv[i][9], "otp") == 0) {
+                            cli_args.plan_render = plan_render_otp;
+                        }
+                        #endif
                     }
                     break;
 
                 case 't':
                     if (strncmp(argv[i], "--to-idx=", 9) == 0) {
-                        req.to = (uint32_t) strtol(&argv[i][9], NULL, 10);
+                        strtospidx (&argv[i][9], &tdata, &req.to_stop_area, NULL);
                     }
-                    #ifdef RRRR_FEATURE_LATLON
+                    else if (strncmp(argv[i], "--to-sp-idx=", 12) == 0) {
+                        strtospidx (&argv[i][12], &tdata, &req.to_stop_point, NULL);
+                    }
+                    else if (strncmp(argv[i], "--to-id=", 8) == 0) {
+                        req.to_stop_area = tdata_stop_areaidx_by_stop_area_id (&tdata, &argv[i][8], 0);
+                    }
+                    else if (strncmp(argv[i], "--to-sp-id=", 11) == 0) {
+                        req.to_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][11], 0);
+                    }
                     else if (strncmp(argv[i], "--to-latlon=", 12) == 0) {
-                        /* TODO: check return value */
-                        strtolatlon(&argv[i][12], &req.to_latlon);
+                        cli_args.has_latlon = strtolatlon(&argv[i][12], &req.to_latlon);
                     }
-                    #endif
+
                     break;
 
                 case 'b':
@@ -251,36 +308,61 @@ int main (int argc, char *argv[]) {
                     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
                     else
                     if (strncmp(argv[i], "--banned-jp-idx=", 16) == 0) {
-                        uint32_t jp_index = (uint32_t) strtol(&argv[i][16], NULL, 10);
-                        if (jp_index < tdata.n_journey_patterns) {
+                        jpidx_t jp;
+                        if (strtojpidx (&argv[i][16], &tdata, &jp, NULL)) {
                             set_add_jp(req.banned_journey_patterns,
                                        &req.n_banned_journey_patterns,
                                        RRRR_MAX_BANNED_JOURNEY_PATTERNS,
-                                       jp_index);
+                                       jp);
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_STOPS > 0
+                    #if RRRR_MAX_BANNED_OPERATORS > 0
+                    else
+                    if (strncmp(argv[i], "--banned-op-idx=", 16) == 0) {
+                        opidx_t op;
+                        if (strtoopidx (&argv[i][16], &tdata, &op, NULL)) {
+                            set_add_uint8 (req.banned_operators,
+                                           &req.n_banned_operators,
+                                           RRRR_MAX_BANNED_OPERATORS,
+                                           op);
+                        }
+                    }
+                    else
+                    if (strncmp(argv[i], "--banned-operator=", 18) == 0) {
+                        opidx_t operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][18], 0);
+                        while (operator != OP_NONE)
+                        {
+                            set_add_uint8 (req.banned_operators,
+                                           &req.n_banned_operators,
+                                           RRRR_MAX_BANNED_OPERATORS,
+                                           operator);
+
+                            operator = tdata_operator_idx_by_operator_name(&tdata, &argv[i][18], operator + 1);
+                        }
+                    }
+                    #endif
+                    #if RRRR_MAX_BANNED_STOP_POINTS > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-idx=", 19) == 0) {
-                        uint32_t stop_idx = (uint32_t) strtol(&argv[i][19], NULL, 10);
-                        if (stop_idx < tdata.n_stops) {
+                        spidx_t sp;
+                        if (strtospidx (&argv[i][19], &tdata, &sp, NULL)) {
                             set_add_sp(req.banned_stops,
                                        &req.n_banned_stops,
-                                       RRRR_MAX_BANNED_STOPS,
-                                       stop_idx);
+                                       RRRR_MAX_BANNED_STOP_POINTS,
+                                       sp);
                         }
                     }
                     #endif
-                    #if RRRR_MAX_BANNED_STOPS_HARD > 0
+                    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
                     else
                     if (strncmp(argv[i], "--banned-stop-hard-idx=", 23) == 0) {
-                        uint32_t stop_idx = (uint32_t) strtol(&argv[i][23], NULL, 10);
-                        if (stop_idx < tdata.n_stops) {
-                            set_add_sp(req.banned_stops_hard,
-                                       &req.n_banned_stops_hard,
-                                       RRRR_MAX_BANNED_STOPS_HARD,
-                                       stop_idx);
+                        spidx_t sp;
+                        if (strtospidx (&argv[i][23], &tdata, &sp, NULL)) {
+                             set_add_sp(req.banned_stop_points_hard,
+                                       &req.n_banned_stop_points_hard,
+                                       RRRR_MAX_BANNED_STOP_POINTS_HARD,
+                                       sp);
                         }
                     }
                     #endif
@@ -288,17 +370,16 @@ int main (int argc, char *argv[]) {
                     else
                     if (strncmp(argv[i], "--banned-vj-offset=", 19) == 0) {
                         char *endptr;
-                        uint32_t jp_index;
-
-                        jp_index = (uint32_t) strtol(&argv[i][21], &endptr, 10);
-                        if (jp_index < tdata.n_journey_patterns && endptr[0] == ',') {
-                            uint16_t vj_offset = strtol(++endptr, NULL, 10);
-                            if (vj_offset < tdata.journey_patterns[jp_index].n_vjs) {
-                                set_add_trip(req.banned_vjs_journey_pattern,
-                                             req.banned_vjs_offset,
-                                             &req.n_banned_vjs,
-                                        RRRR_MAX_BANNED_VEHICLE_JOURNEYS,
-                                             jp_index, vj_offset);
+                        jpidx_t jp;
+                        if (strtojpidx (&argv[i][21], &tdata, &jp, &endptr)) {
+                            jp_vjoffset_t vj_o;
+                            if (endptr[0] == ',' &&
+                                strtovjoffset (++endptr, &tdata, jp, &vj_o, NULL)) {
+                                set_add_vj(req.banned_vjs_journey_pattern,
+                                           req.banned_vjs_offset,
+                                           &req.n_banned_vjs,
+                                           RRRR_MAX_BANNED_VEHICLE_JOURNEYS,
+                                           jp, vj_o);
                             }
                         }
                     }
@@ -309,15 +390,15 @@ int main (int argc, char *argv[]) {
                     if (strcmp(argv[i], "--verbose") == 0) {
                         cli_args.verbose = true;
                     }
-                    else if (strncmp(argv[i], "--via=", 6) == 0) {
-                        req.via = (uint32_t) strtol(&argv[i][6], NULL, 10);
+                    else if (strncmp(argv[i], "--via-idx=", 10) == 0) {
+                        strtospidx (&argv[i][10], &tdata, &req.via_stop_point, NULL);
                     }
-                    #ifdef RRRR_FEATURE_LATLON
+                    else if (strncmp(argv[i], "--via-id=", 9) == 0) {
+                        req.via_stop_point = tdata_stop_pointidx_by_stop_point_id (&tdata, &argv[i][9], 0);
+                    }
                     else if (strncmp(argv[i], "--via-latlon=", 13) == 0) {
-                        /* TODO: check return value */
-                        strtolatlon(&argv[i][13], &req.via_latlon);
+                        cli_args.has_latlon = strtolatlon(&argv[i][13], &req.via_latlon);
                     }
-                    #endif
                     break;
 
                 case 'w':
@@ -325,7 +406,10 @@ int main (int argc, char *argv[]) {
                         req.walk_speed = (float) strtod(&argv[i][13], NULL);
                     }
                     else if (strncmp(argv[i], "--walk-slack=", 13) == 0) {
-                        req.walk_slack = (uint8_t) strtod(&argv[i][13], NULL);
+                        long walk_slack = strtol(&argv[i][13], NULL, 10);
+                        if (walk_slack >= 0 && walk_slack <= 255) {
+                            req.walk_slack = (uint8_t) walk_slack;
+                        }
                     }
                     break;
 
@@ -343,14 +427,7 @@ int main (int argc, char *argv[]) {
     if (cli_args.gtfsrt_alerts_filename != NULL ||
         cli_args.gtfsrt_tripupdates_filename != NULL) {
 
-        tdata.stopid_index = radixtree_load_strings_from_tdata (tdata.stop_ids, tdata.stop_ids_width, tdata.n_stops);
-        tdata.vjid_index = radixtree_load_strings_from_tdata (tdata.vj_ids, tdata.vj_ids_width, tdata.n_vjs);
-        tdata.lineid_index = radixtree_load_strings_from_tdata (tdata.line_ids, tdata.line_ids_width, tdata.n_journey_patterns);
-
-        /* Validate the radixtrees are actually created. */
-        if (!(tdata.stopid_index &&
-              tdata.vjid_index &&
-              tdata.lineid_index)) {
+        if (!tdata_realtime_setup (&tdata)) {
             status = EXIT_FAILURE;
             goto clean_exit;
         }
@@ -379,6 +456,11 @@ int main (int argc, char *argv[]) {
     }
     req.time_rounded = false;
 
+    if (! tdata_hashgrid_setup (&tdata)) {
+        status = EXIT_FAILURE;
+        goto clean_exit;
+    }
+
    /* * * * * * * * * * * * * * * * * *
      * PHASE ONE: INITIALISE THE ROUTER
      *
@@ -401,88 +483,27 @@ int main (int argc, char *argv[]) {
      *
      * * * * * * * * * * * * * * * * * * */
 
-plan:
-    /* While the scratch space remains allocated, each new search may require
-     * reinitialisation of this memory.
-     */
-    router_reset (&router);
+    while (cli_args.repeat){
+        --cli_args.repeat;
+        plan_init (&plan);
 
-    /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
-     * this erases the set cutoff time from reversals in previous requests in the repeat function
-     */
-    if (req.arrive_by) {
-        req.time_cutoff = 0;
-    } else {
-        req.time_cutoff = UNREACHED;
-    }
+        /* Reset the cutoff time to UNREACHED or 0 to simulate a complete new request,
+         * this erases the set cutoff time from reversals in previous requests in the repeat function
+         */
+        if (req.arrive_by) {
+            req.time_cutoff = 0;
+        } else {
+            req.time_cutoff = UNREACHED;
+        }
 
-    /* The router is now able to take a request, and to search
-     * the first arrival time at the target, given the requests
-     * origin.
-     */
+        /* The router is now able to take a request, and to search
+         * the first arrival time at the target, given the requests
+         * origin.
+         */
 
-    if ( ! router_route (&router, &req)) {
-        /* if the search failed we must exit */
-        status = EXIT_FAILURE;
-        goto clean_exit;
-    }
-
-    /* To debug the router, we render an intermediate result */
-    if (cli_args.verbose) {
-        char result_buf[OUTPUT_LEN];
-        router_request_dump (&req, &tdata);
-        router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
-        puts(result_buf);
-    }
-
-    /* When searching clockwise we will board any vehicle_journey that will bring us at
-     * the earliest time at any destination location. If we have to wait at
-     * some stage for a connection, and this wait time exceeds the frequency
-     * of the ingress network, we may suggest a later departure decreases
-     * overal waitingtime.
-     *
-     * To compress waitingtime we employ a reversal. A clockwise search
-     * departing at 9:00am and arriving at 10:00am is observed as was
-     * requested: what vehicle_journey allows to arrive at 10:00am? The counter clockwise
-     * search starts at 10:00am and offers the last possible arrival at 9:15am.
-     * This bounds our searchspace between 9:15am and 10:00am.
-     *
-     * Because of the memory structure. We are not able to render an arrive-by
-     * search, therefore the second arrival will start at 9:15am and should
-     * render exactly the same vehicle_journey. This is not always true, especially not
-     * when there are multiple paths with exactly the same transittime.
-     *
-     *
-     * For an arrive_by counter clockwise search, we must make the result
-     * clockwise. Only one reversal is required. For the more regular clockwise
-     * search, the compression is handled in the first reversal (ccw) and made
-     * clockwise in the second reversal.
-     */
-
-    {
-        uint8_t i;
-        uint8_t n_reversals = req.arrive_by ? 1 : 2;
-        for (i = 0; i < n_reversals; ++i) {
-            if ( ! router_request_reverse (&router, &req)) {
-                /* if the reversal fails we must exit */
-                status = EXIT_FAILURE;
-                goto clean_exit;
-            }
-
-            router_reset (&router);
-
-            if ( ! router_route (&router, &req)) {
-                status = EXIT_FAILURE;
-                goto clean_exit;
-            }
-
-            if (cli_args.verbose) {
-                char result_buf[OUTPUT_LEN];
-                puts ("Repeated search with reversed request: \n");
-                router_request_dump (&req, &tdata);
-                router_result_dump (&router, &req, result_buf, OUTPUT_LEN);
-                puts (result_buf);
-            }
+        if (!router_route_full_reversal(&router, &req, &plan)) {
+            status = EXIT_FAILURE;
+            goto clean_exit;
         }
     }
 
@@ -490,19 +511,11 @@ plan:
      *  PHASE THREE: RENDER THE RESULTS
      *
      * * * * * * * * * * * * * * * * * * */
-
-    /* Output only final result in non-verbose mode */
-    if ( ! cli_args.verbose) {
-        char result_buf[OUTPUT_LEN] = "";
-        router_result_dump(&router, &req, result_buf, OUTPUT_LEN);
-
-        /* For benchmarking: repeat the search up to n time */
-        if (cli_args.repeat > 0) {
-            cli_args.repeat--;
-            goto plan;
-        }
-
-        puts (result_buf);
+    if (cli_args.plan_render) {
+        char result_buf[OUTPUT_LEN];
+        plan.req = req;
+        cli_args.plan_render (&plan, &tdata, result_buf, OUTPUT_LEN);
+        puts(result_buf);
     }
 
     /* * * * * * * * * * * * * * * * * * *
@@ -523,11 +536,8 @@ clean_exit:
     /* Deallocate the scratchspace of the router */
     router_teardown (&router);
 
-    #ifdef RRRR_FEATURE_REALTIME
-    if (tdata.stopid_index) radixtree_destroy (tdata.stopid_index);
-    if (tdata.vjid_index) radixtree_destroy (tdata.vjid_index);
-    if (tdata.lineid_index) radixtree_destroy (tdata.lineid_index);
-    #endif
+    /* Deallocate the hashgrid coordinates */
+    tdata_hashgrid_teardown (&tdata);
 
     /* Unmap the memory and/or deallocate the memory on the heap */
     tdata_close (&tdata);

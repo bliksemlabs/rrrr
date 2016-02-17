@@ -1,3 +1,8 @@
+/* Copyright 2013-2015 Bliksem Labs B.V.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #ifndef _ROUTER_RESULT_H
 #define _ROUTER_RESULT_H
 
@@ -5,21 +10,17 @@
 #include "util.h"
 #include "rrrr_types.h"
 #include "router.h"
+#include "plan.h"
 
-/* A leg represents one ride or walking transfer. */
-typedef struct leg leg_t;
-struct leg {
-    /* journey_pattern index */
-    uint32_t journey_pattern;
+#if 0
+/* Structure to temporary store abstracted plans */
+typedef struct result result_t;
+struct result {
+    /* from stop_point index */
+    spidx_t sp_from;
 
-    /* vj index */
-    uint32_t vj;
-
-    /* from stop index */
-    spidx_t s0;
-
-    /* to stop index */
-    spidx_t s1;
+    /* to stop_point index */
+    spidx_t sp_to;
 
     /* start time */
     rtime_t  t0;
@@ -27,36 +28,19 @@ struct leg {
     /* end time */
     rtime_t  t1;
 
-    #ifdef RRRR_FEATURE_REALTIME
-    /* start delay */
-    int16_t d0;
+    /* modes in trip */
+    uint8_t mode;
 
-    /* end delay */
-    int16_t d1;
-    #endif
+    /* transfers in trip */
+    uint8_t n_transfers;
 };
+#endif
 
-/* An itinerary is a chain of legs leading from one place to another. */
-typedef struct itinerary itinerary_t;
-struct itinerary {
-    uint32_t n_rides;
-    uint32_t n_legs;
-    leg_t legs[RRRR_DEFAULT_MAX_ROUNDS * 2 + 1];
-};
-
-
-/* A plan is several pareto-optimal itineraries connecting the same two stops. */
-typedef struct plan plan_t;
-struct plan {
-    uint32_t n_itineraries;
-    itinerary_t itineraries[RRRR_DEFAULT_MAX_ROUNDS];
-    router_request_t req;
-};
-
-
-bool router_result_to_plan (struct plan *plan, router_t *router, router_request_t *req);
+bool router_result_to_plan (plan_t *plan, router_t *router, router_request_t *req);
 
 /* return num of chars written */
-uint32_t router_result_dump(router_t*, router_request_t*, char *buf, uint32_t buflen);
+uint32_t router_result_dump(router_t *router, router_request_t *req,
+                            uint32_t(*render)(plan_t *plan, tdata_t *tdata, char *buf, uint32_t buflen),
+                            char *buf, uint32_t buflen);
 
 #endif

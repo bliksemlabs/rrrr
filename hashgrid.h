@@ -1,7 +1,8 @@
-/* Copyright 2013 Bliksem Labs.
- * See the LICENSE file at the top-level directory of this distribution and at
- * https://github.com/bliksemlabs/rrrr/
+/* Copyright 2013-2015 Bliksem Labs B.V.
+ * See the LICENSE file at the top-level directory of this distribution and
+ * at https://github.com/bliksemlabs/rrrr/
  */
+
 
 /* hashgrid.h */
 
@@ -24,7 +25,7 @@ struct hashgrid_s {
     /* the array of coords that were indexed
      * note: may have been deallocated by caller
      */
-    coord_t *coords;
+    const coord_t *coords;
 
     /* array containing all the binned items,
      * aliased by the bins array
@@ -64,7 +65,7 @@ struct hashgrid_result_s {
     bool has_next;
 };
 
-void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters, coord_t *coords, uint32_t n_items);
+bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters, const coord_t *coords, uint32_t n_items);
 
 void hashgrid_query (hashgrid_t *, hashgrid_result_t *, coord_t, double radius_meters);
 

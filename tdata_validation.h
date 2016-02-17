@@ -1,4 +1,4 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
@@ -12,6 +12,7 @@ int tdata_validation_boarding_alighting(tdata_t *tdata);
 int tdata_validation_coordinates(tdata_t *tdata);
 int tdata_validation_increasing_times(tdata_t *tdata);
 int tdata_validation_symmetric_transfers(tdata_t *tdata);
+int tdata_validation_symmetric_interlines(tdata_t *tdata);
 bool tdata_validation_check_coherent (tdata_t *tdata);
 
 #endif /* _TDATA_VALIDATION_H */

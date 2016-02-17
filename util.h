@@ -1,9 +1,26 @@
+/* Copyright 2013-2015 Bliksem Labs B.V.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #include "rrrr_types.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <stddef.h>
 #include <time.h>
+
+
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? a : b)
+#endif
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? a : b)
+#endif
+
+#ifndef UNUSED
+#define UNUSED(expr) (void)(expr)
+#endif
 
 #if defined (HAVE_LOCALTIME_R)
     #define rrrr_localtime_r(a, b) localtime_r(a, b)
@@ -27,14 +44,18 @@
 }
 #endif
 
-#define UNUSED(expr) (void)(expr)
-
 #define rrrr_memset(s, u, n) { size_t i = n; do { i--; s[i] = u; } while (i); }
 
+uint32_t dedupRtime (rtime_t *base, uint32_t n);
 uint32_t rrrrandom(uint32_t limit);
-void printBits(size_t const size, void const * const ptr);
+void printBits(uint32_t const size, void const * const ptr);
+void renderBits(const void *ptr, uint32_t size, char *out);
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out);
 char *btimetext(rtime_t rt, char *buf);
 char *timetext(rtime_t t);
 time_t strtoepoch (char *time);
 char * strcasestr(const char *s, const char *find);
+tmode_t strtomode (const char *modes);
+
+double round(double x);
+float median(float *in, uint32_t n, float *min, float *max);

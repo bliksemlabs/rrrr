@@ -1,17 +1,14 @@
-/* Copyright 2013 Bliksem Labs. See the LICENSE file at the top-level directory of this distribution and at https://github.com/bliksemlabs/rrrr/. */
+/* Copyright 2013-2015 Bliksem Labs B.V.
+ * See the LICENSE file at the top-level directory of this distribution and
+ * at https://github.com/bliksemlabs/rrrr/
+ */
 
 /* hashgrid.c */
 #include "hashgrid.h"
+#include "util.h"
 
-#include "geometry.h"
-#include "tdata.h"
-#include "config.h"
-#include <syslog.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include <math.h> /* be sure to link with math library (-lm) */
 
 /* TODO: benchmark the conversion from variable length arrays
  * to [y * grid_dims + x]
@@ -32,7 +29,7 @@
  * but you have to make sure overflow is happening (-fwrapv?)
  */
 
-static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
+static uint32_t xbin (hashgrid_t *hg, const coord_t *coord) {
     uint32_t x = (uint32_t) abs(coord->x / (hg->bin_size.x));
     x %= hg->grid_dim;
     #ifdef RRRR_DEBUG_HASHGRID
@@ -41,7 +38,7 @@ static uint32_t xbin (hashgrid_t *hg, coord_t *coord) {
     return x;
 }
 
-static uint32_t ybin (hashgrid_t *hg, coord_t *coord) {
+static uint32_t ybin (hashgrid_t *hg, const coord_t *coord) {
     uint32_t y = (uint32_t) abs(coord->y / (hg->bin_size.y));
     y %= hg->grid_dim;
     #ifdef RRRR_DEBUG_HASHGRID
@@ -105,7 +102,7 @@ uint32_t hashgrid_result_next (hashgrid_result_t *r) {
 
     ret_item = r->hg->bins[r->y * r->hg->grid_dim + r->x][r->i];
     #ifdef RRRR_DEBUG
-    printf ("x=%d y=%d i=%d item=%d ", r->x, r->y, r->i, ret_item);
+    printf ("x=%d y=%d i=%d item=%d\n", r->x, r->y, r->i, ret_item);
     #endif
     return ret_item;
 }
@@ -123,7 +120,7 @@ uint32_t hashgrid_result_next (hashgrid_result_t *r) {
 uint32_t hashgrid_result_next_filtered (hashgrid_result_t *r, double *distance) {
     uint32_t item;
     while ((item = hashgrid_result_next(r)) != HASHGRID_NONE) {
-        coord_t *coord = r->hg->coords + item;
+        const coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
         #ifdef RRRR_DEBUG_HASHGRID
@@ -151,7 +148,7 @@ uint32_t hashgrid_result_closest (hashgrid_result_t *r) {
     uint32_t best_item = HASHGRID_NONE;
     double   best_distance = INFINITY;
     while ((item = hashgrid_result_next(r)) != HASHGRID_NONE) {
-        coord_t *coord = r->hg->coords + item;
+        const coord_t *coord = r->hg->coords + item;
         latlon_t latlon;
         latlon_from_coord (&latlon, coord);
         #ifdef RRRR_DEBUG_HASHGRID
@@ -172,8 +169,8 @@ uint32_t hashgrid_result_closest (hashgrid_result_t *r) {
     return best_item;
 }
 
-void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
-                    coord_t *coords, uint32_t n_items) {
+bool hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
+                    const coord_t *coords, uint32_t n_items) {
     /* Initialize all struct members. */
     hg->grid_dim = grid_dim;
     hg->coords = coords;
@@ -183,6 +180,8 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
     hg->counts = (uint32_t *) malloc(sizeof(uint32_t)  * grid_dim * grid_dim);
     hg->bins   = (uint32_t **) malloc(sizeof(uint32_t *) * grid_dim * grid_dim);
     hg->items  = (uint32_t *) malloc(sizeof(uint32_t) * n_items);
+
+    if (!hg->counts || !hg->bins || !hg->items) return false;
 
     {
         /* Initalize all dynamically allocated arrays. */
@@ -220,6 +219,7 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
             for (x = 0; x < grid_dim; ++x) {
                 hg->bins[y * grid_dim + x] = bin;
                 bin += hg->counts[y * grid_dim + x];
+                bin = MIN(bin, hg->items + n_items - 1);
                 /* Reset bin item count for reuse when filling up bins. */
                 hg->counts[y * grid_dim + x] = 0;
             }
@@ -232,7 +232,7 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
          */
         uint32_t i_coord;
         for (i_coord = 0; i_coord < n_items; ++i_coord) {
-            coord_t *coord = coords + i_coord;
+            const coord_t *coord = coords + i_coord;
             uint32_t x = xbin (hg, coord);
             uint32_t y = ybin (hg, coord);
             uint32_t i = hg->counts[y * grid_dim + x];
@@ -240,6 +240,8 @@ void hashgrid_init (hashgrid_t *hg, uint32_t grid_dim, double bin_size_meters,
             hg->counts[y * grid_dim + x] += 1;
         }
     }
+
+    return true;
 }
 
 
@@ -270,7 +272,7 @@ void hashgrid_dump (hashgrid_t *hg) {
         }
         fprintf (stderr, "\n");
     }
-    fprintf (stderr, "total of all counts: %d", total);
+    fprintf (stderr, "total of all counts: %d\n", total);
     /* Bins */
     for (y = 0; y < hg->grid_dim; ++y) {
         uint32_t x;

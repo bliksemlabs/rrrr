@@ -1,4 +1,4 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
@@ -69,6 +69,9 @@ bool bitset_get(bitset_t *self, uint32_t index);
  * the specified index. Returns BITSET_NONE if there are no more set bits.
  */
 uint32_t bitset_next_set_bit(bitset_t*, uint32_t index);
+
+/* Return the number of bits set in the bitset_t */
+uint32_t bitset_count(bitset_t *self);
 
 #ifdef RRRR_DEBUG
 /* Print a string-representation of this bitset to STDERR */

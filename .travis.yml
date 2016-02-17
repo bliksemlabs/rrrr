@@ -1,14 +1,32 @@
 language: c
 
+sudo: required
+dist: trusty
+
 compiler:
   - gcc
   - clang
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+addons:
+  apt:
+    packages:
+    - libprotobuf-c0-dev
+    - protobuf-c-compiler
+    - check
+    - pkg-config
+
 before_install:
-  - sudo apt-get update >/dev/null
-  - sudo apt-get -q install check libprotobuf-c0-dev protobuf-c-compiler
+  - export TZ=Europe/Amsterdam
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libprotobuf-c0-dev protobuf-c-compiler check pkg-config
 
 before_script:
+  - pip install pytz python-dateutil --user `whoami`
+  - export PATH=$HOME/.local/bin:$PATH
   - mkdir build
   - cd build
   - cmake ..
@@ -16,6 +34,7 @@ before_script:
 script:
   - make
   - ctest
+  - python -m unittest discover ../rrtimetable/rrtimetable "*_tests.py"
 
 env:
   global:

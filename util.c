@@ -1,19 +1,49 @@
+/* Copyright 2013-2015 Bliksem Labs B.V.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #include "util.h"
-#include "rrrr_types.h"
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <string.h>
-#include <time.h>
+#include <assert.h>
+
+tmode_t strtomode (const char *modes) {
+    /* TODO tokenize additional modes */
+    tmode_t m = m_none;
+    if (0 == strncmp(modes, "TRAM", 4))      m |= m_tram;     else
+    if (0 == strncmp(modes, "SUBWAY", 6))    m |= m_subway;   else
+    if (0 == strncmp(modes, "RAIL", 4))      m |= m_rail;     else
+    if (0 == strncmp(modes, "BUS", 3))       m |= m_bus;      else
+    if (0 == strncmp(modes, "FERRY", 5))     m |= m_ferry;    else
+    if (0 == strncmp(modes, "CABLE_CAR", 9)) m |= m_cablecar; else
+    if (0 == strncmp(modes, "GONDOLA", 7))   m |= m_gondola;  else
+    if (0 == strncmp(modes, "FUNICULAR", 9)) m |= m_funicular;
+    return m;
+}
+
+/* TODO:
+ * We might want to make this more generic to something like:
+ * dedup(void *base, size_t num, size_t size, int (*compar)(const void*, const void*))
+ */
+uint32_t dedupRtime (rtime_t *base, uint32_t n) {
+    uint32_t i = 0, j = 0;
+    if (n == 0) return n;
+
+    for (i = 1; i < n; i++) {
+        if (base[i] != base[j]) {
+            j++;
+            base[j] = base[i];
+        }
+    }
+    return j + 1;
+}
 
 /* buffer should always be at least 13 characters long,
  * including terminating null
  */
 char *btimetext(rtime_t rt, char *buf) {
-    char *day;
+    const char *day;
     uint32_t t, s, m, h;
 
     if (rt == UNREACHED) {
@@ -58,7 +88,7 @@ uint32_t rrrrandom(uint32_t limit) {
  */
 rtime_t epoch_to_rtime (time_t epochtime, struct tm *tm_out) {
     struct tm ltm;
-    uint32_t seconds;
+    int seconds;
     rtime_t rtime;
 
     if (epochtime < SEC_IN_ONE_DAY) {
@@ -107,21 +137,21 @@ time_t strtoepoch (char *time) {
     memset (&ltm, 0, sizeof(struct tm));
     strptime (time, "%Y-%m-%dT%H:%M:%S", &ltm);
     ltm.tm_isdst = -1;
-    return mktime(&ltm);
+    return timegm(&ltm);
 }
 #else
 time_t strtoepoch (char *time) {
     char *endptr;
     struct tm ltm;
     memset (&ltm, 0, sizeof(struct tm));
-    ltm.tm_year = strtol(time, &endptr, 10) - 1900;
-    ltm.tm_mon  = strtol(&endptr[1], &endptr, 10) - 1;
-    ltm.tm_mday = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_hour = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_min  = strtol(&endptr[1], &endptr, 10);
-    ltm.tm_sec  = strtol(&endptr[1], &endptr, 10);
+    ltm.tm_year = (int) strtol(time, &endptr, 10) - 1900;
+    ltm.tm_mon  = (int) strtol(&endptr[1], &endptr, 10) - 1;
+    ltm.tm_mday = (int) strtol(&endptr[1], &endptr, 10);
+    ltm.tm_hour = (int) strtol(&endptr[1], &endptr, 10);
+    ltm.tm_min  = (int) strtol(&endptr[1], &endptr, 10);
+    ltm.tm_sec  = (int) strtol(&endptr[1], &endptr, 10);
     ltm.tm_isdst = -1;
-    return mktime(&ltm);
+    return timegm(&ltm);
 }
 #endif
 
@@ -129,17 +159,56 @@ time_t strtoepoch (char *time) {
 /* assumes little endian http://stackoverflow.com/a/3974138/778449
  * size in bytes
  */
-void printBits(size_t const size, void const * const ptr) {
-    unsigned char *b = (unsigned char*) ptr;
+
+void renderBits(const void *ptr, uint32_t size, char *out) {
+    const unsigned char *b = (const unsigned char*) ptr;
     unsigned char byte;
-    int i, j;
-    for (i = size - 1; i >= 0; i--) {
-        for (j = 7; j >= 0; j--) {
-            byte = b[i] & (1 << j);
-            byte >>= j;
-            fprintf(stderr, "%u", byte);
-        }
-    }
-    puts("");
+
+    do {
+        uint8_t char_size = 8;
+        size--;
+
+        do {
+            char_size--;
+            byte = b[size] & (1 << char_size);
+            byte >>= char_size;
+
+            *out = '0' + (char) byte;
+            out++;
+        } while (char_size);
+
+    } while (size);
+
+    *out = '\0';
+    out++;
+}
+
+void printBits(uint32_t const n, void const * const ptr) {
+    char out[34] = "";
+    assert(n << 3 <= 32);
+    renderBits(ptr, n, out);
+    fprintf(stderr, "%s", out);
 }
 #endif
+
+/* https://answers.yahoo.com/question/index?qid=20091214075728AArnEug */
+static int compareFloats(const void *elem1, const void *elem2) {
+    return (int) (((*((const float*) elem1)) - (*((const float *) elem2))));
+}
+
+/* http://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean */
+float median(float *f, uint32_t n, float *min, float *max) {
+    qsort (f, n, sizeof(float), compareFloats);
+
+    if (min) *min = f[0];
+    if (max) *max = f[n - 1];
+
+    if((n & 1) == 0) {
+        /* even number of elements, return the mean of the two elements */
+        return ((f[(n >> 1)] + f[(n >> 1) - 1]) / 2.0f);
+    } else {
+        /* else return the element in the middle */
+        return f[n >> 1];
+    }
+}
+

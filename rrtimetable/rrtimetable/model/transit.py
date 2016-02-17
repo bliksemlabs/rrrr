@@ -1,9 +1,15 @@
 import datetime
+import dateutil.tz
+import utils
+from copy import copy
 
 class Timetable:
-    def __init__(self,validfrom):
+    def __init__(self,validfrom,timezone):
         if not isinstance(validfrom, datetime.date):
             raise TypeError('validfrom must be a datetime.date, not a %s' % type(validfrom))
+        if not utils.validate_timezone(timezone):
+            raise Exception("Invalid timezone "+str(timezone))
+        self.timezone = timezone
         self.validfrom = validfrom
         self.stop_areas = {}
         self.stop_points = {}
@@ -11,32 +17,75 @@ class Timetable:
         self.routes = {}
         self.lines = {}
         self.vehicle_journeys = {}
+        self.vehicle_journeys_utc = {}
         self.connections = {}
         self.journey_patterns = {}
         self.signature_to_jp = {}
         self.timedemandgroups = {}
         self.signature_to_timedemandgroup = {}
+        self.physical_modes = {}
+        self.commercial_modes = {}
 
 class StopArea:
-    def __init__(self,timetable,uri,name=None,latitude=None,longitude=None):
+
+    def __init__(self,timetable,uri,timezone,name=None,latitude=None,longitude=None):
         self.type = 'stop_area'
         self.uri = uri
         if uri in timetable.stop_areas:
-            raise ValueError('Violation of unique StopArea key') 
+            raise ValueError('Violation of unique StopArea key')
         timetable.stop_areas[uri] = self
+        if not utils.validate_timezone(timezone):
+            raise Exception("Invalid timezone")
+        self.timezone = timezone
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
+
+class CommercialMode:
+    def __init__(self,timetable,uri,name=None):
+        self.type = 'commercial_mode'
+        self.uri = uri
+        if uri in timetable.commercial_modes:
+            raise ValueError('Violation of unique CommercialMode key')
+        timetable.commercial_modes[uri] = self
+        self.name = name
+
+    def __hash__(self):
+        return hash(freeze(self.__dict__))
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+class PhysicalMode:
+    def __init__(self,timetable,uri,name=None):
+        self.type = 'physical_mode'
+        self.uri = uri
+        if uri in timetable.physical_modes:
+            raise ValueError('Violation of unique PhysicalMode key')
+        timetable.physical_modes[uri] = self
+        self.name = name
+
+    def __hash__(self):
+        return hash(freeze(self.__dict__))
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
 
 class StopPoint:
     def __init__(self,timetable,uri,stop_area_uri,name=None,platformcode=None,latitude=None,longitude=None):
         self.type = 'stop_point'
         self.uri = uri
         if stop_area_uri not in timetable.stop_areas:
-            raise ValueError('Violation of foreign key, stop_area not found') 
+            raise ValueError('Violation of foreign key, stop_area not found')
         self.stop_area = timetable.stop_areas[stop_area_uri]
         if uri in timetable.stop_points:
-            raise ValueError('Violation of unique StopPoint key') 
+            raise ValueError('Violation of unique StopPoint key')
         timetable.stop_points[uri] = self
         self.name = name
         self.platformcode = platformcode
@@ -47,9 +96,9 @@ class Connection:
     def __init__(self,timetable,from_stop_point_uri,to_stop_point_uri,min_transfer_time,type=None,):
         self.type = 'connection'
         if from_stop_point_uri not in timetable.stop_points:
-            raise ValueError('Violation of foreign key, from_stop_point not found') 
+            raise ValueError('Violation of foreign key, from_stop_point not found')
         if to_stop_point_uri not in timetable.stop_points:
-            raise ValueError('Violation of foreign key, to_stop_point not found') 
+            raise ValueError('Violation of foreign key, to_stop_point not found')
         if (from_stop_point_uri,to_stop_point_uri) in timetable.connections:
             raise ValueError('Violation of unique key, unique connections between stop_points required')
         self.from_stop_point = timetable.stop_points[from_stop_point_uri]
@@ -59,27 +108,35 @@ class Connection:
         timetable.connections[(from_stop_point_uri,to_stop_point_uri)] = self
 
 class Operator:
-    def __init__(self,timetable,uri,name=None,url=None):
+    def __init__(self,timetable,uri,timezone,name=None,url=None):
         self.type = 'operator'
         self.uri = uri
         if uri in timetable.operators:
-            raise ValueError('Violation of unique Operator key') 
+            raise ValueError('Violation of unique Operator key')
         timetable.operators[uri] = self
+        if not utils.validate_timezone(timezone):
+            raise Exception("Invalid timezone")
+        self.timezone = timezone
         self.name = name
         self.url = url
 
 class Line:
-    def __init__(self,timetable,uri,operator_uri,name=None,code=None):
+    def __init__(self,timetable,uri,operator_uri,physical_mode_uri,name=None,code=None,color=None,color_text=None):
         self.type = 'line'
         self.uri = uri
         if operator_uri not in timetable.operators:
             raise ValueError('Violation of foreign key, operator not found')
         self.operator = timetable.operators[operator_uri]
+        if physical_mode_uri not in timetable.physical_modes:
+            raise ValueError('Violation of foreign key, physical_mode not found')
+        self.physical_mode = timetable.physical_modes[physical_mode_uri]
         if uri in timetable.lines:
-            raise ValueError('Violation of unique Line key') 
+            raise ValueError('Violation of unique Line key')
         timetable.lines[uri] = self
         self.name = name
         self.code = code
+        self.color = color
+        self.color_text = color_text
 
 class Route:
     def __init__(self,timetable,uri,line_uri,direction=None,route_type=None):
@@ -91,7 +148,7 @@ class Route:
         self.line = timetable.lines[line_uri]
         self.route_type = route_type
         if uri in timetable.routes:
-            raise ValueError('Violation of unique Route key') 
+            raise ValueError('Violation of unique Route key')
         timetable.routes[uri] = self
         if direction is not None:
             self.direction = direction
@@ -104,7 +161,7 @@ def freeze(o):
   return o
 
 class JourneyPatternPoint:
-    def __init__(self,timetable,stop_point_uri,forboarding=True,foralighting=True,timingpoint=False,destination=None):
+    def __init__(self,timetable,stop_point_uri,forboarding=True,foralighting=True,timingpoint=False,headsign=None):
         if stop_point_uri not in timetable.stop_points:
             raise ValueError('Violation of foreign key, StopPoint not found')
         self.type = 'journey_pattern_point'
@@ -112,7 +169,7 @@ class JourneyPatternPoint:
         self.forboarding = forboarding
         self.foralighting = foralighting
         self.timingpoint = timingpoint
-        self.destination = destination
+        self.headsign = headsign
 
     def __hash__(self):
         return hash(freeze(self.__dict__))
@@ -125,6 +182,10 @@ class JourneyPatternPoint:
 
 class TimeDemandGroupPoint:
     def __init__(self,drivetime,totaldrivetime):
+        """
+        :param drivetime: drive-time since start of trip
+        :param totaldrivetime: drive-time combined with dwell time at this stoppoint
+        """
         self.type = 'timedemandgrouppoint'
         self.drivetime = drivetime
         self.totaldrivetime = totaldrivetime
@@ -145,14 +206,14 @@ class TimeDemandGroup:
         self.points = points
 
 class JourneyPattern:
-    def __init__(self,timetable,uri,route_uri,points,headsign=None,productcategory=None):
+    def __init__(self,timetable,uri,route_uri,points,headsign=None,commercial_mode=None):
         if route_uri not in timetable.routes:
             raise ValueError('Violation of foreign key, route not found')
         self.route = timetable.routes[route_uri]
         self.type = 'journey_pattern'
         self.uri = uri
         self.points = points
-        self.productcategory = productcategory
+        self.commercial_mode = commercial_mode
         self.headsign = headsign
 
     def __hash__(self):
@@ -165,18 +226,22 @@ class JourneyPattern:
             return False
 
 class VehicleJourney:
-    def __init__(self,timetable,uri,route_uri,headsign=None,productcategory=None):
+    def __init__(self,timetable,uri,route_uri,commercial_mode_uri,headsign=None,blockref=None,realtime_uri=None):
         self.timetable = timetable
         self.type = 'vehicle_journey'
         self.uri = uri
-        self.productcategory = productcategory
+        self.realtime_uri = realtime_uri
         self.headsign = headsign
         self.validity_pattern = set([])
         if uri in timetable.vehicle_journeys:
-            raise ValueError('Violation of unique VehicleJourney key') 
+            raise ValueError('Violation of unique VehicleJourney key')
         timetable.vehicle_journeys[uri] = self
         if route_uri not in timetable.routes:
             raise ValueError('Violation of foreign key, route not found')
+        if commercial_mode_uri not in timetable.commercial_modes:
+            raise ValueError('Violation of foreign key, commercial_mode not found')
+        self.blockref = blockref
+        self.commercial_mode = timetable.commercial_modes[commercial_mode_uri]
         self.route = timetable.routes[route_uri]
         self.points = []
         self.timedemandgroup = []
@@ -190,7 +255,7 @@ class VehicleJourney:
         self.validity_pattern.add((validdate-self.timetable.validfrom).days)
         return True
 
-    def add_stop(self,stop_point_uri,arrival_time,departure_time,forboarding=True,foralighting=True,timingpoint=False,destination=None):
+    def add_stop(self,stop_point_uri,arrival_time,departure_time,forboarding=True,foralighting=True,timingpoint=False,headsign=None):
         if self.__isfinished__:
             raise AttributeError('VehicleJourney was previously completed')
         if stop_point_uri not in self.timetable.stop_points:
@@ -208,9 +273,11 @@ class VehicleJourney:
             if drivetime < self.timedemandgroup[-1].totaldrivetime:
                 raise ValueError('Timetravel from latest stop')
             self.timedemandgroup.append(TimeDemandGroupPoint(drivetime,totaldrivetime))
-        self.points.append(JourneyPatternPoint(self.timetable,stop_point_uri,forboarding,foralighting,timingpoint,destination))
+        self.points.append(JourneyPatternPoint(self.timetable,stop_point_uri,forboarding,foralighting,timingpoint,headsign=(headsign or self.headsign)))
 
-    def finish(self):
+    def finish(self,utc_offset_calculation=utils.utc_time_gtfs):
+        if self.__isfinished__:
+            raise AttributeError('VehicleJourney was previously completed')
         self.__isfinished__ = True
         if len(self.points) != len(self.timedemandgroup):
             raise ValueError('Length of timedemandgroup is not equal with journeypattern')
@@ -219,11 +286,11 @@ class VehicleJourney:
         self.timedemandgroup = tuple(self.timedemandgroup)
         self.points[-1].forboarding = False #Do not allow boarding at final stop
         self.points = tuple(self.points)
-        pattern_signature = (self.route.uri,self.productcategory or '',self.headsign or '',self.points)
+        pattern_signature = (self.route.uri,self.commercial_mode,self.headsign or '',self.points)
         if pattern_signature in self.timetable.signature_to_jp:
             self.journey_pattern = self.timetable.signature_to_jp[pattern_signature]
         else:
-            jp = JourneyPattern(self.timetable,str(len(self.timetable.signature_to_jp)),self.route.uri,self.points,self.headsign,self.productcategory)
+            jp = JourneyPattern(self.timetable,str(len(self.timetable.signature_to_jp)),self.route.uri,self.points,self.headsign,self.commercial_mode)
             self.timetable.signature_to_jp[pattern_signature] = jp
             self.timetable.journey_patterns[jp.uri] = jp
             self.journey_pattern = jp
@@ -236,3 +303,15 @@ class VehicleJourney:
             self.timetable.signature_to_timedemandgroup[self.timedemandgroup] = timegroup
             self.timetable.timedemandgroups[timegroup.uri] = timegroup
             self.timedemandgroup = timegroup
+
+        #Build UTC VehicleJourneys
+        for validdate in [self.timetable.validfrom + datetime.timedelta(days=validdate) for validdate in self.validity_pattern]:
+            utc_offset,utc_deptime = utc_offset_calculation(validdate,self.departure_time,self.route.line.operator.timezone)
+            utc_key = (self.uri,utc_offset)
+            if utc_key not in self.timetable.vehicle_journeys_utc:
+                self.timetable.vehicle_journeys_utc[utc_key] = copy(self)
+                self.timetable.vehicle_journeys_utc[utc_key].validity_pattern = set([])
+                self.timetable.vehicle_journeys_utc[utc_key].departure_time = utc_deptime
+                self.timetable.vehicle_journeys_utc[utc_key].utc_offset = utc_offset
+            utc_vj = self.timetable.vehicle_journeys_utc[utc_key]
+            utc_vj.validity_pattern.add((validdate-self.timetable.validfrom).days)

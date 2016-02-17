@@ -1,11 +1,10 @@
-/* Copyright 2013 Bliksem Labs.
+/* Copyright 2013-2015 Bliksem Labs B.V.
  * See the LICENSE file at the top-level directory of this distribution and at
  * https://github.com/bliksemlabs/rrrr/
  */
 
+/* tdata_validation.c : a set of validation tools to check whether a timetable is correct for RRRR*/
 #include "tdata_validation.h"
-#include "tdata.h"
-
 #include <stdio.h>
 
 /* Validate that the first journey_pattern_point have won't alighting set and
@@ -13,7 +12,7 @@
  */
 int tdata_validation_boarding_alighting(tdata_t *tdata) {
     int32_t ret_invalid = 0;
-    uint32_t i_jp = tdata->n_journey_patterns;
+    jpidx_t i_jp = (jpidx_t) tdata->n_journey_patterns;
 
     do {
         journey_pattern_t *jp;
@@ -28,7 +27,7 @@ int tdata_validation_boarding_alighting(tdata_t *tdata) {
         if ((rsa[0] & rsa_alighting) == rsa_alighting ||
             (rsa[jp->n_stops - 1] & rsa_boarding) == rsa_boarding) {
             fprintf(stderr, "journey_pattern index %d %s %s %s has:\n%s%s", i_jp,
-                    tdata_agency_name_for_journey_pattern(tdata, i_jp),
+                    tdata_operator_name_for_journey_pattern(tdata, i_jp),
                     tdata_line_code_for_journey_pattern(tdata, i_jp),
                     tdata_headsign_for_journey_pattern(tdata, i_jp),
               ((rsa[0] & rsa_alighting) == rsa_alighting ?
@@ -65,21 +64,21 @@ int tdata_validation_coordinates(tdata_t *tdata) {
 
     int32_t ret_invalid = 0;
 
-    uint32_t i_stop = tdata->n_stops;
+    uint32_t sp_index = tdata->n_stop_points;
 
     do {
         latlon_t ll;
 
-        i_stop--;
+        sp_index--;
 
-        ll = tdata->stop_coords[i_stop];
+        ll = tdata->stop_point_coords[sp_index];
         if (ll.lat < min_lat || ll.lat > max_lat ||
             ll.lon < min_lon || ll.lon > max_lon) {
             fprintf (stderr, "stop lat/lon out of range: lat=%f, lon=%f \n",
                                                 ll.lat, ll.lon);
             ret_invalid--;
         }
-    } while (i_stop);
+    } while (sp_index);
 
     return ret_invalid;
 }
@@ -89,11 +88,11 @@ int tdata_validation_coordinates(tdata_t *tdata) {
  */
 int tdata_validation_increasing_times(tdata_t *tdata) {
 
-    uint32_t jp_index, stop_index, vj_index;
+    uint32_t jp_index, sp_index, vj_index;
     int ret_nonincreasing = 0;
     for (jp_index = 0; jp_index < tdata->n_journey_patterns; ++jp_index) {
         journey_pattern_t jp = tdata->journey_patterns[jp_index];
-        vehicle_journey_t *vjs = tdata->vjs + jp.vj_ids_offset;
+        vehicle_journey_t *vjs = tdata->vjs + jp.vj_index;
 
         #ifdef RRRR_DEBUG
         /* statistics on errors, instead of early bail out */
@@ -104,8 +103,8 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
             vehicle_journey_t vj = vjs[vj_index];
             stoptime_t *st = tdata->stop_times + vj.stop_times_offset;
             stoptime_t *prev_st = NULL;
-            for (stop_index = 0; stop_index < jp.n_stops; ++stop_index) {
-                if (stop_index == 0 && st->arrival != 0) {
+            for (sp_index = 0; sp_index < jp.n_stops; ++sp_index) {
+                if (sp_index == 0 && st->arrival != 0) {
                     fprintf (stderr,
                              "timedemand type begins at %d,%d not 0.\n",
                              st->arrival, st->departure);
@@ -117,7 +116,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                 if (st->departure < st->arrival) {
                     fprintf (stderr, "departure before arrival at "
                                      "journey_pattern %d, vj %d, stop %d.\n",
-                            jp_index, vj_index, stop_index);
+                            jp_index, vj_index, sp_index);
                     #ifndef RRRR_DEBUG
                     return -1;
                     #endif
@@ -125,15 +124,15 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
 
                 if (prev_st != NULL) {
                     if (st->arrival < prev_st->departure) {
-                        char *vj_id = "";
+                        char const *vj_id = "";
                         if (tdata->vj_ids) {
-                            vj_id = tdata->vj_ids + (vj_index * tdata->vj_ids_width);
+                            vj_id = tdata_vehicle_journey_id_for_index(tdata,vj_index);
                         }
 
                         fprintf (stderr, "negative travel time arriving at "
                                          "journey_pattern %d, vj %d (%s), stop %d.\n",
                                 jp_index, vj_index,
-                                vj_id, stop_index);
+                                vj_id, sp_index);
                         #if 0
                         fprintf (stderr, "(%d, %d) -> (%d, %d)\n",
                                          prev_st->arrival, prev_st->departure,
@@ -149,7 +148,7 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
                         #if 0
                         fprintf (stderr, "last departure equals arrival at "
                                          "journey_pattern %d, vj %d, stop %d.\n",
-                                jp_index, vj_index, stop_index);
+                                jp_index, vj_index, sp_index);
 
                         #ifdef RRRR_DEBUG
                         n_nonincreasing_vjs += 1;
@@ -175,73 +174,115 @@ int tdata_validation_increasing_times(tdata_t *tdata) {
     return ret_nonincreasing;
 }
 
+/* Check that all interlines are symmetric.
+ */
+int tdata_validation_symmetric_interlines(tdata_t *tdata) {
+    bool is_valid = true;
+    uint32_t jp_index = 0;
+    /* Check forward */
+    for (; jp_index < tdata->n_journey_patterns; jp_index++) {
+        journey_pattern_t *jp = &tdata->journey_patterns[jp_index];
+        jp_vjoffset_t vj_offset = 0;
+        for (; vj_offset < jp->n_vjs; vj_offset++) {
+            vehicle_journey_ref_t *vj_interline = &tdata->vehicle_journey_transfers_forward[jp->vj_index+vj_offset];
+            if (vj_interline->jp_index != JP_NONE) {
+                journey_pattern_t *jp_next = &tdata->journey_patterns[vj_interline->jp_index];
+                vehicle_journey_ref_t *vj_interline_back = &tdata->vehicle_journey_transfers_backward[jp_next->vj_index+vj_interline->vj_offset];
+                if (vj_interline_back->jp_index != jp_index || vj_interline_back->vj_offset != vj_offset){
+                    is_valid = false;
+                    fprintf (stderr,"VJ transfer (clockwise) not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
+                    jp_index,vj_offset,
+                            vj_interline->jp_index,vj_interline->vj_offset,
+                    vj_interline_back->jp_index,vj_interline_back->vj_offset);
+                }
+            }
+        }
+    }
+
+    for (; jp_index < tdata->n_journey_patterns; jp_index++) {
+        journey_pattern_t *jp = &tdata->journey_patterns[jp_index];
+        jp_vjoffset_t vj_offset = 0;
+        for (; vj_offset < jp->n_vjs; vj_offset++) {
+            vehicle_journey_ref_t *vj_interline = &tdata->vehicle_journey_transfers_backward[jp->vj_index+vj_offset];
+            if (vj_interline->jp_index != JP_NONE) {
+                journey_pattern_t *jp_next = &tdata->journey_patterns[vj_interline->jp_index];
+                vehicle_journey_ref_t *vj_interline_back = &tdata->vehicle_journey_transfers_forward[jp_next->vj_index+vj_interline->vj_offset];
+                if (vj_interline_back->jp_index != jp_index || vj_interline_back->vj_offset != vj_offset){
+                    is_valid = false;
+                    fprintf (stderr,"VJ transfer(counterclockwise) not symetric! %d,%d points to %d,%d but points back to %d,%d\n",
+                            jp_index,vj_offset,
+                            vj_interline->jp_index,vj_interline->vj_offset,
+                            vj_interline_back->jp_index,vj_interline_back->vj_offset);
+                }
+            }
+        }
+    }
+    return is_valid ? 0 : 1;
+}
+
 /* Check that all transfers are symmetric.
  */
 int tdata_validation_symmetric_transfers(tdata_t *tdata) {
     int n_transfers_checked = 0;
-    uint32_t stop_index_from;
-    for (stop_index_from = 0;
-         stop_index_from < tdata->n_stops;
-         ++stop_index_from) {
+    spidx_t sp_index_from;
+    for (sp_index_from = 0;
+         sp_index_from < tdata->n_stop_points;
+         ++sp_index_from) {
 
-        /* Iterate over all transfers going out of this stop */
-        uint32_t t  = tdata->stops[stop_index_from    ].transfers_offset;
-        uint32_t tN = tdata->stops[stop_index_from + 1].transfers_offset;
+        /* Iterate over all transfers going out of this stop_point */
+        uint32_t t  = tdata->stop_points[sp_index_from].transfers_offset;
+        uint32_t tN = tdata->stop_points[sp_index_from + 1].transfers_offset;
         for ( ; t < tN ; ++t) {
-            uint32_t stop_index_to = tdata->transfer_target_stops[t];
-            uint32_t forward_distance = tdata->transfer_dist_meters[t] << 4;
-            /*                          actually in units of 2^4 == 16 meters */
+            spidx_t sp_index_to = tdata->transfer_target_stops[t];
+            rtime_t forward_duration = tdata->transfer_durations[t];
 
-            /* Find the reverse transfer (stop_index_to -> stop_index_from) */
-            uint32_t u  = tdata->stops[stop_index_to    ].transfers_offset;
-            uint32_t uN = tdata->stops[stop_index_to + 1].transfers_offset;
+            /* Find the reverse transfer (sp_index_to -> sp_index_from) */
+            uint32_t u  = tdata->stop_points[sp_index_to].transfers_offset;
+            uint32_t uN = tdata->stop_points[sp_index_to + 1].transfers_offset;
             bool found_reverse = false;
-
-            if (stop_index_to == stop_index_from) {
-                fprintf (stderr, "loop transfer from/to stop %d.\n",
-                                 stop_index_from);
-            }
 
             for ( ; u < uN ; ++u) {
                 n_transfers_checked += 1;
-                if (tdata->transfer_target_stops[u] == stop_index_from) {
+                if (tdata->transfer_target_stops[u] == sp_index_from) {
                     /* this is the same transfer in reverse */
-                    uint32_t reverse_distance = tdata->transfer_dist_meters[u] << 4;
-                    if (reverse_distance != forward_distance) {
-                        fprintf (stderr, "transfer from %d to %d is "
+                    rtime_t reverse_duration = tdata->transfer_durations[u];
+                    if (reverse_duration != forward_duration) {
+                        fprintf (stderr, "transfer from_stop_point %d to %d is "
                                          "not symmetric. "
-                                         "forward distance is %d, "
-                                         "reverse distance is %d.\n",
-                                         stop_index_from,
-                                         stop_index_to,
-                                         forward_distance,
-                                         reverse_distance);
+                                         "forward duration is %d, "
+                                         "reverse duration is %d.\n",
+                                sp_index_from,
+                                sp_index_to,
+                                         forward_duration,
+                                         reverse_duration);
                     }
                     found_reverse = true;
                     break;
                 }
             }
             if ( ! found_reverse) {
-                fprintf (stderr, "transfer from %d to %d does not have "
+                fprintf (stderr, "transfer from_stop_point %d to %d does not have "
                                  "an equivalent reverse transfer.\n",
-                                 stop_index_from, stop_index_to);
+                        sp_index_from, sp_index_to);
                 return -1;
             }
         }
     }
+    #ifdef RRRR_DEBUG
     fprintf (stderr, "checked %d transfers for symmetry.\n",
                      n_transfers_checked);
+    #endif
 
     return 0;
 }
 
-static bool tdata_validation_check_nstops (tdata_t *tdata) {
-    if (tdata->n_stops < 2) {
-        fprintf (stderr, "n_stops should be at least two, %d found.\n", tdata->n_stops);
+static bool tdata_validation_check_nstop_points(tdata_t *tdata) {
+    if (tdata->n_stop_points < 2) {
+        fprintf (stderr, "n_stop_points should be at least two, %d found.\n", tdata->n_stop_points);
         return false;
     } else
-    if (tdata->n_stops > ONBOARD) {
-        fprintf (stderr, "n_stops %d exceeds compiled spidx_t width.\n", tdata->n_stops);
+    if (tdata->n_stop_points > ONBOARD) {
+        fprintf (stderr, "n_stop_points %d exceeds compiled spidx_t width.\n", tdata->n_stop_points);
         return false;
     }
 
@@ -249,13 +290,18 @@ static bool tdata_validation_check_nstops (tdata_t *tdata) {
 }
 
 bool tdata_validation_check_coherent (tdata_t *tdata) {
+    #ifdef RRRR_DEBUG
     fprintf (stderr, "checking tdata coherency...\n");
+    #endif
 
-    return  (tdata_validation_check_nstops(tdata) &&
+    return  (tdata_validation_check_nstop_points(tdata) &&
              tdata->n_journey_patterns > 0 &&
+             tdata->n_vjs > 0 &&
+             tdata->n_journey_patterns < ((jpidx_t) -1) &&
              tdata_validation_boarding_alighting(tdata) == 0 &&
              tdata_validation_coordinates(tdata) == 0 &&
              tdata_validation_increasing_times(tdata) == 0 &&
-             tdata_validation_symmetric_transfers(tdata) == 0);
+             tdata_validation_symmetric_transfers(tdata) == 0 &&
+             tdata_validation_symmetric_interlines(tdata) == 0);
 }
 

@@ -23,15 +23,20 @@ clang provides very good error messages and warnings. At present time gcc provid
 1. **check**:
 a unit testing framework for c. http://check.sourceforge.net/.
 
+Dependencies for OSX
+--------------------
+
+1. **brew**
+Install homebrew. http://brew.sh/
+
+1. brew install protobuf-c check pkg-config cmake
+Install the requirements to Cmake would work.
 
 Building transit data
 ---------------------
 
-The ansi branch currently does not include any build scripts. Your best bet for generating timetable v3 outside the realm of Bliksem Integration will be timetable.py from the realtime_expanded2 branch.
-First, run `python gtfsdb.py input.gtfs.zip output.gtfsdb` to load your GTFS feed into an SQLite database.
-Next, run `python transfers.py output.gtfsdb` to add distance-based transfers to the transfers table in the database.
-Finally, run `python timetable.py output.gtfsdb` to create the timetable file `timetable.dat` based on that GTFS database.
-If you just want to experiment with the code download: http://1313.nl/timetable.dat
+Browse into rrtimetable/rrtimetable. Run `python gtfs2rrrr.py gtfs.zip` to create the timetable file `timetable4.dat` based on that GTFS database.
+If you just want to experiment with the code download: http://1313.nl/timetable4.dat
 
 Coding conventions
 ------------------
@@ -67,3 +72,9 @@ Been there done that
  * We have attempted to split the journey_pattern_t in a core routing and a meta data struct. The resulting code was 4% slower.
  * The original code for the router state was packed in one struct. It gave 10% improvement to split it in separate lists.
  * In an attempt to prevent overflow checking (migrating rtime to 32bit) resulted in a serious performance degradation.
+
+Conciderations
+--------------
+
+ * In some places of the code the function argument has been made uint32_t to prevent overflowing on a multiplication later. Such example is initialize_transfers_full (router_t *router, uint32_t round) where the original uint8_t round is later multiplied with spidx_t.
+

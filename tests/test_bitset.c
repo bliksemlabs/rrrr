@@ -11,9 +11,14 @@ START_TEST (test_bitset)
 
         for (i = 0; i < 50000; i += 2)
             bitset_set(bs, i);
+        
+        ck_assert_int_eq (bitset_count(bs), 25000);
+        
         for (i = 1; i < 50000; i += 2)
             bitset_set(bs_inv, i);
 
+        ck_assert_int_eq (bitset_count(bs_inv), 25000);
+        
         for (i = 0; i < 50000; ++i){
             if (i % 2 == 0){
                 ck_assert(bitset_get(bs, i));
@@ -44,13 +49,24 @@ START_TEST (test_bitset)
 
         /* Test flipping all bits on */
         bitset_black(bs);
+        ck_assert_int_eq(bitset_count(bs), 50000);
         for (i = 0; i < 50000; ++i) {
             ck_assert(bitset_get(bs, i));
         }
 
         /* Test clearing all bits */
         bitset_clear(bs);
+        ck_assert_int_eq(bitset_count(bs), 0);
         ck_assert_int_eq(BITSET_NONE,bitset_next_set_bit(bs, 0));
+
+        /* Test counting */
+        bitset_set(bs, 49999);
+        bitset_set(bs, 39999);
+        bitset_set(bs, 29999);
+        bitset_set(bs, 19999);
+        bitset_set(bs,  1);
+        bitset_set(bs,  0);
+        ck_assert_int_eq (bitset_count(bs), 6);
 
         /* Test unset */
         bitset_black(bs);
@@ -58,6 +74,7 @@ START_TEST (test_bitset)
             bitset_unset(bs, i);
         }
 
+        ck_assert_int_eq(bitset_count(bs), 25000);
         ck_assert(!bitset_get(bs, 0));
         ck_assert(bitset_get(bs, 1));
         ck_assert_int_eq(1, bitset_next_set_bit(bs, 1));
@@ -69,6 +86,8 @@ START_TEST (test_bitset)
         bitset_destroy(bs_inv);
     }
 END_TEST
+
+Suite *make_bitset_suite(void);
 
 Suite *make_bitset_suite(void) {
     Suite *s = suite_create("bitset_t");

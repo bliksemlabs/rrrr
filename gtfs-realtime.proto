@@ -11,10 +11,9 @@
 // arrival times.
 //
 // This protocol is published at:
-//   http://developers.google.com/transit/gtfs-realtime/
+// https://developers.google.com/transit/gtfs-realtime/
 
 syntax = "proto2";
-
 option java_package = "com.google.transit.realtime";
 package transit_realtime;
 
@@ -30,11 +29,17 @@ package transit_realtime;
 //   items of one specified application; all the other entities will be ignored.
 // - Polling frequency
 message FeedMessage {
+
   // Metadata about this feed and feed message.
   required FeedHeader header = 1;
 
   // Contents of the feed.
   repeated FeedEntity entity = 2;
+
+  // The extensions namespace allows 3rd-party developers to extend the
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
+  extensions 1000 to 1999;
 }
 
 // Metadata about a feed, included in feed messages.
@@ -86,6 +91,11 @@ message FeedEntity {
   optional TripUpdate trip_update = 3;
   optional VehiclePosition vehicle = 4;
   optional Alert alert = 5;
+
+  // The extensions namespace allows 3rd-party developers to extend the
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
+  extensions 1000 to 1999;
 }
 
 //
@@ -188,8 +198,7 @@ message TripUpdate {
       // stops, although not necessarily according to the times of the schedule.
       // At least one of arrival and departure must be provided. If the schedule
       // for this stop contains both arrival and departure times then so must
-      // this update. An update with only an arrival, say, where the schedule
-      // has both, indicates that the trip is terminating early at this stop.
+      // this update.
       SCHEDULED = 0;
 
       // The stop is skipped, i.e., the vehicle will not stop at this stop.
@@ -235,9 +244,29 @@ message TripUpdate {
   // - stop_sequences 10,... have unknown delay.
   repeated StopTimeUpdate stop_time_update = 2;
 
-  // Moment at which the vehicle's real-time progress was measured.  In POSIX
+  // Moment at which the vehicle's real-time progress was measured. In POSIX
   // time (i.e., the number of seconds since January 1st 1970 00:00:00 UTC).
   optional uint64 timestamp = 4;
+
+  // The current schedule deviation for the trip.  Delay should only be
+  // specified when the prediction is given relative to some existing schedule
+  // in GTFS.
+  //
+  // Delay (in seconds) can be positive (meaning that the vehicle is late) or
+  // negative (meaning that the vehicle is ahead of schedule). Delay of 0
+  // means that the vehicle is exactly on time.
+  //
+  // Delay information in StopTimeUpdates take precedent of trip-level delay
+  // information, such that trip-level delay is only propagated until the next
+  // stop along the trip with a StopTimeUpdate delay value specified.
+  //
+  // Feed providers are strongly encouraged to provide a TripUpdate.timestamp
+  // value indicating when the delay value was last updated, in order to
+  // evaluate the freshness of the data.
+  //
+  // NOTE: This field is still experimental, and subject to change. It may be
+  // formally adopted in the future.
+  optional int32 delay = 5;
 
   // The extensions namespace allows 3rd-party developers to extend the
   // GTFS-realtime specification in order to add and evaluate new features and
@@ -296,6 +325,43 @@ message VehiclePosition {
   }
   optional CongestionLevel congestion_level = 6;
 
+  // The degree of passenger occupancy of the vehicle. This field is still
+  // experimental, and subject to change. It may be formally adopted in the
+  // future.
+  enum OccupancyStatus {
+    // The vehicle is considered empty by most measures, and has few or no
+    // passengers onboard, but is still accepting passengers.
+    EMPTY = 0;
+
+    // The vehicle has a relatively large percentage of seats available.
+    // What percentage of free seats out of the total seats available is to be
+    // considered large enough to fall into this category is determined at the
+    // discretion of the producer.
+    MANY_SEATS_AVAILABLE = 1;
+
+    // The vehicle has a relatively small percentage of seats available.
+    // What percentage of free seats out of the total seats available is to be
+    // considered small enough to fall into this category is determined at the
+    // discretion of the feed producer.
+    FEW_SEATS_AVAILABLE = 2;
+
+    // The vehicle can currently accommodate only standing passengers.
+    STANDING_ROOM_ONLY = 3;
+
+    // The vehicle can currently accommodate only standing passengers
+    // and has limited space for them.
+    CRUSHED_STANDING_ROOM_ONLY = 4;
+
+    // The vehicle is considered full by most measures, but may still be
+    // allowing passengers to board.
+    FULL = 5;
+
+    // The vehicle is not accepting additional passengers.
+    NOT_ACCEPTING_PASSENGERS = 6;
+
+  }
+  optional OccupancyStatus occupancy_status = 9;
+
   optional OVapiVehiclePosition ovapi_vehicle_position = 1003;
   // The extensions namespace allows 3rd-party developers to extend the
   // GTFS-realtime specification in order to add and evaluate new features
@@ -309,7 +375,6 @@ message OVapiVehiclePosition {
   // means that the vehicle is exactly on time.
   optional int32 delay = 1;
 }
-
 
 // An alert, indicating some sort of incident in the public transit network.
 message Alert {
@@ -389,6 +454,11 @@ message TimeRange {
   // 00:00:00 UTC).
   // If missing, the interval ends at plus infinity.
   optional uint64 end = 2;
+
+  // The extensions namespace allows 3rd-party developers to extend the
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
+  extensions 1000 to 1999;
 }
 
 // A position.
@@ -412,8 +482,8 @@ message Position {
   optional float speed = 5;
 
   // The extensions namespace allows 3rd-party developers to extend the
-  // GTFS-realtime specification in order to add and evaluate new features
-  // and modifications to the spec.
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
   extensions 1000 to 1999;
 }
 
@@ -428,22 +498,30 @@ message Position {
 //   addition, absolute arrival/departure times must be provided.
 message TripDescriptor {
   // The trip_id from the GTFS feed that this selector refers to.
-  // For non frequency expanded trips, this field is enough to uniquely identify
-  // the trip. For frequency expanded, start_time and start_date might also be
+  // For non frequency-based trips, this field is enough to uniquely identify
+  // the trip. For frequency-based trip, start_time and start_date might also be
   // necessary.
   optional string trip_id = 1;
 
   // The route_id from the GTFS that this selector refers to.
   optional string route_id = 5;
 
-  // The scheduled start time of this trip instance.
-  // This field should be given only if the trip is frequency-expanded in the
-  // GTFS feed. The value must precisely correspond to start_time specified for
-  // the route in the GTFS feed plus some multiple of headway_secs.
-  // Format of the field is same as that of GTFS/frequencies.txt/start_time,
-  // e.g., 11:15:35 or 25:15:35.
+  // The initially scheduled start time of this trip instance.
+  // When the trip_id corresponds to a non-frequency-based trip, this field
+  // should either be omitted or be equal to the value in the GTFS feed. When
+  // the trip_id correponds to a frequency-based trip, the start_time must be
+  // specified for trip updates and vehicle positions. If the trip corresponds
+  // to exact_times=1 GTFS record, then start_time must be some multiple
+  // (including zero) of headway_secs later than frequencies.txt start_time for
+  // the corresponding time period. If the trip corresponds to exact_times=0,
+  // then its start_time may be arbitrary, and is initially expected to be the
+  // first departure of the trip. Once established, the start_time of this
+  // frequency-based trip should be considered immutable, even if the first
+  // departure time changes -- that time change may instead be reflected in a
+  // StopTimeUpdate.
+  // Format and semantics of the field is same as that of
+  // GTFS/frequencies.txt/start_time, e.g., 11:15:35 or 25:15:35.
   optional string start_time = 2;
-
   // The scheduled start date of this trip instance.
   // Must be provided to disambiguate trips that are so late as to collide with
   // a scheduled trip on a next day. For example, for a train that departs 8:00
@@ -476,27 +554,12 @@ message TripDescriptor {
     // A trip that existed in the schedule but was removed.
     CANCELED = 3;
 
-    // A trip that replaces a portion of static schedule.
-    // If the trip selector identifies a certain trip instance, then only that
-    // instance is replaced. If the selector identifies a route, then all the
-    // trips along that route are replaced.
-    //
-    // The replacement applies only to the portion of the trip supplied. For
-    // instance, consider a route that goes through stops A,B,C,D,E,F, and a
-    // REPLACEMENT trip provides data for stops A,B,C. Then, the times for stops
-    // D,E,F are still taken from the static schedule.
-    //
-    // A feed might supply several REPLACEMENT trips. In this case, the portion
-    // of static schedule that is replaced is the union of what is defined by
-    // all the feeds. Normally, all the REPLACEMENT trips should either
-    // correspond to the same route or to individual trip instances.
-    REPLACEMENT = 5;
   }
   optional ScheduleRelationship schedule_relationship = 4;
 
   // The extensions namespace allows 3rd-party developers to extend the
-  // GTFS-realtime specification in order to add and evaluate new features
-  // and modifications to the spec.
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
   extensions 1000 to 1999;
 }
 
@@ -515,8 +578,8 @@ message VehicleDescriptor {
   optional string license_plate = 3;
 
   // The extensions namespace allows 3rd-party developers to extend the
-  // GTFS-realtime specification in order to add and evaluate new features
-  // and modifications to the spec.
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
   extensions 1000 to 1999;
 }
 
@@ -534,8 +597,8 @@ message EntitySelector {
   optional string stop_id = 5;
 
   // The extensions namespace allows 3rd-party developers to extend the
-  // GTFS-realtime specification in order to add and evaluate new features
-  // and modifications to the spec.
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
   extensions 1000 to 1999;
 }
 
@@ -557,8 +620,17 @@ message TranslatedString {
     // no i18n is done at all for the feed. At most one translation is
     // allowed to have an unspecified language tag.
     optional string language = 2;
+
+    // The extensions namespace allows 3rd-party developers to extend the
+    // GTFS-realtime specification in order to add and evaluate new features and
+    // modifications to the spec.
+    extensions 1000 to 1999;
   }
   // At least one translation must be provided.
   repeated Translation translation = 1;
-}
 
+  // The extensions namespace allows 3rd-party developers to extend the
+  // GTFS-realtime specification in order to add and evaluate new features and
+  // modifications to the spec.
+  extensions 1000 to 1999;
+}

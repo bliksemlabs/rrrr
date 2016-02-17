@@ -1,9 +1,13 @@
+/* Copyright 2013-2015 Bliksem Labs B.V.
+ * See the LICENSE file at the top-level directory of this distribution and at
+ * https://github.com/bliksemlabs/rrrr/
+ */
+
 #ifndef _RRRR_TYPES_H
 #define _RRRR_TYPES_H
 
 #include "config.h"
 #include "hashgrid.h"
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
@@ -23,6 +27,20 @@ typedef uint16_t rtime_t;
 
 typedef uint16_t spidx_t;
 
+typedef uint32_t vjidx_t;
+
+typedef uint16_t jpidx_t;
+
+typedef uint16_t jp_vjoffset_t;
+
+typedef uint16_t jppidx_t;
+
+typedef uint8_t opidx_t;
+
+typedef uint16_t lineidx_t;
+
+typedef uint16_t routeidx_t;
+
 typedef uint32_t calendar_t;
 
 typedef struct service_day {
@@ -38,13 +56,119 @@ struct list {
     uint32_t len;
 };
 
+typedef struct stop_point stop_point_t;
+struct stop_point {
+    uint32_t journey_patterns_at_stop_point_offset;
+    uint32_t transfers_offset;
+    /* Transfer offset calculation by next item
+     * won't allow to extend the list nor to append
+     * to the end and fragment, adding a new stop
+     * once the transfers have to be extended is
+     * an option, but will not ensure the transfers
+     * are transitive. Low hanging fruit would be
+     * to store the number of transfers.
+     *
+     * By splitting up the struct a dynamic list of
+     * n_transfers can be computed. And in case of
+     * extending an object truly be updated.
+     *
+     * Alternatively references to the old object
+     * Should be updated.
+     */
+};
+
+/* An individual JourneyPattern in the RAPTOR sense:
+ * A group of VehicleJourneys all share the same JourneyPattern.
+ */
+typedef struct journey_pattern journey_pattern_t;
+struct journey_pattern {
+    uint32_t journey_pattern_point_offset;
+    vjidx_t vj_index;
+    jppidx_t n_stops;
+    jp_vjoffset_t n_vjs;
+    uint16_t attributes;
+    routeidx_t route_index;
+    rtime_t  min_time;
+    rtime_t  max_time;
+};
+
+typedef uint16_t vj_attribute_mask_t;
 typedef enum vehicle_journey_attributes {
-    vja_none = 0,
-    vja_accessible = 1,
-    vja_toilet = 2,
-    vja_wifi = 4
+    vja_none                  = 0,
+    vja_wheelchair_accessible = 1,
+    vja_bike_accepted         = 2,
+    vja_visual_announcement   = 4,
+    vja_audible_announcement  = 8,
+    vja_appropriate_escort    = 16,
+    vja_appropriate_signage   = 32,
+    vja_school_vehicle        = 64,
+    vja_wifi                  = 128,
+    vja_toilet                = 256,
+    vja_ondemand              = 512
+    /* 5 more attributes allowed */
 } vehicle_journey_attributes_t;
 
+/* An individual VehicleJourney,
+ * a materialized instance of a time demand type. */
+typedef struct vehicle_journey vehicle_journey_t;
+struct vehicle_journey {
+    /* The offset of the first stoptime of the
+     * time demand type used by this vehicle_journey.
+     */
+    uint32_t stop_times_offset;
+
+    /* The absolute start time since at the
+     * departure of the first stop
+     */
+    rtime_t  begin_time;
+
+    /* The vj_attributes
+     */
+    vj_attribute_mask_t vj_attributes;
+};
+
+typedef struct vehicle_journey_ref vehicle_journey_ref_t;
+struct vehicle_journey_ref {
+    jppidx_t jp_index;
+    jp_vjoffset_t vj_offset;
+};
+
+typedef struct stoptime stoptime_t;
+struct stoptime {
+    rtime_t arrival;
+    rtime_t departure;
+};
+
+typedef enum stop_attribute {
+    /* the stop is accessible for a wheelchair */
+            sa_wheelchair_boarding  =   1,
+
+    /* the stop is accessible for the visible impaired */
+            sa_visual_accessible    =   2,
+
+    /* a shelter is available against rain */
+            sa_shelter              =   4,
+
+    /* a bicycle can be parked */
+            sa_bikeshed             =   8,
+
+    /* a bicycle may be rented */
+            sa_bicyclerent          =  16,
+
+    /* a car can be parked */
+            sa_parking              =  32
+} stop_attribute_t;
+
+typedef enum journey_pattern_point_attribute {
+    /* the vehicle waits if it arrives early */
+            rsa_waitingpoint =   1,
+
+    /* a passenger can enter the vehicle at this stop */
+            rsa_boarding     =   2,
+
+    /* a passenger can leave the vehicle at this stop */
+            rsa_alighting    =   4
+} journey_pattern_point_attribute_t;
 
 typedef enum optimise {
     /* output only shortest time */
@@ -59,6 +183,7 @@ typedef enum optimise {
 
 
 typedef enum tmode {
+    m_none      =   0,
     m_tram      =   1,
     m_subway    =   2,
     m_rail      =   4,
@@ -70,49 +195,69 @@ typedef enum tmode {
     m_all       = 255
 } tmode_t;
 
+typedef struct street_network street_network_t;
+struct street_network {
+    spidx_t n_points;
+    /* Used to mark stop_point as po for the itinerary */
+    spidx_t stop_points[RRRR_MAX_ENTRY_EXIT_POINTS];
+    /* Used to mark duration from origin to stop_point */
+    rtime_t durations[RRRR_MAX_ENTRY_EXIT_POINTS];
+};
+
 typedef struct router_request router_request_t;
 struct router_request {
-#ifdef RRRR_FEATURE_LATLON
+    /* Requested stop_point as start-location */
+    spidx_t from_stop_point;
+
+    /* Requested stop_area as start-location */
+    spidx_t from_stop_area;
+
     /* actual origin in wgs84 presented to the planner */
     latlon_t from_latlon;
-    hashgrid_result_t from_hg_result;
+
+    /* Requested stop_area as end-location */
+    spidx_t to_stop_area;
+
+    /* (nearest) destination stop_point index from the users perspective */
+    spidx_t to_stop_point;
 
     /* actual destination in wgs84 presented to the planner */
     latlon_t to_latlon;
-    hashgrid_result_t to_hg_result;
+
+    /* preferred transfer stop_point index from the users perspective */
+    spidx_t via_stop_point;
 
     /* actual intermediate in wgs84 presented to the planner */
     latlon_t via_latlon;
-    hashgrid_result_t via_hg_result;
-#endif
-    /* (nearest) start stop index from the users perspective */
-    spidx_t from;
-
-    /* (nearest) destination stop index from the users perspective */
-    spidx_t to;
-
-    /* preferred transfer stop index from the users perspective */
-    spidx_t via;
 
     /* onboard departure, journey_pattern index from the users perspective */
-    uint32_t onboard_vj_journey_pattern;
+    jpidx_t onboard_journey_pattern;
 
     /* onboard departure, vehicle_journey offset within the journey_pattern */
-    uint32_t onboard_journey_pattern_offset;
+    jp_vjoffset_t onboard_journey_pattern_vjoffset;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
-    uint32_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
+    jpidx_t banned_journey_patterns[RRRR_MAX_BANNED_JOURNEY_PATTERNS];
     #endif
-    #if RRRR_MAX_BANNED_STOPS > 0
-    spidx_t banned_stops[RRRR_MAX_BANNED_STOPS];
+    #if RRRR_MAX_BANNED_OPERATORS > 0
+    opidx_t banned_operators[RRRR_MAX_BANNED_OPERATORS];
     #endif
-    #if RRRR_MAX_BANNED_STOPS_HARD > 0
-    spidx_t banned_stops_hard[RRRR_MAX_BANNED_STOPS_HARD];
+    #if RRRR_MAX_BANNED_STOP_POINTS > 0
+    spidx_t banned_stops[RRRR_MAX_BANNED_STOP_POINTS];
+    #endif
+    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
+    spidx_t banned_stop_points_hard[RRRR_MAX_BANNED_STOP_POINTS_HARD];
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
-    uint32_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
-    uint16_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    jpidx_t banned_vjs_journey_pattern[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    jp_vjoffset_t banned_vjs_offset[RRRR_MAX_BANNED_VEHICLE_JOURNEYS];
+    #endif
+
+    /* select journey patterns from these operators only */
+    #if RRRR_MAX_FILTERED_OPERATORS > 0
+    opidx_t n_operators;
+    opidx_t operators[RRRR_MAX_FILTERED_OPERATORS];
     #endif
 
     /* bit for the day on which we are searching, relative to the timetable calendar */
@@ -130,11 +275,6 @@ struct router_request {
     /* the maximum distance the hashgrid will search through for alternative stops */
     uint16_t walk_max_distance;
 
-#ifdef FEATURE_AGENCY_FILTER
-    /* Filter the journey_patterns by the operating agency */
-    uint16_t agency;
-#endif
-
     /* the largest number of transfers to allow in the result */
     uint8_t max_transfers;
 
@@ -145,17 +285,20 @@ struct router_request {
     uint8_t walk_slack;
 
     /* select the required vehicle_journey attributes by a bitfield */
-    uint8_t vj_attributes;
+    vj_attribute_mask_t vj_attributes;
 
     /* TODO comment on banning */
     #if RRRR_MAX_BANNED_JOURNEY_PATTERNS > 0
     uint8_t n_banned_journey_patterns;
     #endif
-    #if RRRR_MAX_BANNED_STOPS > 0
+    #if RRRR_MAX_BANNED_OPERATORS > 0
+    uint8_t n_banned_operators;
+    #endif
+    #if RRRR_MAX_BANNED_STOP_POINTS > 0
     uint8_t n_banned_stops;
     #endif
-    #if RRRR_MAX_BANNED_STOPS_HARD > 0
-    uint8_t n_banned_stops_hard;
+    #if RRRR_MAX_BANNED_STOP_POINTS_HARD > 0
+    uint8_t n_banned_stop_points_hard;
     #endif
     #if RRRR_MAX_BANNED_VEHICLE_JOURNEYS > 0
     uint8_t n_banned_vjs;
@@ -175,8 +318,16 @@ struct router_request {
 
     /* whether to show the intermediate stops in the output */
     bool intermediatestops;
+
+    /* Mark durations to various stop-points from the request start-position of the itinerary */
+    street_network_t entry;
+    /* Mark durations from various stop-points to the request end-position of the itinerary */
+    street_network_t exit;
 };
 
+#ifndef restrict
+#define restrict __restrict
+#endif
 
 #ifndef _LP64
     #define ZU "%u"
@@ -185,6 +336,7 @@ struct router_request {
 #endif
 
 #define SEC_TO_RTIME(x) (rtime_t) ((x) >> 2)
+#define SIGNED_SEC_TO_RTIME(x) ((x) >> 2)
 #define RTIME_TO_SEC(x) (((uint32_t)x) << 2)
 #define RTIME_TO_SEC_SIGNED(x) ((x) << 2)
 
@@ -198,9 +350,14 @@ struct router_request {
 #define RTIME_THREE_DAYS  (SEC_TO_RTIME(SEC_IN_THREE_DAYS))
 
 #define UNREACHED UINT16_MAX
-#define NONE      (UINT16_MAX)
-#define WALK      (UINT16_MAX - 1)
+#define STREET     (UINT16_MAX - 1)
+#define STAY_ON    (UINT16_MAX - 2)
+#define WALK       (UINT16_MAX - 3)
 
+#define OP_NONE   ((opidx_t) -1)
+#define JP_NONE   ((jpidx_t) -1)
+#define JPP_NONE  ((jppidx_t) -1)
+#define VJ_NONE   ((jp_vjoffset_t) -1)
 #define STOP_NONE ((spidx_t) -1)
 #define ONBOARD   ((spidx_t) -2)
 
