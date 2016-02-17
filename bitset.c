@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-
+#include <string.h>
 
 /* Initialize a pre-allocated bitset struct,
  * allocating memory for bits_t holding the bits.
