@@ -48,12 +48,9 @@ void bitset_destroy(bitset_t *self) {
 }
 
 void bitset_clear(bitset_t *self) {
-    uint32_t i_chunk = self->n_chunks;
-    
-    while (i_chunk) {
-        i_chunk--;
-        self->chunks[i_chunk] = (bits_t) 0;
-    }
+    /* memset uses an SSE implementation when available that is much faster than writing 0s after each other and 
+     * hoping the auto-vectorization kicks in. memset is by a factor of at least to 2 times faster */
+    memset (self->chunks, 0, sizeof (bits_t) * self->n_chunks);
 }
 
 void bitset_black(bitset_t *self) {
