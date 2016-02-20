@@ -6,6 +6,9 @@ int main(int argv, char *args[]) {
     tdata_string_pool_t pool;
     tdata_stop_points_t sps;
 
+    (void)(argv);
+    (void)(args);
+
     tdata_string_pool_init (&pool);
     tdata_stop_points_init (&sps, &pool);
     

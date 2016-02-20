@@ -8,6 +8,9 @@ int main(int argv, char *args[]) {
     
     opidx_t op;
 
+    (void)(argv);
+    (void)(args);
+
     tdata_string_pool_init (&pool);
     tdata_operators_init (&ops, &pool);
     
