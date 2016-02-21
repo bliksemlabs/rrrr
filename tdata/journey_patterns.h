@@ -32,8 +32,8 @@ ret_t tdata_journey_patterns_init (tdata_journey_patterns_t *jps, tdata_commerci
 ret_t tdata_journey_patterns_mrproper (tdata_journey_patterns_t *jps);
 ret_t tdata_journey_patterns_ensure_size (tdata_journey_patterns_t *jps, jpidx_t size);
 ret_t tdata_journey_patterns_add (tdata_journey_patterns_t *jps,
-                            const uint32_t **journey_pattern_point_offset,
-                            const vjidx_t **vj_index,
+                            const uint32_t *journey_pattern_point_offset,
+                            const vjidx_t *vj_index,
                             const jppidx_t *n_stops,
                             const jp_vjoffset_t *n_vjs,
                             const uint16_t *attributes,
