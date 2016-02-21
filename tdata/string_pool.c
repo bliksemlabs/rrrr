@@ -57,7 +57,7 @@ tdata_string_pool_ensure_size (tdata_string_pool_t *pool, uint32_t size)
 
     /* It already has memory, but it needs more..
      */
-    p = realloc (pool->pool, size * sizeof(char));
+    p = realloc (pool->pool, sizeof(char) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
     }
