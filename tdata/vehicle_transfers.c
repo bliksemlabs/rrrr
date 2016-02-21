@@ -9,8 +9,7 @@
 ret_t
 tdata_vehicle_transfers_init (tdata_vehicle_transfers_t *vt)
 {
-    vt->vehicle_journey_transfers_forward = NULL;
-    vt->vehicle_journey_transfers_backward = NULL;
+    vt->vehicle_journey_transfers = NULL;
 
     vt->size = 0;
     vt->len = 0;
@@ -26,11 +25,8 @@ tdata_vehicle_transfers_mrproper (tdata_vehicle_transfers_t *vt)
         return ret_deny;
     }
 
-    if (vt->vehicle_journey_transfers_forward)
-        free (vt->vehicle_journey_transfers_forward);
-
-    if (vt->vehicle_journey_transfers_backward)
-        free (vt->vehicle_journey_transfers_backward);
+    if (vt->vehicle_journey_transfers)
+        free (vt->vehicle_journey_transfers);
 
     return tdata_vehicle_transfers_init (vt);
 }
@@ -48,12 +44,10 @@ tdata_vehicle_transfers_ensure_size (tdata_vehicle_transfers_t *vt, uint32_t siz
 
     /* If it is a new buffer, take memory and return
      */
-    if (vt->vehicle_journey_transfers_forward == NULL) {
-        vt->vehicle_journey_transfers_forward = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
-        vt->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
+    if (vt->vehicle_journey_transfers == NULL) {
+        vt->vehicle_journey_transfers = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
 
-        if (unlikely (vt->vehicle_journey_transfers_forward == NULL ||
-                      vt->vehicle_journey_transfers_backward == NULL)) {
+        if (unlikely (vt->vehicle_journey_transfers == NULL)) {
             return ret_nomem;
         }
         vt->size = size;
@@ -62,17 +56,11 @@ tdata_vehicle_transfers_ensure_size (tdata_vehicle_transfers_t *vt, uint32_t siz
 
     /* It already has memory, but it needs more..
      */
-    p = realloc (vt->vehicle_journey_transfers_forward, sizeof(vehicle_journey_ref_t) * size);
+    p = realloc (vt->vehicle_journey_transfers, sizeof(vehicle_journey_ref_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
     }
-    vt->vehicle_journey_transfers_forward = (vehicle_journey_ref_t *) p;
-
-    p = realloc (vt->vehicle_journey_transfers_backward, sizeof(vehicle_journey_ref_t) * size);
-    if (unlikely (p == NULL)) {
-        return ret_nomem;
-    }
-    vt->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) p;
+    vt->vehicle_journey_transfers = (vehicle_journey_ref_t *) p;
 
     vt->size = size;
 
@@ -81,8 +69,7 @@ tdata_vehicle_transfers_ensure_size (tdata_vehicle_transfers_t *vt, uint32_t siz
 
 ret_t
 tdata_vehicle_transfers_add (tdata_vehicle_transfers_t *vt,
-                     const vehicle_journey_ref_t *vehicle_journey_transfers_forward,
-                     const vehicle_journey_ref_t *vehicle_journey_transfers_backward,
+                     const vehicle_journey_ref_t *vehicle_journey_transfers,
                      const uint32_t size,
                      uint32_t *offset)
 {
@@ -109,8 +96,7 @@ tdata_vehicle_transfers_add (tdata_vehicle_transfers_t *vt,
 
     /* Copy
      */
-    memcpy (vt->vehicle_journey_transfers_forward + vt->len, vehicle_journey_transfers_forward, sizeof(vehicle_journey_ref_t) * size);
-    memcpy (vt->vehicle_journey_transfers_backward + vt->len, vehicle_journey_transfers_backward, sizeof(vehicle_journey_ref_t) * size);
+    memcpy (vt->vehicle_journey_transfers + vt->len, vehicle_journey_transfers, sizeof(vehicle_journey_ref_t) * size);
 
     if (offset) {
         *offset = vt->len;
