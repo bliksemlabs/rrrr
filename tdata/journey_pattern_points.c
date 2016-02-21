@@ -2,17 +2,19 @@
 #include <stdlib.h>
 
 #include "common.h"
-#include "string_pool.h"
 #include "journey_pattern_points.h"
 
 #define REALLOC_EXTRA_SIZE     64
 
 ret_t
-tdata_journey_pattern_points_init (tdata_journey_pattern_points_t *jpps)
+tdata_journey_pattern_points_init (tdata_journey_pattern_points_t *jpps, tdata_stop_points_t *sps, tdata_string_pool_t *pool)
 {
     jpps->journey_pattern_points = NULL;
     jpps->journey_pattern_point_headsigns = NULL;
     jpps->journey_pattern_point_attributes = NULL;
+
+    jpps->sps = sps;
+    jpps->pool = pool;
 
     jpps->size = 0;
     jpps->len = 0;
@@ -37,7 +39,7 @@ tdata_journey_pattern_points_mrproper (tdata_journey_pattern_points_t *jpps)
     if (jpps->journey_pattern_point_attributes)
         free (jpps->journey_pattern_point_attributes);
 
-    return tdata_journey_pattern_points_init (jpps);
+    return tdata_journey_pattern_points_init (jpps, jpps->sps, jpps->pool);
 }
 
 ret_t
@@ -94,8 +96,8 @@ tdata_journey_pattern_points_ensure_size (tdata_journey_pattern_points_t *jpps, 
 
 ret_t
 tdata_journey_pattern_points_add (tdata_journey_pattern_points_t *jpps,
-                            const spidx_t **journey_pattern_points,
-                            const uint32_t **journey_pattern_point_headsigns,
+                            const spidx_t *journey_pattern_points,
+                            const char **journey_pattern_point_headsigns,
                             const uint8_t *journey_pattern_point_attributes,
                             const jppidx_t size,
                             jppidx_t *offset)
@@ -124,8 +126,17 @@ tdata_journey_pattern_points_add (tdata_journey_pattern_points_t *jpps,
     /* Copy
      */
     memcpy (jpps->journey_pattern_points           + jpps->len, journey_pattern_points, sizeof(spidx_t) * size);
-    memcpy (jpps->journey_pattern_point_headsigns  + jpps->len, journey_pattern_point_headsigns, sizeof(uint32_t) * size);
     memcpy (jpps->journey_pattern_point_attributes + jpps->len, journey_pattern_point_attributes, sizeof(uint8_t) * size);
+
+    available = size;
+
+    while (available) {
+        jppidx_t idx;
+
+        available--;
+        idx = jpps->len + available;
+        tdata_string_pool_add (jpps->pool, journey_pattern_point_headsigns[available], strlen (journey_pattern_point_headsigns[available]) + 1, &jpps->journey_pattern_point_headsigns[idx]);
+    }
 
     if (offset) {
         *offset = jpps->len;
