@@ -1,6 +1,9 @@
 CC=gcc
 
 all:
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_vehicle_journeys ../vehicle_journeys.c ../stop_times.c ../vehicle_transfers.c ../string_pool.c test_vehicle_journeys.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_vehicle_transfers ../vehicle_transfers.c test_vehicle_transfers.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_times ../stop_times.c test_stop_times.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_journey_pattern_points ../journey_pattern_points.c ../stop_points.c ../string_pool.c test_journey_pattern_points.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_routes ../routes.c ../lines.c ../physical_modes.c ../operators.c ../string_pool.c test_routes.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_lines ../lines.c ../physical_modes.c ../operators.c ../string_pool.c test_lines.c

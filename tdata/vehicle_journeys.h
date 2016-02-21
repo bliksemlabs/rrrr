@@ -1,12 +1,14 @@
 #include "common.h"
 #include "tdata_common.h"
 #include "string_pool.h"
+#include "stop_times.h"
+#include "vehicle_transfers.h"
 
 typedef struct {
     uint32_t *stop_times_offset;
     rtime_t *begin_time;
     vj_attribute_mask_t *vj_attributes;
- 
+
     uint32_t *vj_ids;
     calendar_t *vj_active;
     int8_t *vj_time_offsets;
@@ -20,13 +22,15 @@ typedef struct {
     uint8_t *n_transfers_forward;
     uint8_t *n_transfers_backward;
 
+    tdata_vehicle_transfers_t *vts;
+    tdata_stop_times_t *sts;
     tdata_string_pool_t *pool;
 
     spidx_t size; /* Total amount of memory */
     spidx_t len;  /* Length of the list   */
 } tdata_vehicle_journeys_t;
 
-ret_t tdata_vehicle_journeys_init (tdata_vehicle_journeys_t *vjs, tdata_string_pool_t *pool);
+ret_t tdata_vehicle_journeys_init (tdata_vehicle_journeys_t *vjs, tdata_vehicle_transfers_t *vts, tdata_stop_times_t *sts,  tdata_string_pool_t *pool);
 ret_t tdata_vehicle_journeys_mrproper (tdata_vehicle_journeys_t *vjs);
 ret_t tdata_vehicle_journeys_ensure_size (tdata_vehicle_journeys_t *vjs, vjidx_t size);
 ret_t tdata_vehicle_journeys_add (tdata_vehicle_journeys_t *vjs,

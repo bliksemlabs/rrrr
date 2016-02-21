@@ -8,7 +8,10 @@
 #define REALLOC_EXTRA_SIZE     128
 
 ret_t
-tdata_vehicle_journeys_init (tdata_vehicle_journeys_t *vjs, tdata_string_pool_t *pool)
+tdata_vehicle_journeys_init (tdata_vehicle_journeys_t *vjs,
+                             tdata_vehicle_transfers_t *vts,
+                             tdata_stop_times_t *sts,
+                             tdata_string_pool_t *pool)
 {
     vjs->stop_times_offset = NULL;
     vjs->begin_time = NULL;
@@ -25,6 +28,8 @@ tdata_vehicle_journeys_init (tdata_vehicle_journeys_t *vjs, tdata_string_pool_t 
     vjs->n_transfers_forward = NULL;
     vjs->n_transfers_backward = NULL;
 
+    vjs->vts = vts;
+    vjs->sts = sts;
     vjs->pool = pool;
 
     vjs->size = 0;
@@ -77,7 +82,7 @@ tdata_vehicle_journeys_mrproper (tdata_vehicle_journeys_t *vjs)
     if (vjs->n_transfers_backward)
         free (vjs->n_transfers_backward);
 
-    return tdata_vehicle_journeys_init (vjs, vjs->pool);
+    return tdata_vehicle_journeys_init (vjs, vjs->vts, vjs->sts, vjs->pool);
 }
 
 ret_t
