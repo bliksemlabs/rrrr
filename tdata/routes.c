@@ -7,9 +7,11 @@
 #define REALLOC_EXTRA_SIZE     16
 
 ret_t
-tdata_routes_init (tdata_routes_t *routes)
+tdata_routes_init (tdata_routes_t *routes, tdata_lines_t *lines)
 {
     routes->line_for_route = NULL;
+
+    routes->lines = lines;
 
     routes->size = 0;
     routes->len = 0;
@@ -28,7 +30,7 @@ tdata_routes_mrproper (tdata_routes_t *routes)
     if (routes->line_for_route)
         free (routes->line_for_route);
 
-    return tdata_routes_init (routes);
+    return tdata_routes_init (routes, routes->lines);
 }
 
 ret_t
