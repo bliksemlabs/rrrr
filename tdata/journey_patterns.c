@@ -2,13 +2,16 @@
 #include <stdlib.h>
 
 #include "common.h"
-#include "string_pool.h"
 #include "journey_patterns.h"
 
 #define REALLOC_EXTRA_SIZE     16
 
 ret_t
-tdata_journey_patterns_init (tdata_journey_patterns_t *jps)
+tdata_journey_patterns_init (tdata_journey_patterns_t *jps,
+                             tdata_commercial_modes_t *cms,
+                             tdata_routes_t *routes,
+                             tdata_journey_pattern_points_t *jpps,
+                             tdata_vehicle_journeys_t *vjs)
 {
     jps->journey_pattern_point_offset = NULL;
     jps->vj_index = NULL;
@@ -17,6 +20,11 @@ tdata_journey_patterns_init (tdata_journey_patterns_t *jps)
     jps->attributes = NULL;
     jps->route_index = NULL;
     jps->commercial_mode_for_jp = NULL;
+
+    jps->cms = cms;
+    jps->routes = routes;
+    jps->jpps = jpps;
+    jps->vjs = vjs;
 
     jps->size = 0;
     jps->len = 0;
@@ -53,7 +61,7 @@ tdata_journey_patterns_mrproper (tdata_journey_patterns_t *jps)
     if (jps->commercial_mode_for_jp)
         free (jps->commercial_mode_for_jp);
 
-    return tdata_journey_patterns_init (jps);
+    return tdata_journey_patterns_init (jps, jps->cms, jps->routes, jps->jpps, jps->vjs);
 }
 
 ret_t

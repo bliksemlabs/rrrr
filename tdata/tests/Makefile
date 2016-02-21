@@ -14,4 +14,4 @@ all:
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_areas ../stop_areas.c ../string_pool.c test_stop_areas.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_points ../stop_points.c ../string_pool.c test_stop_points.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_operators ../operators.c ../string_pool.c test_operators.c
-
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_journey_patterns ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../string_pool.c test_journey_patterns.c
