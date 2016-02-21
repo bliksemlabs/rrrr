@@ -43,40 +43,40 @@ tdata_vehicle_journeys_mrproper (tdata_vehicle_journeys_t *vjs)
 
     if (vjs->stop_times_offset)
         free (vjs->stop_times_offset);
-    
+
     if (vjs->begin_time)
         free (vjs->begin_time);
-    
+
     if (vjs->vj_attributes)
         free (vjs->vj_attributes);
-    
+
     if (vjs->vj_ids)
         free (vjs->vj_ids);
-    
+
     if (vjs->vj_active)
         free (vjs->vj_active);
-    
+
     if (vjs->vj_time_offsets)
         free (vjs->vj_time_offsets);
-    
+
     if (vjs->vehicle_journey_transfers_forward)
         free (vjs->vehicle_journey_transfers_forward);
-    
+
     if (vjs->vehicle_journey_transfers_backward)
         free (vjs->vehicle_journey_transfers_backward);
 
     if (vjs->vj_transfers_forward_offset)
         free (vjs->vj_transfers_forward_offset);
-    
+
     if (vjs->vj_transfers_backward_offset)
         free (vjs->vj_transfers_backward_offset);
 
     if (vjs->n_transfers_forward)
         free (vjs->n_transfers_forward);
-    
+
     if (vjs->n_transfers_backward)
         free (vjs->n_transfers_backward);
-     
+
     return tdata_vehicle_journeys_init (vjs, vjs->pool);
 }
 
@@ -102,7 +102,7 @@ tdata_vehicle_journeys_ensure_size (tdata_vehicle_journeys_t *vjs, vjidx_t size)
         vjs->vj_time_offsets    = (int8_t *) calloc (size, sizeof(int8_t));
         vjs->vehicle_journey_transfers_forward = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
         vjs->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
-        
+
         vjs->vj_transfers_forward_offset = (uint32_t *) calloc (size, sizeof(uint32_t));
         vjs->vj_transfers_backward_offset = (uint32_t *) calloc (size, sizeof(uint32_t));
         vjs->n_transfers_forward  = (uint8_t *) calloc (size, sizeof(uint8_t));
@@ -163,13 +163,13 @@ tdata_vehicle_journeys_ensure_size (tdata_vehicle_journeys_t *vjs, vjidx_t size)
         return ret_nomem;
     }
     vjs->vj_time_offsets = (int8_t *) p;
-    
+
     p = realloc (vjs->vehicle_journey_transfers_forward, sizeof(vehicle_journey_ref_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
     }
     vjs->vehicle_journey_transfers_forward = (vehicle_journey_ref_t *) p;
- 
+
     p = realloc (vjs->vehicle_journey_transfers_backward, sizeof(vehicle_journey_ref_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
@@ -193,7 +193,7 @@ tdata_vehicle_journeys_ensure_size (tdata_vehicle_journeys_t *vjs, vjidx_t size)
         return ret_nomem;
     }
     vjs->n_transfers_forward = (uint8_t *) p;
- 
+
     p = realloc (vjs->n_transfers_backward, sizeof(uint8_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
@@ -201,8 +201,8 @@ tdata_vehicle_journeys_ensure_size (tdata_vehicle_journeys_t *vjs, vjidx_t size)
     vjs->n_transfers_backward = (uint8_t *) p;
 
     vjs->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -237,7 +237,7 @@ tdata_vehicle_journeys_add (tdata_vehicle_journeys_t *vjs,
     available = vjs->size - vjs->len;
 
     if ((vjidx_t) available < size) {
-        if (unlikely (tdata_vehicle_journeys_ensure_size (vjs, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_vehicle_journeys_ensure_size (vjs, vjs->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -269,7 +269,7 @@ tdata_vehicle_journeys_add (tdata_vehicle_journeys_t *vjs,
 
     if (offset) {
         *offset = vjs->len;
-    }    
+    }
 
     vjs->len += size;
 

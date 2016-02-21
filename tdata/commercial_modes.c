@@ -32,13 +32,13 @@ tdata_commercial_modes_mrproper (tdata_commercial_modes_t *cms)
 
     if (cms->commercial_mode_ids)
         free (cms->commercial_mode_ids);
-    
+
     if (cms->commercial_mode_urls)
         free (cms->commercial_mode_urls);
-    
+
     if (cms->commercial_mode_names)
         free (cms->commercial_mode_names);
-    
+
     return tdata_commercial_modes_init (cms, cms->pool);
 }
 
@@ -59,7 +59,7 @@ tdata_commercial_modes_ensure_size (tdata_commercial_modes_t *cms, cmidx_t size)
         cms->commercial_mode_ids           = (uint32_t *) calloc (size, sizeof(uint32_t));
         cms->commercial_mode_urls          = (uint32_t *) calloc (size, sizeof(uint32_t));
         cms->commercial_mode_names         = (uint32_t *) calloc (size, sizeof(uint32_t));
-        
+
         if (unlikely (cms->commercial_mode_ids == NULL ||
                       cms->commercial_mode_urls == NULL ||
                       cms->commercial_mode_names == NULL)) {
@@ -90,8 +90,8 @@ tdata_commercial_modes_ensure_size (tdata_commercial_modes_t *cms, cmidx_t size)
     cms->commercial_mode_names = (uint32_t *) p;
 
     cms->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -118,7 +118,7 @@ tdata_commercial_modes_add (tdata_commercial_modes_t *cms,
     available = cms->size - cms->len;
 
     if ((cmidx_t) available < size) {
-        if (unlikely (tdata_commercial_modes_ensure_size (cms, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_commercial_modes_ensure_size (cms, cms->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -139,7 +139,7 @@ tdata_commercial_modes_add (tdata_commercial_modes_t *cms,
 
     if (offset) {
         *offset = cms->len;
-    }    
+    }
 
     cms->len += size;
 

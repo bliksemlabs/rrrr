@@ -27,7 +27,7 @@ tdata_routes_mrproper (tdata_routes_t *routes)
 
     if (routes->line_for_route)
         free (routes->line_for_route);
-    
+
     return tdata_routes_init (routes);
 }
 
@@ -46,7 +46,7 @@ tdata_routes_ensure_size (tdata_routes_t *routes, routeidx_t size)
      */
     if (routes->line_for_route == NULL) {
         routes->line_for_route = (lineidx_t *) calloc (size, sizeof(lineidx_t));
-        
+
         if (unlikely (routes->line_for_route == NULL)) {
             return ret_nomem;
         }
@@ -63,8 +63,8 @@ tdata_routes_ensure_size (tdata_routes_t *routes, routeidx_t size)
     routes->line_for_route = (lineidx_t *) p;
 
     routes->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -89,7 +89,7 @@ tdata_routes_add (tdata_routes_t *routes,
     available = routes->size - routes->len;
 
     if ((routeidx_t) available < size) {
-        if (unlikely (tdata_routes_ensure_size (routes, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_routes_ensure_size (routes, routes->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -100,7 +100,7 @@ tdata_routes_add (tdata_routes_t *routes,
 
     if (offset) {
         *offset = routes->len;
-    }    
+    }
 
     routes->len += size;
 

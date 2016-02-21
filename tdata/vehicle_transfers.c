@@ -31,7 +31,7 @@ tdata_vehicle_transfers_mrproper (tdata_vehicle_transfers_t *vt)
 
     if (vt->vehicle_journey_transfers_backward)
         free (vt->vehicle_journey_transfers_backward);
-    
+
     return tdata_vehicle_transfers_init (vt);
 }
 
@@ -51,7 +51,7 @@ tdata_vehicle_transfers_ensure_size (tdata_vehicle_transfers_t *vt, uint32_t siz
     if (vt->vehicle_journey_transfers_forward == NULL) {
         vt->vehicle_journey_transfers_forward = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
         vt->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) calloc (size, sizeof(vehicle_journey_ref_t));
-        
+
         if (unlikely (vt->vehicle_journey_transfers_forward == NULL ||
                       vt->vehicle_journey_transfers_backward == NULL)) {
             return ret_nomem;
@@ -75,8 +75,8 @@ tdata_vehicle_transfers_ensure_size (tdata_vehicle_transfers_t *vt, uint32_t siz
     vt->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) p;
 
     vt->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -102,7 +102,7 @@ tdata_vehicle_transfers_add (tdata_vehicle_transfers_t *vt,
     available = vt->size - vt->len;
 
     if ((uint32_t) available < size) {
-        if (unlikely (tdata_vehicle_transfers_ensure_size (vt, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_vehicle_transfers_ensure_size (vt, vt->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -114,7 +114,7 @@ tdata_vehicle_transfers_add (tdata_vehicle_transfers_t *vt,
 
     if (offset) {
         *offset = vt->len;
-    }    
+    }
 
     vt->len += size;
 

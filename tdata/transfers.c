@@ -28,10 +28,10 @@ tdata_transfers_mrproper (tdata_transfers_t *transfers)
 
     if (transfers->transfer_target_stops)
         free (transfers->transfer_target_stops);
- 
+
     if (transfers->transfer_durations)
         free (transfers->transfer_durations);
-    
+
     return tdata_transfers_init (transfers);
 }
 
@@ -51,7 +51,7 @@ tdata_transfers_ensure_size (tdata_transfers_t *transfers, uint32_t size)
     if (transfers->transfer_target_stops == NULL) {
         transfers->transfer_target_stops = (spidx_t *) calloc (size + 1, sizeof(spidx_t));
         transfers->transfer_durations    = (rtime_t *) calloc (size + 1, sizeof(rtime_t));
-        
+
         if (unlikely (transfers->transfer_target_stops == NULL ||
                       transfers->transfer_durations == NULL)) {
             return ret_nomem;
@@ -75,8 +75,8 @@ tdata_transfers_ensure_size (tdata_transfers_t *transfers, uint32_t size)
     transfers->transfer_durations= (rtime_t *) p;
 
     transfers->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -102,7 +102,7 @@ tdata_transfers_add (tdata_transfers_t *transfers,
     available = transfers->size - transfers->len;
 
     if ((uint32_t) available < size) {
-        if (unlikely (tdata_transfers_ensure_size (transfers, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_transfers_ensure_size (transfers, transfers->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -114,7 +114,7 @@ tdata_transfers_add (tdata_transfers_t *transfers,
 
     if (offset) {
         *offset = transfers->len;
-    }    
+    }
 
     transfers->len += size;
 

@@ -28,10 +28,10 @@ tdata_stop_times_mrproper (tdata_stop_times_t *sts)
 
     if (sts->arrival)
         free (sts->arrival);
- 
+
     if (sts->departure)
         free (sts->departure);
-    
+
     return tdata_stop_times_init (sts);
 }
 
@@ -51,7 +51,7 @@ tdata_stop_times_ensure_size (tdata_stop_times_t *sts, uint32_t size)
     if (sts->arrival == NULL) {
         sts->arrival   = (rtime_t *) calloc (size, sizeof(rtime_t));
         sts->departure = (rtime_t *) calloc (size, sizeof(rtime_t));
-        
+
         if (unlikely (sts->arrival == NULL || sts->departure == NULL)) {
             return ret_nomem;
         }
@@ -74,8 +74,8 @@ tdata_stop_times_ensure_size (tdata_stop_times_t *sts, uint32_t size)
     sts->departure = (rtime_t *) p;
 
     sts->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -101,7 +101,7 @@ tdata_stop_times_add (tdata_stop_times_t *sts,
     available = sts->size - sts->len;
 
     if ((uint32_t) available < size) {
-        if (unlikely (tdata_stop_times_ensure_size (sts, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_stop_times_ensure_size (sts, sts->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -113,7 +113,7 @@ tdata_stop_times_add (tdata_stop_times_t *sts,
 
     if (offset) {
         *offset = sts->len;
-    }    
+    }
 
     sts->len += size;
 

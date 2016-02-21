@@ -32,13 +32,13 @@ tdata_physical_modes_mrproper (tdata_physical_modes_t *pms)
 
     if (pms->physical_mode_ids)
         free (pms->physical_mode_ids);
-    
+
     if (pms->physical_mode_urls)
         free (pms->physical_mode_urls);
-    
+
     if (pms->physical_mode_names)
         free (pms->physical_mode_names);
-    
+
     return tdata_physical_modes_init (pms, pms->pool);
 }
 
@@ -59,7 +59,7 @@ tdata_physical_modes_ensure_size (tdata_physical_modes_t *pms, pmidx_t size)
         pms->physical_mode_ids           = (uint32_t *) calloc (size, sizeof(uint32_t));
         pms->physical_mode_urls          = (uint32_t *) calloc (size, sizeof(uint32_t));
         pms->physical_mode_names         = (uint32_t *) calloc (size, sizeof(uint32_t));
-        
+
         if (unlikely (pms->physical_mode_ids == NULL ||
                       pms->physical_mode_urls == NULL ||
                       pms->physical_mode_names == NULL)) {
@@ -90,8 +90,8 @@ tdata_physical_modes_ensure_size (tdata_physical_modes_t *pms, pmidx_t size)
     pms->physical_mode_names = (uint32_t *) p;
 
     pms->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -118,7 +118,7 @@ tdata_physical_modes_add (tdata_physical_modes_t *pms,
     available = pms->size - pms->len;
 
     if ((pmidx_t) available < size) {
-        if (unlikely (tdata_physical_modes_ensure_size (pms, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_physical_modes_ensure_size (pms, pms->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -139,7 +139,7 @@ tdata_physical_modes_add (tdata_physical_modes_t *pms,
 
     if (offset) {
         *offset = pms->len;
-    }    
+    }
 
     pms->len += size;
 

@@ -34,25 +34,25 @@ tdata_journey_patterns_mrproper (tdata_journey_patterns_t *jps)
 
     if (jps->journey_pattern_point_offset)
         free (jps->journey_pattern_point_offset);
-    
+
     if (jps->vj_index)
         free (jps->vj_index);
-    
+
     if (jps->n_stops)
         free (jps->n_stops);
-    
+
     if (jps->n_vjs)
         free (jps->n_vjs);
-    
+
     if (jps->attributes)
         free (jps->attributes);
-    
+
     if (jps->route_index)
         free (jps->route_index);
-    
+
     if (jps->commercial_mode_for_jp)
         free (jps->commercial_mode_for_jp);
-    
+
     return tdata_journey_patterns_init (jps);
 }
 
@@ -136,8 +136,8 @@ tdata_journey_patterns_ensure_size (tdata_journey_patterns_t *jps, spidx_t size)
     jps->commercial_mode_for_jp = (cmidx_t *) p;
 
     jps->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -168,7 +168,7 @@ tdata_journey_patterns_add (tdata_journey_patterns_t *jps,
     available = jps->size - jps->len;
 
     if ((jpidx_t) available < size) {
-        if (unlikely (tdata_journey_patterns_ensure_size (jps, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_journey_patterns_ensure_size (jps, jps->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -186,7 +186,7 @@ tdata_journey_patterns_add (tdata_journey_patterns_t *jps,
     if (offset) {
         *offset = jps->len;
     }
-   
+
     jps->len += size;
 
     return ret_ok;

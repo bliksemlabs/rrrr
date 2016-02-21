@@ -33,15 +33,15 @@ tdata_stop_areas_mrproper (tdata_stop_areas_t *sas)
 
     if (sas->stop_area_ids)
         free (sas->stop_area_ids);
-    
+
     if (sas->stop_area_coords)
         free (sas->stop_area_coords);
-    
+
     if (sas->stop_area_nameidx)
         free (sas->stop_area_nameidx);
-    
-    if (sas->stop_area_timezones) 
-        free (sas->stop_area_timezones); 
+
+    if (sas->stop_area_timezones)
+        free (sas->stop_area_timezones);
 
     return tdata_stop_areas_init (sas, sas->pool);
 }
@@ -64,7 +64,7 @@ tdata_stop_areas_ensure_size (tdata_stop_areas_t *sas, spidx_t size)
         sas->stop_area_coords        = (latlon_t *) calloc (size, sizeof(latlon_t));
         sas->stop_area_nameidx       = (uint32_t *) calloc (size, sizeof(uint32_t));
         sas->stop_area_timezones     = (uint32_t *) calloc (size, sizeof(uint32_t));
-        
+
         if (unlikely (sas->stop_area_ids == NULL ||
                       sas->stop_area_coords == NULL ||
                       sas->stop_area_nameidx == NULL ||
@@ -102,8 +102,8 @@ tdata_stop_areas_ensure_size (tdata_stop_areas_t *sas, spidx_t size)
     sas->stop_area_timezones = (uint32_t *) p;
 
     sas->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -131,7 +131,7 @@ tdata_stop_areas_add (tdata_stop_areas_t *sas,
     available = sas->size - sas->len;
 
     if ((spidx_t) available < size) {
-        if (unlikely (tdata_stop_areas_ensure_size (sas, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_stop_areas_ensure_size (sas, sas->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -139,7 +139,7 @@ tdata_stop_areas_add (tdata_stop_areas_t *sas,
     /* Copy
      */
     memcpy (sas->stop_area_coords + sas->len, coord, sizeof(latlon_t) * size);
-   
+
     available = size;
 
     while (available) {
@@ -155,7 +155,7 @@ tdata_stop_areas_add (tdata_stop_areas_t *sas,
     if (offset) {
         *offset = sas->len;
     }
-    
+
     sas->len += size;
 
     return ret_ok;

@@ -32,13 +32,13 @@ tdata_operators_mrproper (tdata_operators_t *ops)
 
     if (ops->operator_ids)
         free (ops->operator_ids);
-    
+
     if (ops->operator_urls)
         free (ops->operator_urls);
-    
+
     if (ops->operator_names)
         free (ops->operator_names);
-    
+
     return tdata_operators_init (ops, ops->pool);
 }
 
@@ -59,7 +59,7 @@ tdata_operators_ensure_size (tdata_operators_t *ops, opidx_t size)
         ops->operator_ids           = (uint32_t *) calloc (size, sizeof(uint32_t));
         ops->operator_urls          = (uint32_t *) calloc (size, sizeof(uint32_t));
         ops->operator_names         = (uint32_t *) calloc (size, sizeof(uint32_t));
-        
+
         if (unlikely (ops->operator_ids == NULL ||
                       ops->operator_urls == NULL ||
                       ops->operator_names == NULL)) {
@@ -90,8 +90,8 @@ tdata_operators_ensure_size (tdata_operators_t *ops, opidx_t size)
     ops->operator_names = (uint32_t *) p;
 
     ops->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -118,7 +118,7 @@ tdata_operators_add (tdata_operators_t *ops,
     available = ops->size - ops->len;
 
     if ((opidx_t) available < size) {
-        if (unlikely (tdata_operators_ensure_size (ops, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_operators_ensure_size (ops, ops->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -139,7 +139,7 @@ tdata_operators_add (tdata_operators_t *ops,
 
     if (offset) {
         *offset = ops->len;
-    }    
+    }
 
     ops->len += size;
 

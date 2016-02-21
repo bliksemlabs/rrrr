@@ -36,25 +36,25 @@ tdata_lines_mrproper (tdata_lines_t *lines)
 
     if (lines->line_ids)
         free (lines->line_ids);
-    
+
     if (lines->line_codes)
         free (lines->line_codes);
-    
+
     if (lines->line_names)
         free (lines->line_names);
- 
+
     if (lines->line_colors)
         free (lines->line_colors);
-     
+
     if (lines->line_colors_text)
         free (lines->line_colors_text);
-    
+
     if (lines->operator_for_line)
         free (lines->operator_for_line);
-    
+
     if (lines->physical_mode_for_line)
         free (lines->physical_mode_for_line);
- 
+
     return tdata_lines_init (lines, lines->pool);
 }
 
@@ -79,7 +79,7 @@ tdata_lines_ensure_size (tdata_lines_t *lines, lineidx_t size)
         lines->line_colors_text       = (uint32_t *) calloc (size, sizeof(uint32_t));
         lines->operator_for_line      = (opidx_t *)  calloc (size, sizeof(opidx_t));
         lines->physical_mode_for_line = (pmidx_t *)  calloc (size, sizeof(pmidx_t));
-        
+
         if (unlikely (lines->line_ids == NULL ||
                       lines->line_codes == NULL ||
                       lines->line_names == NULL ||
@@ -138,8 +138,8 @@ tdata_lines_ensure_size (tdata_lines_t *lines, lineidx_t size)
     lines->physical_mode_for_line = (pmidx_t *) p;
 
     lines->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -170,7 +170,7 @@ tdata_lines_add (tdata_lines_t *lines,
     available = lines->size - lines->len;
 
     if ((lineidx_t) available < size) {
-        if (unlikely (tdata_lines_ensure_size (lines, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_lines_ensure_size (lines, lines->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -196,7 +196,7 @@ tdata_lines_add (tdata_lines_t *lines,
 
     if (offset) {
         *offset = lines->len;
-    }    
+    }
 
     lines->len += size;
 

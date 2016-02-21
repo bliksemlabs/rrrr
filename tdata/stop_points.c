@@ -38,30 +38,30 @@ tdata_stop_points_mrproper (tdata_stop_points_t *sps)
 
     if (sps->platformcodes)
         free (sps->platformcodes);
-    
+
     if (sps->stop_point_ids)
         free (sps->stop_point_ids);
-    
+
     if (sps->stop_point_coords)
         free (sps->stop_point_coords);
-    
+
     if (sps->stop_point_nameidx)
         free (sps->stop_point_nameidx);
-    
+
     if (sps->stop_point_waittime)
         free (sps->stop_point_waittime);
-    
+
     if (sps->stop_point_attributes)
         free (sps->stop_point_attributes);
-    
+
     if (sps->stop_area_for_stop_point)
         free (sps->stop_area_for_stop_point);
-    
+
     if (sps->journey_patterns_at_stop_point_offset)
         free (sps->journey_patterns_at_stop_point_offset);
-    
-    if (sps->transfers_offset) 
-        free (sps->transfers_offset); 
+
+    if (sps->transfers_offset)
+        free (sps->transfers_offset);
 
     return tdata_stop_points_init (sps, sps->pool);
 }
@@ -89,7 +89,7 @@ tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size)
         sps->stop_area_for_stop_point = (spidx_t *)  calloc (size, sizeof(spidx_t));
         sps->journey_patterns_at_stop_point_offset = (uint32_t *) calloc (size + 1, sizeof(uint32_t));
         sps->transfers_offset     = (uint32_t *) calloc (size + 1, sizeof(uint32_t));
-        
+
         if (unlikely (sps->platformcodes == NULL ||
                       sps->stop_point_ids == NULL ||
                       sps->stop_point_coords == NULL ||
@@ -142,7 +142,7 @@ tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size)
         return ret_nomem;
     }
     sps->stop_point_attributes = (uint8_t *) p;
-    
+
     p = realloc (sps->stop_area_for_stop_point, sizeof(spidx_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
@@ -162,8 +162,8 @@ tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size)
     sps->transfers_offset = (uint32_t *) p;
 
     sps->size = size;
-    
-    return ret_ok; 
+
+    return ret_ok;
 }
 
 ret_t
@@ -194,7 +194,7 @@ tdata_stop_points_add (tdata_stop_points_t *sps,
     available = sps->size - sps->len;
 
     if ((spidx_t) available < size) {
-        if (unlikely (tdata_stop_points_ensure_size (sps, (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
+        if (unlikely (tdata_stop_points_ensure_size (sps, sps->size + (size - available) + REALLOC_EXTRA_SIZE) != ret_ok)) {
             return ret_nomem;
         }
     }
@@ -205,7 +205,7 @@ tdata_stop_points_add (tdata_stop_points_t *sps,
     memcpy (sps->stop_point_waittime + sps->len, waittime, sizeof(rtime_t) * size);
     memcpy (sps->stop_point_attributes + sps->len, attributes, sizeof(uint8_t) * size);
     memcpy (sps->stop_area_for_stop_point + sps->len, stop_area, sizeof(spidx_t) * size);
-   
+
     available = size;
 
     while (available) {
@@ -220,7 +220,7 @@ tdata_stop_points_add (tdata_stop_points_t *sps,
 
     if (offset) {
         *offset = sps->len;
-    }    
+    }
 
     sps->len += size;
 
