@@ -4,13 +4,15 @@
 
 int main(int argv, char *args[]) {
     tdata_string_pool_t pool;
+    tdata_transfers_t transfers;
     tdata_stop_points_t sps;
 
     (void)(argv);
     (void)(args);
 
     tdata_string_pool_init (&pool);
-    tdata_stop_points_init (&sps, &pool);
+    tdata_transfers_init (&transfers);
+    tdata_stop_points_init (&sps, &transfers, &pool);
 
     printf("now: %d %d\n", sps.len, sps.size);
 
@@ -29,6 +31,7 @@ int main(int argv, char *args[]) {
 
     printf("%s %s %s\n", &sps.pool->pool[sps.platformcodes[0]], &sps.pool->pool[sps.stop_point_ids[0]], &sps.pool->pool[sps.stop_point_nameidx[0]]);
 
+    tdata_transfers_mrproper (&transfers);
     tdata_stop_points_mrproper (&sps);
     tdata_string_pool_mrproper (&pool);
 

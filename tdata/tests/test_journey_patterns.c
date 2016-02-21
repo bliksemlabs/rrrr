@@ -5,6 +5,7 @@
 int main(int argv, char *args[]) {
     tdata_string_pool_t pool;
 
+    tdata_transfers_t transfers;
     tdata_stop_points_t sps;
     tdata_journey_pattern_points_t jpps;
 
@@ -26,7 +27,8 @@ int main(int argv, char *args[]) {
 
     tdata_string_pool_init (&pool);
 
-    tdata_stop_points_init (&sps, &pool);
+    tdata_transfers_init (&transfers);
+    tdata_stop_points_init (&sps, &transfers, &pool);
     tdata_journey_pattern_points_init (&jpps, &sps, &pool);
 
     tdata_stop_times_init (&sts);
@@ -41,6 +43,9 @@ int main(int argv, char *args[]) {
     tdata_commercial_modes_init (&cms, &pool);
 
     tdata_journey_patterns_init (&jps, &cms, &routes, &jpps, &vjs);
+
+    tdata_journey_patterns_ensure_size (&jps, 1);
+
     tdata_journey_patterns_mrproper (&jps);
 
     tdata_commercial_modes_mrproper (&cms);
@@ -54,6 +59,7 @@ int main(int argv, char *args[]) {
     tdata_stop_times_mrproper (&sts);
 
     tdata_journey_pattern_points_mrproper (&jpps);
+    tdata_transfers_mrproper (&transfers);
     tdata_stop_points_mrproper (&sps);
 
     tdata_string_pool_mrproper (&pool);

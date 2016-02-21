@@ -4,6 +4,7 @@
 
 int main(int argv, char *args[]) {
     tdata_string_pool_t pool;
+    tdata_transfers_t transfers;
     tdata_stop_points_t sps;
     tdata_journey_pattern_points_t jpps;
 
@@ -14,9 +15,9 @@ int main(int argv, char *args[]) {
     (void)(args);
 
     tdata_string_pool_init (&pool);
-    tdata_stop_points_init (&sps, &pool);
+    tdata_transfers_init (&transfers);
+    tdata_stop_points_init (&sps, &transfers, &pool);
     tdata_journey_pattern_points_init (&jpps, &sps, &pool);
-
 
     {
         const char *id[] = {"1", "2"};
@@ -43,6 +44,7 @@ int main(int argv, char *args[]) {
     printf("now: %d %d %d\n", jpps.len, jpps.size, jpp_offset);
 
     tdata_journey_pattern_points_mrproper (&jpps);
+    tdata_transfers_mrproper (&transfers);
     tdata_stop_points_mrproper (&sps);
     tdata_string_pool_mrproper (&pool);
 

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "tdata_common.h"
 #include "string_pool.h"
+#include "transfers.h"
 
 typedef struct {
     uint32_t *platformcodes;
@@ -13,13 +14,14 @@ typedef struct {
     uint32_t *journey_patterns_at_stop_point_offset;
     uint32_t *transfers_offset;
 
+    tdata_transfers_t *transfers;
     tdata_string_pool_t *pool;
 
     spidx_t size; /* Total amount of memory */
     spidx_t len;  /* Length of the list   */
 } tdata_stop_points_t;
 
-ret_t tdata_stop_points_init (tdata_stop_points_t *sps, tdata_string_pool_t *pool);
+ret_t tdata_stop_points_init (tdata_stop_points_t *sps, tdata_transfers_t *transfers, tdata_string_pool_t *pool);
 ret_t tdata_stop_points_mrproper (tdata_stop_points_t *sps);
 ret_t tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size);
 ret_t tdata_stop_points_add (tdata_stop_points_t *sps,

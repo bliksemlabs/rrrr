@@ -8,7 +8,7 @@
 #define REALLOC_EXTRA_SIZE     16
 
 ret_t
-tdata_stop_points_init (tdata_stop_points_t *sps, tdata_string_pool_t *pool)
+tdata_stop_points_init (tdata_stop_points_t *sps, tdata_transfers_t *transfers, tdata_string_pool_t *pool)
 {
     sps->platformcodes = NULL;
     sps->stop_point_ids = NULL;
@@ -20,6 +20,7 @@ tdata_stop_points_init (tdata_stop_points_t *sps, tdata_string_pool_t *pool)
     sps->journey_patterns_at_stop_point_offset = NULL;
     sps->transfers_offset = NULL;
 
+    sps->transfers = transfers;
     sps->pool = pool;
 
     sps->size = 0;
@@ -63,7 +64,7 @@ tdata_stop_points_mrproper (tdata_stop_points_t *sps)
     if (sps->transfers_offset)
         free (sps->transfers_offset);
 
-    return tdata_stop_points_init (sps, sps->pool);
+    return tdata_stop_points_init (sps, sps->transfers, sps->pool);
 }
 
 ret_t
