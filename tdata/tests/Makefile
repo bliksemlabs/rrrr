@@ -1,6 +1,7 @@
 CC=gcc
 
 all:
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_transfers ../transfers.c test_stop_transfers.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_vehicle_journeys ../vehicle_journeys.c ../stop_times.c ../vehicle_transfers.c ../string_pool.c test_vehicle_journeys.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_vehicle_transfers ../vehicle_transfers.c test_vehicle_transfers.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_times ../stop_times.c test_stop_times.c
