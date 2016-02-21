@@ -4,7 +4,7 @@
 
 int main(int argv, char *args[]) {
     tdata_string_pool_t pool;
-    tdata_stop_times_t sps;
+    tdata_stop_times_t sts;
     tdata_vehicle_transfers_t vts;
     tdata_vehicle_journeys_t vjs;
 
@@ -15,14 +15,14 @@ int main(int argv, char *args[]) {
     (void)(args);
 
     tdata_string_pool_init (&pool);
-    tdata_stop_times_init (&sps);
+    tdata_stop_times_init (&sts);
     tdata_vehicle_transfers_init (&vts);
-    tdata_vehicle_journeys_init (&vjs, &vts, &sps, &pool);
+    tdata_vehicle_journeys_init (&vjs, &vts, &sts, &pool);
 
     {
         const rtime_t arrival[] = {0, 15, 30};
         const rtime_t departure[] = {0, 20, 30};
-        tdata_stop_times_add (&sps, arrival, departure, 3, &st_offset);
+        tdata_stop_times_add (&sts, arrival, departure, 3, &st_offset);
     }
 
     {
@@ -47,7 +47,7 @@ int main(int argv, char *args[]) {
 
     tdata_vehicle_journeys_mrproper (&vjs);
     tdata_vehicle_transfers_mrproper (&vts);
-    tdata_stop_times_mrproper (&sps);
+    tdata_stop_times_mrproper (&sts);
     tdata_string_pool_mrproper (&pool);
 
     return 0;
