@@ -11,7 +11,6 @@ ret_t
 tdata_commercial_modes_init (tdata_commercial_modes_t *cms, tdata_string_pool_t *pool)
 {
     cms->commercial_mode_ids = NULL;
-    cms->commercial_mode_urls = NULL;
     cms->commercial_mode_names = NULL;
 
     cms->pool = pool;
@@ -32,9 +31,6 @@ tdata_commercial_modes_mrproper (tdata_commercial_modes_t *cms)
 
     if (cms->commercial_mode_ids)
         free (cms->commercial_mode_ids);
-
-    if (cms->commercial_mode_urls)
-        free (cms->commercial_mode_urls);
 
     if (cms->commercial_mode_names)
         free (cms->commercial_mode_names);
@@ -57,11 +53,9 @@ tdata_commercial_modes_ensure_size (tdata_commercial_modes_t *cms, cmidx_t size)
      */
     if (cms->commercial_mode_ids == NULL) {
         cms->commercial_mode_ids           = (uint32_t *) calloc (size, sizeof(uint32_t));
-        cms->commercial_mode_urls          = (uint32_t *) calloc (size, sizeof(uint32_t));
         cms->commercial_mode_names         = (uint32_t *) calloc (size, sizeof(uint32_t));
 
         if (unlikely (cms->commercial_mode_ids == NULL ||
-                      cms->commercial_mode_urls == NULL ||
                       cms->commercial_mode_names == NULL)) {
             return ret_nomem;
         }
@@ -77,12 +71,6 @@ tdata_commercial_modes_ensure_size (tdata_commercial_modes_t *cms, cmidx_t size)
     }
     cms->commercial_mode_ids = (uint32_t *) p;
 
-    p = realloc (cms->commercial_mode_urls, sizeof(uint32_t) * size);
-    if (unlikely (p == NULL)) {
-        return ret_nomem;
-    }
-    cms->commercial_mode_urls = (uint32_t *) p;
-
     p = realloc (cms->commercial_mode_names, sizeof(uint32_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
@@ -97,7 +85,6 @@ tdata_commercial_modes_ensure_size (tdata_commercial_modes_t *cms, cmidx_t size)
 ret_t
 tdata_commercial_modes_add (tdata_commercial_modes_t *cms,
                      const char **id,
-                     const char **url,
                      const char **name,
                      const cmidx_t size,
                      cmidx_t *offset)
@@ -133,7 +120,6 @@ tdata_commercial_modes_add (tdata_commercial_modes_t *cms,
         available--;
         idx = cms->len + available;
         tdata_string_pool_add (cms->pool, id[available], strlen (id[available]) + 1, &cms->commercial_mode_ids[idx]);
-        tdata_string_pool_add (cms->pool, url[available], strlen (url[available]) + 1, &cms->commercial_mode_urls[idx]);
         tdata_string_pool_add (cms->pool, name[available], strlen (name[available]) + 1, &cms->commercial_mode_names[idx]);
     }
 

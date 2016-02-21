@@ -4,9 +4,8 @@
 
 typedef struct {
     uint32_t *commercial_mode_ids;
-    uint32_t *commercial_mode_urls;
     uint32_t *commercial_mode_names;
-    
+
     tdata_string_pool_t *pool;
 
     cmidx_t size; /* Total amount of memory */
@@ -18,7 +17,6 @@ ret_t tdata_commercial_modes_mrproper (tdata_commercial_modes_t *cm);
 ret_t tdata_commercial_modes_ensure_size (tdata_commercial_modes_t *cm, cmidx_t size);
 ret_t tdata_commercial_modes_add (tdata_commercial_modes_t *cm,
                            const char **id,
-                           const char **urls,
                            const char **names,
                            const cmidx_t size,
                            cmidx_t *offset);
