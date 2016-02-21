@@ -11,7 +11,6 @@ ret_t
 tdata_physical_modes_init (tdata_physical_modes_t *pms, tdata_string_pool_t *pool)
 {
     pms->physical_mode_ids = NULL;
-    pms->physical_mode_urls = NULL;
     pms->physical_mode_names = NULL;
 
     pms->pool = pool;
@@ -32,9 +31,6 @@ tdata_physical_modes_mrproper (tdata_physical_modes_t *pms)
 
     if (pms->physical_mode_ids)
         free (pms->physical_mode_ids);
-
-    if (pms->physical_mode_urls)
-        free (pms->physical_mode_urls);
 
     if (pms->physical_mode_names)
         free (pms->physical_mode_names);
@@ -57,11 +53,9 @@ tdata_physical_modes_ensure_size (tdata_physical_modes_t *pms, pmidx_t size)
      */
     if (pms->physical_mode_ids == NULL) {
         pms->physical_mode_ids           = (uint32_t *) calloc (size, sizeof(uint32_t));
-        pms->physical_mode_urls          = (uint32_t *) calloc (size, sizeof(uint32_t));
         pms->physical_mode_names         = (uint32_t *) calloc (size, sizeof(uint32_t));
 
         if (unlikely (pms->physical_mode_ids == NULL ||
-                      pms->physical_mode_urls == NULL ||
                       pms->physical_mode_names == NULL)) {
             return ret_nomem;
         }
@@ -77,12 +71,6 @@ tdata_physical_modes_ensure_size (tdata_physical_modes_t *pms, pmidx_t size)
     }
     pms->physical_mode_ids = (uint32_t *) p;
 
-    p = realloc (pms->physical_mode_urls, sizeof(uint32_t) * size);
-    if (unlikely (p == NULL)) {
-        return ret_nomem;
-    }
-    pms->physical_mode_urls = (uint32_t *) p;
-
     p = realloc (pms->physical_mode_names, sizeof(uint32_t) * size);
     if (unlikely (p == NULL)) {
         return ret_nomem;
@@ -97,7 +85,6 @@ tdata_physical_modes_ensure_size (tdata_physical_modes_t *pms, pmidx_t size)
 ret_t
 tdata_physical_modes_add (tdata_physical_modes_t *pms,
                      const char **id,
-                     const char **url,
                      const char **name,
                      const pmidx_t size,
                      pmidx_t *offset)
@@ -133,7 +120,6 @@ tdata_physical_modes_add (tdata_physical_modes_t *pms,
         available--;
         idx = pms->len + available;
         tdata_string_pool_add (pms->pool, id[available], strlen (id[available]) + 1, &pms->physical_mode_ids[idx]);
-        tdata_string_pool_add (pms->pool, url[available], strlen (url[available]) + 1, &pms->physical_mode_urls[idx]);
         tdata_string_pool_add (pms->pool, name[available], strlen (name[available]) + 1, &pms->physical_mode_names[idx]);
     }
 

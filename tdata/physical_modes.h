@@ -4,9 +4,8 @@
 
 typedef struct {
     uint32_t *physical_mode_ids;
-    uint32_t *physical_mode_urls;
     uint32_t *physical_mode_names;
-    
+
     tdata_string_pool_t *pool;
 
     pmidx_t size; /* Total amount of memory */
@@ -18,7 +17,6 @@ ret_t tdata_physical_modes_mrproper (tdata_physical_modes_t *pms);
 ret_t tdata_physical_modes_ensure_size (tdata_physical_modes_t *pms, pmidx_t size);
 ret_t tdata_physical_modes_add (tdata_physical_modes_t *pms,
                            const char **id,
-                           const char **urls,
                            const char **names,
                            const pmidx_t size,
                            pmidx_t *offset);
