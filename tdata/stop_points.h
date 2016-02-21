@@ -11,7 +11,6 @@ typedef struct {
     rtime_t  *stop_point_waittime;
     uint8_t  *stop_point_attributes;
     spidx_t  *stop_area_for_stop_point;
-    uint32_t *journey_patterns_at_stop_point_offset;
     uint32_t *transfers_offset;
 
     tdata_transfers_t *transfers;

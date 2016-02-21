@@ -17,7 +17,6 @@ tdata_stop_points_init (tdata_stop_points_t *sps, tdata_transfers_t *transfers, 
     sps->stop_point_waittime = NULL;
     sps->stop_point_attributes = NULL;
     sps->stop_area_for_stop_point = NULL;
-    sps->journey_patterns_at_stop_point_offset = NULL;
     sps->transfers_offset = NULL;
 
     sps->transfers = transfers;
@@ -58,9 +57,6 @@ tdata_stop_points_mrproper (tdata_stop_points_t *sps)
     if (sps->stop_area_for_stop_point)
         free (sps->stop_area_for_stop_point);
 
-    if (sps->journey_patterns_at_stop_point_offset)
-        free (sps->journey_patterns_at_stop_point_offset);
-
     if (sps->transfers_offset)
         free (sps->transfers_offset);
 
@@ -88,7 +84,6 @@ tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size)
         sps->stop_point_waittime      = (rtime_t *)  calloc (size, sizeof(rtime_t));
         sps->stop_point_attributes    = (uint8_t *)  calloc (size, sizeof(uint8_t));
         sps->stop_area_for_stop_point = (spidx_t *)  calloc (size, sizeof(spidx_t));
-        sps->journey_patterns_at_stop_point_offset = (uint32_t *) calloc (size + 1, sizeof(uint32_t));
         sps->transfers_offset     = (uint32_t *) calloc (size + 1, sizeof(uint32_t));
 
         if (unlikely (sps->platformcodes == NULL ||
@@ -98,7 +93,6 @@ tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size)
                       sps->stop_point_waittime == NULL ||
                       sps->stop_point_attributes == NULL ||
                       sps->stop_area_for_stop_point == NULL ||
-                      sps->journey_patterns_at_stop_point_offset == NULL ||
                       sps->transfers_offset == NULL)) {
             return ret_nomem;
         }
@@ -149,12 +143,6 @@ tdata_stop_points_ensure_size (tdata_stop_points_t *sps, spidx_t size)
         return ret_nomem;
     }
     sps->stop_area_for_stop_point = (spidx_t *) p;
-
-    p = realloc (sps->journey_patterns_at_stop_point_offset, sizeof(uint32_t) * (size + 1));
-    if (unlikely (p == NULL)) {
-        return ret_nomem;
-    }
-    sps->journey_patterns_at_stop_point_offset = (uint32_t *) p;
 
     p = realloc (sps->transfers_offset, sizeof(uint32_t) * (size + 1));
     if (unlikely (p == NULL)) {
