@@ -1,6 +1,7 @@
 #ifndef TDATA_STRING_POOL_H
 #define TDATA_STRING_POOL_H
 
+#include "tdata_common.h"
 #include "common.h"
 
 typedef struct {
