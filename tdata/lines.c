@@ -8,7 +8,7 @@
 #define REALLOC_EXTRA_SIZE     16
 
 ret_t
-tdata_lines_init (tdata_lines_t *lines, tdata_string_pool_t *pool)
+tdata_lines_init (tdata_lines_t *lines, tdata_operators_t *operators, tdata_physical_modes_t *physical_modes, tdata_string_pool_t *pool)
 {
     lines->line_ids = NULL;
     lines->line_codes = NULL;
@@ -18,6 +18,8 @@ tdata_lines_init (tdata_lines_t *lines, tdata_string_pool_t *pool)
     lines->operator_for_line = NULL;
     lines->physical_mode_for_line = NULL;
 
+    lines->operators = operators;
+    lines->physical_modes = physical_modes;
     lines->pool = pool;
 
     lines->size = 0;
@@ -55,7 +57,7 @@ tdata_lines_mrproper (tdata_lines_t *lines)
     if (lines->physical_mode_for_line)
         free (lines->physical_mode_for_line);
 
-    return tdata_lines_init (lines, lines->pool);
+    return tdata_lines_init (lines, lines->operators, lines->physical_modes, lines->pool);
 }
 
 ret_t
