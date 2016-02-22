@@ -18,6 +18,13 @@ tdata_string_pool_init (tdata_string_pool_t *pool)
     return ret_ok;
 }
 
+void
+tdata_string_pool_fake (tdata_string_pool_t *pool, const char *p, const uint32_t len) {
+    pool->pool = (char *) p;
+    pool->size = 0;
+    pool->len  = len;
+}
+
 ret_t
 tdata_string_pool_mrproper (tdata_string_pool_t *pool)
 {
@@ -36,6 +43,11 @@ ret_t
 tdata_string_pool_ensure_size (tdata_string_pool_t *pool, uint32_t size)
 {
     void *p;
+
+    if (unlikely (pool->size == 0 && pool->len > 0)) {
+        /* The memory has arrived via a memory mapping */
+        return ret_deny;
+    }
 
     /* Maybe it doesn't need it
      * if buf->size == 0 and size == 0 then buf can be NULL.
