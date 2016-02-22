@@ -8,7 +8,7 @@ typedef struct {
     uint32_t timezone;
     int32_t utc_offset;
 
-    tdata_string_pool_t pool;
+    tdata_string_pool_t string_pool;
 
     tdata_stop_points_t sps;
     tdata_transfers_t transfers;

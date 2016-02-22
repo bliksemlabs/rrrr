@@ -17,6 +17,7 @@ all:
 	$(CC) -c -Wextra -Wall -ansi -pedantic vehicle_journeys.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic vehicle_transfers.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic container.c
+	$(CC) -c -Wextra -Wall -ansi -pedantic container_mmap.c
 
 clean:
 	rm *.o
