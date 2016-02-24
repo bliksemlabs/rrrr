@@ -11,9 +11,6 @@
 #include "container_mmap.h"
 #include "tdata_io_v4.h"
 
-#define load_mmap(b, storage, type) \
-    tdata_string_pool_fake (&container->container.storage, (type *) (((char *) b) + header->loc_##storage), header->n_##storage)
-
 ret_t
 tdata_container_mmap_init (tdata_container_mmap_t *container, const char *filename)
 {
@@ -40,7 +37,7 @@ tdata_container_mmap_init (tdata_container_mmap_t *container, const char *filena
     }
 
     /* we can cast off_t to size_t since we have checked it is > 0 */
-    container->base = mmap(NULL, (size_t) st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    container->base = (void *) mmap(NULL, (size_t) st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     container->size = (size_t) st.st_size;
     if (container->base == MAP_FAILED) {
         fprintf(stderr, "The input file %s could not be mapped.\n", filename);
@@ -64,7 +61,13 @@ tdata_container_mmap_init (tdata_container_mmap_t *container, const char *filena
      */
     close (fd);
 
-    load_mmap (container->base, string_pool, char);
+#define load_mmap(storage, type) \
+    (type *) (((char *) container->base) + header->loc_##storage)
+
+#define len_mmap(storage) \
+    header->n_##storage
+
+    tdata_string_pool_fake (&container->container.string_pool, load_mmap(string_pool, char), len_mmap(string_pool));
 
     return ret_ok;
 
