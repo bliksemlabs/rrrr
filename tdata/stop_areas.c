@@ -24,6 +24,23 @@ tdata_stop_areas_init (tdata_stop_areas_t *sas, tdata_string_pool_t *pool)
 }
 
 ret_t
+tdata_stop_areas_fake (tdata_stop_areas_t *sas, const uint32_t *stop_area_ids, const latlon_t *stop_area_coords, const uint32_t *stop_area_nameidx, const uint32_t *stop_area_timezones, const uint32_t len) {
+
+    if (len > ((spidx_t) -1))
+        return ret_error;
+
+    sas->stop_area_ids = (uint32_t *) stop_area_ids;
+    sas->stop_area_coords = (latlon_t *) stop_area_coords;
+    sas->stop_area_nameidx = (uint32_t *) stop_area_nameidx;
+    sas->stop_area_timezones = (uint32_t *) stop_area_timezones;
+
+    sas->size = 0;
+    sas->len = (spidx_t) len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_stop_areas_mrproper (tdata_stop_areas_t *sas)
 {
     if (unlikely (sas->size == 0 && sas->len > 0)) {

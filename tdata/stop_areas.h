@@ -15,6 +15,12 @@ typedef struct {
 } tdata_stop_areas_t;
 
 ret_t tdata_stop_areas_init (tdata_stop_areas_t *sas, tdata_string_pool_t *pool);
+ret_t tdata_stop_areas_fake (tdata_stop_areas_t *sas,
+                             const uint32_t *stop_area_ids,
+                             const latlon_t *stop_area_coords,
+                             const uint32_t *stop_area_nameidx,
+                             const uint32_t *stop_area_timezones,
+                             const uint32_t len);
 ret_t tdata_stop_areas_mrproper (tdata_stop_areas_t *sas);
 ret_t tdata_stop_areas_ensure_size (tdata_stop_areas_t *sas, spidx_t size);
 ret_t tdata_stop_areas_add (tdata_stop_areas_t *sas,
