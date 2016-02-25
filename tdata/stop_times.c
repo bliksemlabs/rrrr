@@ -19,6 +19,18 @@ tdata_stop_times_init (tdata_stop_times_t *sts)
 }
 
 ret_t
+tdata_stop_times_fake (tdata_stop_times_t *sts, const rtime_t *arrival, const rtime_t *departure, const uint32_t len)
+{
+    sts->arrival = (rtime_t *) arrival;
+    sts->departure = (rtime_t *) departure;
+
+    sts->size = 0;
+    sts->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_stop_times_mrproper (tdata_stop_times_t *sts)
 {
     if (unlikely (sts->size == 0 && sts->len > 0)) {

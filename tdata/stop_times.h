@@ -12,6 +12,7 @@ typedef struct {
 } tdata_stop_times_t;
 
 ret_t tdata_stop_times_init (tdata_stop_times_t *sts);
+ret_t tdata_stop_times_fake (tdata_stop_times_t *sts, const rtime_t *arrival, const rtime_t *departure, const uint32_t len);
 ret_t tdata_stop_times_mrproper (tdata_stop_times_t *sts);
 ret_t tdata_stop_times_ensure_size (tdata_stop_times_t *sts, uint32_t size);
 ret_t tdata_stop_times_add (tdata_stop_times_t *sts,
