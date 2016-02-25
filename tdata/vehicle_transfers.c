@@ -18,6 +18,17 @@ tdata_vehicle_transfers_init (tdata_vehicle_transfers_t *vt)
 }
 
 ret_t
+tdata_vehicle_transfers_fake (tdata_vehicle_transfers_t *vt, const vehicle_journey_ref_t *vehicle_journey_transfers, const uint32_t len)
+{
+    vt->vehicle_journey_transfers = (vehicle_journey_ref_t *) vehicle_journey_transfers;
+
+    vt->size = 0;
+    vt->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_vehicle_transfers_mrproper (tdata_vehicle_transfers_t *vt)
 {
     if (unlikely (vt->size == 0 && vt->len > 0)) {
