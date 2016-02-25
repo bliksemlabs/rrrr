@@ -22,6 +22,21 @@ tdata_commercial_modes_init (tdata_commercial_modes_t *cms, tdata_string_pool_t 
 }
 
 ret_t
+tdata_commercial_modes_fake (tdata_commercial_modes_t *cms, const uint32_t *commercial_mode_ids, const uint32_t *commercial_mode_names, const uint32_t len)
+{
+    if (len > ((cmidx_t) -1))
+        return ret_error;
+
+    cms->commercial_mode_ids = (uint32_t *) commercial_mode_ids;
+    cms->commercial_mode_names = (uint32_t *) commercial_mode_names;
+
+    cms->size = 0;
+    cms->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_commercial_modes_mrproper (tdata_commercial_modes_t *cms)
 {
     if (unlikely (cms->size == 0 && cms->len > 0)) {
