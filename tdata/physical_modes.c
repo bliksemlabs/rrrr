@@ -22,6 +22,21 @@ tdata_physical_modes_init (tdata_physical_modes_t *pms, tdata_string_pool_t *poo
 }
 
 ret_t
+tdata_physical_modes_fake (tdata_physical_modes_t *pms, const uint32_t *physical_mode_ids, const uint32_t *physical_mode_names, const uint32_t len)
+{
+    if (len > ((pmidx_t) -1))
+        return ret_error;
+
+    pms->physical_mode_ids = (uint32_t *) physical_mode_ids;
+    pms->physical_mode_names = (uint32_t *) physical_mode_names;
+
+    pms->size = 0;
+    pms->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_physical_modes_mrproper (tdata_physical_modes_t *pms)
 {
     if (unlikely (pms->size == 0 && pms->len > 0)) {
