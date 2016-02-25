@@ -29,6 +29,34 @@ tdata_lines_init (tdata_lines_t *lines, tdata_operators_t *operators, tdata_phys
 }
 
 ret_t
+tdata_lines_fake (tdata_lines_t *lines,
+                     const uint32_t *line_ids,
+                     const uint32_t *line_codes,
+                     const uint32_t *line_names,
+                     const uint32_t *line_colors,
+                     const uint32_t *line_colors_text,
+                     const opidx_t *operator_for_line,
+                     const pmidx_t *physical_mode_for_line,
+                     const uint32_t len)
+{
+    if (len > ((lineidx_t) -1))
+        return ret_error;
+
+    lines->line_ids = (uint32_t *) line_ids;
+    lines->line_codes = (uint32_t *) line_codes;
+    lines->line_names = (uint32_t *) line_names;
+    lines->line_colors = (uint32_t *) line_colors;
+    lines->line_colors_text = (uint32_t *) line_colors_text;
+    lines->operator_for_line = (opidx_t *) operator_for_line;
+    lines->physical_mode_for_line = (pmidx_t *) physical_mode_for_line;
+
+    lines->size = 0;
+    lines->len = (lineidx_t) len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_lines_mrproper (tdata_lines_t *lines)
 {
     if (unlikely (lines->size == 0 && lines->len > 0)) {
