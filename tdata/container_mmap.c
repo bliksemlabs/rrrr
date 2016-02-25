@@ -61,13 +61,18 @@ tdata_container_mmap_init (tdata_container_mmap_t *container, const char *filena
      */
     close (fd);
 
-#define load_mmap(storage, type) \
+#define load_mmap(type, storage) \
     (type *) (((char *) container->base) + header->loc_##storage)
 
 #define len_mmap(storage) \
     header->n_##storage
 
-    tdata_string_pool_fake (&container->container.string_pool, load_mmap(string_pool, char), len_mmap(string_pool));
+    tdata_string_pool_fake (&container->container.string_pool, load_mmap(char, string_pool), len_mmap(string_pool));
+    tdata_transfers_fake (&container->container.transfers, load_mmap(spidx_t, transfer_target_stops), load_mmap(rtime_t, transfer_durations), len_mmap(transfer_target_stops));
+    tdata_stop_areas_fake (&container->container.sas, load_mmap(uint32_t, stop_area_ids), load_mmap(latlon_t, stop_area_coords), load_mmap(uint32_t, stop_area_nameidx), load_mmap(uint32_t, stop_area_timezones), len_mmap(stop_area_ids));
+    /* tdata_stop_points_fake (&container->container.sps, load_mmap(uint32_t, platformcodes), load_mmap(uint32_t, stop_point_ids), load_mmap(latlon_t, stop_point_coords), load_mmap(uint32_t, stop_point_nameidx), load_mmap(rtime_t, stop_point_waittime), load_mmap(uint8_t, stop_point_attributes), load_mmap(spidx_t, stop_area_for_stop_point), load_mmap(uint32_t, transfers_offset), len_mmap(stop_point_ids)); */
+    tdata_journey_pattern_points_fake (&container->container.jpps, load_mmap(spidx_t, journey_pattern_points), load_mmap(uint32_t, journey_pattern_point_headsigns), load_mmap(uint8_t, journey_pattern_point_attributes), len_mmap(journey_pattern_points));
+
 
     return ret_ok;
 
