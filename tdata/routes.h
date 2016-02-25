@@ -13,6 +13,7 @@ typedef struct {
 } tdata_routes_t;
 
 ret_t tdata_routes_init (tdata_routes_t *routes, tdata_lines_t *lines);
+ret_t tdata_routes_fake (tdata_routes_t *routes, const lineidx_t *line_for_route, const uint32_t len);
 ret_t tdata_routes_mrproper (tdata_routes_t *routes);
 ret_t tdata_routes_ensure_size (tdata_routes_t *routes, routeidx_t size);
 ret_t tdata_routes_add (tdata_routes_t *routes,

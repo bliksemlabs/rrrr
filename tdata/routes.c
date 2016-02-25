@@ -20,6 +20,20 @@ tdata_routes_init (tdata_routes_t *routes, tdata_lines_t *lines)
 }
 
 ret_t
+tdata_routes_fake (tdata_routes_t *routes, const lineidx_t *line_for_route, const uint32_t len)
+{
+    if (len > ((routeidx_t) -1))
+        return ret_error;
+
+    routes->line_for_route = (lineidx_t *) line_for_route;
+
+    routes->size = 0;
+    routes->len = (routeidx_t) len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_routes_mrproper (tdata_routes_t *routes)
 {
     if (unlikely (routes->size == 0 && routes->len > 0)) {
