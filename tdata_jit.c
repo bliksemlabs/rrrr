@@ -322,7 +322,7 @@ bool tdata_vehicle_journeys_new (tdata_t *td, vjidx_t n) {
 
     td->vjs =      (vehicle_journey_t *) calloc (n, sizeof(vehicle_journey_t));
     td->vj_ids          =   (uint32_t *) calloc (n, sizeof(uint32_t));
-    td->vj_active       = (calendar_t *) calloc (n, sizeof(uint32_t));
+    td->vj_active       = (calendar_t *) calloc (n, sizeof(calendar_t));
     td->vj_time_offsets =     (int8_t *) calloc (n, sizeof(int8_t));
     td->vehicle_journey_transfers_forward  = (vehicle_journey_ref_t *) calloc (n, sizeof(vehicle_journey_ref_t));
     td->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) calloc (n, sizeof(vehicle_journey_ref_t));
