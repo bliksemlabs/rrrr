@@ -9,10 +9,9 @@ typedef struct {
     int32_t utc_offset;
 
     tdata_string_pool_t string_pool;
-
-    tdata_stop_points_t sps;
-    tdata_stop_areas_t sas;
     tdata_transfers_t transfers;
+    tdata_stop_areas_t sas;
+    tdata_stop_points_t sps;
     tdata_journey_pattern_points_t jpps;
 
     tdata_stop_times_t sts;
