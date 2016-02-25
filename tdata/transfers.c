@@ -19,6 +19,17 @@ tdata_transfers_init (tdata_transfers_t *transfers)
 }
 
 ret_t
+tdata_transfers_fake (tdata_transfers_t *transfers, const spidx_t *transfer_target_stops, const rtime_t *transfer_durations, const uint32_t len) {
+    transfers->transfer_target_stops = (spidx_t *) transfer_target_stops;
+    transfers->transfer_durations = (rtime_t *) transfer_durations;
+
+    transfers->size = 0;
+    transfers->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_transfers_mrproper (tdata_transfers_t *transfers)
 {
     if (unlikely (transfers->size == 0 && transfers->len > 0)) {
