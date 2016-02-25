@@ -30,6 +30,27 @@ tdata_stop_points_init (tdata_stop_points_t *sps, tdata_stop_areas_t *sas, tdata
 }
 
 ret_t
+tdata_stop_points_fake (tdata_stop_points_t *sps, const uint32_t *platformcodes, const uint32_t *stop_point_ids, const latlon_t *stop_point_coords, const uint32_t *stop_point_nameidx, const rtime_t *stop_point_waittime, const uint8_t *stop_point_attributes, const spidx_t *stop_area_for_stop_point, const uint32_t *transfers_offset, const uint32_t len) {
+
+    if (len > ((spidx_t) -1))
+        return ret_error;
+
+    sps->stop_point_ids = (uint32_t *) platformcodes;
+    sps->stop_point_ids = (uint32_t *) stop_point_ids;
+    sps->stop_point_coords = (latlon_t *) stop_point_coords;
+    sps->stop_point_nameidx = (uint32_t *) stop_point_nameidx;
+    sps->stop_point_waittime = (rtime_t *) stop_point_waittime;
+    sps->stop_point_attributes = (uint8_t *) stop_point_attributes;
+    sps->stop_area_for_stop_point = (spidx_t *) stop_area_for_stop_point;
+    sps->transfers_offset = (uint32_t *) transfers_offset;
+
+    sps->size = 0;
+    sps->len = (spidx_t) len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_stop_points_mrproper (tdata_stop_points_t *sps)
 {
     if (unlikely (sps->size == 0 && sps->len > 0)) {
