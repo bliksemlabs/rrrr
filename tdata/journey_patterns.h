@@ -29,6 +29,15 @@ typedef struct {
 } tdata_journey_patterns_t;
 
 ret_t tdata_journey_patterns_init (tdata_journey_patterns_t *jps, tdata_commercial_modes_t *cms, tdata_routes_t *routes, tdata_journey_pattern_points_t *jpps, tdata_vehicle_journeys_t *vjs);
+ret_t tdata_journey_patterns_fake (tdata_journey_patterns_t *jps,
+                             const uint32_t *journey_pattern_point_offset,
+                             const vjidx_t *vj_index,
+                             const jppidx_t *n_stops,
+                             const jp_vjoffset_t *n_vjs,
+                             const uint16_t *attributes,
+                             const routeidx_t *route_index,
+                             const cmidx_t *commercial_mode_for_jp,
+                             const uint32_t len);
 ret_t tdata_journey_patterns_mrproper (tdata_journey_patterns_t *jps);
 ret_t tdata_journey_patterns_ensure_size (tdata_journey_patterns_t *jps, jpidx_t size);
 ret_t tdata_journey_patterns_add (tdata_journey_patterns_t *jps,

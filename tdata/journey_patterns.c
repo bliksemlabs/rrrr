@@ -33,6 +33,34 @@ tdata_journey_patterns_init (tdata_journey_patterns_t *jps,
 }
 
 ret_t
+tdata_journey_patterns_fake (tdata_journey_patterns_t *jps,
+                             const uint32_t *journey_pattern_point_offset,
+                             const vjidx_t *vj_index,
+                             const jppidx_t *n_stops,
+                             const jp_vjoffset_t *n_vjs,
+                             const uint16_t *attributes,
+                             const routeidx_t *route_index,
+                             const cmidx_t *commercial_mode_for_jp,
+                             const uint32_t len)
+{
+    if (len > ((jpidx_t) -1))
+        return ret_error;
+
+    jps->journey_pattern_point_offset = (uint32_t *) journey_pattern_point_offset;
+    jps->vj_index = (vjidx_t *) vj_index;
+    jps->n_stops = (jppidx_t *) n_stops;
+    jps->n_vjs = (jp_vjoffset_t *) n_vjs;
+    jps->attributes = (uint16_t *) attributes;
+    jps->route_index = (routeidx_t *) route_index;
+    jps->commercial_mode_for_jp = (cmidx_t *) commercial_mode_for_jp;
+
+    jps->size = 0;
+    jps->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_journey_patterns_mrproper (tdata_journey_patterns_t *jps)
 {
     if (unlikely (jps->size == 0 && jps->len > 0)) {
