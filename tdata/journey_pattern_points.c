@@ -23,6 +23,19 @@ tdata_journey_pattern_points_init (tdata_journey_pattern_points_t *jpps, tdata_s
 }
 
 ret_t
+tdata_journey_pattern_points_fake (tdata_journey_pattern_points_t *jpps, const spidx_t *journey_pattern_points, const uint32_t *journey_pattern_point_headsigns, const uint8_t *journey_pattern_point_attributes, const uint32_t len)
+{
+    jpps->journey_pattern_points = (spidx_t *) journey_pattern_points;
+    jpps->journey_pattern_point_headsigns = (uint32_t *) journey_pattern_point_headsigns;
+    jpps->journey_pattern_point_attributes = (uint8_t *) journey_pattern_point_attributes;
+
+    jpps->size = 0;
+    jpps->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_journey_pattern_points_mrproper (tdata_journey_pattern_points_t *jpps)
 {
     if (unlikely (jpps->size == 0 && jpps->len > 0)) {
