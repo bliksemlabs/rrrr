@@ -23,6 +23,22 @@ tdata_operators_init (tdata_operators_t *ops, tdata_string_pool_t *pool)
 }
 
 ret_t
+tdata_operators_fake (tdata_operators_t *ops, const uint32_t *operator_ids, const uint32_t *operator_urls, const uint32_t *operator_names, const uint32_t len)
+{
+    if (len > ((opidx_t) -1))
+        return ret_error;
+
+    ops->operator_ids = (uint32_t *) operator_ids;
+    ops->operator_urls = (uint32_t *) operator_urls;
+    ops->operator_names = (uint32_t *) operator_names;
+
+    ops->size = 0;
+    ops->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_operators_mrproper (tdata_operators_t *ops)
 {
     if (unlikely (ops->size == 0 && ops->len > 0)) {

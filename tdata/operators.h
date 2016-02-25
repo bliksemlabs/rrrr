@@ -6,7 +6,7 @@ typedef struct {
     uint32_t *operator_ids;
     uint32_t *operator_urls;
     uint32_t *operator_names;
-    
+
     tdata_string_pool_t *pool;
 
     opidx_t size; /* Total amount of memory */
@@ -14,6 +14,7 @@ typedef struct {
 } tdata_operators_t;
 
 ret_t tdata_operators_init (tdata_operators_t *ops, tdata_string_pool_t *pool);
+ret_t tdata_operators_fake (tdata_operators_t *ops, const uint32_t *operator_ids, const uint32_t *operator_urls, const uint32_t *operator_names, const uint32_t len);
 ret_t tdata_operators_mrproper (tdata_operators_t *ops);
 ret_t tdata_operators_ensure_size (tdata_operators_t *ops, opidx_t size);
 ret_t tdata_operators_add (tdata_operators_t *ops,
