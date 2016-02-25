@@ -4,7 +4,7 @@ all:
 	$(CC) -c -Wextra -Wall -ansi -pedantic commercial_modes.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic journey_pattern_points.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic journey_patterns.c
-	$(CC) -c -Wextra -Wall -ansi -pedantic journey_patterns_indexed.c
+#	$(CC) -c -Wextra -Wall -ansi -pedantic journey_patterns_indexed.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic lines.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic operators.c
 	$(CC) -c -Wextra -Wall -ansi -pedantic physical_modes.c

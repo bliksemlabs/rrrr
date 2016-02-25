@@ -15,7 +15,8 @@ tdata_container_init (tdata_container_t *container)
     tdata_string_pool_init (&container->string_pool);
 
     tdata_transfers_init (&container->transfers);
-    tdata_stop_points_init (&container->sps, &container->transfers, &container->string_pool);
+    tdata_stop_areas_init (&container->sas, &container->string_pool);
+    tdata_stop_points_init (&container->sps, &container->sas, &container->transfers, &container->string_pool);
     tdata_journey_pattern_points_init (&container->jpps, &container->sps, &container->string_pool);
 
     tdata_stop_times_init (&container->sts);
@@ -54,6 +55,7 @@ tdata_container_mrproper (tdata_container_t *container)
 
     tdata_journey_pattern_points_mrproper (&container->jpps);
     tdata_transfers_mrproper (&container->transfers);
+    tdata_stop_areas_mrproper (&container->sas);
     tdata_stop_points_mrproper (&container->sps);
 
     tdata_string_pool_mrproper (&container->string_pool);

@@ -1,19 +1,19 @@
 CC=gcc
 
 all:
-	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_container_mmap ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../string_pool.c ../transfers.c ../container.c ../container_mmap.c test_container_mmap.c
-	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_container ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../string_pool.c ../transfers.c ../container.c test_container.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_container_mmap ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../stop_areas.c ../string_pool.c ../transfers.c ../container.c ../container_mmap.c test_container_mmap.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_container ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../stop_areas.c ../string_pool.c ../transfers.c ../container.c test_container.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_string_pool ../string_pool.c test_string_pool.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_transfers ../transfers.c test_stop_transfers.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_vehicle_journeys ../vehicle_journeys.c ../stop_times.c ../transfers.c ../vehicle_transfers.c ../string_pool.c test_vehicle_journeys.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_vehicle_transfers ../vehicle_transfers.c test_vehicle_transfers.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_times ../stop_times.c ../transfers.c test_stop_times.c
-	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_journey_pattern_points ../journey_pattern_points.c ../stop_points.c ../transfers.c ../string_pool.c test_journey_pattern_points.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_journey_pattern_points ../journey_pattern_points.c ../stop_points.c ../stop_areas.c ../transfers.c ../string_pool.c test_journey_pattern_points.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_routes ../routes.c ../lines.c ../physical_modes.c ../operators.c ../string_pool.c test_routes.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_lines ../lines.c ../physical_modes.c ../operators.c ../string_pool.c test_lines.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_commercial_modes ../commercial_modes.c ../string_pool.c test_commercial_modes.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_physical_modes ../physical_modes.c ../string_pool.c test_physical_modes.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_areas ../stop_areas.c ../string_pool.c test_stop_areas.c
-	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_points ../stop_points.c ../transfers.c ../string_pool.c test_stop_points.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_stop_points ../stop_points.c ../stop_areas.c ../transfers.c ../string_pool.c test_stop_points.c
 	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_operators ../operators.c ../string_pool.c test_operators.c
-	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_journey_patterns ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../transfers.c ../string_pool.c test_journey_patterns.c
+	$(CC) -O0 -ggdb3 -Wextra -Wall -ansi -pedantic -I.. -o test_journey_patterns ../journey_patterns.c ../commercial_modes.c ../routes.c ../lines.c ../physical_modes.c ../operators.c ../vehicle_journeys.c ../vehicle_transfers.c ../stop_times.c ../journey_pattern_points.c ../stop_points.c ../stop_areas.c ../transfers.c ../string_pool.c test_journey_patterns.c

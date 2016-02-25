@@ -7,6 +7,7 @@ int main(int argv, char *args[]) {
 
     tdata_transfers_t transfers;
     tdata_stop_points_t sps;
+    tdata_stop_areas_t sas;
     tdata_journey_pattern_points_t jpps;
 
     tdata_stop_times_t sts;
@@ -28,7 +29,8 @@ int main(int argv, char *args[]) {
     tdata_string_pool_init (&pool);
 
     tdata_transfers_init (&transfers);
-    tdata_stop_points_init (&sps, &transfers, &pool);
+    tdata_stop_areas_init (&sas, &pool);
+    tdata_stop_points_init (&sps, &sas, &transfers, &pool);
     tdata_journey_pattern_points_init (&jpps, &sps, &pool);
 
     tdata_stop_times_init (&sts);
