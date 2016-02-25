@@ -39,6 +39,45 @@ tdata_vehicle_journeys_init (tdata_vehicle_journeys_t *vjs,
 }
 
 ret_t
+tdata_vehicle_journeys_fake (tdata_vehicle_journeys_t *vjs,
+                             const uint32_t *stop_times_offset,
+                             const rtime_t *begin_time,
+                             const vj_attribute_mask_t *vj_attributes,
+                             const uint32_t *vj_ids,
+                             const calendar_t *vj_active,
+                             const int8_t *vj_time_offsets,
+                             const vehicle_journey_ref_t *vehicle_journey_transfers_forward,
+                             const vehicle_journey_ref_t *vehicle_journey_transfers_backward,
+                             const uint32_t *vj_transfers_forward_offset,
+                             const uint32_t *vj_transfers_backward_offset,
+                             const uint8_t *n_transfers_forward,
+                             const uint8_t *n_transfers_backward,
+                             const uint32_t len)
+{
+    if (len > ((vjidx_t) -1))
+        return ret_error;
+
+    vjs->stop_times_offset = (uint32_t *) stop_times_offset;
+    vjs->begin_time        = (rtime_t *) begin_time;
+    vjs->vj_attributes     = (vj_attribute_mask_t *) vj_attributes;
+    vjs->vj_ids            = (uint32_t *) vj_ids;
+    vjs->vj_active         = (calendar_t *) vj_active;
+    vjs->vj_time_offsets    = (int8_t *) vj_time_offsets;
+    vjs->vehicle_journey_transfers_forward = (vehicle_journey_ref_t *) vehicle_journey_transfers_forward;
+    vjs->vehicle_journey_transfers_backward = (vehicle_journey_ref_t *) vehicle_journey_transfers_backward;
+
+    vjs->vj_transfers_forward_offset = (uint32_t *) vj_transfers_forward_offset;
+    vjs->vj_transfers_backward_offset = (uint32_t *) vj_transfers_backward_offset;
+    vjs->n_transfers_forward  = (uint8_t *) n_transfers_forward;
+    vjs->n_transfers_backward = (uint8_t *) n_transfers_backward;
+
+    vjs->size = 0;
+    vjs->len = len;
+
+    return ret_ok;
+}
+
+ret_t
 tdata_vehicle_journeys_mrproper (tdata_vehicle_journeys_t *vjs)
 {
     if (unlikely (vjs->size == 0 && vjs->len > 0)) {
