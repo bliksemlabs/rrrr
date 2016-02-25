@@ -14,6 +14,7 @@ typedef struct {
     rtime_t *max_time;
     calendar_t *journey_pattern_active;
     jpidx_t *journey_patterns_at_stop;
+    /* journey_patterns_at_stop_point_offset */
 
 } tdata_journey_patterns_indexed_t;
 
