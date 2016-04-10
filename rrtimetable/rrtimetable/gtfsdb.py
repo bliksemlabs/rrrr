@@ -74,6 +74,9 @@ def cons(ary):
 def parse_gtfs_time(timestr):
     return (lambda x:int(x[0])*3600+int(x[1])*60+int(x[2]))(timestr.split(":")) #oh yes I did
 
+def generate_gtfs_time(timeint):
+    return '%02d:%02d:%02d' % ((timeint / 3600), ((timeint % 3600) / 60), (timeint % 60),)
+
 def parse_gtfs_date(datestr):
     return (int(datestr[0:4]), int(datestr[4:6]), int(datestr[6:8]))
 
@@ -345,13 +348,86 @@ WHERE s1.parent_station is not null AND s1.stop_id != s2.stop_id
         return ret
 
     def stop_times(self):
+        # Within GTFS frequencies.txt describe instances of patterns.
+        # Running between a start and end time with an interval since start.
+        # Mathematically start_time + (headway_secs * x) is the offset to a
+        # normalised journey pattern. The offset is added to both arrival
+        # and departure tie.
+        #
+        # stop_times.txt do not have to be normalised. This would require
+        # the patterns to start from 00:00:00. By substracting the first
+        # departure time from all arrival and departure time we can
+        # expand all trips to matching the pattern.
+        #
+        # The code depending on this function depends on "grouped" trips,
+        # in increasing time order.
+        #
+        # The algorithm to expand Frequencies into extra trips
+        #
+        # First we find per trip the first departure time
+        # select trip_id, min(departure_time) from stop_times group by trip_id;
+        #
+        # Then we convert the stop_times to journey patterns by substracting
+        # the first departuretime of the trip.
+        # SELECT trip_id, arrival_time - offset as arrival_time,
+        #                 departure_time - offset as departure_time,
+        #        stop_id, stop_sequence, stop_headsign,
+        #        pickup_type, drop_off_type, timepoint, shape_dist_traveled
+        # FROM stop_times
+        # JOIN (SELECT trip_id, min(departure_time) AS offset
+        #       FROM stop_times
+        #       GROUP BY trip_id) AS trip_offset
+        # USING (trip_id);
+
         c = self.get_cursor()
+
+        c.execute( """SELECT trip_id,realtime_trip_id,service_id,
+                             route_id||':'||coalesce(direction_id,0) as route_id,
+                             trip_headsign,stop_sequence,stop_id,arrival_time,
+                             departure_time,pickup_type,drop_off_type,
+                             stop_headsign,route_type,block_id,
+                             start_time, headway_secs,
+                             (end_time - start_time) / headway_secs as repeat
+                      FROM frequencies JOIN trips USING (trip_id)
+                                       JOIN stop_times USING (trip_id)
+                                       JOIN routes USING (route_id);""" )
+
+        ret = []
+        for st in list(c):
+            for r in range(0, st[-1]):
+                offset = st[-3] + (r * st[-2])
+
+                trip_id = st[0] + ':' + str(offset)
+                realtime_trip_id = st[1]
+                service_id = st[2]
+                route_id = st[3]
+                trip_headsign = st[4]
+                stop_sequence = st[5]
+                stop_id = st[6]
+                arrival_time = st[7] + offset
+                departure_time = st[8] + offset
+                pickup_type = st[9]
+                drop_off_type = st[10]
+                stop_headsign = st[11]
+                route_type = st[12]
+                block_id = st[13]
+
+                ret.append((trip_id,realtime_trip_id,service_id,route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type,block_id,))
+
+        # Due to our expansion, we can not depend on the SQL ORDER BY
+        ret = sorted(ret, key=lambda k: k[0] + ':' + '%03d' % k[5])
+
+        # For normal trips, frequencies are not used.
+        # We filter the trips having a frequency definition.
+
+        # Filter JOIN with EXCEPT works slightly faster than NOT IN
         c.execute( """
 SELECT trip_id,realtime_trip_id,service_id,route_id||':'||coalesce(direction_id,0) as route_id,trip_headsign,stop_sequence,stop_id,arrival_time,departure_time,pickup_type,drop_off_type,stop_headsign,route_type,block_id
 FROM trips JOIN stop_times USING (trip_id) JOIN routes USING (route_id)
+JOIN (SELECT trip_id FROM trips EXCEPT SELECT trip_id FROM frequencies) AS filter USING (trip_id)
 ORDER BY trip_id,stop_sequence
 """)
-        ret = list(c)
+        ret += list(c)
         c.close()
         return ret
 
