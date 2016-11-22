@@ -150,31 +150,31 @@ inline uint32_t tdata_routeidx_by_route_id(tdata_t *td, char* route_id, uint32_t
 }
 
 inline char *tdata_trip_ids_for_route(tdata_t *td, uint32_t route_index) {
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     uint32_t char_offset = route.trip_ids_offset * td->trip_id_width;
     return td->trip_ids + char_offset;
 }
 
 inline calendar_t *tdata_trip_masks_for_route(tdata_t *td, uint32_t route_index) {
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->trip_active + route.trip_ids_offset;
 }
 
 inline char *tdata_headsign_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->headsigns + route.headsign_offset;
 }
 
 inline char *tdata_shortname_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->route_shortnames + (td->route_shortname_width * route.shortname_index);
 }
 
 inline char *tdata_productcategory_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->productcategories + (td->productcategory_width * route.productcategory_index);
 }
 
@@ -189,19 +189,19 @@ inline uint32_t tdata_agencyidx_by_agency_name(tdata_t *td, char* agency_name, u
 
 inline char *tdata_agency_id_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->agency_ids + (td->agency_id_width * route.agency_index);
 }
 
 inline char *tdata_agency_name_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->agency_names + (td->agency_name_width * route.agency_index);
 }
 
 inline char *tdata_agency_url_for_route(tdata_t *td, uint32_t route_index) {
     if (route_index == NONE) return "NONE";
-    route_t route = (td->routes)[route_index];
+    rrrr_route_t route = (td->routes)[route_index];
     return td->agency_urls + (td->agency_url_width * route.agency_index);
 }
 
@@ -220,7 +220,7 @@ void tdata_check_coherent (tdata_t *tdata) {
     }
     /* Check that all timedemand types start at 0 and consist of monotonically increasing times. */
     for (uint32_t r = 0; r < tdata->n_routes; ++r) {
-        route_t route = tdata->routes[r];
+        rrrr_route_t route = tdata->routes[r];
         trip_t *trips = tdata->trips + route.trip_ids_offset;
         int n_nonincreasing_trips = 0;
         for (int t = 0; t < route.n_trips; ++t) {
@@ -305,7 +305,7 @@ void tdata_load(char *filename, tdata_t *td) {
     td->stops = (stop_t*) (b + header->loc_stops);
     td->stop_attributes = (uint8_t*) (b + header->loc_stop_attributes);
     td->stop_coords = (latlon_t*) (b + header->loc_stop_coords);
-    td->routes = (route_t*) (b + header->loc_routes);
+    td->routes = (rrrr_route_t*) (b + header->loc_routes);
     td->route_stops = (uint32_t *) (b + header->loc_route_stops);
     td->route_stop_attributes = (uint8_t *) (b + header->loc_route_stop_attributes);
     td->stop_times = (stoptime_t*) (b + header->loc_stop_times);
@@ -358,12 +358,12 @@ void tdata_close(tdata_t *td) {
 
 // TODO should pass pointer to tdata?
 inline uint32_t *tdata_stops_for_route(tdata_t *td, uint32_t route) {
-    route_t route0 = td->routes[route];
+    rrrr_route_t route0 = td->routes[route];
     return td->route_stops + route0.route_stops_offset;
 }
 
 inline uint8_t *tdata_stop_attributes_for_route(tdata_t *td, uint32_t route) {
-    route_t route0 = td->routes[route];
+    rrrr_route_t route0 = td->routes[route];
     return td->route_stop_attributes + route0.route_stops_offset;
 }
 
@@ -395,7 +395,7 @@ inline float tdata_delay_min (tdata_t *td, uint32_t route_index, uint32_t trip_i
 
 void tdata_dump_route(tdata_t *td, uint32_t route_idx, uint32_t trip_idx) {
     uint32_t *stops = tdata_stops_for_route(td, route_idx);
-    route_t route = td->routes[route_idx];
+    rrrr_route_t route = td->routes[route_idx];
     printf("\nRoute details for %s %s %s '%s %s' [%d] (n_stops %d, n_trips %d)\n", tdata_agency_name_for_route(td, route_idx),
         tdata_agency_id_for_route(td, route_idx), tdata_agency_url_for_route(td, route_idx),
         tdata_shortname_for_route(td, route_idx), tdata_headsign_for_route(td, route_idx), route_idx, route.n_stops, route.n_trips);
@@ -435,8 +435,8 @@ void tdata_dump(tdata_t *td) {
     for (uint32_t i = 0; i < td->n_routes; i++) {
         printf("route %d\n", i);
         printf("having trips %d\n", td->routes[i].n_trips);
-        route_t r0 = td->routes[i];
-        route_t r1 = td->routes[i+1];
+        rrrr_route_t r0 = td->routes[i];
+        rrrr_route_t r1 = td->routes[i+1];
         uint32_t j0 = r0.route_stops_offset;
         uint32_t j1 = r1.route_stops_offset;
         uint32_t j;
@@ -512,7 +512,7 @@ void tdata_apply_gtfsrt (tdata_t *tdata, RadixTree *tripid_index, uint8_t *buf, 
 void tdata_clear_gtfsrt (tdata_t *tdata) {
     /* If we had the total number of trips nested loops would not be necessary. */
     for (uint32_t r = 0; r < tdata->n_routes; ++r) {
-        route_t route = tdata->routes[r];
+        rrrr_route_t route = tdata->routes[r];
         trip_t *trips = tdata_trips_for_route(tdata, r);
         for (int t = 0; t < route.n_trips; ++t) {
             trips[t].realtime_delay = 0;

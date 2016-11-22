@@ -20,8 +20,8 @@ struct stop {
 };
 
 /* An individual Route in the RAPTOR sense: A group of VehicleJourneys all having the same JourneyPattern. */
-typedef struct route route_t;
-struct route {
+typedef struct rrrr_route rrrr_route_t;
+struct rrrr_route {
     uint32_t route_stops_offset;
     uint32_t trip_ids_offset;
     uint32_t headsign_offset;
@@ -78,7 +78,7 @@ struct tdata {
     uint32_t n_agencies;
     stop_t *stops;
     uint8_t *stop_attributes;
-    route_t *routes;
+    rrrr_route_t *routes;
     uint32_t *route_stops;
     uint8_t  *route_stop_attributes;
     stoptime_t *stop_times;
