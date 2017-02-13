@@ -65,7 +65,7 @@ for sid, sname, lat, lon in list(db.conn.execute(all_query)) :
             print "  ", sid2, sname2, '%0.1f m' % d
         transfers.append ( (sid, sid2, d * OBSTRUCTION) )
     n_processed += 1;
-    if n_processed % 10000 == 0 :
+    if n_processed % 1000 == 0 :
         print 'processed %d stops' % n_processed
 
 cur = db.get_cursor()

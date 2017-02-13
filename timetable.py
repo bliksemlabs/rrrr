@@ -10,7 +10,7 @@ import operator
 from pytz import timezone
 import pytz
 
-MAX_DISTANCE = 801
+MAX_DISTANCE = 2000
 
 if len(sys.argv) < 2 :
     USAGE = """usage: timetable.py inputfile.gtfsdb [calendar start date] 
@@ -30,9 +30,12 @@ print 'feed covers %s -- %s' % (feed_start_date, feed_end_date)
 try :
     start_date = date( *map(int, sys.argv[2].split('-')) )
 except :
-    print 'Scanning service calendar to find the month with maximum service.'
-    print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
-    start_date = db.find_max_service()
+    #print 'Scanning service calendar to find the month with maximum service.'
+    #print 'NOTE that this is not necessarily accurate and you can end up with sparse service in the chosen period.'
+    # start_date = db.find_max_service()
+    print 'Using Yesterday'
+    yesterday = date.today() - timedelta(days=2)
+    start_date =  yesterday
 print 'calendar start date is %s' % start_date
 
 timezones = db.agency_timezones()
@@ -320,7 +323,11 @@ for route in route_for_idx :
     exemplar_trip = route.trip_ids[0]
     #  executemany
     productcategory = ''
-    rid, headsign, agency, short_name, long_name, mode = db.tripinfo(exemplar_trip)
+    try:
+        rid, headsign, agency, short_name, long_name, mode = db.tripinfo(exemplar_trip)
+    except:
+	print(exemplar_trip)
+	continue
     if (headsign is None) :
         headsign = ''
     route_ids_for_idx.append(rid)
@@ -429,8 +436,11 @@ for idx, route in enumerate(route_for_idx) :
             timedemandgroups_offsets[timedemandgroupref] = offset
             timedemandgroups_written[str(times)] = offset
             for totaldrivetime, stopwaittime in times:
-                out.write(timedemandgroup_t.pack(totaldrivetime >> 2, (totaldrivetime + stopwaittime) >> 2))
-                offset += 1
+		try:
+               	    out.write(timedemandgroup_t.pack(totaldrivetime >> 2, (totaldrivetime + stopwaittime) >> 2))
+                    offset += 1
+		except:
+		    print('{0} tdt, swt {1}'.format(totaldrivetime,stopwaittime))
             prev_time = None
             # coherency check: stoptimes should be increasing
             for time in times:
@@ -625,12 +635,18 @@ agencyIds = []
 agencyNames = []
 agencyUrls = []
 sorted_agencyIds = sorted(idx_for_agency.iteritems(), key=operator.itemgetter(1))
+print('sorted {0}'.format(sorted_agencyIds))
+if len(sorted_agencyIds) > 1:
+    sorted_agencyIds.pop(1)
 if len(sorted_agencyIds) == 0:
     agencyIds.append('__DEFAULT__')
     agencyNames.append('')
     agencyUrls.append('')
 else:
-    for agency_id,agency_name,agency_url,agency_phone,agency_timezone in [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]:
+    agency_list = [db.agency(agencyId) for agencyId,idx in sorted_agencyIds]
+    print('------')
+    print(agency_list)
+    for agency_id,agency_name,agency_url,agency_phone,agency_timezone in agency_list:
         if agency_id == None: # agency_id is an optional value in GTFS
             agencyIds.append('')
         else:
