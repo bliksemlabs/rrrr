@@ -107,7 +107,7 @@ bool index_journey_pattern_points (const tdata_t *td, jpidx_t **jps, uint32_t *n
 
     /* our list is done, fill up remaining stops in the list with the highest
      * jp_index found, this makes the length of the list zero  */
-    for (; sp_index <= td->n_stop_points; sp_index++) journey_patterns_at_stop_point_offset[sp_index] = i2;
+    for (; sp_index < td->n_stop_points; sp_index++) journey_patterns_at_stop_point_offset[sp_index] = i2;
 
     *jps = journey_patterns_at_stop;
     *n = n_journey_patterns_at_stop;
