@@ -132,6 +132,7 @@ bool tdata_journey_patterns_at_stop (tdata_t *td) {
         free (journey_patterns_at_stop_point_offset);
 
         /* but ideally do the column store dance */
+        free (td->journey_patterns_at_stop);
         td->journey_patterns_at_stop = journey_patterns_at_stop;
     }
 
@@ -284,7 +285,25 @@ bool tdata_journey_patterns_append (tdata_t *td, uint32_t jpp_offset, vjidx_t vj
 }
 
 bool tdata_journey_patterns_index (tdata_t *td) {
-    return index_journey_patterns (td, &td->journey_pattern_active, &td->journey_pattern_min, &td->journey_pattern_max, &td->max_time);
+    calendar_t *journey_pattern_active;
+    rtime_t *journey_pattern_min;
+    rtime_t *journey_pattern_max;
+    rtime_t max_time;
+
+    if (index_journey_patterns (td, &journey_pattern_active, &journey_pattern_min, &journey_pattern_max, &max_time)) {
+        free (td->journey_pattern_active);
+        free (td->journey_pattern_min);
+        free (td->journey_pattern_max);
+
+	td->journey_pattern_active = journey_pattern_active;
+	td->journey_pattern_min = journey_pattern_min;
+	td->journey_pattern_max = journey_pattern_max;
+	td->max_time = max_time;
+
+	return true;
+    }
+
+    return false;
 }
 
 void tdata_journey_patterns_free (tdata_t *td) {
@@ -296,7 +315,6 @@ void tdata_journey_patterns_free (tdata_t *td) {
     td->n_journey_pattern_point_attributes = 0;
     td->n_journey_pattern_point_headsigns  = 0;
 
-    free (td->journey_patterns);
     free (td->journey_patterns);
     free (td->journey_pattern_active);
     free (td->commercial_mode_for_jp);
@@ -310,6 +328,14 @@ void tdata_journey_patterns_free (tdata_t *td) {
     td->journey_pattern_points           = NULL;
     td->journey_pattern_point_headsigns  = NULL;
     td->journey_pattern_point_attributes = NULL;
+
+    td->max_time = 0;
+
+    free (td->journey_pattern_min);
+    free (td->journey_pattern_max);
+
+    td->journey_pattern_min              = NULL;
+    td->journey_pattern_max              = NULL;
 }
 
 bool tdata_vehicle_journeys_new (tdata_t *td, vjidx_t n) {
@@ -653,9 +679,6 @@ void tdata_jit_free (tdata_t *td) {
 
     tdata_stop_points_free (td);
     tdata_stop_areas_free (td);
-    tdata_journey_patterns_free (td);
-
-    free (td);
 }
 #else
 void tdata_jit_not_available();

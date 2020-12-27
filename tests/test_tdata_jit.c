@@ -56,18 +56,20 @@ void dump_journey_patterns_active (const char *filename, tdata_t *tdata) {
 START_TEST (test_tdata_jit)
     {
         tdata_t tdata;
-        uint32_t *journey_patterns_active;
-        jpidx_t *journey_patterns_at_stop;
-        uint32_t n_journey_patterns_at_stop;
+        uint32_t *journey_pattern_active_orig;
+        uint32_t n_journey_pattern_active_orig;
+        uint32_t n_journey_patterns_at_stop_orig;
         uint32_t n_journey_patterns;
         rtime_t max_time;
 
         memset (&tdata, 0, sizeof(tdata_t));
 
         ck_assert_msg (tdata_load (&tdata, "/tmp/timetable4.dat"), "Copy a working timetable4.dat file to /tmp/timetabel4.dat, and rerun the test.");
-        journey_patterns_active = tdata.journey_pattern_active;
-        journey_patterns_at_stop = tdata.journey_patterns_at_stop;
-        n_journey_patterns_at_stop = tdata.n_journey_patterns_at_stop;
+
+        n_journey_patterns_at_stop_orig = tdata.n_journey_patterns_at_stop;
+        journey_pattern_active_orig = (uint32_t *) malloc(sizeof(uint32_t) * tdata.n_journey_pattern_active);
+        memcpy(journey_pattern_active_orig, tdata.journey_pattern_active, sizeof(uint32_t) * tdata.n_journey_pattern_active);
+        n_journey_pattern_active_orig = tdata.n_journey_pattern_active;
 
         /* Store the max_time to compare it later */
         max_time = tdata.max_time;
@@ -79,15 +81,16 @@ START_TEST (test_tdata_jit)
         dump_journey_patterns_active  ("/tmp/jp_active-timetable.txt", &tdata);
 
         ck_assert (tdata_journey_patterns_at_stop (&tdata));
-        ck_assert_int_eq (n_journey_patterns_at_stop, tdata.n_journey_patterns_at_stop);
+        ck_assert_int_eq (n_journey_patterns_at_stop_orig, tdata.n_journey_patterns_at_stop);
         dump_journey_patterns_at_stop ("/tmp/jp_sp_idx-jit.txt", &tdata);
         /* This one is not the same because the Python code doesn't sort the list */
-        /* ck_assert (memcmp(journey_patterns_at_stop, tdata.journey_patterns_at_stop, tdata.n_journey_patterns_at_stop) == 0); */
+        /* ck_assert (memcmp(journey_patterns_at_stop_orig, tdata.journey_patterns_at_stop, tdata.n_journey_patterns_at_stop) == 0); */
 
         ck_assert (tdata_journey_patterns_index (&tdata));
         dump_journey_patterns_active ("/tmp/jp_active-jit.txt", &tdata);
         ck_assert_int_eq (max_time, tdata.max_time);
-        ck_assert (memcmp(journey_patterns_active, tdata.journey_pattern_active, tdata.n_journey_patterns) == 0);
+        ck_assert_int_eq (n_journey_pattern_active_orig, tdata.n_journey_pattern_active);
+        ck_assert (memcmp(journey_pattern_active_orig, tdata.journey_pattern_active, sizeof(jpidx_t) * tdata.n_journey_pattern_active) == 0);
 
         n_journey_patterns = tdata.n_journey_patterns;
         while (n_journey_patterns) {
@@ -104,6 +107,10 @@ START_TEST (test_tdata_jit)
             ck_assert_int_eq (tdata.journey_pattern_max[n_journey_patterns], tdata.journey_patterns[n_journey_patterns].max_time);
             */
         }
+
+	free (journey_pattern_active_orig);
+	tdata_jit_free (&tdata);
+	tdata_close (&tdata);
     }
 END_TEST
 
