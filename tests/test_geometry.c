@@ -3,8 +3,6 @@
 #include <math.h>
 #include "../geometry.h"
 
-#define ck_assert_float_eq(a, b) ck_assert(fabs(a - b) < 0.00001f)
-
 START_TEST (test_strtolatlon)
     {
         latlon_t latlon1;
