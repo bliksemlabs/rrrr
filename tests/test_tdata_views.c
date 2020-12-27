@@ -24,6 +24,9 @@ START_TEST (test_tdata_views)
             n_results--;
             printf("%u\n", result[n_results]);
         }
+
+	tdata_close (&tdata);
+	free (result);
     }
 END_TEST
 
